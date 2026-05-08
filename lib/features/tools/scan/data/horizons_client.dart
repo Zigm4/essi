@@ -5,13 +5,15 @@ import 'package:dio/dio.dart';
 
 import '../domain/scan_models.dart';
 
-class _RawPosition {
+class HorizonsRawPosition {
   final DateTime date;
   final double x;
   final double y;
   final double z;
-  const _RawPosition(this.date, this.x, this.y, this.z);
+  const HorizonsRawPosition(this.date, this.x, this.y, this.z);
 }
+
+typedef _RawPosition = HorizonsRawPosition;
 
 class _ScanWindow {
   final double broadDays;
@@ -71,7 +73,7 @@ class HorizonsParser {
     return DateTime.utc(year, month, day, hour, minute, wholeSec, ms);
   }
 
-  static List<_RawPosition> _allPositions(String text) {
+  static List<HorizonsRawPosition> allPositions(String text) {
     final out = <_RawPosition>[];
     DateTime? pendingDate;
 
@@ -99,15 +101,8 @@ class HorizonsParser {
     return out;
   }
 
-  static _RawPosition? _firstPosition(String text) {
-    for (final raw in const LineSplitter().convert(text)) {
-      final line = raw.trim();
-      if (line.contains('A.D.')) {
-        // pendingDate will be picked up on subsequent X = line
-        // delegated to allPositions which is more complete
-      }
-    }
-    final all = _allPositions(text);
+  static HorizonsRawPosition? firstPosition(String text) {
+    final all = allPositions(text);
     return all.isEmpty ? null : all.first;
   }
 
@@ -275,7 +270,7 @@ class HorizonsClient {
       step: '1h',
       cancel: cancel,
     );
-    final raw = HorizonsParser._firstPosition(text);
+    final raw = HorizonsParser.firstPosition(text);
     if (raw == null) throw const ScanNoDataError();
     final m = HorizonsParser.metrics(x: raw.x, y: raw.y);
     return PlanetPosition(
@@ -301,7 +296,7 @@ class HorizonsClient {
       step: cfg.broadStep,
       cancel: cancel,
     );
-    final positions = HorizonsParser._allPositions(text);
+    final positions = HorizonsParser.allPositions(text);
     if (positions.isEmpty) throw const ScanNoDataError();
     final firstMetrics = HorizonsParser.metrics(
       x: positions.first.x,
@@ -338,7 +333,7 @@ class HorizonsClient {
           step: cfg.precisionStep,
           cancel: cancel,
         );
-        final preList = HorizonsParser._allPositions(preText);
+        final preList = HorizonsParser.allPositions(preText);
         if (preList.isNotEmpty) {
           var prev2 = HorizonsParser.metrics(
             x: preList[0].x,

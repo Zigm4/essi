@@ -98,6 +98,33 @@ class MarsExpressService {
     return future;
   }
 
+  static List<DateTime> alertDates({
+    required int zone,
+    required List<TrainStop> stops,
+    DateTime? now,
+  }) {
+    final base = now ?? DateTime.now();
+    final arrivals = nextArrivals(
+      zone: zone,
+      currentMinute: base.minute,
+      stops: stops,
+    );
+    if (arrivals.isEmpty) return const [];
+    final raw = arrivals.first;
+    var anchor = DateTime(base.year, base.month, base.day, base.hour);
+    if (raw >= 60) {
+      anchor = anchor.add(const Duration(hours: 1));
+      anchor = anchor.add(Duration(minutes: raw - 60));
+    } else {
+      anchor = anchor.add(Duration(minutes: raw));
+    }
+    return [
+      anchor.subtract(const Duration(minutes: 2)),
+      anchor.subtract(const Duration(minutes: 1)),
+      anchor,
+    ];
+  }
+
   static List<ScheduleEntry> consolidated({
     required int currentMinute,
     required List<TrainStop> stops,

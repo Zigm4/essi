@@ -16,9 +16,12 @@ import '../features/menu/views/faq_view.dart';
 import '../features/menu/views/menu_view.dart';
 import '../features/menu/views/settings_view.dart';
 import '../features/tools/asteroid/views/asteroid_analyzer_view.dart';
+import '../features/tools/celestial/views/celestial_view.dart';
 import '../features/tools/fishing/views/fishing_map_view.dart';
 import '../features/tools/scan/views/system_scan_view.dart';
 import '../features/tools/tools_home_view.dart';
+import '../features/tools/tracker/domain/tracker_models.dart';
+import '../features/tools/tracker/views/tracker_view.dart';
 import '../features/tools/train/views/mars_express_view.dart';
 import '../features/tools/wallet/views/wallet_lookup_view.dart';
 import 'app_shell.dart';
@@ -99,6 +102,18 @@ GoRouter buildRouter() {
                         ),
                       ),
                     ],
+                  ),
+                  GoRoute(
+                    path: 'tracker',
+                    builder: (context, state) => TrackerView(
+                      prefill: state.extra is TrackTarget
+                          ? state.extra as TrackTarget
+                          : null,
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'discoveries',
+                    builder: (context, state) => const CelestialView(),
                   ),
                 ],
               ),

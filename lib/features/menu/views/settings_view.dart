@@ -9,6 +9,7 @@ import '../../../design_system/components/section_header.dart';
 import '../../../design_system/spacing.dart';
 import '../../../design_system/typography.dart';
 import '../../../services/app_settings.dart';
+import '../../../services/data_export.dart';
 import '../../../services/haptics.dart';
 
 class SettingsView extends ConsumerWidget {
@@ -18,6 +19,7 @@ class SettingsView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(appSettingsProvider);
     final notifier = ref.read(appSettingsProvider.notifier);
+    final exportService = ref.read(dataExportServiceProvider);
     return Scaffold(
       backgroundColor: AppColors.bgDeepest,
       extendBodyBehindAppBar: true,
@@ -86,6 +88,63 @@ class SettingsView extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SectionHeader(
+                      title: 'Data',
+                      icon: Icons.data_object,
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      'Backup or move your data between devices using a JSON file.',
+                      style: AppTypography.caption,
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    _ActionRow(
+                      label: 'Export…',
+                      icon: Icons.upload,
+                      onTap: () async {
+                        Haptics.of(ref).tap();
+                        try {
+                          await exportService.shareExport();
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Export failed: $e')),
+                            );
+                          }
+                        }
+                      },
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    _ActionRow(
+                      label: 'Import…',
+                      icon: Icons.download,
+                      onTap: () async {
+                        Haptics.of(ref).tap();
+                        try {
+                          final summary =
+                              await exportService.importFromUserPick();
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(summary.describe())),
+                            );
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Import failed: $e')),
+                            );
+                          }
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              GlassCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SectionHeader(
                       title: 'What stays on',
                       icon: Icons.shield,
                     ),
@@ -139,6 +198,45 @@ class _ToggleRow extends StatelessWidget {
           activeThumbColor: AppColors.accentSuccess,
         ),
       ],
+    );
+  }
+}
+
+class _ActionRow extends StatelessWidget {
+  const _ActionRow({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: 10,
+        ),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+          border: Border.all(color: AppColors.borderSubtle),
+          color: AppColors.bgGlass,
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: AppColors.accentPrimary, size: 18),
+            const SizedBox(width: AppSpacing.sm),
+            Text(label, style: AppTypography.body),
+            const Spacer(),
+            const Icon(Icons.chevron_right, color: AppColors.textDim),
+          ],
+        ),
+      ),
     );
   }
 }

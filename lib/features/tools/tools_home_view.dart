@@ -76,16 +76,20 @@ class ToolsHomeView extends StatelessWidget {
                 onTap: () => context.push('/tools/mars-express'),
               ),
               const SizedBox(height: AppSpacing.sm),
-              const _ComingSoon(
+              ToolCard(
                 title: 'Discoveries',
                 subtitle: 'Find comets and asteroids by date (NASA SBDB)',
                 icon: Icons.travel_explore,
+                tint: AppColors.accentDanger,
+                onTap: () => context.push('/tools/discoveries'),
               ),
               const SizedBox(height: AppSpacing.sm),
-              const _ComingSoon(
+              ToolCard(
                 title: 'Tracker',
                 subtitle: 'Track a comet or asteroid live (JPL Horizons)',
                 icon: Icons.gps_fixed,
+                tint: AppColors.accentPrimary,
+                onTap: () => context.push('/tools/tracker'),
               ),
             ],
           ),
@@ -95,6 +99,8 @@ class ToolsHomeView extends StatelessWidget {
   }
 }
 
+// _ComingSoon retained for future placeholders.
+// ignore: unused_element
 class _ComingSoon extends StatelessWidget {
   const _ComingSoon({
     required this.title,

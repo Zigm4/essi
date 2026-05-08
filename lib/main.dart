@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app/app.dart';
 import 'services/app_settings.dart';
+import 'services/notifications.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,6 +18,7 @@ Future<void> main() async {
     systemNavigationBarColor: Color(0xFF03060B),
     systemNavigationBarIconBrightness: Brightness.light,
   ));
+  await AppNotifications.initialize();
   final prefs = await SharedPreferences.getInstance();
   runApp(
     ProviderScope(

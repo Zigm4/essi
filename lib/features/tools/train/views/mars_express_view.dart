@@ -12,6 +12,8 @@ import '../../../../design_system/components/section_header.dart';
 import '../../../../design_system/components/transmission_header.dart';
 import '../../../../design_system/spacing.dart';
 import '../../../../design_system/typography.dart';
+import '../../../../services/haptics.dart';
+import '../../../../services/notifications.dart';
 import '../domain/mars_express_models.dart';
 
 class MarsExpressView extends ConsumerStatefulWidget {
@@ -29,7 +31,10 @@ class _MarsExpressViewState extends ConsumerState<MarsExpressView> {
   void initState() {
     super.initState();
     _ticker = Timer.periodic(const Duration(seconds: 5), (_) {
-      if (mounted) setState(() => _now = DateTime.now());
+      if (mounted) {
+        setState(() => _now = DateTime.now());
+        ref.read(trainAlertControllerProvider.notifier).refresh();
+      }
     });
   }
 
@@ -39,9 +44,39 @@ class _MarsExpressViewState extends ConsumerState<MarsExpressView> {
     super.dispose();
   }
 
+  Future<void> _toggleAlert(int zone, MarsExpressSchedule schedule) async {
+    final alert = ref.read(trainAlertControllerProvider);
+    final notifier = ref.read(trainAlertControllerProvider.notifier);
+    if (alert.armedZone == zone) {
+      await notifier.cancel();
+      Haptics.of(ref).warning();
+      return;
+    }
+    final dates = MarsExpressService.alertDates(
+      zone: zone,
+      stops: schedule.stops,
+      now: _now,
+    );
+    if (dates.isEmpty) return;
+    final ok = await notifier.arm(zone: zone, alertDates: dates);
+    if (ok) {
+      Haptics.of(ref).success();
+    } else {
+      Haptics.of(ref).error();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Notifications permission denied.'),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final scheduleAsync = ref.watch(marsExpressScheduleProvider);
+    final alert = ref.watch(trainAlertControllerProvider);
     return Scaffold(
       backgroundColor: AppColors.bgDeepest,
       extendBodyBehindAppBar: true,
@@ -141,12 +176,20 @@ class _MarsExpressViewState extends ConsumerState<MarsExpressView> {
                           icon: Icons.schedule,
                         ),
                         const SizedBox(height: AppSpacing.sm),
+                        Text(
+                          'Tap a row to arm or cancel alerts (T-2, T-1, arrival)',
+                          style: AppTypography.caption,
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
                         for (var i = 0; i < entries.length; i++) ...[
                           _ScheduleRow(
                             entry: entries[i],
                             isCurrent: !entries[i].nextHour &&
                                 minute >= entries[i].startMinute &&
                                 minute <= entries[i].endMinute,
+                            isArmed: alert.armedZone == entries[i].zone,
+                            onArm: () =>
+                                _toggleAlert(entries[i].zone, schedule),
                           ),
                           if (i < entries.length - 1)
                             Container(
@@ -161,6 +204,46 @@ class _MarsExpressViewState extends ConsumerState<MarsExpressView> {
                       ],
                     ),
                   ),
+                  if (alert.armedZone != null) ...[
+                    const SizedBox(height: AppSpacing.lg),
+                    GlassCard(
+                      child: Row(
+                        children: [
+                          const Icon(Icons.notifications_active,
+                              color: AppColors.accentWarn),
+                          const SizedBox(width: AppSpacing.sm),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Alerts armed for Zone ${alert.armedZone}',
+                                  style: AppTypography.body,
+                                ),
+                                if (alert.arrival != null)
+                                  Text(
+                                    'Arrival ${DateFormat('HH:mm').format(alert.arrival!)}',
+                                    style: AppTypography.caption,
+                                  ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () async {
+                              await ref
+                                  .read(trainAlertControllerProvider.notifier)
+                                  .cancel();
+                              if (mounted) {
+                                Haptics.of(ref).warning();
+                              }
+                            },
+                            icon: const Icon(Icons.cancel,
+                                color: AppColors.accentDanger),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ),
             );
@@ -172,50 +255,70 @@ class _MarsExpressViewState extends ConsumerState<MarsExpressView> {
 }
 
 class _ScheduleRow extends StatelessWidget {
-  const _ScheduleRow({required this.entry, required this.isCurrent});
+  const _ScheduleRow({
+    required this.entry,
+    required this.isCurrent,
+    required this.isArmed,
+    required this.onArm,
+  });
   final ScheduleEntry entry;
   final bool isCurrent;
+  final bool isArmed;
+  final VoidCallback onArm;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Opacity(
-        opacity: isCurrent ? 1 : 0.85,
-        child: Row(
-          children: [
-            SizedBox(
-              width: 70,
-              child: Text(
-                entry.rangeText,
-                style: AppTypography.mono.copyWith(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: isCurrent
-                      ? AppColors.accentSecondary
-                      : AppColors.textSecondary,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onArm,
+        child: Opacity(
+          opacity: isCurrent ? 1 : 0.85,
+          child: Row(
+            children: [
+              SizedBox(
+                width: 70,
+                child: Text(
+                  entry.rangeText,
+                  style: AppTypography.mono.copyWith(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: isCurrent
+                        ? AppColors.accentSecondary
+                        : AppColors.textSecondary,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Icon(
-              entry.name == null ? Icons.swap_horiz : Icons.tram,
-              color: entry.name == null
-                  ? AppColors.textDim
-                  : AppColors.accentPrimary,
-              size: 16,
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Zone ${entry.zone}', style: AppTypography.body),
-                  Text(entry.name ?? 'Transit', style: AppTypography.caption),
-                ],
+              const SizedBox(width: AppSpacing.sm),
+              Icon(
+                entry.name == null ? Icons.swap_horiz : Icons.tram,
+                color: entry.name == null
+                    ? AppColors.textDim
+                    : AppColors.accentPrimary,
+                size: 16,
               ),
-            ),
-          ],
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Zone ${entry.zone}', style: AppTypography.body),
+                    Text(entry.name ?? 'Transit', style: AppTypography.caption),
+                  ],
+                ),
+              ),
+              Icon(
+                isArmed
+                    ? Icons.notifications_active
+                    : Icons.notifications_outlined,
+                color: isArmed
+                    ? AppColors.accentWarn
+                    : AppColors.textDim,
+                size: 18,
+              ),
+            ],
+          ),
         ),
       ),
     );
