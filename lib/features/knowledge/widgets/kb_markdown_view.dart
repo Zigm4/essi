@@ -20,12 +20,11 @@ class KBMarkdownView extends StatelessWidget {
         if (uri == null) return;
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       },
-      imageBuilder: (uri, title, alt) {
-        final raw = uri.toString();
+      sizedImageBuilder: (config) {
+        final raw = config.uri.toString();
         if (raw.startsWith('http://') || raw.startsWith('https://')) {
           return Image.network(raw);
         }
-        // Resolve relative paths into Flutter assets/knowledge/...
         final clean = raw.startsWith('./') ? raw.substring(2) : raw;
         final base = clean.startsWith('images/') ? clean : 'images/$clean';
         return Image.asset('assets/knowledge/$base');

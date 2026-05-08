@@ -12,11 +12,14 @@ import '../../../../design_system/components/transmission_header.dart';
 import '../../../../design_system/spacing.dart';
 import '../../../../design_system/typography.dart';
 import '../../../../services/haptics.dart';
+import '../../../../services/share_card.dart';
 import '../data/horizons_client.dart';
 import '../domain/scan_models.dart';
 import '../state/scan_controller.dart';
 import '../widgets/planet_result_row.dart';
+import '../widgets/scan_share_card.dart';
 import 'scan_history_sheet.dart';
+import 'system_scan_how_it_works.dart';
 
 class SystemScanView extends ConsumerWidget {
   const SystemScanView({super.key});
@@ -36,6 +39,19 @@ class SystemScanView extends ConsumerWidget {
         title: Text('System Scan', style: AppTypography.headline),
         iconTheme: const IconThemeData(color: AppColors.accentPrimary),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            color: AppColors.accentPrimary,
+            tooltip: 'How this tool works',
+            onPressed: () {
+              showModalBottomSheet<void>(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (_) => const SystemScanHowItWorksView(),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.history),
             color: AppColors.accentPrimary,
@@ -355,19 +371,53 @@ class _ActionCard extends ConsumerWidget {
   }
 }
 
-class _ResultsCard extends StatelessWidget {
+class _ResultsCard extends ConsumerWidget {
   const _ResultsCard({required this.state});
   final ScanState state;
 
+  Future<void> _share(BuildContext context, WidgetRef ref) async {
+    final snapshots = state.rows
+        .where((r) => r.status is PlanetRowOk)
+        .map((r) => (r.status as PlanetRowOk).position)
+        .toList();
+    if (snapshots.isEmpty) return;
+    Haptics.of(ref).tap();
+    await ShareCardCapture.share(
+      context: context,
+      card: ScanShareCard(
+        mode: state.mode,
+        date: state.lastScannedAt ?? DateTime.now(),
+        snapshots: snapshots,
+      ),
+      fileName:
+          'underdeck-scan-${DateTime.now().millisecondsSinceEpoch}.png',
+      text: 'Underdeck system scan',
+    );
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return GlassCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SectionHeader(
-            title: 'Solar system snapshot',
-            icon: Icons.public,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Expanded(
+                child: SectionHeader(
+                  title: 'Solar system snapshot',
+                  icon: Icons.public,
+                ),
+              ),
+              if (state.canShare)
+                IconButton(
+                  onPressed: () => _share(context, ref),
+                  icon: const Icon(Icons.ios_share,
+                      color: AppColors.accentPrimary, size: 18),
+                  tooltip: 'Share scan',
+                ),
+            ],
           ),
           const SizedBox(height: AppSpacing.md),
           for (var i = 0; i < state.rows.length; i++) ...[

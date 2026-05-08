@@ -19,6 +19,8 @@ import '../data/celestial_client.dart';
 import '../data/celestial_repository.dart';
 import '../domain/celestial_kind.dart';
 import '../domain/celestial_models.dart';
+import 'discoveries_how_it_works.dart';
+import 'discovery_history_sheet.dart';
 
 class CelestialView extends ConsumerStatefulWidget {
   const CelestialView({super.key});
@@ -104,6 +106,41 @@ class _CelestialViewState extends ConsumerState<CelestialView> {
         elevation: 0,
         title: Text('Discoveries', style: AppTypography.headline),
         iconTheme: const IconThemeData(color: AppColors.accentPrimary),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.info_outline, color: AppColors.accentPrimary),
+            tooltip: 'How this tool works',
+            onPressed: () {
+              showModalBottomSheet<void>(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (_) => const DiscoveriesHowItWorksView(),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.history, color: AppColors.accentPrimary),
+            tooltip: 'Search history',
+            onPressed: () {
+              showModalBottomSheet<void>(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (_) => DiscoveryHistorySheet(
+                  onReplay: (record) {
+                    Navigator.of(context).pop();
+                    setState(() {
+                      _kind = record.kind;
+                      _startDate = record.startDate;
+                      _endDate = record.endDate;
+                    });
+                  },
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: AppBackground(
         child: PageScrollView(

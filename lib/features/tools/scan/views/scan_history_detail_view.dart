@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../design_system/colors.dart';
@@ -8,17 +9,35 @@ import '../../../../design_system/components/page_scroll_view.dart';
 import '../../../../design_system/components/section_header.dart';
 import '../../../../design_system/spacing.dart';
 import '../../../../design_system/typography.dart';
+import '../../../../services/haptics.dart';
+import '../../../../services/share_card.dart';
 import '../data/scan_repository.dart';
 import '../domain/scan_models.dart';
 import '../widgets/planet_result_row.dart';
+import '../widgets/scan_share_card.dart';
 
-class ScanHistoryDetailView extends StatelessWidget {
+class ScanHistoryDetailView extends ConsumerWidget {
   const ScanHistoryDetailView({super.key, required this.entry});
 
   final ScanHistoryRecord entry;
 
+  Future<void> _share(BuildContext context, WidgetRef ref) async {
+    Haptics.of(ref).tap();
+    await ShareCardCapture.share(
+      context: context,
+      card: ScanShareCard(
+        mode: entry.mode,
+        date: entry.date,
+        snapshots: entry.snapshots,
+      ),
+      fileName:
+          'underdeck-scan-${DateTime.now().millisecondsSinceEpoch}.png',
+      text: 'Underdeck system scan',
+    );
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       backgroundColor: AppColors.bgDeepest,
       extendBodyBehindAppBar: true,
@@ -103,9 +122,22 @@ class ScanHistoryDetailView extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SectionHeader(
-                      title: 'Snapshot',
-                      icon: Icons.public,
+                    Row(
+                      children: [
+                        const Expanded(
+                          child: SectionHeader(
+                            title: 'Snapshot',
+                            icon: Icons.public,
+                          ),
+                        ),
+                        if (entry.snapshots.isNotEmpty)
+                          IconButton(
+                            onPressed: () => _share(context, ref),
+                            icon: const Icon(Icons.ios_share,
+                                color: AppColors.accentPrimary, size: 18),
+                            tooltip: 'Share scan',
+                          ),
+                      ],
                     ),
                     const SizedBox(height: AppSpacing.md),
                     for (var i = 0; i < entry.snapshots.length; i++) ...[

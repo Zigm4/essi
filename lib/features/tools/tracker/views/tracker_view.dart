@@ -12,10 +12,13 @@ import '../../../../design_system/components/transmission_header.dart';
 import '../../../../design_system/spacing.dart';
 import '../../../../design_system/typography.dart';
 import '../../../../services/haptics.dart';
+import '../../../../services/share_card.dart';
 import '../../celestial/domain/celestial_kind.dart';
 import '../domain/tracker_models.dart';
 import '../state/tracker_controller.dart';
+import '../widgets/tracker_share_card.dart';
 import 'tracker_history_sheet.dart';
+import 'tracker_how_it_works.dart';
 
 class TrackerView extends ConsumerStatefulWidget {
   const TrackerView({super.key, this.prefill});
@@ -72,6 +75,18 @@ class _TrackerViewState extends ConsumerState<TrackerView> {
         title: Text('Tracker', style: AppTypography.headline),
         iconTheme: const IconThemeData(color: AppColors.accentPrimary),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.info_outline, color: AppColors.accentPrimary),
+            tooltip: 'How this tool works',
+            onPressed: () {
+              showModalBottomSheet<void>(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (_) => const TrackerHowItWorksView(),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.history, color: AppColors.accentPrimary),
             tooltip: 'Tracker history',
@@ -349,19 +364,43 @@ class _KindPicker extends StatelessWidget {
   }
 }
 
-class _ResultCard extends StatelessWidget {
+class _ResultCard extends ConsumerWidget {
   const _ResultCard({required this.result});
   final TrackerResult result;
 
   String _fmt(double v, int digits) => v.toStringAsFixed(digits);
 
+  Future<void> _share(BuildContext context, WidgetRef ref) async {
+    Haptics.of(ref).tap();
+    await ShareCardCapture.share(
+      context: context,
+      card: TrackerShareCard(result: result),
+      fileName:
+          'underdeck-track-${DateTime.now().millisecondsSinceEpoch}.png',
+      text: 'Underdeck tracker',
+    );
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return GlassCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SectionHeader(title: 'Position', icon: Icons.public),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Expanded(
+                child: SectionHeader(title: 'Position', icon: Icons.public),
+              ),
+              IconButton(
+                onPressed: () => _share(context, ref),
+                icon: const Icon(Icons.ios_share,
+                    color: AppColors.accentPrimary, size: 18),
+                tooltip: 'Share track',
+              ),
+            ],
+          ),
           const SizedBox(height: AppSpacing.sm),
           Row(
             children: [
