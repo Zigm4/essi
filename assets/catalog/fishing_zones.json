@@ -1,0 +1,902 @@
+[
+  {
+    "id": 1,
+    "name": "Unknown",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 2,
+    "name": "Unknown",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 3,
+    "name": "Unknown",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 4,
+    "name": "Unknown",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 5,
+    "name": "Unknown",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 6,
+    "name": "Unknown",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 7,
+    "name": "Unknown",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 8,
+    "name": "Unknown",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 9,
+    "name": "Unknown",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 10,
+    "name": "Unknown",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 11,
+    "name": "Unknown",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 12,
+    "name": "Unknown",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 13,
+    "name": "Unknown",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 14,
+    "name": "Unknown",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 15,
+    "name": "Unknown",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 16,
+    "name": "Reef",
+    "accessible": false,
+    "depth": null,
+    "pole": null,
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 17,
+    "name": "Unknown",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 18,
+    "name": "Unknown",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 19,
+    "name": "Unknown",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 20,
+    "name": "Unknown",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 21,
+    "name": "Unknown",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 22,
+    "name": "Serpent's Sway",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 23,
+    "name": "Barbary Bend",
+    "accessible": true,
+    "depth": "Grove",
+    "pole": "Green",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 24,
+    "name": "Reef",
+    "accessible": false,
+    "depth": null,
+    "pole": null,
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 25,
+    "name": "Unknown",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 26,
+    "name": "Unknown",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 27,
+    "name": "Unknown",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 28,
+    "name": "Davy Jones' Depths",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 29,
+    "name": "Angler's Abyss",
+    "accessible": true,
+    "depth": "Void",
+    "pole": "Red",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 30,
+    "name": "Black Spot Bay",
+    "accessible": true,
+    "depth": "Deep",
+    "pole": "Blue",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 31,
+    "name": "Reef",
+    "accessible": false,
+    "depth": null,
+    "pole": null,
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 32,
+    "name": "Pegleg Point",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 33,
+    "name": "Unknown",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 34,
+    "name": "Witchwood Whirl",
+    "accessible": true,
+    "depth": "Lair",
+    "pole": "Black",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 35,
+    "name": "Unknown",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 36,
+    "name": "Kraken Cove",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 37,
+    "name": "Long John's Lagoon",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 38,
+    "name": "Crusoe's Current",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 39,
+    "name": "Unknown",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 40,
+    "name": "Harpy's Haunt",
+    "accessible": true,
+    "depth": "Lair",
+    "pole": "Black",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 41,
+    "name": "Reef",
+    "accessible": false,
+    "depth": null,
+    "pole": null,
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 42,
+    "name": "Kraken's Lair",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 43,
+    "name": "Hookhand Harbor",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 44,
+    "name": "Benbow Waters",
+    "accessible": true,
+    "depth": "Grove",
+    "pole": "Green",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 45,
+    "name": "Neptune's Narrows",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 46,
+    "name": "Dreadweed Drift",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 47,
+    "name": "Unknown",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 48,
+    "name": "Kraken's Keep",
+    "accessible": true,
+    "depth": "Wreck",
+    "pole": "White",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 49,
+    "name": "Marooner's Mooring",
+    "accessible": true,
+    "depth": "Harbour",
+    "pole": "Pink",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 50,
+    "name": "Hispaniola Horizon",
+    "accessible": true,
+    "depth": "Wreck",
+    "pole": "White",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 51,
+    "name": "Reef",
+    "accessible": false,
+    "depth": null,
+    "pole": null,
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 52,
+    "name": "Unknown",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 53,
+    "name": "Reef",
+    "accessible": false,
+    "depth": null,
+    "pole": null,
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 54,
+    "name": "Grimgrasp Grove",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 55,
+    "name": "Eastshire Jetty",
+    "accessible": true,
+    "depth": "Harbour",
+    "pole": "Pink",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 56,
+    "name": "Corsair's Crossing",
+    "accessible": true,
+    "depth": "Deep",
+    "pole": "Blue",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 57,
+    "name": "Leviathan's Lair",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 58,
+    "name": "Blind Pew's Pass",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 59,
+    "name": "Unknown",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 60,
+    "name": "Mutineer's Marsh",
+    "accessible": true,
+    "depth": "Void",
+    "pole": "Red",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 61,
+    "name": "Anchor's Alcove",
+    "accessible": true,
+    "depth": "Shore",
+    "pole": "Purple",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 62,
+    "name": "Pew's Panorama",
+    "accessible": true,
+    "depth": "Harbour",
+    "pole": "Pink",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 63,
+    "name": "Marooner's Main",
+    "accessible": true,
+    "depth": "Harbour",
+    "pole": "Pink",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 64,
+    "name": "Galleon's Graveyard",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 65,
+    "name": "Dread Pirate's Domain",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 66,
+    "name": "Masthead Meadow",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 67,
+    "name": "Buccaneer's Bend",
+    "accessible": true,
+    "depth": "Shore",
+    "pole": "Purple",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 68,
+    "name": "Rum Runner's Rapids",
+    "accessible": true,
+    "depth": "Void",
+    "pole": "Red",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 69,
+    "name": "Jolly Roger Reed",
+    "accessible": true,
+    "depth": "Harbour",
+    "pole": "Pink",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 70,
+    "name": "Reef",
+    "accessible": false,
+    "depth": null,
+    "pole": null,
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 71,
+    "name": "Brigand's Bend",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 72,
+    "name": "Corsair's Cove",
+    "accessible": true,
+    "depth": "Harbour",
+    "pole": "Pink",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 73,
+    "name": "Reef",
+    "accessible": false,
+    "depth": null,
+    "pole": null,
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 74,
+    "name": "Reef",
+    "accessible": false,
+    "depth": null,
+    "pole": null,
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 75,
+    "name": "Reef",
+    "accessible": false,
+    "depth": null,
+    "pole": null,
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 76,
+    "name": "Old Salt's Snare",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 77,
+    "name": "Raider's Run",
+    "accessible": true,
+    "depth": "Deep",
+    "pole": "Blue",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 78,
+    "name": "Reef",
+    "accessible": false,
+    "depth": null,
+    "pole": null,
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 79,
+    "name": "Calico Jack's Cove",
+    "accessible": true,
+    "depth": "Harbour",
+    "pole": "Pink",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 80,
+    "name": "Dead Man's Drop",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 81,
+    "name": "Phantom's Fall",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 82,
+    "name": "Pirate's Passage",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 83,
+    "name": "Ghost Ship Gully",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 84,
+    "name": "Barnacle Bayou",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 85,
+    "name": "Scurvy Sands",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 86,
+    "name": "Devil's Dip",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 87,
+    "name": "Pirate's Plunder Point",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 88,
+    "name": "Reef",
+    "accessible": false,
+    "depth": null,
+    "pole": null,
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 89,
+    "name": "Reef",
+    "accessible": false,
+    "depth": null,
+    "pole": null,
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 90,
+    "name": "Reef",
+    "accessible": false,
+    "depth": null,
+    "pole": null,
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 91,
+    "name": "Treasure Trove Tide",
+    "accessible": true,
+    "depth": "Grove",
+    "pole": "Green",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 92,
+    "name": "Gallow Wake",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 93,
+    "name": "Plankwalker's Paradise",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 94,
+    "name": "Cannonball Current",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 95,
+    "name": "Marauder's Mist",
+    "accessible": true,
+    "depth": "Lair",
+    "pole": "Black",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 96,
+    "name": "Smuggler's Hideout",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "rankle-river",
+    "isMapRoom": false
+  },
+  {
+    "id": 996,
+    "name": "Event Arena",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "event-arena",
+    "isMapRoom": true
+  },
+  {
+    "id": 997,
+    "name": "Imperious Falls",
+    "accessible": true,
+    "depth": "Unknown",
+    "pole": "Unknown",
+    "room": "imperious-falls",
+    "isMapRoom": true
+  },
+  {
+    "id": 998,
+    "name": "East Shire",
+    "accessible": true,
+    "depth": "Shore",
+    "pole": "Purple",
+    "room": "east-shire",
+    "isMapRoom": true
+  },
+  {
+    "id": 999,
+    "name": "West Shire",
+    "accessible": true,
+    "depth": "Pond",
+    "pole": "Brown",
+    "room": "west-shire",
+    "isMapRoom": true
+  }
+]

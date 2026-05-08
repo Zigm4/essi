@@ -1,0 +1,55 @@
+{
+  "categories": [
+    {
+      "id": "maps",
+      "title": "Maps",
+      "icon": "map.fill",
+      "order": 1,
+      "articles": [
+        {
+          "slug": "hideous-dungeon",
+          "title": "Hideous Dungeon",
+          "file": "01-maps/hideous-dungeon.md",
+          "tags": ["kb:map"],
+          "order": 1
+        },
+        {
+          "slug": "ratropia",
+          "title": "Ratropia",
+          "file": "01-maps/ratropia.md",
+          "tags": ["kb:map"],
+          "order": 2
+        },
+        {
+          "slug": "apms",
+          "title": "APMs",
+          "file": "01-maps/apms.md",
+          "tags": ["kb:map"],
+          "order": 3
+        }
+      ]
+    },
+    {
+      "id": "systems",
+      "title": "Systems",
+      "icon": "gearshape.fill",
+      "order": 2,
+      "articles": [
+        {
+          "slug": "vessel-recall",
+          "title": "Vessel Recall",
+          "file": "02-systems/vessel-recall.md",
+          "tags": ["kb:system", "kb:vessel"],
+          "order": 1
+        },
+        {
+          "slug": "vessel-permissions",
+          "title": "Vessel Permissions",
+          "file": "02-systems/vessel-permissions.md",
+          "tags": ["kb:system", "kb:vessel", "kb:passengers"],
+          "order": 2
+        }
+      ]
+    }
+  ]
+}
