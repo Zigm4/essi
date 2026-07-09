@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../../core/logging.dart';
 import '../../../../data/database/app_database.dart';
 import '../../celestial/domain/celestial_kind.dart';
 import '../domain/tracker_models.dart';
@@ -51,7 +52,21 @@ class TrackerRepository {
   Stream<List<TrackerHistoryRecord>> watchAll() {
     final q = _db.select(_db.trackerHistory)
       ..orderBy([(t) => OrderingTerm.desc(t.date)]);
-    return q.watch().map((rows) => rows.map(TrackerHistoryRecord.fromRow).toList());
+    // F16/read-tolerance: skip rows whose fromRow throws so a single corrupt
+    // payload can't error the entire history stream.
+    return q.watch().map(
+          (rows) => rows
+              .map((r) {
+                try {
+                  return TrackerHistoryRecord.fromRow(r);
+                } catch (e, st) {
+                  logError(e, st);
+                  return null;
+                }
+              })
+              .whereType<TrackerHistoryRecord>()
+              .toList(),
+        );
   }
 
   Future<void> delete(String id) async {

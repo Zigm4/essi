@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/network/app_dio.dart';
 import '../data/horizons_client.dart';
 import '../data/scan_repository.dart';
 import '../domain/scan_models.dart';
@@ -79,6 +80,10 @@ class ScanController extends StateNotifier<ScanState> {
 
   void cancel() {
     _cancel?.cancel('user cancelled');
+    // Bump the generation so any in-flight startScan() loop bails out and its
+    // post-await tail (persist + lastScannedAt) is skipped for this run.
+    _generation++;
+    if (!mounted) return;
     state = state.copyWith(isScanning: false);
   }
 
@@ -103,7 +108,7 @@ class ScanController extends StateNotifier<ScanState> {
 
     final total = HorizonsClient.planets.length;
     for (var i = 0; i < total; i++) {
-      if (_generation != myGeneration || cancel.isCancelled) {
+      if (!mounted || _generation != myGeneration || cancel.isCancelled) {
         break;
       }
       final planet = HorizonsClient.planets[i];
@@ -111,24 +116,27 @@ class ScanController extends StateNotifier<ScanState> {
         final pos = activeMode == ScanMode.light
             ? await _client.fetchLight(planet: planet, cancel: cancel)
             : await _client.fetchFull(planet: planet, cancel: cancel);
-        if (_generation != myGeneration) break;
+        if (!mounted || _generation != myGeneration) break;
         _updateRow(planet.name, PlanetRowOk(pos));
       } on ScanError catch (e) {
         if (e is ScanCancelledError) break;
-        if (_generation != myGeneration) break;
+        if (!mounted || _generation != myGeneration) break;
         _updateRow(planet.name, PlanetRowErrored(e));
       } catch (_) {
-        if (_generation != myGeneration) break;
+        if (!mounted || _generation != myGeneration) break;
         _updateRow(planet.name, const PlanetRowErrored(ScanUnparseableError()));
       }
-      if (_generation != myGeneration) break;
+      if (!mounted || _generation != myGeneration) break;
       state = state.copyWith(progressCount: i + 1);
       if (i < total - 1) {
         await Future<void>.delayed(HorizonsClient.interRequestDelay);
       }
     }
 
-    if (_generation != myGeneration) return;
+    // A cancel()/dispose() or a newer startScan() bumped the generation, or the
+    // notifier was disposed: do NOT flip isScanning, stamp lastScannedAt, or
+    // persist a partial/cancelled scan.
+    if (!mounted || _generation != myGeneration) return;
 
     final completed = state.rows
         .where((r) => r.status is PlanetRowOk)
@@ -140,7 +148,7 @@ class ScanController extends StateNotifier<ScanState> {
       lastScannedAt: DateTime.now(),
     );
 
-    if (completed.isNotEmpty) {
+    if (completed.isNotEmpty && mounted && _generation == myGeneration) {
       await _repo.save(
         mode: activeMode,
         snapshots: completed,
@@ -158,13 +166,15 @@ class ScanController extends StateNotifier<ScanState> {
 
   @override
   void dispose() {
+    // Bump generation so any in-flight loop's post-await writes are skipped.
+    _generation++;
     _cancel?.cancel();
     super.dispose();
   }
 }
 
 final horizonsClientProvider = Provider<HorizonsClient>((ref) {
-  return HorizonsClient();
+  return HorizonsClient(dio: ref.watch(appDioProvider));
 });
 
 final scanControllerProvider =

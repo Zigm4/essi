@@ -5,6 +5,16 @@ import 'package:dio/dio.dart';
 
 import '../domain/scan_models.dart';
 
+/// F47 — thrown when a Horizons payload is not an ephemeris table (the
+/// `$$SOE`/`$$EOE` markers are missing), e.g. an in-band "API SERVER BUSY"
+/// notice. Carries a short [preview] of the payload so callers can surface it.
+class HorizonsFormatException implements Exception {
+  final String preview;
+  const HorizonsFormatException(this.preview);
+  @override
+  String toString() => 'HorizonsFormatException: $preview';
+}
+
 class HorizonsRawPosition {
   final DateTime date;
   final double x;
@@ -73,30 +83,51 @@ class HorizonsParser {
     return DateTime.utc(year, month, day, hour, minute, wholeSec, ms);
   }
 
+  // Tolerant X/Y/Z vector line: handles `X =`, `X=`, extra spaces, and
+  // scientific notation. Anchored to the start of the (trimmed) line so it
+  // does not accidentally match the velocity line (`VX= ... VY= ... VZ=`).
+  static final RegExp _xyzLine = RegExp(
+    r'^X\s*=\s*(-?[\d.]+(?:[eE][+-]?\d+)?)'
+    r'\s+Y\s*=\s*(-?[\d.]+(?:[eE][+-]?\d+)?)'
+    r'\s+Z\s*=\s*(-?[\d.]+(?:[eE][+-]?\d+)?)',
+  );
+
   static List<HorizonsRawPosition> allPositions(String text) {
+    // F47 — the ephemeris table lives between the `$$SOE` and `$$EOE`
+    // markers. If `$$SOE` is absent the payload is not an ephemeris at all
+    // (e.g. "API SERVER BUSY", a rate-limit notice, or an error message);
+    // surface it distinctly instead of scanning to an empty list that would
+    // collapse into a generic "no data" outcome.
+    final soe = text.indexOf(r'$$SOE');
+    if (soe < 0) {
+      final collapsed = text.trim().replaceAll(RegExp(r'\s+'), ' ');
+      final preview =
+          collapsed.length > 200 ? collapsed.substring(0, 200) : collapsed;
+      throw HorizonsFormatException(preview);
+    }
+    final eoe = text.indexOf(r'$$EOE', soe);
+    final body = eoe < 0
+        ? text.substring(soe + 5)
+        : text.substring(soe + 5, eoe);
+
     final out = <_RawPosition>[];
     DateTime? pendingDate;
 
-    for (final raw in const LineSplitter().convert(text)) {
+    for (final raw in const LineSplitter().convert(body)) {
       final line = raw.trim();
       if (line.contains('A.D.')) {
         final after = line.split('A.D.').last.split('TDB').first.trim();
         pendingDate = _parseDate(after);
         continue;
       }
-      if (line.startsWith('X =') && pendingDate != null) {
-        try {
-          final xPart = line.split('X =').last.split('Y =').first.trim();
-          final yPart = line.split('Y =').last.split('Z =').first.trim();
-          final zPart = line.split('Z =').last.trim();
-          final x = double.parse(xPart);
-          final y = double.parse(yPart);
-          final z = double.parse(zPart);
-          out.add(_RawPosition(pendingDate, x, y, z));
-        } catch (_) {
-          continue;
-        }
-      }
+      if (pendingDate == null) continue;
+      final m = _xyzLine.firstMatch(line);
+      if (m == null) continue;
+      final x = double.tryParse(m.group(1)!);
+      final y = double.tryParse(m.group(2)!);
+      final z = double.tryParse(m.group(3)!);
+      if (x == null || y == null || z == null) continue;
+      out.add(_RawPosition(pendingDate, x, y, z));
     }
     return out;
   }
@@ -222,6 +253,7 @@ class HorizonsClient {
       'MAKE_EPHEM': "'YES'",
       'EPHEM_TYPE': "'VECTORS'",
       'CENTER': "'500@10'",
+      'OUT_UNITS': "'KM-S'",
       'START_TIME': "'${_formatUtc(start)}'",
       'STOP_TIME': "'${_formatUtc(stop)}'",
       'STEP_SIZE': "'$step'",
@@ -270,7 +302,12 @@ class HorizonsClient {
       step: '1h',
       cancel: cancel,
     );
-    final raw = HorizonsParser.firstPosition(text);
+    final HorizonsRawPosition? raw;
+    try {
+      raw = HorizonsParser.firstPosition(text);
+    } on HorizonsFormatException catch (e) {
+      throw ScanApiMessageError(e.preview);
+    }
     if (raw == null) throw const ScanNoDataError();
     final m = HorizonsParser.metrics(x: raw.x, y: raw.y);
     return PlanetPosition(
@@ -296,7 +333,12 @@ class HorizonsClient {
       step: cfg.broadStep,
       cancel: cancel,
     );
-    final positions = HorizonsParser.allPositions(text);
+    final List<HorizonsRawPosition> positions;
+    try {
+      positions = HorizonsParser.allPositions(text);
+    } on HorizonsFormatException catch (e) {
+      throw ScanApiMessageError(e.preview);
+    }
     if (positions.isEmpty) throw const ScanNoDataError();
     final firstMetrics = HorizonsParser.metrics(
       x: positions.first.x,

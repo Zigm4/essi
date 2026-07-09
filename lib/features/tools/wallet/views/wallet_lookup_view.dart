@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:underdeck_app/core/logging.dart';
+
 import '../../../../services/haptics.dart';
 import '../../../../services/share_card.dart';
 import '../widgets/wallet_share_card.dart';
@@ -74,8 +76,9 @@ class WalletData {
           .map((e) => WalletEntry.fromJson(e as Map<String, dynamic>))
           .toList();
       return WalletData(list);
-    } catch (_) {
-      return const WalletData([]);
+    } catch (e, st) {
+      logError('Failed to load assets/catalog/wallets.json: $e', st);
+      rethrow;
     }
   }
 }

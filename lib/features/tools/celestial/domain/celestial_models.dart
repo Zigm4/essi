@@ -85,6 +85,21 @@ class DiscoveredObject {
       );
 }
 
+/// Outcome of a single SBDB search: the parsed objects plus whether the API
+/// capped the reply at its row limit (so the list is incomplete). [truncated]
+/// lets the UI warn the user instead of presenting a partial list as the whole
+/// result set (F15).
+@immutable
+class DiscoverySearchResult {
+  final List<DiscoveredObject> objects;
+  final bool truncated;
+
+  const DiscoverySearchResult({
+    required this.objects,
+    this.truncated = false,
+  });
+}
+
 enum DiscoveryStatus { ok, caution, danger, unknown }
 
 @immutable

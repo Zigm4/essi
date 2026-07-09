@@ -1,31 +1,58 @@
+import 'dart:async';
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app/app.dart';
+import 'core/logging.dart';
 import 'services/app_settings.dart';
 import 'services/notifications.dart';
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-  ]);
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarColor: Color(0x00000000),
-    statusBarIconBrightness: Brightness.light,
-    systemNavigationBarColor: Color(0xFF03060B),
-    systemNavigationBarIconBrightness: Brightness.light,
-  ));
-  await AppNotifications.initialize();
-  final prefs = await SharedPreferences.getInstance();
-  runApp(
-    ProviderScope(
-      overrides: [
-        sharedPreferencesProvider.overrideWithValue(prefs),
-      ],
-      child: const UnderdeckApp(),
-    ),
-  );
+  runZonedGuarded(() async {
+    WidgetsFlutterBinding.ensureInitialized();
+
+    // Route framework and platform errors through the shared logger so nothing
+    // is silently swallowed.
+    FlutterError.onError = (details) {
+      logError(details.exception, details.stack);
+    };
+    PlatformDispatcher.instance.onError = (error, stack) {
+      logError(error, stack);
+      return true;
+    };
+
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+    ]);
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      statusBarColor: Color(0x00000000),
+      statusBarIconBrightness: Brightness.light,
+      systemNavigationBarColor: Color(0xFF03060B),
+      systemNavigationBarIconBrightness: Brightness.light,
+    ));
+
+    // A notification-plugin init failure must not leave the user on a
+    // permanent blank screen — degrade gracefully and continue booting.
+    try {
+      await AppNotifications.initialize();
+    } catch (e, st) {
+      logError('AppNotifications.initialize() failed: $e', st);
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    runApp(
+      ProviderScope(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+        ],
+        child: const UnderdeckApp(),
+      ),
+    );
+  }, (error, stack) {
+    logError(error, stack);
+  });
 }

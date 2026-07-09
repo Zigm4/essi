@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../../core/logging.dart';
 import '../../../../data/database/app_database.dart';
 import '../domain/scan_models.dart';
 
@@ -65,7 +66,19 @@ class ScanRepository {
     final query = _db.select(_db.scanHistory)
       ..orderBy([(t) => OrderingTerm.desc(t.date)]);
     return query.watch().map(
-      (rows) => rows.map(ScanHistoryRecord.fromRow).toList(),
+      // F16/read-tolerance: one corrupt payload must not error the whole
+      // stream — skip rows whose fromRow throws instead of propagating.
+      (rows) => rows
+          .map((r) {
+            try {
+              return ScanHistoryRecord.fromRow(r);
+            } catch (e, st) {
+              logError(e, st);
+              return null;
+            }
+          })
+          .whereType<ScanHistoryRecord>()
+          .toList(),
     );
   }
 

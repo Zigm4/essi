@@ -67,13 +67,19 @@ class TrackerState {
 }
 
 class TrackerController extends StateNotifier<TrackerState> {
-  TrackerController(this._client, this._repo, this._catalog)
+  TrackerController(this._ref, this._client, this._repo)
       : super(TrackerState.initial());
 
+  final Ref _ref;
   final TrackerClient _client;
   final TrackerRepository _repo;
-  final TrackerCatalog _catalog;
   CancelToken? _cancel;
+  int _generation = 0;
+
+  /// Resolves the catalog lazily without the provider *watching* it, so the
+  /// controller is never rebuilt from initial() when the asset resolves (F7).
+  TrackerCatalog get _catalog =>
+      _ref.read(trackerCatalogProvider).valueOrNull ?? const TrackerCatalog([]);
 
   void setQuery(String value) {
     final exact = _catalog.matchExact(value);
@@ -102,6 +108,7 @@ class TrackerController extends StateNotifier<TrackerState> {
 
   Future<void> track() async {
     _cancel?.cancel();
+    final myGeneration = ++_generation;
     final cancel = CancelToken();
     _cancel = cancel;
     state = state.copyWith(phase: const TrackerLoading());
@@ -112,20 +119,28 @@ class TrackerController extends StateNotifier<TrackerState> {
       mpcID: state.lockedMpcID,
     );
     try {
+      // Await the catalog rather than snapshotting it at construction, so an
+      // auto-track fired before the asset resolves still gets a full catalog.
+      final catalog = await _ref.read(trackerCatalogProvider.future);
+      if (!mounted || _generation != myGeneration) return;
       final result = await _client.track(
         target: target,
-        catalog: _catalog,
+        catalog: catalog,
         cancel: cancel,
       );
+      if (!mounted || _generation != myGeneration) return;
       await _repo.save(result);
+      if (!mounted || _generation != myGeneration) return;
       state = state.copyWith(phase: TrackerReady(result));
     } on TrackerError catch (e) {
+      if (!mounted || _generation != myGeneration) return;
       if (e is TrackerCancelledError) {
         state = state.copyWith(phase: const TrackerIdle());
       } else {
         state = state.copyWith(phase: TrackerErrored(e));
       }
     } catch (_) {
+      if (!mounted || _generation != myGeneration) return;
       state = state.copyWith(
         phase: const TrackerErrored(TrackerUnparseableError()),
       );
@@ -134,11 +149,15 @@ class TrackerController extends StateNotifier<TrackerState> {
 
   void cancel() {
     _cancel?.cancel();
+    // Bump generation so a superseded track() tail can't clobber this idle state.
+    _generation++;
+    if (!mounted) return;
     state = state.copyWith(phase: const TrackerIdle());
   }
 
   @override
   void dispose() {
+    _generation++;
     _cancel?.cancel();
     super.dispose();
   }
@@ -146,11 +165,13 @@ class TrackerController extends StateNotifier<TrackerState> {
 
 final trackerControllerProvider = StateNotifierProvider.autoDispose<
     TrackerController, TrackerState>((ref) {
-  final catalogAsync = ref.watch(trackerCatalogProvider);
-  final catalog = catalogAsync.valueOrNull ?? const TrackerCatalog([]);
+  // Intentionally does NOT watch trackerCatalogProvider: doing so would rebuild
+  // the whole StateNotifier from initial() when the asset resolves, wiping any
+  // in-flight track()/prefill (e.g. the Discoveries→Tracker auto-track). The
+  // controller resolves the catalog lazily via ref.read instead (F7).
   return TrackerController(
+    ref,
     ref.watch(trackerClientProvider),
     ref.watch(trackerRepositoryProvider),
-    catalog,
   );
 });

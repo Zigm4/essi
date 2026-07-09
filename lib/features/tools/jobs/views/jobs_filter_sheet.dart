@@ -41,6 +41,8 @@ class JobsFilterSheet extends ConsumerStatefulWidget {
 
 class _JobsFilterSheetState extends ConsumerState<JobsFilterSheet> {
   late JobFilter _draft;
+  late final double _bonusMin;
+  late final double _bonusMax;
   late final TextEditingController _pickupAstCtrl;
   late final TextEditingController _pickupZoneCtrl;
   late final TextEditingController _dropoffAstCtrl;
@@ -50,6 +52,25 @@ class _JobsFilterSheetState extends ConsumerState<JobsFilterSheet> {
   void initState() {
     super.initState();
     _draft = ref.read(jobFilterControllerProvider);
+
+    // Derive the bonus slider bounds from the real data extent so negative
+    // bonuses are reachable and the default range hides nothing (F11).
+    final repo = ref.read(jobsRepositoryProvider).maybeWhen(
+          data: (r) => r,
+          orElse: () => null,
+        );
+    final bonuses = repo?.all.map((j) => j.bonus).toList() ?? const <int>[];
+    var lo = bonuses.isEmpty
+        ? 0.0
+        : bonuses.reduce((a, b) => a < b ? a : b).toDouble();
+    var hi = bonuses.isEmpty
+        ? 0.0
+        : bonuses.reduce((a, b) => a > b ? a : b).toDouble();
+    if (hi <= lo) hi = lo + 1; // guard against a degenerate (min == max) slider
+    _bonusMin = lo;
+    _bonusMax = hi;
+    _draft = _draft.copyWith(bonus: _clampBonus(_draft), bonusMin: lo, bonusMax: hi);
+
     _pickupAstCtrl =
         TextEditingController(text: _draft.pickupAstnum?.toString() ?? '');
     _pickupZoneCtrl =
@@ -67,6 +88,19 @@ class _JobsFilterSheetState extends ConsumerState<JobsFilterSheet> {
     _dropoffAstCtrl.dispose();
     _dropoffZoneCtrl.dispose();
     super.dispose();
+  }
+
+  /// Pulls [f]'s bonus range into the real data extent: an unbounded
+  /// (never-set) range collapses to the full extent so the slider always has
+  /// finite endpoints to render, and finite values are clamped in range.
+  RangeValues _clampBonus(JobFilter f) {
+    final start = f.bonus.start.isFinite
+        ? f.bonus.start.clamp(_bonusMin, _bonusMax).toDouble()
+        : _bonusMin;
+    final end = f.bonus.end.isFinite
+        ? f.bonus.end.clamp(_bonusMin, _bonusMax).toDouble()
+        : _bonusMax;
+    return RangeValues(start, end);
   }
 
   int _liveResultCount() {
@@ -111,7 +145,11 @@ class _JobsFilterSheetState extends ConsumerState<JobsFilterSheet> {
   void _reset() {
     Haptics.of(ref).warning();
     setState(() {
-      _draft = JobFilter.empty;
+      _draft = JobFilter.empty.copyWith(
+        bonusMin: _bonusMin,
+        bonusMax: _bonusMax,
+        bonus: RangeValues(_bonusMin, _bonusMax),
+      );
       _pickupAstCtrl.clear();
       _pickupZoneCtrl.clear();
       _dropoffAstCtrl.clear();
@@ -221,8 +259,8 @@ class _JobsFilterSheetState extends ConsumerState<JobsFilterSheet> {
                         title: 'Bonus',
                         child: _RangeBlock(
                           range: _draft.bonus,
-                          min: 0,
-                          max: 500,
+                          min: _bonusMin,
+                          max: _bonusMax,
                           divisions: 50,
                           onChange: (r) => setState(
                               () => _draft = _draft.copyWith(bonus: r)),

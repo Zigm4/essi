@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:underdeck_app/core/logging.dart';
+
 @immutable
 class AsteroidEntry {
   final String name;
@@ -77,15 +79,9 @@ class AsteroidTables {
     try {
       final raw = await rootBundle.loadString('assets/catalog/asteroid_tables.json');
       return _parse(jsonDecode(raw) as Map<String, dynamic>);
-    } catch (_) {
-      return const AsteroidTables(
-        type: {},
-        size: {},
-        structure: {},
-        salvage: {},
-        law: {},
-        resource: {},
-      );
+    } catch (e, st) {
+      logError('Failed to load assets/catalog/asteroid_tables.json: $e', st);
+      rethrow;
     }
   }
 }

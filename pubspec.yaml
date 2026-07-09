@@ -52,6 +52,7 @@ dev_dependencies:
 
   build_runner: ^2.4.13
   drift_dev: ^2.21.0
+  sqlite3: ^2.4.0 # direct import in test/db_migration_test.dart
   riverpod_generator: ^2.6.3
   custom_lint: ^0.7.0
   riverpod_lint: ^2.6.3

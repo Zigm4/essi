@@ -40,6 +40,7 @@ class _CelestialViewState extends ConsumerState<CelestialView> {
   bool _isSearching = false;
   CancelToken? _cancel;
   List<DiscoveredObject>? _results;
+  bool _resultsTruncated = false;
   String? _errorMessage;
   bool _timedOut = false;
 
@@ -85,23 +86,26 @@ class _CelestialViewState extends ConsumerState<CelestialView> {
       _isSearching = true;
       _errorMessage = null;
       _timedOut = false;
+      _resultsTruncated = false;
     });
     try {
-      final results = await ref.read(celestialClientProvider).search(
+      final result = await ref.read(celestialClientProvider).search(
             start: _startDate,
             end: _endDate,
             kind: _kind,
             cancel: cancel,
           );
+      final results = result.objects;
       await ref.read(celestialRepositoryProvider).save(
             kind: _kind,
             startDate: _startDate,
             endDate: _endDate,
             results: results,
           );
-      if (!mounted) return;
+      if (!mounted || !identical(cancel, _cancel)) return;
       setState(() {
         _results = results;
+        _resultsTruncated = result.truncated;
         _isSearching = false;
       });
       if (results.isEmpty) {
@@ -110,16 +114,23 @@ class _CelestialViewState extends ConsumerState<CelestialView> {
         Haptics.of(ref).success();
       }
     } on CelestialError catch (e) {
-      if (!mounted) return;
+      // A superseded search's cancellation must not stamp an error over the
+      // newer search's state (F37).
+      if (!mounted || !identical(cancel, _cancel)) return;
+      if (e is CelestialCancelledError) {
+        // Preserve prior _results; don't surface a cancellation as an error.
+        setState(() => _isSearching = false);
+        return;
+      }
       setState(() {
         _isSearching = false;
         _results = null;
         _errorMessage = e.message;
         _timedOut = e is CelestialOfflineError;
-        if (e is! CelestialCancelledError) Haptics.of(ref).warning();
+        Haptics.of(ref).warning();
       });
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted || !identical(cancel, _cancel)) return;
       setState(() {
         _isSearching = false;
         _results = null;
@@ -253,6 +264,7 @@ class _CelestialViewState extends ConsumerState<CelestialView> {
                 const SizedBox(height: AppSpacing.lg),
                 _ResultsSection(
                   results: _results!,
+                  truncated: _resultsTruncated,
                   kind: _kind,
                   startDate: _startDate,
                   endDate: _endDate,
@@ -803,11 +815,13 @@ class _ErrorCard extends StatelessWidget {
 class _ResultsSection extends ConsumerWidget {
   const _ResultsSection({
     required this.results,
+    required this.truncated,
     required this.kind,
     required this.startDate,
     required this.endDate,
   });
   final List<DiscoveredObject> results;
+  final bool truncated;
   final CelestialKind kind;
   final DateTime startDate;
   final DateTime endDate;
@@ -875,6 +889,41 @@ class _ResultsSection extends ConsumerWidget {
               ),
             ],
           ),
+          if (truncated) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm,
+                vertical: 8,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.accentWarn.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+                border: Border.all(
+                  color: AppColors.accentWarn.withValues(alpha: 0.5),
+                  width: 0.7,
+                ),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.warning_amber,
+                      color: AppColors.accentWarn, size: 16),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      'Results truncated — SBDB capped this reply at its row '
+                      'limit, so more matches almost certainly exist. Narrow '
+                      'the date range for a complete list.',
+                      style: AppTypography.caption.copyWith(
+                        color: AppColors.accentWarn,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: AppSpacing.sm),
           for (final obj in results) ...[
             _DiscoveryCard(obj: obj),

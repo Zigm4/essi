@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:underdeck_app/core/logging.dart';
+
 import '../../celestial/domain/celestial_kind.dart';
 
 @immutable
@@ -81,7 +83,12 @@ class TrackerCatalog {
           .map((e) => TrackedObjectEntry.fromJson(e as Map<String, dynamic>))
           .toList();
       return TrackerCatalog(list);
-    } catch (_) {
+    } catch (e, st) {
+      logError(
+        'Failed to load assets/catalog/tracked_objects.json '
+        '(using empty catalog): $e',
+        st,
+      );
       return const TrackerCatalog([]);
     }
   }
@@ -183,6 +190,13 @@ class TrackerMpcLookupError extends TrackerError {
   const TrackerMpcLookupError();
   @override
   String get message => "Couldn't resolve an MPC ID for that target.";
+}
+
+class TrackerApiMessageError extends TrackerError {
+  final String detail;
+  const TrackerApiMessageError(this.detail);
+  @override
+  String get message => 'JPL Horizons returned an unexpected response: $detail';
 }
 
 class TrackerNoEphemerisError extends TrackerError {

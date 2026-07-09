@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:underdeck_app/core/logging.dart';
+
 import '../../captures/domain/captures_models.dart';
 
 enum ShipRight {
@@ -205,7 +207,11 @@ class HangarCatalogs {
         return (jsonDecode(raw) as List<dynamic>)
             .map((e) => factory(e as Map<String, dynamic>))
             .toList();
-      } catch (_) {
+      } catch (e, st) {
+        logError(
+          'Failed to load assets/catalog/$name.json (using empty list): $e',
+          st,
+        );
         return const [];
       }
     }

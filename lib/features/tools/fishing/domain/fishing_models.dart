@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:underdeck_app/core/logging.dart';
+
 @immutable
 class FishingZone {
   final int id;
@@ -135,8 +137,9 @@ class FishingData {
         ));
       }
       return FishingData(rooms);
-    } catch (_) {
-      return const FishingData([]);
+    } catch (e, st) {
+      logError('Failed to load assets/catalog/fishing_zones.json: $e', st);
+      rethrow;
     }
   }
 }

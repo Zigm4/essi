@@ -779,6 +779,7 @@ class $TagsTable extends Tags with TableInfo<$TagsTable, Tag> {
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
   );
   static const VerificationMeta _colorHexMeta = const VerificationMeta(
     'colorHex',
@@ -1072,6 +1073,9 @@ class $NoteTagsTable extends NoteTags with TableInfo<$NoteTagsTable, NoteTag> {
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES notes (id) ON DELETE CASCADE',
+    ),
   );
   static const VerificationMeta _tagIdMeta = const VerificationMeta('tagId');
   @override
@@ -1081,6 +1085,9 @@ class $NoteTagsTable extends NoteTags with TableInfo<$NoteTagsTable, NoteTag> {
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES tags (id) ON DELETE CASCADE',
+    ),
   );
   @override
   List<GeneratedColumn> get $columns => [noteId, tagId];
@@ -1279,6 +1286,9 @@ class $LinkTagsTable extends LinkTags with TableInfo<$LinkTagsTable, LinkTag> {
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES links (id) ON DELETE CASCADE',
+    ),
   );
   static const VerificationMeta _tagIdMeta = const VerificationMeta('tagId');
   @override
@@ -1288,6 +1298,9 @@ class $LinkTagsTable extends LinkTags with TableInfo<$LinkTagsTable, LinkTag> {
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES tags (id) ON DELETE CASCADE',
+    ),
   );
   @override
   List<GeneratedColumn> get $columns => [linkId, tagId];
@@ -1466,213 +1479,6 @@ class LinkTagsCompanion extends UpdateCompanion<LinkTag> {
   String toString() {
     return (StringBuffer('LinkTagsCompanion(')
           ..write('linkId: $linkId, ')
-          ..write('tagId: $tagId, ')
-          ..write('rowid: $rowid')
-          ..write(')'))
-        .toString();
-  }
-}
-
-class $ShipTagsTable extends ShipTags with TableInfo<$ShipTagsTable, ShipTag> {
-  @override
-  final GeneratedDatabase attachedDatabase;
-  final String? _alias;
-  $ShipTagsTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _shipIdMeta = const VerificationMeta('shipId');
-  @override
-  late final GeneratedColumn<String> shipId = GeneratedColumn<String>(
-    'ship_id',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _tagIdMeta = const VerificationMeta('tagId');
-  @override
-  late final GeneratedColumn<String> tagId = GeneratedColumn<String>(
-    'tag_id',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  @override
-  List<GeneratedColumn> get $columns => [shipId, tagId];
-  @override
-  String get aliasedName => _alias ?? actualTableName;
-  @override
-  String get actualTableName => $name;
-  static const String $name = 'ship_tags';
-  @override
-  VerificationContext validateIntegrity(
-    Insertable<ShipTag> instance, {
-    bool isInserting = false,
-  }) {
-    final context = VerificationContext();
-    final data = instance.toColumns(true);
-    if (data.containsKey('ship_id')) {
-      context.handle(
-        _shipIdMeta,
-        shipId.isAcceptableOrUnknown(data['ship_id']!, _shipIdMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_shipIdMeta);
-    }
-    if (data.containsKey('tag_id')) {
-      context.handle(
-        _tagIdMeta,
-        tagId.isAcceptableOrUnknown(data['tag_id']!, _tagIdMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_tagIdMeta);
-    }
-    return context;
-  }
-
-  @override
-  Set<GeneratedColumn> get $primaryKey => {shipId, tagId};
-  @override
-  ShipTag map(Map<String, dynamic> data, {String? tablePrefix}) {
-    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return ShipTag(
-      shipId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}ship_id'],
-      )!,
-      tagId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}tag_id'],
-      )!,
-    );
-  }
-
-  @override
-  $ShipTagsTable createAlias(String alias) {
-    return $ShipTagsTable(attachedDatabase, alias);
-  }
-}
-
-class ShipTag extends DataClass implements Insertable<ShipTag> {
-  final String shipId;
-  final String tagId;
-  const ShipTag({required this.shipId, required this.tagId});
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    map['ship_id'] = Variable<String>(shipId);
-    map['tag_id'] = Variable<String>(tagId);
-    return map;
-  }
-
-  ShipTagsCompanion toCompanion(bool nullToAbsent) {
-    return ShipTagsCompanion(shipId: Value(shipId), tagId: Value(tagId));
-  }
-
-  factory ShipTag.fromJson(
-    Map<String, dynamic> json, {
-    ValueSerializer? serializer,
-  }) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return ShipTag(
-      shipId: serializer.fromJson<String>(json['shipId']),
-      tagId: serializer.fromJson<String>(json['tagId']),
-    );
-  }
-  @override
-  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{
-      'shipId': serializer.toJson<String>(shipId),
-      'tagId': serializer.toJson<String>(tagId),
-    };
-  }
-
-  ShipTag copyWith({String? shipId, String? tagId}) =>
-      ShipTag(shipId: shipId ?? this.shipId, tagId: tagId ?? this.tagId);
-  ShipTag copyWithCompanion(ShipTagsCompanion data) {
-    return ShipTag(
-      shipId: data.shipId.present ? data.shipId.value : this.shipId,
-      tagId: data.tagId.present ? data.tagId.value : this.tagId,
-    );
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('ShipTag(')
-          ..write('shipId: $shipId, ')
-          ..write('tagId: $tagId')
-          ..write(')'))
-        .toString();
-  }
-
-  @override
-  int get hashCode => Object.hash(shipId, tagId);
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is ShipTag &&
-          other.shipId == this.shipId &&
-          other.tagId == this.tagId);
-}
-
-class ShipTagsCompanion extends UpdateCompanion<ShipTag> {
-  final Value<String> shipId;
-  final Value<String> tagId;
-  final Value<int> rowid;
-  const ShipTagsCompanion({
-    this.shipId = const Value.absent(),
-    this.tagId = const Value.absent(),
-    this.rowid = const Value.absent(),
-  });
-  ShipTagsCompanion.insert({
-    required String shipId,
-    required String tagId,
-    this.rowid = const Value.absent(),
-  }) : shipId = Value(shipId),
-       tagId = Value(tagId);
-  static Insertable<ShipTag> custom({
-    Expression<String>? shipId,
-    Expression<String>? tagId,
-    Expression<int>? rowid,
-  }) {
-    return RawValuesInsertable({
-      if (shipId != null) 'ship_id': shipId,
-      if (tagId != null) 'tag_id': tagId,
-      if (rowid != null) 'rowid': rowid,
-    });
-  }
-
-  ShipTagsCompanion copyWith({
-    Value<String>? shipId,
-    Value<String>? tagId,
-    Value<int>? rowid,
-  }) {
-    return ShipTagsCompanion(
-      shipId: shipId ?? this.shipId,
-      tagId: tagId ?? this.tagId,
-      rowid: rowid ?? this.rowid,
-    );
-  }
-
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    if (shipId.present) {
-      map['ship_id'] = Variable<String>(shipId.value);
-    }
-    if (tagId.present) {
-      map['tag_id'] = Variable<String>(tagId.value);
-    }
-    if (rowid.present) {
-      map['rowid'] = Variable<int>(rowid.value);
-    }
-    return map;
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('ShipTagsCompanion(')
-          ..write('shipId: $shipId, ')
           ..write('tagId: $tagId, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -3158,6 +2964,219 @@ class ShipsCompanion extends UpdateCompanion<Ship> {
   }
 }
 
+class $ShipTagsTable extends ShipTags with TableInfo<$ShipTagsTable, ShipTag> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ShipTagsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _shipIdMeta = const VerificationMeta('shipId');
+  @override
+  late final GeneratedColumn<String> shipId = GeneratedColumn<String>(
+    'ship_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES ships (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _tagIdMeta = const VerificationMeta('tagId');
+  @override
+  late final GeneratedColumn<String> tagId = GeneratedColumn<String>(
+    'tag_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES tags (id) ON DELETE CASCADE',
+    ),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [shipId, tagId];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'ship_tags';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ShipTag> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('ship_id')) {
+      context.handle(
+        _shipIdMeta,
+        shipId.isAcceptableOrUnknown(data['ship_id']!, _shipIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_shipIdMeta);
+    }
+    if (data.containsKey('tag_id')) {
+      context.handle(
+        _tagIdMeta,
+        tagId.isAcceptableOrUnknown(data['tag_id']!, _tagIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_tagIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {shipId, tagId};
+  @override
+  ShipTag map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ShipTag(
+      shipId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}ship_id'],
+      )!,
+      tagId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tag_id'],
+      )!,
+    );
+  }
+
+  @override
+  $ShipTagsTable createAlias(String alias) {
+    return $ShipTagsTable(attachedDatabase, alias);
+  }
+}
+
+class ShipTag extends DataClass implements Insertable<ShipTag> {
+  final String shipId;
+  final String tagId;
+  const ShipTag({required this.shipId, required this.tagId});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['ship_id'] = Variable<String>(shipId);
+    map['tag_id'] = Variable<String>(tagId);
+    return map;
+  }
+
+  ShipTagsCompanion toCompanion(bool nullToAbsent) {
+    return ShipTagsCompanion(shipId: Value(shipId), tagId: Value(tagId));
+  }
+
+  factory ShipTag.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ShipTag(
+      shipId: serializer.fromJson<String>(json['shipId']),
+      tagId: serializer.fromJson<String>(json['tagId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'shipId': serializer.toJson<String>(shipId),
+      'tagId': serializer.toJson<String>(tagId),
+    };
+  }
+
+  ShipTag copyWith({String? shipId, String? tagId}) =>
+      ShipTag(shipId: shipId ?? this.shipId, tagId: tagId ?? this.tagId);
+  ShipTag copyWithCompanion(ShipTagsCompanion data) {
+    return ShipTag(
+      shipId: data.shipId.present ? data.shipId.value : this.shipId,
+      tagId: data.tagId.present ? data.tagId.value : this.tagId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ShipTag(')
+          ..write('shipId: $shipId, ')
+          ..write('tagId: $tagId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(shipId, tagId);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ShipTag &&
+          other.shipId == this.shipId &&
+          other.tagId == this.tagId);
+}
+
+class ShipTagsCompanion extends UpdateCompanion<ShipTag> {
+  final Value<String> shipId;
+  final Value<String> tagId;
+  final Value<int> rowid;
+  const ShipTagsCompanion({
+    this.shipId = const Value.absent(),
+    this.tagId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ShipTagsCompanion.insert({
+    required String shipId,
+    required String tagId,
+    this.rowid = const Value.absent(),
+  }) : shipId = Value(shipId),
+       tagId = Value(tagId);
+  static Insertable<ShipTag> custom({
+    Expression<String>? shipId,
+    Expression<String>? tagId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (shipId != null) 'ship_id': shipId,
+      if (tagId != null) 'tag_id': tagId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ShipTagsCompanion copyWith({
+    Value<String>? shipId,
+    Value<String>? tagId,
+    Value<int>? rowid,
+  }) {
+    return ShipTagsCompanion(
+      shipId: shipId ?? this.shipId,
+      tagId: tagId ?? this.tagId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (shipId.present) {
+      map['ship_id'] = Variable<String>(shipId.value);
+    }
+    if (tagId.present) {
+      map['tag_id'] = Variable<String>(tagId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ShipTagsCompanion(')
+          ..write('shipId: $shipId, ')
+          ..write('tagId: $tagId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $ScanHistoryTable extends ScanHistory
     with TableInfo<$ScanHistoryTable, ScanHistoryData> {
   @override
@@ -4242,8 +4261,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $TagsTable tags = $TagsTable(this);
   late final $NoteTagsTable noteTags = $NoteTagsTable(this);
   late final $LinkTagsTable linkTags = $LinkTagsTable(this);
-  late final $ShipTagsTable shipTags = $ShipTagsTable(this);
   late final $ShipsTable ships = $ShipsTable(this);
+  late final $ShipTagsTable shipTags = $ShipTagsTable(this);
   late final $ScanHistoryTable scanHistory = $ScanHistoryTable(this);
   late final $TrackerHistoryTable trackerHistory = $TrackerHistoryTable(this);
   late final $DiscoveryHistoryTable discoveryHistory = $DiscoveryHistoryTable(
@@ -4259,12 +4278,57 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     tags,
     noteTags,
     linkTags,
-    shipTags,
     ships,
+    shipTags,
     scanHistory,
     trackerHistory,
     discoveryHistory,
   ];
+  @override
+  StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'notes',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('note_tags', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'tags',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('note_tags', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'links',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('link_tags', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'tags',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('link_tags', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'ships',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('ship_tags', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'tags',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('ship_tags', kind: UpdateKind.delete)],
+    ),
+  ]);
 }
 
 typedef $$NotesTableCreateCompanionBuilder =
@@ -4285,6 +4349,30 @@ typedef $$NotesTableUpdateCompanionBuilder =
       Value<DateTime> updatedAt,
       Value<int> rowid,
     });
+
+final class $$NotesTableReferences
+    extends BaseReferences<_$AppDatabase, $NotesTable, Note> {
+  $$NotesTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$NoteTagsTable, List<NoteTag>> _noteTagsRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.noteTags,
+    aliasName: $_aliasNameGenerator(db.notes.id, db.noteTags.noteId),
+  );
+
+  $$NoteTagsTableProcessedTableManager get noteTagsRefs {
+    final manager = $$NoteTagsTableTableManager(
+      $_db,
+      $_db.noteTags,
+    ).filter((f) => f.noteId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_noteTagsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
 
 class $$NotesTableFilterComposer extends Composer<_$AppDatabase, $NotesTable> {
   $$NotesTableFilterComposer({
@@ -4318,6 +4406,31 @@ class $$NotesTableFilterComposer extends Composer<_$AppDatabase, $NotesTable> {
     column: $table.updatedAt,
     builder: (column) => ColumnFilters(column),
   );
+
+  Expression<bool> noteTagsRefs(
+    Expression<bool> Function($$NoteTagsTableFilterComposer f) f,
+  ) {
+    final $$NoteTagsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.noteTags,
+      getReferencedColumn: (t) => t.noteId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NoteTagsTableFilterComposer(
+            $db: $db,
+            $table: $db.noteTags,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$NotesTableOrderingComposer
@@ -4378,6 +4491,31 @@ class $$NotesTableAnnotationComposer
 
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  Expression<T> noteTagsRefs<T extends Object>(
+    Expression<T> Function($$NoteTagsTableAnnotationComposer a) f,
+  ) {
+    final $$NoteTagsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.noteTags,
+      getReferencedColumn: (t) => t.noteId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NoteTagsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.noteTags,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$NotesTableTableManager
@@ -4391,9 +4529,9 @@ class $$NotesTableTableManager
           $$NotesTableAnnotationComposer,
           $$NotesTableCreateCompanionBuilder,
           $$NotesTableUpdateCompanionBuilder,
-          (Note, BaseReferences<_$AppDatabase, $NotesTable, Note>),
+          (Note, $$NotesTableReferences),
           Note,
-          PrefetchHooks Function()
+          PrefetchHooks Function({bool noteTagsRefs})
         > {
   $$NotesTableTableManager(_$AppDatabase db, $NotesTable table)
     : super(
@@ -4439,9 +4577,33 @@ class $$NotesTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) =>
+                    (e.readTable(table), $$NotesTableReferences(db, table, e)),
+              )
               .toList(),
-          prefetchHooksCallback: null,
+          prefetchHooksCallback: ({noteTagsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [if (noteTagsRefs) db.noteTags],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (noteTagsRefs)
+                    await $_getPrefetchedData<Note, $NotesTable, NoteTag>(
+                      currentTable: table,
+                      referencedTable: $$NotesTableReferences
+                          ._noteTagsRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$NotesTableReferences(db, table, p0).noteTagsRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.noteId == item.id),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
         ),
       );
 }
@@ -4456,9 +4618,9 @@ typedef $$NotesTableProcessedTableManager =
       $$NotesTableAnnotationComposer,
       $$NotesTableCreateCompanionBuilder,
       $$NotesTableUpdateCompanionBuilder,
-      (Note, BaseReferences<_$AppDatabase, $NotesTable, Note>),
+      (Note, $$NotesTableReferences),
       Note,
-      PrefetchHooks Function()
+      PrefetchHooks Function({bool noteTagsRefs})
     >;
 typedef $$LinksTableCreateCompanionBuilder =
     LinksCompanion Function({
@@ -4480,6 +4642,30 @@ typedef $$LinksTableUpdateCompanionBuilder =
       Value<DateTime> updatedAt,
       Value<int> rowid,
     });
+
+final class $$LinksTableReferences
+    extends BaseReferences<_$AppDatabase, $LinksTable, Link> {
+  $$LinksTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$LinkTagsTable, List<LinkTag>> _linkTagsRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.linkTags,
+    aliasName: $_aliasNameGenerator(db.links.id, db.linkTags.linkId),
+  );
+
+  $$LinkTagsTableProcessedTableManager get linkTagsRefs {
+    final manager = $$LinkTagsTableTableManager(
+      $_db,
+      $_db.linkTags,
+    ).filter((f) => f.linkId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_linkTagsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
 
 class $$LinksTableFilterComposer extends Composer<_$AppDatabase, $LinksTable> {
   $$LinksTableFilterComposer({
@@ -4518,6 +4704,31 @@ class $$LinksTableFilterComposer extends Composer<_$AppDatabase, $LinksTable> {
     column: $table.updatedAt,
     builder: (column) => ColumnFilters(column),
   );
+
+  Expression<bool> linkTagsRefs(
+    Expression<bool> Function($$LinkTagsTableFilterComposer f) f,
+  ) {
+    final $$LinkTagsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.linkTags,
+      getReferencedColumn: (t) => t.linkId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LinkTagsTableFilterComposer(
+            $db: $db,
+            $table: $db.linkTags,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$LinksTableOrderingComposer
@@ -4586,6 +4797,31 @@ class $$LinksTableAnnotationComposer
 
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  Expression<T> linkTagsRefs<T extends Object>(
+    Expression<T> Function($$LinkTagsTableAnnotationComposer a) f,
+  ) {
+    final $$LinkTagsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.linkTags,
+      getReferencedColumn: (t) => t.linkId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LinkTagsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.linkTags,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$LinksTableTableManager
@@ -4599,9 +4835,9 @@ class $$LinksTableTableManager
           $$LinksTableAnnotationComposer,
           $$LinksTableCreateCompanionBuilder,
           $$LinksTableUpdateCompanionBuilder,
-          (Link, BaseReferences<_$AppDatabase, $LinksTable, Link>),
+          (Link, $$LinksTableReferences),
           Link,
-          PrefetchHooks Function()
+          PrefetchHooks Function({bool linkTagsRefs})
         > {
   $$LinksTableTableManager(_$AppDatabase db, $LinksTable table)
     : super(
@@ -4651,9 +4887,33 @@ class $$LinksTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) =>
+                    (e.readTable(table), $$LinksTableReferences(db, table, e)),
+              )
               .toList(),
-          prefetchHooksCallback: null,
+          prefetchHooksCallback: ({linkTagsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [if (linkTagsRefs) db.linkTags],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (linkTagsRefs)
+                    await $_getPrefetchedData<Link, $LinksTable, LinkTag>(
+                      currentTable: table,
+                      referencedTable: $$LinksTableReferences
+                          ._linkTagsRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$LinksTableReferences(db, table, p0).linkTagsRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.linkId == item.id),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
         ),
       );
 }
@@ -4668,9 +4928,9 @@ typedef $$LinksTableProcessedTableManager =
       $$LinksTableAnnotationComposer,
       $$LinksTableCreateCompanionBuilder,
       $$LinksTableUpdateCompanionBuilder,
-      (Link, BaseReferences<_$AppDatabase, $LinksTable, Link>),
+      (Link, $$LinksTableReferences),
       Link,
-      PrefetchHooks Function()
+      PrefetchHooks Function({bool linkTagsRefs})
     >;
 typedef $$TagsTableCreateCompanionBuilder =
     TagsCompanion Function({
@@ -4688,6 +4948,68 @@ typedef $$TagsTableUpdateCompanionBuilder =
       Value<String?> colorHex,
       Value<int> rowid,
     });
+
+final class $$TagsTableReferences
+    extends BaseReferences<_$AppDatabase, $TagsTable, Tag> {
+  $$TagsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$NoteTagsTable, List<NoteTag>> _noteTagsRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.noteTags,
+    aliasName: $_aliasNameGenerator(db.tags.id, db.noteTags.tagId),
+  );
+
+  $$NoteTagsTableProcessedTableManager get noteTagsRefs {
+    final manager = $$NoteTagsTableTableManager(
+      $_db,
+      $_db.noteTags,
+    ).filter((f) => f.tagId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_noteTagsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$LinkTagsTable, List<LinkTag>> _linkTagsRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.linkTags,
+    aliasName: $_aliasNameGenerator(db.tags.id, db.linkTags.tagId),
+  );
+
+  $$LinkTagsTableProcessedTableManager get linkTagsRefs {
+    final manager = $$LinkTagsTableTableManager(
+      $_db,
+      $_db.linkTags,
+    ).filter((f) => f.tagId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_linkTagsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$ShipTagsTable, List<ShipTag>> _shipTagsRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.shipTags,
+    aliasName: $_aliasNameGenerator(db.tags.id, db.shipTags.tagId),
+  );
+
+  $$ShipTagsTableProcessedTableManager get shipTagsRefs {
+    final manager = $$ShipTagsTableTableManager(
+      $_db,
+      $_db.shipTags,
+    ).filter((f) => f.tagId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_shipTagsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
 
 class $$TagsTableFilterComposer extends Composer<_$AppDatabase, $TagsTable> {
   $$TagsTableFilterComposer({
@@ -4716,6 +5038,81 @@ class $$TagsTableFilterComposer extends Composer<_$AppDatabase, $TagsTable> {
     column: $table.colorHex,
     builder: (column) => ColumnFilters(column),
   );
+
+  Expression<bool> noteTagsRefs(
+    Expression<bool> Function($$NoteTagsTableFilterComposer f) f,
+  ) {
+    final $$NoteTagsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.noteTags,
+      getReferencedColumn: (t) => t.tagId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NoteTagsTableFilterComposer(
+            $db: $db,
+            $table: $db.noteTags,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> linkTagsRefs(
+    Expression<bool> Function($$LinkTagsTableFilterComposer f) f,
+  ) {
+    final $$LinkTagsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.linkTags,
+      getReferencedColumn: (t) => t.tagId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LinkTagsTableFilterComposer(
+            $db: $db,
+            $table: $db.linkTags,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> shipTagsRefs(
+    Expression<bool> Function($$ShipTagsTableFilterComposer f) f,
+  ) {
+    final $$ShipTagsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.shipTags,
+      getReferencedColumn: (t) => t.tagId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ShipTagsTableFilterComposer(
+            $db: $db,
+            $table: $db.shipTags,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$TagsTableOrderingComposer extends Composer<_$AppDatabase, $TagsTable> {
@@ -4769,6 +5166,81 @@ class $$TagsTableAnnotationComposer
 
   GeneratedColumn<String> get colorHex =>
       $composableBuilder(column: $table.colorHex, builder: (column) => column);
+
+  Expression<T> noteTagsRefs<T extends Object>(
+    Expression<T> Function($$NoteTagsTableAnnotationComposer a) f,
+  ) {
+    final $$NoteTagsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.noteTags,
+      getReferencedColumn: (t) => t.tagId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NoteTagsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.noteTags,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> linkTagsRefs<T extends Object>(
+    Expression<T> Function($$LinkTagsTableAnnotationComposer a) f,
+  ) {
+    final $$LinkTagsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.linkTags,
+      getReferencedColumn: (t) => t.tagId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LinkTagsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.linkTags,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> shipTagsRefs<T extends Object>(
+    Expression<T> Function($$ShipTagsTableAnnotationComposer a) f,
+  ) {
+    final $$ShipTagsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.shipTags,
+      getReferencedColumn: (t) => t.tagId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ShipTagsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.shipTags,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$TagsTableTableManager
@@ -4782,9 +5254,13 @@ class $$TagsTableTableManager
           $$TagsTableAnnotationComposer,
           $$TagsTableCreateCompanionBuilder,
           $$TagsTableUpdateCompanionBuilder,
-          (Tag, BaseReferences<_$AppDatabase, $TagsTable, Tag>),
+          (Tag, $$TagsTableReferences),
           Tag,
-          PrefetchHooks Function()
+          PrefetchHooks Function({
+            bool noteTagsRefs,
+            bool linkTagsRefs,
+            bool shipTagsRefs,
+          })
         > {
   $$TagsTableTableManager(_$AppDatabase db, $TagsTable table)
     : super(
@@ -4826,9 +5302,70 @@ class $$TagsTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) =>
+                    (e.readTable(table), $$TagsTableReferences(db, table, e)),
+              )
               .toList(),
-          prefetchHooksCallback: null,
+          prefetchHooksCallback:
+              ({
+                noteTagsRefs = false,
+                linkTagsRefs = false,
+                shipTagsRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (noteTagsRefs) db.noteTags,
+                    if (linkTagsRefs) db.linkTags,
+                    if (shipTagsRefs) db.shipTags,
+                  ],
+                  addJoins: null,
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (noteTagsRefs)
+                        await $_getPrefetchedData<Tag, $TagsTable, NoteTag>(
+                          currentTable: table,
+                          referencedTable: $$TagsTableReferences
+                              ._noteTagsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$TagsTableReferences(db, table, p0).noteTagsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.tagId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (linkTagsRefs)
+                        await $_getPrefetchedData<Tag, $TagsTable, LinkTag>(
+                          currentTable: table,
+                          referencedTable: $$TagsTableReferences
+                              ._linkTagsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$TagsTableReferences(db, table, p0).linkTagsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.tagId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (shipTagsRefs)
+                        await $_getPrefetchedData<Tag, $TagsTable, ShipTag>(
+                          currentTable: table,
+                          referencedTable: $$TagsTableReferences
+                              ._shipTagsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$TagsTableReferences(db, table, p0).shipTagsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.tagId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
         ),
       );
 }
@@ -4843,9 +5380,13 @@ typedef $$TagsTableProcessedTableManager =
       $$TagsTableAnnotationComposer,
       $$TagsTableCreateCompanionBuilder,
       $$TagsTableUpdateCompanionBuilder,
-      (Tag, BaseReferences<_$AppDatabase, $TagsTable, Tag>),
+      (Tag, $$TagsTableReferences),
       Tag,
-      PrefetchHooks Function()
+      PrefetchHooks Function({
+        bool noteTagsRefs,
+        bool linkTagsRefs,
+        bool shipTagsRefs,
+      })
     >;
 typedef $$NoteTagsTableCreateCompanionBuilder =
     NoteTagsCompanion Function({
@@ -4860,6 +5401,46 @@ typedef $$NoteTagsTableUpdateCompanionBuilder =
       Value<int> rowid,
     });
 
+final class $$NoteTagsTableReferences
+    extends BaseReferences<_$AppDatabase, $NoteTagsTable, NoteTag> {
+  $$NoteTagsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $NotesTable _noteIdTable(_$AppDatabase db) => db.notes.createAlias(
+    $_aliasNameGenerator(db.noteTags.noteId, db.notes.id),
+  );
+
+  $$NotesTableProcessedTableManager get noteId {
+    final $_column = $_itemColumn<String>('note_id')!;
+
+    final manager = $$NotesTableTableManager(
+      $_db,
+      $_db.notes,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_noteIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $TagsTable _tagIdTable(_$AppDatabase db) =>
+      db.tags.createAlias($_aliasNameGenerator(db.noteTags.tagId, db.tags.id));
+
+  $$TagsTableProcessedTableManager get tagId {
+    final $_column = $_itemColumn<String>('tag_id')!;
+
+    final manager = $$TagsTableTableManager(
+      $_db,
+      $_db.tags,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_tagIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
 class $$NoteTagsTableFilterComposer
     extends Composer<_$AppDatabase, $NoteTagsTable> {
   $$NoteTagsTableFilterComposer({
@@ -4869,15 +5450,51 @@ class $$NoteTagsTableFilterComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<String> get noteId => $composableBuilder(
-    column: $table.noteId,
-    builder: (column) => ColumnFilters(column),
-  );
+  $$NotesTableFilterComposer get noteId {
+    final $$NotesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.noteId,
+      referencedTable: $db.notes,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NotesTableFilterComposer(
+            $db: $db,
+            $table: $db.notes,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 
-  ColumnFilters<String> get tagId => $composableBuilder(
-    column: $table.tagId,
-    builder: (column) => ColumnFilters(column),
-  );
+  $$TagsTableFilterComposer get tagId {
+    final $$TagsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.tagId,
+      referencedTable: $db.tags,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TagsTableFilterComposer(
+            $db: $db,
+            $table: $db.tags,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$NoteTagsTableOrderingComposer
@@ -4889,15 +5506,51 @@ class $$NoteTagsTableOrderingComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<String> get noteId => $composableBuilder(
-    column: $table.noteId,
-    builder: (column) => ColumnOrderings(column),
-  );
+  $$NotesTableOrderingComposer get noteId {
+    final $$NotesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.noteId,
+      referencedTable: $db.notes,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NotesTableOrderingComposer(
+            $db: $db,
+            $table: $db.notes,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 
-  ColumnOrderings<String> get tagId => $composableBuilder(
-    column: $table.tagId,
-    builder: (column) => ColumnOrderings(column),
-  );
+  $$TagsTableOrderingComposer get tagId {
+    final $$TagsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.tagId,
+      referencedTable: $db.tags,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TagsTableOrderingComposer(
+            $db: $db,
+            $table: $db.tags,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$NoteTagsTableAnnotationComposer
@@ -4909,11 +5562,51 @@ class $$NoteTagsTableAnnotationComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<String> get noteId =>
-      $composableBuilder(column: $table.noteId, builder: (column) => column);
+  $$NotesTableAnnotationComposer get noteId {
+    final $$NotesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.noteId,
+      referencedTable: $db.notes,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$NotesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.notes,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 
-  GeneratedColumn<String> get tagId =>
-      $composableBuilder(column: $table.tagId, builder: (column) => column);
+  $$TagsTableAnnotationComposer get tagId {
+    final $$TagsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.tagId,
+      referencedTable: $db.tags,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TagsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.tags,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$NoteTagsTableTableManager
@@ -4927,9 +5620,9 @@ class $$NoteTagsTableTableManager
           $$NoteTagsTableAnnotationComposer,
           $$NoteTagsTableCreateCompanionBuilder,
           $$NoteTagsTableUpdateCompanionBuilder,
-          (NoteTag, BaseReferences<_$AppDatabase, $NoteTagsTable, NoteTag>),
+          (NoteTag, $$NoteTagsTableReferences),
           NoteTag,
-          PrefetchHooks Function()
+          PrefetchHooks Function({bool noteId, bool tagId})
         > {
   $$NoteTagsTableTableManager(_$AppDatabase db, $NoteTagsTable table)
     : super(
@@ -4960,9 +5653,67 @@ class $$NoteTagsTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$NoteTagsTableReferences(db, table, e),
+                ),
+              )
               .toList(),
-          prefetchHooksCallback: null,
+          prefetchHooksCallback: ({noteId = false, tagId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (noteId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.noteId,
+                                referencedTable: $$NoteTagsTableReferences
+                                    ._noteIdTable(db),
+                                referencedColumn: $$NoteTagsTableReferences
+                                    ._noteIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+                    if (tagId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.tagId,
+                                referencedTable: $$NoteTagsTableReferences
+                                    ._tagIdTable(db),
+                                referencedColumn: $$NoteTagsTableReferences
+                                    ._tagIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
         ),
       );
 }
@@ -4977,9 +5728,9 @@ typedef $$NoteTagsTableProcessedTableManager =
       $$NoteTagsTableAnnotationComposer,
       $$NoteTagsTableCreateCompanionBuilder,
       $$NoteTagsTableUpdateCompanionBuilder,
-      (NoteTag, BaseReferences<_$AppDatabase, $NoteTagsTable, NoteTag>),
+      (NoteTag, $$NoteTagsTableReferences),
       NoteTag,
-      PrefetchHooks Function()
+      PrefetchHooks Function({bool noteId, bool tagId})
     >;
 typedef $$LinkTagsTableCreateCompanionBuilder =
     LinkTagsCompanion Function({
@@ -4994,6 +5745,46 @@ typedef $$LinkTagsTableUpdateCompanionBuilder =
       Value<int> rowid,
     });
 
+final class $$LinkTagsTableReferences
+    extends BaseReferences<_$AppDatabase, $LinkTagsTable, LinkTag> {
+  $$LinkTagsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $LinksTable _linkIdTable(_$AppDatabase db) => db.links.createAlias(
+    $_aliasNameGenerator(db.linkTags.linkId, db.links.id),
+  );
+
+  $$LinksTableProcessedTableManager get linkId {
+    final $_column = $_itemColumn<String>('link_id')!;
+
+    final manager = $$LinksTableTableManager(
+      $_db,
+      $_db.links,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_linkIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $TagsTable _tagIdTable(_$AppDatabase db) =>
+      db.tags.createAlias($_aliasNameGenerator(db.linkTags.tagId, db.tags.id));
+
+  $$TagsTableProcessedTableManager get tagId {
+    final $_column = $_itemColumn<String>('tag_id')!;
+
+    final manager = $$TagsTableTableManager(
+      $_db,
+      $_db.tags,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_tagIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
 class $$LinkTagsTableFilterComposer
     extends Composer<_$AppDatabase, $LinkTagsTable> {
   $$LinkTagsTableFilterComposer({
@@ -5003,15 +5794,51 @@ class $$LinkTagsTableFilterComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<String> get linkId => $composableBuilder(
-    column: $table.linkId,
-    builder: (column) => ColumnFilters(column),
-  );
+  $$LinksTableFilterComposer get linkId {
+    final $$LinksTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.linkId,
+      referencedTable: $db.links,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LinksTableFilterComposer(
+            $db: $db,
+            $table: $db.links,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 
-  ColumnFilters<String> get tagId => $composableBuilder(
-    column: $table.tagId,
-    builder: (column) => ColumnFilters(column),
-  );
+  $$TagsTableFilterComposer get tagId {
+    final $$TagsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.tagId,
+      referencedTable: $db.tags,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TagsTableFilterComposer(
+            $db: $db,
+            $table: $db.tags,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$LinkTagsTableOrderingComposer
@@ -5023,15 +5850,51 @@ class $$LinkTagsTableOrderingComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<String> get linkId => $composableBuilder(
-    column: $table.linkId,
-    builder: (column) => ColumnOrderings(column),
-  );
+  $$LinksTableOrderingComposer get linkId {
+    final $$LinksTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.linkId,
+      referencedTable: $db.links,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LinksTableOrderingComposer(
+            $db: $db,
+            $table: $db.links,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 
-  ColumnOrderings<String> get tagId => $composableBuilder(
-    column: $table.tagId,
-    builder: (column) => ColumnOrderings(column),
-  );
+  $$TagsTableOrderingComposer get tagId {
+    final $$TagsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.tagId,
+      referencedTable: $db.tags,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TagsTableOrderingComposer(
+            $db: $db,
+            $table: $db.tags,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$LinkTagsTableAnnotationComposer
@@ -5043,11 +5906,51 @@ class $$LinkTagsTableAnnotationComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<String> get linkId =>
-      $composableBuilder(column: $table.linkId, builder: (column) => column);
+  $$LinksTableAnnotationComposer get linkId {
+    final $$LinksTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.linkId,
+      referencedTable: $db.links,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LinksTableAnnotationComposer(
+            $db: $db,
+            $table: $db.links,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 
-  GeneratedColumn<String> get tagId =>
-      $composableBuilder(column: $table.tagId, builder: (column) => column);
+  $$TagsTableAnnotationComposer get tagId {
+    final $$TagsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.tagId,
+      referencedTable: $db.tags,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TagsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.tags,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$LinkTagsTableTableManager
@@ -5061,9 +5964,9 @@ class $$LinkTagsTableTableManager
           $$LinkTagsTableAnnotationComposer,
           $$LinkTagsTableCreateCompanionBuilder,
           $$LinkTagsTableUpdateCompanionBuilder,
-          (LinkTag, BaseReferences<_$AppDatabase, $LinkTagsTable, LinkTag>),
+          (LinkTag, $$LinkTagsTableReferences),
           LinkTag,
-          PrefetchHooks Function()
+          PrefetchHooks Function({bool linkId, bool tagId})
         > {
   $$LinkTagsTableTableManager(_$AppDatabase db, $LinkTagsTable table)
     : super(
@@ -5094,9 +5997,67 @@ class $$LinkTagsTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$LinkTagsTableReferences(db, table, e),
+                ),
+              )
               .toList(),
-          prefetchHooksCallback: null,
+          prefetchHooksCallback: ({linkId = false, tagId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (linkId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.linkId,
+                                referencedTable: $$LinkTagsTableReferences
+                                    ._linkIdTable(db),
+                                referencedColumn: $$LinkTagsTableReferences
+                                    ._linkIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+                    if (tagId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.tagId,
+                                referencedTable: $$LinkTagsTableReferences
+                                    ._tagIdTable(db),
+                                referencedColumn: $$LinkTagsTableReferences
+                                    ._tagIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
         ),
       );
 }
@@ -5111,143 +6072,9 @@ typedef $$LinkTagsTableProcessedTableManager =
       $$LinkTagsTableAnnotationComposer,
       $$LinkTagsTableCreateCompanionBuilder,
       $$LinkTagsTableUpdateCompanionBuilder,
-      (LinkTag, BaseReferences<_$AppDatabase, $LinkTagsTable, LinkTag>),
+      (LinkTag, $$LinkTagsTableReferences),
       LinkTag,
-      PrefetchHooks Function()
-    >;
-typedef $$ShipTagsTableCreateCompanionBuilder =
-    ShipTagsCompanion Function({
-      required String shipId,
-      required String tagId,
-      Value<int> rowid,
-    });
-typedef $$ShipTagsTableUpdateCompanionBuilder =
-    ShipTagsCompanion Function({
-      Value<String> shipId,
-      Value<String> tagId,
-      Value<int> rowid,
-    });
-
-class $$ShipTagsTableFilterComposer
-    extends Composer<_$AppDatabase, $ShipTagsTable> {
-  $$ShipTagsTableFilterComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnFilters<String> get shipId => $composableBuilder(
-    column: $table.shipId,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get tagId => $composableBuilder(
-    column: $table.tagId,
-    builder: (column) => ColumnFilters(column),
-  );
-}
-
-class $$ShipTagsTableOrderingComposer
-    extends Composer<_$AppDatabase, $ShipTagsTable> {
-  $$ShipTagsTableOrderingComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnOrderings<String> get shipId => $composableBuilder(
-    column: $table.shipId,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get tagId => $composableBuilder(
-    column: $table.tagId,
-    builder: (column) => ColumnOrderings(column),
-  );
-}
-
-class $$ShipTagsTableAnnotationComposer
-    extends Composer<_$AppDatabase, $ShipTagsTable> {
-  $$ShipTagsTableAnnotationComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  GeneratedColumn<String> get shipId =>
-      $composableBuilder(column: $table.shipId, builder: (column) => column);
-
-  GeneratedColumn<String> get tagId =>
-      $composableBuilder(column: $table.tagId, builder: (column) => column);
-}
-
-class $$ShipTagsTableTableManager
-    extends
-        RootTableManager<
-          _$AppDatabase,
-          $ShipTagsTable,
-          ShipTag,
-          $$ShipTagsTableFilterComposer,
-          $$ShipTagsTableOrderingComposer,
-          $$ShipTagsTableAnnotationComposer,
-          $$ShipTagsTableCreateCompanionBuilder,
-          $$ShipTagsTableUpdateCompanionBuilder,
-          (ShipTag, BaseReferences<_$AppDatabase, $ShipTagsTable, ShipTag>),
-          ShipTag,
-          PrefetchHooks Function()
-        > {
-  $$ShipTagsTableTableManager(_$AppDatabase db, $ShipTagsTable table)
-    : super(
-        TableManagerState(
-          db: db,
-          table: table,
-          createFilteringComposer: () =>
-              $$ShipTagsTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$ShipTagsTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () =>
-              $$ShipTagsTableAnnotationComposer($db: db, $table: table),
-          updateCompanionCallback:
-              ({
-                Value<String> shipId = const Value.absent(),
-                Value<String> tagId = const Value.absent(),
-                Value<int> rowid = const Value.absent(),
-              }) =>
-                  ShipTagsCompanion(shipId: shipId, tagId: tagId, rowid: rowid),
-          createCompanionCallback:
-              ({
-                required String shipId,
-                required String tagId,
-                Value<int> rowid = const Value.absent(),
-              }) => ShipTagsCompanion.insert(
-                shipId: shipId,
-                tagId: tagId,
-                rowid: rowid,
-              ),
-          withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
-              .toList(),
-          prefetchHooksCallback: null,
-        ),
-      );
-}
-
-typedef $$ShipTagsTableProcessedTableManager =
-    ProcessedTableManager<
-      _$AppDatabase,
-      $ShipTagsTable,
-      ShipTag,
-      $$ShipTagsTableFilterComposer,
-      $$ShipTagsTableOrderingComposer,
-      $$ShipTagsTableAnnotationComposer,
-      $$ShipTagsTableCreateCompanionBuilder,
-      $$ShipTagsTableUpdateCompanionBuilder,
-      (ShipTag, BaseReferences<_$AppDatabase, $ShipTagsTable, ShipTag>),
-      ShipTag,
-      PrefetchHooks Function()
+      PrefetchHooks Function({bool linkId, bool tagId})
     >;
 typedef $$ShipsTableCreateCompanionBuilder =
     ShipsCompanion Function({
@@ -5309,6 +6136,30 @@ typedef $$ShipsTableUpdateCompanionBuilder =
       Value<DateTime> updatedAt,
       Value<int> rowid,
     });
+
+final class $$ShipsTableReferences
+    extends BaseReferences<_$AppDatabase, $ShipsTable, Ship> {
+  $$ShipsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$ShipTagsTable, List<ShipTag>> _shipTagsRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.shipTags,
+    aliasName: $_aliasNameGenerator(db.ships.id, db.shipTags.shipId),
+  );
+
+  $$ShipTagsTableProcessedTableManager get shipTagsRefs {
+    final manager = $$ShipTagsTableTableManager(
+      $_db,
+      $_db.shipTags,
+    ).filter((f) => f.shipId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_shipTagsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
 
 class $$ShipsTableFilterComposer extends Composer<_$AppDatabase, $ShipsTable> {
   $$ShipsTableFilterComposer({
@@ -5447,6 +6298,31 @@ class $$ShipsTableFilterComposer extends Composer<_$AppDatabase, $ShipsTable> {
     column: $table.updatedAt,
     builder: (column) => ColumnFilters(column),
   );
+
+  Expression<bool> shipTagsRefs(
+    Expression<bool> Function($$ShipTagsTableFilterComposer f) f,
+  ) {
+    final $$ShipTagsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.shipTags,
+      getReferencedColumn: (t) => t.shipId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ShipTagsTableFilterComposer(
+            $db: $db,
+            $table: $db.shipTags,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$ShipsTableOrderingComposer
@@ -5707,6 +6583,31 @@ class $$ShipsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  Expression<T> shipTagsRefs<T extends Object>(
+    Expression<T> Function($$ShipTagsTableAnnotationComposer a) f,
+  ) {
+    final $$ShipTagsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.shipTags,
+      getReferencedColumn: (t) => t.shipId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ShipTagsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.shipTags,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$ShipsTableTableManager
@@ -5720,9 +6621,9 @@ class $$ShipsTableTableManager
           $$ShipsTableAnnotationComposer,
           $$ShipsTableCreateCompanionBuilder,
           $$ShipsTableUpdateCompanionBuilder,
-          (Ship, BaseReferences<_$AppDatabase, $ShipsTable, Ship>),
+          (Ship, $$ShipsTableReferences),
           Ship,
-          PrefetchHooks Function()
+          PrefetchHooks Function({bool shipTagsRefs})
         > {
   $$ShipsTableTableManager(_$AppDatabase db, $ShipsTable table)
     : super(
@@ -5852,9 +6753,33 @@ class $$ShipsTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) =>
+                    (e.readTable(table), $$ShipsTableReferences(db, table, e)),
+              )
               .toList(),
-          prefetchHooksCallback: null,
+          prefetchHooksCallback: ({shipTagsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [if (shipTagsRefs) db.shipTags],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (shipTagsRefs)
+                    await $_getPrefetchedData<Ship, $ShipsTable, ShipTag>(
+                      currentTable: table,
+                      referencedTable: $$ShipsTableReferences
+                          ._shipTagsRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$ShipsTableReferences(db, table, p0).shipTagsRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.shipId == item.id),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
         ),
       );
 }
@@ -5869,9 +6794,353 @@ typedef $$ShipsTableProcessedTableManager =
       $$ShipsTableAnnotationComposer,
       $$ShipsTableCreateCompanionBuilder,
       $$ShipsTableUpdateCompanionBuilder,
-      (Ship, BaseReferences<_$AppDatabase, $ShipsTable, Ship>),
+      (Ship, $$ShipsTableReferences),
       Ship,
-      PrefetchHooks Function()
+      PrefetchHooks Function({bool shipTagsRefs})
+    >;
+typedef $$ShipTagsTableCreateCompanionBuilder =
+    ShipTagsCompanion Function({
+      required String shipId,
+      required String tagId,
+      Value<int> rowid,
+    });
+typedef $$ShipTagsTableUpdateCompanionBuilder =
+    ShipTagsCompanion Function({
+      Value<String> shipId,
+      Value<String> tagId,
+      Value<int> rowid,
+    });
+
+final class $$ShipTagsTableReferences
+    extends BaseReferences<_$AppDatabase, $ShipTagsTable, ShipTag> {
+  $$ShipTagsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $ShipsTable _shipIdTable(_$AppDatabase db) => db.ships.createAlias(
+    $_aliasNameGenerator(db.shipTags.shipId, db.ships.id),
+  );
+
+  $$ShipsTableProcessedTableManager get shipId {
+    final $_column = $_itemColumn<String>('ship_id')!;
+
+    final manager = $$ShipsTableTableManager(
+      $_db,
+      $_db.ships,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_shipIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $TagsTable _tagIdTable(_$AppDatabase db) =>
+      db.tags.createAlias($_aliasNameGenerator(db.shipTags.tagId, db.tags.id));
+
+  $$TagsTableProcessedTableManager get tagId {
+    final $_column = $_itemColumn<String>('tag_id')!;
+
+    final manager = $$TagsTableTableManager(
+      $_db,
+      $_db.tags,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_tagIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ShipTagsTableFilterComposer
+    extends Composer<_$AppDatabase, $ShipTagsTable> {
+  $$ShipTagsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  $$ShipsTableFilterComposer get shipId {
+    final $$ShipsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.shipId,
+      referencedTable: $db.ships,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ShipsTableFilterComposer(
+            $db: $db,
+            $table: $db.ships,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$TagsTableFilterComposer get tagId {
+    final $$TagsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.tagId,
+      referencedTable: $db.tags,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TagsTableFilterComposer(
+            $db: $db,
+            $table: $db.tags,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ShipTagsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ShipTagsTable> {
+  $$ShipTagsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  $$ShipsTableOrderingComposer get shipId {
+    final $$ShipsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.shipId,
+      referencedTable: $db.ships,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ShipsTableOrderingComposer(
+            $db: $db,
+            $table: $db.ships,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$TagsTableOrderingComposer get tagId {
+    final $$TagsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.tagId,
+      referencedTable: $db.tags,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TagsTableOrderingComposer(
+            $db: $db,
+            $table: $db.tags,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ShipTagsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ShipTagsTable> {
+  $$ShipTagsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  $$ShipsTableAnnotationComposer get shipId {
+    final $$ShipsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.shipId,
+      referencedTable: $db.ships,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ShipsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.ships,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$TagsTableAnnotationComposer get tagId {
+    final $$TagsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.tagId,
+      referencedTable: $db.tags,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TagsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.tags,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ShipTagsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ShipTagsTable,
+          ShipTag,
+          $$ShipTagsTableFilterComposer,
+          $$ShipTagsTableOrderingComposer,
+          $$ShipTagsTableAnnotationComposer,
+          $$ShipTagsTableCreateCompanionBuilder,
+          $$ShipTagsTableUpdateCompanionBuilder,
+          (ShipTag, $$ShipTagsTableReferences),
+          ShipTag,
+          PrefetchHooks Function({bool shipId, bool tagId})
+        > {
+  $$ShipTagsTableTableManager(_$AppDatabase db, $ShipTagsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ShipTagsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ShipTagsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ShipTagsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> shipId = const Value.absent(),
+                Value<String> tagId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) =>
+                  ShipTagsCompanion(shipId: shipId, tagId: tagId, rowid: rowid),
+          createCompanionCallback:
+              ({
+                required String shipId,
+                required String tagId,
+                Value<int> rowid = const Value.absent(),
+              }) => ShipTagsCompanion.insert(
+                shipId: shipId,
+                tagId: tagId,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ShipTagsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({shipId = false, tagId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (shipId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.shipId,
+                                referencedTable: $$ShipTagsTableReferences
+                                    ._shipIdTable(db),
+                                referencedColumn: $$ShipTagsTableReferences
+                                    ._shipIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+                    if (tagId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.tagId,
+                                referencedTable: $$ShipTagsTableReferences
+                                    ._tagIdTable(db),
+                                referencedColumn: $$ShipTagsTableReferences
+                                    ._tagIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ShipTagsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ShipTagsTable,
+      ShipTag,
+      $$ShipTagsTableFilterComposer,
+      $$ShipTagsTableOrderingComposer,
+      $$ShipTagsTableAnnotationComposer,
+      $$ShipTagsTableCreateCompanionBuilder,
+      $$ShipTagsTableUpdateCompanionBuilder,
+      (ShipTag, $$ShipTagsTableReferences),
+      ShipTag,
+      PrefetchHooks Function({bool shipId, bool tagId})
     >;
 typedef $$ScanHistoryTableCreateCompanionBuilder =
     ScanHistoryCompanion Function({
@@ -6508,10 +7777,10 @@ class $AppDatabaseManager {
       $$NoteTagsTableTableManager(_db, _db.noteTags);
   $$LinkTagsTableTableManager get linkTags =>
       $$LinkTagsTableTableManager(_db, _db.linkTags);
-  $$ShipTagsTableTableManager get shipTags =>
-      $$ShipTagsTableTableManager(_db, _db.shipTags);
   $$ShipsTableTableManager get ships =>
       $$ShipsTableTableManager(_db, _db.ships);
+  $$ShipTagsTableTableManager get shipTags =>
+      $$ShipTagsTableTableManager(_db, _db.shipTags);
   $$ScanHistoryTableTableManager get scanHistory =>
       $$ScanHistoryTableTableManager(_db, _db.scanHistory);
   $$TrackerHistoryTableTableManager get trackerHistory =>

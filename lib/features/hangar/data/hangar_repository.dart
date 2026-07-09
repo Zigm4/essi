@@ -110,15 +110,21 @@ class HangarRepository {
       createdAt: Value(current.id.isEmpty ? now : current.createdAt),
       updatedAt: Value(now),
     );
-    if (current.id.isEmpty) {
-      await _db.into(_db.ships).insert(companion);
-    } else {
-      await (_db.update(_db.ships)..where((t) => t.id.equals(id)))
-          .write(companion);
-    }
-    // Replace ship-tag join rows
-    final tags = await _captures.resolveAndAttachShipTags(id, tagDisplayNames);
-    await _captures.pruneOrphanTags();
+    // F45: keep the ship write, ship-tag join replacement and orphan pruning
+    // atomic (nested transaction with resolveAndAttachShipTags).
+    final tags = await _db.transaction(() async {
+      if (current.id.isEmpty) {
+        await _db.into(_db.ships).insert(companion);
+      } else {
+        await (_db.update(_db.ships)..where((t) => t.id.equals(id)))
+            .write(companion);
+      }
+      // Replace ship-tag join rows
+      final resolved =
+          await _captures.resolveAndAttachShipTags(id, tagDisplayNames);
+      await _captures.pruneOrphanTags();
+      return resolved;
+    });
     return ShipModel(
       id: id,
       name: current.name,
@@ -140,9 +146,12 @@ class HangarRepository {
   }
 
   Future<void> delete(String id) async {
-    await (_db.delete(_db.shipTags)..where((t) => t.shipId.equals(id))).go();
-    await (_db.delete(_db.ships)..where((t) => t.id.equals(id))).go();
-    await _captures.pruneOrphanTags();
+    // F45: atomic delete of the ship, its join rows and orphan pruning.
+    await _db.transaction(() async {
+      await (_db.delete(_db.shipTags)..where((t) => t.shipId.equals(id))).go();
+      await (_db.delete(_db.ships)..where((t) => t.id.equals(id))).go();
+      await _captures.pruneOrphanTags();
+    });
   }
 }
 

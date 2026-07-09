@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/network/app_dio.dart';
 import '../domain/celestial_kind.dart';
 import '../domain/celestial_models.dart';
 
@@ -12,24 +13,31 @@ class CelestialClient {
 
   static const _baseUrl = 'https://ssd-api.jpl.nasa.gov/sbdb_query.api';
 
-  Future<List<DiscoveredObject>> search({
+  Future<DiscoverySearchResult> search({
     required DateTime start,
     required DateTime end,
     required CelestialKind kind,
     required CancelToken cancel,
   }) async {
-    final today = DateTime.now();
-    final todayUtc = DateTime.utc(today.year, today.month, today.day);
-    if (start.isAfter(end) || end.isAfter(todayUtc)) {
+    // The SBDB API filters on calendar dates, so treat the picker values as
+    // pure y/m/d and never let the device timezone shift them (F10). Compare
+    // against today the same calendar-date way, so "today" is valid in every
+    // timezone rather than being rejected east of UTC.
+    final now = DateTime.now();
+    final todayUtc = DateTime.utc(now.year, now.month, now.day);
+    final startUtc = DateTime.utc(start.year, start.month, start.day);
+    final endUtc = DateTime.utc(end.year, end.month, end.day);
+    if (startUtc.isAfter(endUtc) || endUtc.isAfter(todayUtc)) {
       throw const CelestialDateOutOfRangeError();
     }
 
     String two(int n) => n.toString().padLeft(2, '0');
-    String fmt(DateTime d) =>
-        '${d.toUtc().year}-${two(d.toUtc().month)}-${two(d.toUtc().day)}';
+    // Format straight from the calendar fields — no .toUtc() shift (F10).
+    String fmt(DateTime d) => '${d.year}-${two(d.month)}-${two(d.day)}';
     final startStr = fmt(start);
     final endStr = fmt(end);
     final isHistorical = start.year < 1900;
+    final limit = isHistorical ? 50000 : 1000;
 
     final params = <String, dynamic>{
       'fields': kind == CelestialKind.asteroid
@@ -38,10 +46,10 @@ class CelestialClient {
       'sb-kind': kind.apiParam,
     };
     if (isHistorical) {
-      params['limit'] = '50000';
+      params['limit'] = '$limit';
     } else {
       params['sb-cdata'] = '{"AND":["first_obs|RG|$startStr|$endStr"]}';
-      params['limit'] = '1000';
+      params['limit'] = '$limit';
     }
 
     try {
@@ -65,7 +73,11 @@ class CelestialClient {
       } else if (response.data is String) {
         body = jsonDecode(response.data as String) as Map<String, dynamic>;
       }
-      if (body == null) return const [];
+      if (body == null) return const DiscoverySearchResult(objects: []);
+      // SBDB caps the reply at `limit` rows with no "there's more" flag, so a
+      // reply that exactly fills the limit is almost certainly truncated (F15).
+      final returnedRows = (body['data'] as List<dynamic>?)?.length ?? 0;
+      final truncated = returnedRows >= limit;
       final raw = _parse(body, kind);
       if (isHistorical) {
         DateTime? parseDate(String? s) {
@@ -76,13 +88,14 @@ class CelestialClient {
             return null;
           }
         }
-        return raw.where((o) {
+        final filtered = raw.where((o) {
           final d = parseDate(o.firstObs);
           if (d == null) return false;
           return !d.isBefore(start) && !d.isAfter(end);
         }).toList();
+        return DiscoverySearchResult(objects: filtered, truncated: truncated);
       }
-      return raw;
+      return DiscoverySearchResult(objects: raw, truncated: truncated);
     } on DioException catch (e) {
       if (CancelToken.isCancel(e)) throw const CelestialCancelledError();
       if (e.type == DioExceptionType.connectionError ||
@@ -141,13 +154,16 @@ class CelestialClient {
     for (final row in rows) {
       final pdes = str(row, iPdes);
       if (pdes == null || pdes.isEmpty) continue;
+      // SBDB reports `diameter` in KILOMETRES; convert to metres so the 140 m
+      // caution threshold and every "X m" display are correct (F9).
+      final diameterKm = num_(row, iDiameter);
       out.add(DiscoveredObject(
         designation: pdes,
         fullName: str(row, iFullName) ?? pdes,
         firstObs: str(row, iFirst),
         lastObs: str(row, iLast),
         isHazardous: str(row, iPha) == 'Y',
-        diameterMeters: num_(row, iDiameter),
+        diameterMeters: diameterKm == null ? null : diameterKm * 1000,
         albedo: num_(row, iAlbedo),
         kind: kind,
       ));
@@ -158,5 +174,5 @@ class CelestialClient {
 }
 
 final celestialClientProvider = Provider<CelestialClient>((ref) {
-  return CelestialClient();
+  return CelestialClient(dio: ref.watch(appDioProvider));
 });

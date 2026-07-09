@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/network/app_dio.dart';
 import '../../celestial/domain/celestial_kind.dart';
 import '../../scan/data/horizons_client.dart';
 import '../domain/tracker_models.dart';
@@ -35,7 +36,15 @@ class TrackerClient {
         cancel: cancel,
       );
       if (raw == null) continue;
-      final first = HorizonsParser.firstPosition(raw);
+      final HorizonsRawPosition? first;
+      try {
+        first = HorizonsParser.firstPosition(raw);
+      } on HorizonsFormatException catch (e) {
+        // F47 — the payload was not an ephemeris table (e.g. an in-band
+        // "API SERVER BUSY" notice); surface it instead of treating it as
+        // a missing ephemeris.
+        throw TrackerApiMessageError(e.preview);
+      }
       if (first == null) continue;
       final date = first.date;
       final x = first.x;
@@ -129,6 +138,11 @@ class TrackerClient {
           responseType: ResponseType.json,
           sendTimeout: const Duration(seconds: 30),
           receiveTimeout: const Duration(seconds: 30),
+          // F18 — SBDB returns HTTP 300 with a `list` body when the query
+          // matches multiple objects; accept it so the multi-match branch
+          // below can pick a candidate instead of throwing.
+          validateStatus: (status) =>
+              status != null && status >= 200 && status < 400,
         ),
         cancelToken: cancel,
       );
@@ -160,6 +174,15 @@ class TrackerClient {
           e.type == DioExceptionType.connectionTimeout ||
           e.type == DioExceptionType.receiveTimeout) {
         throw const TrackerOfflineError();
+      }
+      // F18 — a real 404 means "no such object"; keep returning null so the
+      // caller can try the next attempt. Any other server response (5xx, or
+      // any response at all) is a genuine upstream failure and must surface
+      // instead of masquerading as a no-match.
+      final status = e.response?.statusCode;
+      if (status == 404) return null;
+      if (e.response != null) {
+        throw TrackerHttpError(status ?? 0);
       }
       return null;
     }
@@ -194,6 +217,7 @@ class TrackerClient {
       'MAKE_EPHEM': "'YES'",
       'EPHEM_TYPE': "'VECTORS'",
       'CENTER': "'500@10'",
+      'OUT_UNITS': "'KM-S'",
       'START_TIME': "'$start'",
       'STOP_TIME': "'$stop'",
       'STEP_SIZE': "'1d'",
@@ -235,5 +259,5 @@ class TrackerClient {
 }
 
 final trackerClientProvider = Provider<TrackerClient>((ref) {
-  return TrackerClient();
+  return TrackerClient(dio: ref.watch(appDioProvider));
 });

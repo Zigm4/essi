@@ -12,12 +12,20 @@ import 'package:share_plus/share_plus.dart';
 import 'package:uuid/uuid.dart';
 
 import '../data/database/app_database.dart';
+import '../features/tools/celestial/domain/celestial_models.dart';
+import '../features/tools/scan/domain/scan_models.dart';
+import '../features/tools/tracker/domain/tracker_models.dart';
 
 class DataExportService {
   DataExportService(this._db);
   final AppDatabase _db;
   static const _uuid = Uuid();
   static const formatVersion = 1;
+
+  /// Test/diagnostic hook: builds the same export payload that
+  /// [exportToFile] writes, without touching the filesystem or plugins.
+  @visibleForTesting
+  Future<Map<String, dynamic>> collect() => _collect();
 
   Future<Map<String, dynamic>> _collect() async {
     final notes = await _db.select(_db.notes).get();
@@ -157,11 +165,20 @@ class DataExportService {
     return importFromFile(File(picked.path));
   }
 
+  /// Human-facing message for any file that isn't a well-formed export.
+  static const _invalidFileMessage = "This file isn't a valid Underdeck export";
+
   Future<ImportSummary> importFromFile(File file) async {
     final raw = await file.readAsString();
-    final j = jsonDecode(raw);
+    final dynamic j;
+    try {
+      j = jsonDecode(raw);
+    } on FormatException {
+      // F60: unparseable JSON → fixed human string, not a raw parser dump.
+      throw const FormatException(_invalidFileMessage);
+    }
     if (j is! Map<String, dynamic>) {
-      throw const FormatException('Expected a JSON object');
+      throw const FormatException(_invalidFileMessage);
     }
     final version = j['version'];
     if (version is! int || version > formatVersion) {
@@ -170,17 +187,24 @@ class DataExportService {
     }
     final data = j['data'];
     if (data is! Map<String, dynamic>) {
-      throw const FormatException('Missing data object');
+      throw const FormatException(_invalidFileMessage);
     }
-    return _import(data);
+    try {
+      return await _import(data);
+    } on TypeError {
+      // F60: a required field was missing/mistyped when casting a record.
+      throw const FormatException(_invalidFileMessage);
+    }
   }
 
   Future<ImportSummary> _import(Map<String, dynamic> data) async {
     int notes = 0, links = 0, tags = 0, ships = 0;
     int scan = 0, tracker = 0, discovery = 0;
 
+    // Tolerant: a malformed/absent date must never throw and abort the whole
+    // import (a single poisoned row would otherwise take the file down).
     DateTime parseDate(dynamic v) =>
-        v is String ? DateTime.parse(v) : DateTime.now();
+        (v is String ? DateTime.tryParse(v) : null) ?? DateTime.now();
 
     String dedupeId(String fallback) => _uuid.v4();
     final unused = dedupeId; // ignore: unused_local_variable
@@ -190,27 +214,42 @@ class DataExportService {
       final existingTags = await _db.select(_db.tags).get();
       final tagsByKey = {for (final t in existingTags) t.name: t.id};
 
+      // H3: translate every imported tag id to the id actually used locally.
+      // When an imported tag collides by NAME with a pre-existing local tag
+      // (different uuid), we skip the insert but still remap the imported id
+      // onto the existing local id so join rows are preserved, not dropped.
+      final tagRemap = <String, String>{};
+
       for (final t in (data['tags'] as List<dynamic>? ?? const [])) {
         final m = t as Map<String, dynamic>;
+        final importedId = (m['id'] as String?) ?? _uuid.v4();
         final key = (m['name'] as String? ?? '').toLowerCase();
-        if (tagsByKey.containsKey(key)) continue;
-        final id = (m['id'] as String?) ?? _uuid.v4();
+        if (tagsByKey.containsKey(key)) {
+          // Name collision: reuse the existing local tag id.
+          tagRemap[importedId] = tagsByKey[key]!;
+          continue;
+        }
         await _db.into(_db.tags).insert(
           TagsCompanion.insert(
-            id: id,
-            displayName: m['displayName'] as String,
+            id: importedId,
+            displayName: (m['displayName'] as String?) ?? key,
             name: key,
             colorHex: drift.Value(m['colorHex'] as String?),
           ),
           mode: drift.InsertMode.insertOrIgnore,
         );
-        tagsByKey[key] = id;
+        tagsByKey[key] = importedId;
+        tagRemap[importedId] = importedId;
         tags++;
       }
 
+      // Resolves an imported tag id to a real local tag id (via the remap for
+      // collisions/fresh inserts, else by direct id lookup), or null if the
+      // referenced tag doesn't exist locally.
       Future<String?> ensureTagId(String idCandidate) async {
+        final mapped = tagRemap[idCandidate] ?? idCandidate;
         final exists = await (_db.select(_db.tags)
-              ..where((t) => t.id.equals(idCandidate)))
+              ..where((t) => t.id.equals(mapped)))
             .getSingleOrNull();
         return exists?.id;
       }
@@ -230,17 +269,32 @@ class DataExportService {
         items: (data['notes'] as List<dynamic>? ?? const []),
         insertFn: (m) async {
           final id = m['id'] as String? ?? _uuid.v4();
+          final updatedAt = parseDate(m['updatedAt']);
           final exists = await (_db.select(_db.notes)
                 ..where((t) => t.id.equals(id)))
               .getSingleOrNull();
-          if (exists != null) return false;
+          if (exists != null) {
+            // F43: newer-wins — overwrite the local row only when the imported
+            // copy is strictly newer; otherwise leave it and don't count it.
+            if (!updatedAt.isAfter(exists.updatedAt)) return false;
+            await (_db.update(_db.notes)..where((t) => t.id.equals(id))).write(
+              // createdAt intentionally omitted: an update must preserve the
+              // original creation timestamp, not overwrite it (F43 regression).
+              NotesCompanion(
+                title: drift.Value(m['title'] as String? ?? ''),
+                body: drift.Value(m['body'] as String? ?? ''),
+                updatedAt: drift.Value(updatedAt),
+              ),
+            );
+            return true;
+          }
           await _db.into(_db.notes).insert(
             NotesCompanion.insert(
               id: id,
               title: drift.Value(m['title'] as String? ?? ''),
               body: drift.Value(m['body'] as String? ?? ''),
               createdAt: parseDate(m['createdAt']),
-              updatedAt: parseDate(m['updatedAt']),
+              updatedAt: updatedAt,
             ),
             mode: drift.InsertMode.insertOrIgnore,
           );
@@ -252,10 +306,25 @@ class DataExportService {
         items: (data['links'] as List<dynamic>? ?? const []),
         insertFn: (m) async {
           final id = m['id'] as String? ?? _uuid.v4();
+          final updatedAt = parseDate(m['updatedAt']);
           final exists = await (_db.select(_db.links)
                 ..where((t) => t.id.equals(id)))
               .getSingleOrNull();
-          if (exists != null) return false;
+          if (exists != null) {
+            // F43: newer-wins update.
+            if (!updatedAt.isAfter(exists.updatedAt)) return false;
+            await (_db.update(_db.links)..where((t) => t.id.equals(id))).write(
+              // createdAt intentionally omitted (see notes update above): an
+              // update must preserve the original creation timestamp (F43).
+              LinksCompanion(
+                title: drift.Value(m['title'] as String? ?? ''),
+                url: drift.Value(m['url'] as String? ?? ''),
+                note: drift.Value(m['note'] as String? ?? ''),
+                updatedAt: drift.Value(updatedAt),
+              ),
+            );
+            return true;
+          }
           await _db.into(_db.links).insert(
             LinksCompanion.insert(
               id: id,
@@ -263,7 +332,7 @@ class DataExportService {
               url: drift.Value(m['url'] as String? ?? ''),
               note: drift.Value(m['note'] as String? ?? ''),
               createdAt: parseDate(m['createdAt']),
-              updatedAt: parseDate(m['updatedAt']),
+              updatedAt: updatedAt,
             ),
             mode: drift.InsertMode.insertOrIgnore,
           );
@@ -275,39 +344,49 @@ class DataExportService {
         items: (data['ships'] as List<dynamic>? ?? const []),
         insertFn: (m) async {
           final id = m['id'] as String? ?? _uuid.v4();
+          final updatedAt = parseDate(m['updatedAt']);
+          final values = ShipsCompanion(
+            id: drift.Value(id),
+            name: drift.Value(m['name'] as String? ?? ''),
+            modelKey: drift.Value(m['modelKey'] as String?),
+            customModelLabel: drift.Value(m['customModelLabel'] as String?),
+            registered: drift.Value(m['registered'] as bool? ?? false),
+            locationKey: drift.Value(m['locationKey'] as String?),
+            customLocation: drift.Value(m['customLocation'] as String?),
+            locationZone: drift.Value(m['locationZone'] as int?),
+            locationSector: drift.Value(m['locationSector'] as String?),
+            locationSL: drift.Value(m['locationSL'] as int?),
+            hull: drift.Value(m['hull'] as int?),
+            pilotName: drift.Value(m['pilotName'] as String?),
+            gunnerName: drift.Value(m['gunnerName'] as String?),
+            cartographerName: drift.Value(m['cartographerName'] as String?),
+            prospectorName: drift.Value(m['prospectorName'] as String?),
+            signallerName: drift.Value(m['signallerName'] as String?),
+            technicianName: drift.Value(m['technicianName'] as String?),
+            sentryName: drift.Value(m['sentryName'] as String?),
+            fabricatorName: drift.Value(m['fabricatorName'] as String?),
+            medicName: drift.Value(m['medicName'] as String?),
+            quartermasterName: drift.Value(m['quartermasterName'] as String?),
+            chefName: drift.Value(m['chefName'] as String?),
+            alchemistName: drift.Value(m['alchemistName'] as String?),
+            note: drift.Value(m['note'] as String? ?? ''),
+            createdAt: drift.Value(parseDate(m['createdAt'])),
+            updatedAt: drift.Value(updatedAt),
+          );
           final exists = await (_db.select(_db.ships)
                 ..where((t) => t.id.equals(id)))
               .getSingleOrNull();
-          if (exists != null) return false;
+          if (exists != null) {
+            // F43: newer-wins update.
+            if (!updatedAt.isAfter(exists.updatedAt)) return false;
+            // Preserve the original createdAt on update (F43): the shared
+            // `values` companion carries it for the insert path only.
+            await (_db.update(_db.ships)..where((t) => t.id.equals(id)))
+                .write(values.copyWith(createdAt: const drift.Value.absent()));
+            return true;
+          }
           await _db.into(_db.ships).insert(
-            ShipsCompanion.insert(
-              id: id,
-              name: drift.Value(m['name'] as String? ?? ''),
-              modelKey: drift.Value(m['modelKey'] as String?),
-              customModelLabel: drift.Value(m['customModelLabel'] as String?),
-              registered: drift.Value(m['registered'] as bool? ?? false),
-              locationKey: drift.Value(m['locationKey'] as String?),
-              customLocation: drift.Value(m['customLocation'] as String?),
-              locationZone: drift.Value(m['locationZone'] as int?),
-              locationSector: drift.Value(m['locationSector'] as String?),
-              locationSL: drift.Value(m['locationSL'] as int?),
-              hull: drift.Value(m['hull'] as int?),
-              pilotName: drift.Value(m['pilotName'] as String?),
-              gunnerName: drift.Value(m['gunnerName'] as String?),
-              cartographerName: drift.Value(m['cartographerName'] as String?),
-              prospectorName: drift.Value(m['prospectorName'] as String?),
-              signallerName: drift.Value(m['signallerName'] as String?),
-              technicianName: drift.Value(m['technicianName'] as String?),
-              sentryName: drift.Value(m['sentryName'] as String?),
-              fabricatorName: drift.Value(m['fabricatorName'] as String?),
-              medicName: drift.Value(m['medicName'] as String?),
-              quartermasterName: drift.Value(m['quartermasterName'] as String?),
-              chefName: drift.Value(m['chefName'] as String?),
-              alchemistName: drift.Value(m['alchemistName'] as String?),
-              note: drift.Value(m['note'] as String? ?? ''),
-              createdAt: parseDate(m['createdAt']),
-              updatedAt: parseDate(m['updatedAt']),
-            ),
+            values,
             mode: drift.InsertMode.insertOrIgnore,
           );
           return true;
@@ -318,6 +397,7 @@ class DataExportService {
         required Iterable items,
         required String idA,
         required String idB,
+        required Future<bool> Function(String) parentExists,
         required Future<void> Function(String, String) insertFn,
       }) async {
         for (final raw in items) {
@@ -327,13 +407,22 @@ class DataExportService {
           if (a == null || b == null) continue;
           final tagOK = await ensureTagId(b);
           if (tagOK == null) continue;
-          await insertFn(a, b);
+          // F44: the join tables now enforce foreign keys, so inserting a row
+          // whose parent doesn't exist locally would abort the whole import.
+          // Skip such orphan rows instead.
+          if (!await parentExists(a)) continue;
+          // H3: use the resolved local tag id, not the raw imported one.
+          await insertFn(a, tagOK);
         }
       }
       await insertJoin(
         items: (data['noteTags'] as List<dynamic>? ?? const []),
         idA: 'noteId',
         idB: 'tagId',
+        parentExists: (a) async =>
+            await (_db.select(_db.notes)..where((t) => t.id.equals(a)))
+                .getSingleOrNull() !=
+            null,
         insertFn: (a, b) async {
           await _db.into(_db.noteTags).insert(
             NoteTagsCompanion.insert(noteId: a, tagId: b),
@@ -345,6 +434,10 @@ class DataExportService {
         items: (data['linkTags'] as List<dynamic>? ?? const []),
         idA: 'linkId',
         idB: 'tagId',
+        parentExists: (a) async =>
+            await (_db.select(_db.links)..where((t) => t.id.equals(a)))
+                .getSingleOrNull() !=
+            null,
         insertFn: (a, b) async {
           await _db.into(_db.linkTags).insert(
             LinkTagsCompanion.insert(linkId: a, tagId: b),
@@ -356,6 +449,10 @@ class DataExportService {
         items: (data['shipTags'] as List<dynamic>? ?? const []),
         idA: 'shipId',
         idB: 'tagId',
+        parentExists: (a) async =>
+            await (_db.select(_db.ships)..where((t) => t.id.equals(a)))
+                .getSingleOrNull() !=
+            null,
         insertFn: (a, b) async {
           await _db.into(_db.shipTags).insert(
             ShipTagsCompanion.insert(shipId: a, tagId: b),
@@ -364,60 +461,123 @@ class DataExportService {
         },
       );
 
+      // F16: validate a history payload by round-tripping it through the same
+      // fromJson path the repositories use at read time. Unparseable/malformed
+      // payloads are skipped at import so they can never brick watchAll().
+      bool validScanPayload(Map<String, dynamic> m) {
+        final decoded = jsonDecode(m['payloadJson'] as String? ?? '{}');
+        if (decoded is! Map<String, dynamic>) return false;
+        for (final j in (decoded['snapshots'] as List<dynamic>? ?? const [])) {
+          PlanetPosition.fromJson(j as Map<String, dynamic>);
+        }
+        return true;
+      }
+
+      bool validTrackerPayload(Map<String, dynamic> m) {
+        final decoded = jsonDecode(m['payloadJson'] as String? ?? '{}');
+        if (decoded is! Map<String, dynamic>) return false;
+        TrackerResult.fromJson(decoded);
+        return true;
+      }
+
+      bool validDiscoveryPayload(Map<String, dynamic> m) {
+        final decoded = jsonDecode(m['payloadJson'] as String? ?? '{}');
+        if (decoded is! Map<String, dynamic>) return false;
+        DateTime.parse(decoded['startDate'] as String);
+        DateTime.parse(decoded['endDate'] as String);
+        for (final e in (decoded['results'] as List<dynamic>? ?? const [])) {
+          DiscoveredObject.fromJson(e as Map<String, dynamic>);
+        }
+        return true;
+      }
+
       Future<int> insertHistory(
-        String key,
-        Future<void> Function(Map<String, dynamic>) write,
-      ) async {
+        String key, {
+        required bool Function(Map<String, dynamic>) validate,
+        required Future<bool> Function(Map<String, dynamic>) write,
+      }) async {
         var count = 0;
         for (final raw in (data[key] as List<dynamic>? ?? const [])) {
           final m = raw as Map<String, dynamic>;
-          await write(m);
-          count++;
+          try {
+            if (!validate(m)) continue; // F16: malformed shape → skip
+          } catch (_) {
+            continue; // F16: unparseable payload → skip
+          }
+          // F36/F42: count a row only when it is actually newly inserted.
+          if (await write(m)) count++;
         }
         return count;
       }
 
-      scan = await insertHistory('scanHistory', (m) async {
-        final id = m['id'] as String? ?? _uuid.v4();
-        await _db.into(_db.scanHistory).insert(
-          ScanHistoryCompanion.insert(
-            id: id,
-            date: parseDate(m['date']),
-            mode: m['mode'] as String? ?? 'light',
-            payloadJson: m['payloadJson'] as String? ?? '{}',
-            errored: drift.Value(m['errored'] as bool? ?? false),
-          ),
-          mode: drift.InsertMode.insertOrIgnore,
-        );
-      });
+      scan = await insertHistory(
+        'scanHistory',
+        validate: validScanPayload,
+        write: (m) async {
+          final id = m['id'] as String? ?? _uuid.v4();
+          final exists = await (_db.select(_db.scanHistory)
+                ..where((t) => t.id.equals(id)))
+              .getSingleOrNull();
+          if (exists != null) return false;
+          await _db.into(_db.scanHistory).insert(
+            ScanHistoryCompanion.insert(
+              id: id,
+              date: parseDate(m['date']),
+              mode: m['mode'] as String? ?? 'light',
+              payloadJson: m['payloadJson'] as String? ?? '{}',
+              errored: drift.Value(m['errored'] as bool? ?? false),
+            ),
+            mode: drift.InsertMode.insertOrIgnore,
+          );
+          return true;
+        },
+      );
 
-      tracker = await insertHistory('trackerHistory', (m) async {
-        final id = m['id'] as String? ?? _uuid.v4();
-        await _db.into(_db.trackerHistory).insert(
-          TrackerHistoryCompanion.insert(
-            id: id,
-            date: parseDate(m['date']),
-            mode: m['mode'] as String? ?? 'asteroid',
-            payloadJson: m['payloadJson'] as String? ?? '{}',
-            errored: drift.Value(m['errored'] as bool? ?? false),
-          ),
-          mode: drift.InsertMode.insertOrIgnore,
-        );
-      });
+      tracker = await insertHistory(
+        'trackerHistory',
+        validate: validTrackerPayload,
+        write: (m) async {
+          final id = m['id'] as String? ?? _uuid.v4();
+          final exists = await (_db.select(_db.trackerHistory)
+                ..where((t) => t.id.equals(id)))
+              .getSingleOrNull();
+          if (exists != null) return false;
+          await _db.into(_db.trackerHistory).insert(
+            TrackerHistoryCompanion.insert(
+              id: id,
+              date: parseDate(m['date']),
+              mode: m['mode'] as String? ?? 'asteroid',
+              payloadJson: m['payloadJson'] as String? ?? '{}',
+              errored: drift.Value(m['errored'] as bool? ?? false),
+            ),
+            mode: drift.InsertMode.insertOrIgnore,
+          );
+          return true;
+        },
+      );
 
-      discovery = await insertHistory('discoveryHistory', (m) async {
-        final id = m['id'] as String? ?? _uuid.v4();
-        await _db.into(_db.discoveryHistory).insert(
-          DiscoveryHistoryCompanion.insert(
-            id: id,
-            date: parseDate(m['date']),
-            mode: m['mode'] as String? ?? 'comet',
-            payloadJson: m['payloadJson'] as String? ?? '{}',
-            errored: drift.Value(m['errored'] as bool? ?? false),
-          ),
-          mode: drift.InsertMode.insertOrIgnore,
-        );
-      });
+      discovery = await insertHistory(
+        'discoveryHistory',
+        validate: validDiscoveryPayload,
+        write: (m) async {
+          final id = m['id'] as String? ?? _uuid.v4();
+          final exists = await (_db.select(_db.discoveryHistory)
+                ..where((t) => t.id.equals(id)))
+              .getSingleOrNull();
+          if (exists != null) return false;
+          await _db.into(_db.discoveryHistory).insert(
+            DiscoveryHistoryCompanion.insert(
+              id: id,
+              date: parseDate(m['date']),
+              mode: m['mode'] as String? ?? 'comet',
+              payloadJson: m['payloadJson'] as String? ?? '{}',
+              errored: drift.Value(m['errored'] as bool? ?? false),
+            ),
+            mode: drift.InsertMode.insertOrIgnore,
+          );
+          return true;
+        },
+      );
     });
 
     return ImportSummary(

@@ -67,7 +67,12 @@ class JobFilter {
   final RangeValues skillAmt; // 0..100
   final RangeValues requiredRep; // 0..8
   final RangeValues risk; // 0..14
-  final RangeValues bonus; // 0..500
+  final RangeValues bonus; // full data extent by default; see bonusMin/bonusMax
+  // Real min/max bonus of the loaded dataset. Until the filter sheet resolves
+  // them from the jobs they stay ±infinity, which makes the default [bonus]
+  // range accept every job — including the 11 negative-bonus jobs (F11).
+  final double bonusMin;
+  final double bonusMax;
   final int? pickupAstnum;
   final int? pickupZone;
   final int? dropoffAstnum;
@@ -89,7 +94,9 @@ class JobFilter {
     this.skillAmt = const RangeValues(0, 100),
     this.requiredRep = const RangeValues(0, 8),
     this.risk = const RangeValues(0, 14),
-    this.bonus = const RangeValues(0, 500),
+    this.bonus = bonusUnbounded,
+    this.bonusMin = double.negativeInfinity,
+    this.bonusMax = double.infinity,
     this.pickupAstnum,
     this.pickupZone,
     this.dropoffAstnum,
@@ -103,6 +110,11 @@ class JobFilter {
 
   static const empty = JobFilter();
 
+  /// Default [bonus] range: spans the whole real line so that, before the data
+  /// extent is known, every job (negative bonuses included) passes the filter.
+  static const bonusUnbounded =
+      RangeValues(double.negativeInfinity, double.infinity);
+
   JobFilter copyWith({
     String? query,
     Set<String>? types,
@@ -115,6 +127,8 @@ class JobFilter {
     RangeValues? requiredRep,
     RangeValues? risk,
     RangeValues? bonus,
+    double? bonusMin,
+    double? bonusMax,
     int? pickupAstnum,
     bool clearPickupAstnum = false,
     int? pickupZone,
@@ -141,6 +155,8 @@ class JobFilter {
         requiredRep: requiredRep ?? this.requiredRep,
         risk: risk ?? this.risk,
         bonus: bonus ?? this.bonus,
+        bonusMin: bonusMin ?? this.bonusMin,
+        bonusMax: bonusMax ?? this.bonusMax,
         pickupAstnum:
             clearPickupAstnum ? null : (pickupAstnum ?? this.pickupAstnum),
         pickupZone: clearPickupZone ? null : (pickupZone ?? this.pickupZone),
@@ -169,7 +185,9 @@ class JobFilter {
     if (skillAmt.start > 0 || skillAmt.end < 100) c++;
     if (requiredRep.start > 0 || requiredRep.end < 8) c++;
     if (risk.start > 0 || risk.end < 14) c++;
-    if (bonus.start > 0 || bonus.end < 500) c++;
+    // Bonus is only an active filter when narrowed inside the real data
+    // extent; the full-extent (or still-unbounded) range counts as off (F11).
+    if (bonus.start > bonusMin || bonus.end < bonusMax) c++;
     if (pickupAstnum != null) c++;
     if (pickupZone != null) c++;
     if (dropoffAstnum != null) c++;

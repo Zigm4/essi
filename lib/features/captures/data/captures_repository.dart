@@ -159,14 +159,18 @@ class CapturesRepository {
     String shipId,
     List<String> displayNames,
   ) async {
-    final tags = await _resolveTags(displayNames);
-    await (_db.delete(_db.shipTags)..where((t) => t.shipId.equals(shipId))).go();
-    for (final t in tags) {
-      await _db.into(_db.shipTags).insert(
-            ShipTagsCompanion.insert(shipId: shipId, tagId: t.id),
-          );
-    }
-    return tags;
+    // F45: atomic tag resolution + ship-tag join replacement.
+    return _db.transaction(() async {
+      final tags = await _resolveTags(displayNames);
+      await (_db.delete(_db.shipTags)..where((t) => t.shipId.equals(shipId)))
+          .go();
+      for (final t in tags) {
+        await _db.into(_db.shipTags).insert(
+              ShipTagsCompanion.insert(shipId: shipId, tagId: t.id),
+            );
+      }
+      return tags;
+    });
   }
 
   Future<NoteModel> saveNote({
@@ -176,29 +180,34 @@ class CapturesRepository {
     required List<String> tagDisplayNames,
   }) async {
     final now = DateTime.now();
-    final tags = await _resolveTags(tagDisplayNames);
     final noteId = id ?? _uuid.v4();
-    if (id == null) {
-      await _db.into(_db.notes).insert(
-            NotesCompanion.insert(
-              id: noteId,
-              title: Value(title),
-              body: Value(body),
-              createdAt: now,
-              updatedAt: now,
-            ),
-          );
-    } else {
-      await (_db.update(_db.notes)..where((t) => t.id.equals(noteId))).write(
-        NotesCompanion(
-          title: Value(title),
-          body: Value(body),
-          updatedAt: Value(now),
-        ),
-      );
-    }
-    await _replaceNoteTags(noteId, tags);
-    await pruneOrphanTags();
+    // F45: keep tag resolution, the note write, join replacement and orphan
+    // pruning atomic so a partial failure can't leave dangling state.
+    final tags = await _db.transaction(() async {
+      final resolved = await _resolveTags(tagDisplayNames);
+      if (id == null) {
+        await _db.into(_db.notes).insert(
+              NotesCompanion.insert(
+                id: noteId,
+                title: Value(title),
+                body: Value(body),
+                createdAt: now,
+                updatedAt: now,
+              ),
+            );
+      } else {
+        await (_db.update(_db.notes)..where((t) => t.id.equals(noteId))).write(
+          NotesCompanion(
+            title: Value(title),
+            body: Value(body),
+            updatedAt: Value(now),
+          ),
+        );
+      }
+      await _replaceNoteTags(noteId, resolved);
+      await pruneOrphanTags();
+      return resolved;
+    });
     return NoteModel(
       id: noteId,
       title: title,
@@ -210,9 +219,12 @@ class CapturesRepository {
   }
 
   Future<void> deleteNote(String id) async {
-    await (_db.delete(_db.noteTags)..where((t) => t.noteId.equals(id))).go();
-    await (_db.delete(_db.notes)..where((t) => t.id.equals(id))).go();
-    await pruneOrphanTags();
+    // F45: atomic delete of the note, its join rows and orphan pruning.
+    await _db.transaction(() async {
+      await (_db.delete(_db.noteTags)..where((t) => t.noteId.equals(id))).go();
+      await (_db.delete(_db.notes)..where((t) => t.id.equals(id))).go();
+      await pruneOrphanTags();
+    });
   }
 
   Future<LinkModel> saveLink({
@@ -223,31 +235,35 @@ class CapturesRepository {
     required List<String> tagDisplayNames,
   }) async {
     final now = DateTime.now();
-    final tags = await _resolveTags(tagDisplayNames);
     final linkId = id ?? _uuid.v4();
-    if (id == null) {
-      await _db.into(_db.links).insert(
-            LinksCompanion.insert(
-              id: linkId,
-              title: Value(title),
-              url: Value(url),
-              note: Value(note),
-              createdAt: now,
-              updatedAt: now,
-            ),
-          );
-    } else {
-      await (_db.update(_db.links)..where((t) => t.id.equals(linkId))).write(
-        LinksCompanion(
-          title: Value(title),
-          url: Value(url),
-          note: Value(note),
-          updatedAt: Value(now),
-        ),
-      );
-    }
-    await _replaceLinkTags(linkId, tags);
-    await pruneOrphanTags();
+    // F45: atomic tag resolution + link write + join replacement + pruning.
+    final tags = await _db.transaction(() async {
+      final resolved = await _resolveTags(tagDisplayNames);
+      if (id == null) {
+        await _db.into(_db.links).insert(
+              LinksCompanion.insert(
+                id: linkId,
+                title: Value(title),
+                url: Value(url),
+                note: Value(note),
+                createdAt: now,
+                updatedAt: now,
+              ),
+            );
+      } else {
+        await (_db.update(_db.links)..where((t) => t.id.equals(linkId))).write(
+          LinksCompanion(
+            title: Value(title),
+            url: Value(url),
+            note: Value(note),
+            updatedAt: Value(now),
+          ),
+        );
+      }
+      await _replaceLinkTags(linkId, resolved);
+      await pruneOrphanTags();
+      return resolved;
+    });
     return LinkModel(
       id: linkId,
       title: title,
@@ -260,9 +276,12 @@ class CapturesRepository {
   }
 
   Future<void> deleteLink(String id) async {
-    await (_db.delete(_db.linkTags)..where((t) => t.linkId.equals(id))).go();
-    await (_db.delete(_db.links)..where((t) => t.id.equals(id))).go();
-    await pruneOrphanTags();
+    // F45: atomic delete of the link, its join rows and orphan pruning.
+    await _db.transaction(() async {
+      await (_db.delete(_db.linkTags)..where((t) => t.linkId.equals(id))).go();
+      await (_db.delete(_db.links)..where((t) => t.id.equals(id))).go();
+      await pruneOrphanTags();
+    });
   }
 }
 

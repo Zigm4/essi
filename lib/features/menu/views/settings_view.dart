@@ -127,9 +127,13 @@ class SettingsView extends ConsumerWidget {
                             );
                           }
                         } catch (e) {
+                          // F60: show the human message (FormatException.message)
+                          // instead of the raw "FormatException: …" dump.
+                          final msg =
+                              e is FormatException ? e.message : 'Import failed';
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Import failed: $e')),
+                              SnackBar(content: Text(msg)),
                             );
                           }
                         }

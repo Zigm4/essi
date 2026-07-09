@@ -134,6 +134,13 @@ class ScanUnparseableError extends ScanError {
   String get message => "Couldn't parse JPL Horizons response.";
 }
 
+class ScanApiMessageError extends ScanError {
+  final String detail;
+  const ScanApiMessageError(this.detail);
+  @override
+  String get message => 'JPL Horizons returned an unexpected response: $detail';
+}
+
 class ScanNoDataError extends ScanError {
   const ScanNoDataError();
   @override

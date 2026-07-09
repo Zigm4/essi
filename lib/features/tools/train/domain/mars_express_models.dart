@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:underdeck_app/core/logging.dart';
+
 @immutable
 class TrainStop {
   final int minute;
@@ -44,8 +46,9 @@ class MarsExpressSchedule {
           .toList();
       list.sort((a, b) => a.minute.compareTo(b.minute));
       return MarsExpressSchedule(list);
-    } catch (_) {
-      return const MarsExpressSchedule([]);
+    } catch (e, st) {
+      logError('Failed to load assets/catalog/train_schedule.json: $e', st);
+      rethrow;
     }
   }
 }

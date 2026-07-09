@@ -60,7 +60,15 @@ class ScanHistorySheet extends ConsumerWidget {
                               _confirmClearAll(context, ref, entries.length),
                         ),
                   loading: () => const SizedBox.shrink(),
-                  error: (_, _) => const SizedBox.shrink(),
+                  // Keep the purge control reachable even when history can't be
+                  // read, so a user can recover from a poisoned store.
+                  error: (_, _) => IconButton(
+                    icon: const Icon(
+                      Icons.delete_outline,
+                      color: AppColors.accentDanger,
+                    ),
+                    onPressed: () => _confirmClearAll(context, ref, null),
+                  ),
                 ),
               ],
             ),
@@ -89,14 +97,7 @@ class ScanHistorySheet extends ConsumerWidget {
                       ),
                 loading: () =>
                     const Center(child: CircularProgressIndicator()),
-                error: (e, _) => Center(
-                  child: Text(
-                    'Error: $e',
-                    style: AppTypography.body.copyWith(
-                      color: AppColors.accentDanger,
-                    ),
-                  ),
-                ),
+                error: (e, _) => const _ErrorState(),
               ),
             ),
           ),
@@ -108,7 +109,7 @@ class ScanHistorySheet extends ConsumerWidget {
   Future<void> _confirmClearAll(
     BuildContext context,
     WidgetRef ref,
-    int count,
+    int? count,
   ) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -116,7 +117,9 @@ class ScanHistorySheet extends ConsumerWidget {
         backgroundColor: AppColors.bgElevated,
         title: Text('Delete all scans?', style: AppTypography.headline),
         content: Text(
-          "$count scan${count == 1 ? '' : 's'} will be removed. This can't be undone.",
+          count == null
+              ? "All saved scans will be removed. This can't be undone."
+              : "$count scan${count == 1 ? '' : 's'} will be removed. This can't be undone.",
           style: AppTypography.body,
         ),
         actions: [
@@ -145,6 +148,37 @@ class ScanHistorySheet extends ConsumerWidget {
       Haptics.of(ref).warning();
       await ref.read(scanRepositoryProvider).clear();
     }
+  }
+}
+
+class _ErrorState extends StatelessWidget {
+  const _ErrorState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.warning_amber_rounded,
+              size: 48,
+              color: AppColors.accentDanger.withValues(alpha: 0.6),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text("Couldn't load scan history", style: AppTypography.headline),
+            const SizedBox(height: 4),
+            Text(
+              'Some saved data may be corrupted. Use the delete button above to clear history and recover.',
+              textAlign: TextAlign.center,
+              style: AppTypography.caption,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

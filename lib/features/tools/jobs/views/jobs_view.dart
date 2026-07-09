@@ -476,11 +476,13 @@ class _ActiveChipsRow extends ConsumerWidget {
         () => n.update((g) => g.copyWith(risk: const RangeValues(0, 14))),
       );
     }
-    if (filter.bonus.start > 0 || filter.bonus.end < 500) {
+    if (filter.bonus.start > filter.bonusMin ||
+        filter.bonus.end < filter.bonusMax) {
       add(
         'bonus ${filter.bonus.start.round()}..${filter.bonus.end.round()}',
         AppColors.accentWarn,
-        () => n.update((g) => g.copyWith(bonus: const RangeValues(0, 500))),
+        () => n.update((g) =>
+            g.copyWith(bonus: RangeValues(g.bonusMin, g.bonusMax))),
       );
     }
     if (filter.pickupAstnum != null) {

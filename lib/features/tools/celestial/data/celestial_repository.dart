@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../../core/logging.dart';
 import '../../../../data/database/app_database.dart';
 import '../domain/celestial_kind.dart';
 import '../domain/celestial_models.dart';
@@ -70,7 +71,19 @@ class CelestialRepository {
     final q = _db.select(_db.discoveryHistory)
       ..orderBy([(t) => OrderingTerm.desc(t.date)]);
     return q.watch().map(
-      (rows) => rows.map(DiscoveryHistoryRecord.fromRow).toList(),
+      // F16/read-tolerance: skip rows whose fromRow throws so one corrupt
+      // payload can't error the whole discovery-history stream.
+      (rows) => rows
+          .map((r) {
+            try {
+              return DiscoveryHistoryRecord.fromRow(r);
+            } catch (e, st) {
+              logError(e, st);
+              return null;
+            }
+          })
+          .whereType<DiscoveryHistoryRecord>()
+          .toList(),
     );
   }
 

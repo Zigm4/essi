@@ -59,7 +59,13 @@ class DiscoveryHistorySheet extends ConsumerWidget {
                               _confirmClearAll(context, ref, entries.length),
                         ),
                   loading: () => const SizedBox.shrink(),
-                  error: (_, _) => const SizedBox.shrink(),
+                  // Keep the purge control reachable even when history can't be
+                  // read, so a user can recover from a poisoned store.
+                  error: (_, _) => IconButton(
+                    icon: const Icon(Icons.delete_outline,
+                        color: AppColors.accentDanger),
+                    onPressed: () => _confirmClearAll(context, ref, null),
+                  ),
                 ),
               ],
             ),
@@ -112,10 +118,26 @@ class DiscoveryHistorySheet extends ConsumerWidget {
                 loading: () =>
                     const Center(child: CircularProgressIndicator()),
                 error: (e, _) => Center(
-                  child: Text(
-                    'Error: $e',
-                    style: AppTypography.body
-                        .copyWith(color: AppColors.accentDanger),
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpacing.xl),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.warning_amber_rounded,
+                            size: 48,
+                            color: AppColors.accentDanger
+                                .withValues(alpha: 0.6)),
+                        const SizedBox(height: AppSpacing.sm),
+                        Text("Couldn't load discoveries history",
+                            style: AppTypography.headline),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Some saved data may be corrupted. Use the delete button above to clear history and recover.',
+                          textAlign: TextAlign.center,
+                          style: AppTypography.caption,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -129,7 +151,7 @@ class DiscoveryHistorySheet extends ConsumerWidget {
   Future<void> _confirmClearAll(
     BuildContext context,
     WidgetRef ref,
-    int count,
+    int? count,
   ) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -137,7 +159,9 @@ class DiscoveryHistorySheet extends ConsumerWidget {
         backgroundColor: AppColors.bgElevated,
         title: Text('Delete all searches?', style: AppTypography.headline),
         content: Text(
-          "$count entr${count == 1 ? 'y' : 'ies'} will be removed.",
+          count == null
+              ? 'All saved searches will be removed.'
+              : "$count entr${count == 1 ? 'y' : 'ies'} will be removed.",
           style: AppTypography.body,
         ),
         actions: [
