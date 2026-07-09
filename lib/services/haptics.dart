@@ -12,6 +12,13 @@ class Haptics {
     return Haptics._(enabled);
   }
 
+  /// Same as [of] but for a provider [Ref] (e.g. inside a StateNotifier), so
+  /// controllers can fire haptics without a widget.
+  static Haptics ofRef(Ref ref) {
+    final enabled = ref.read(appSettingsProvider).hapticsEnabled;
+    return Haptics._(enabled);
+  }
+
   void tap() {
     if (!_enabled) return;
     HapticFeedback.lightImpact();

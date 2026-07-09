@@ -6,18 +6,30 @@ import '../../../design_system/spacing.dart';
 import '../../../design_system/typography.dart';
 import 'tag_chip.dart';
 
+/// Lets an owning editor flush a half-typed-but-uncommitted tag into the
+/// selected set right before saving (F38). Attach one via
+/// [TagInputField.controller] and call [commitPending] at the start of `_save`.
+class TagInputController {
+  VoidCallback? _flush;
+
+  /// Commits whatever token is currently typed in the field, if any.
+  void commitPending() => _flush?.call();
+}
+
 class TagInputField extends StatefulWidget {
   const TagInputField({
     super.key,
     required this.selectedTags,
     required this.onChanged,
     required this.suggestionPool,
+    this.controller,
     this.placeholder = 'Add tag…',
   });
 
   final List<String> selectedTags;
   final ValueChanged<List<String>> onChanged;
   final List<String> suggestionPool;
+  final TagInputController? controller;
   final String placeholder;
 
   @override
@@ -32,6 +44,7 @@ class _TagInputFieldState extends State<TagInputField> {
   @override
   void initState() {
     super.initState();
+    widget.controller?._flush = _commit;
     _focus.addListener(() {
       if (_focus.hasFocus != _focused) {
         setState(() => _focused = _focus.hasFocus);
@@ -40,7 +53,21 @@ class _TagInputFieldState extends State<TagInputField> {
   }
 
   @override
+  void didUpdateWidget(TagInputField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      if (oldWidget.controller?._flush == _commit) {
+        oldWidget.controller?._flush = null;
+      }
+      widget.controller?._flush = _commit;
+    }
+  }
+
+  @override
   void dispose() {
+    if (widget.controller?._flush == _commit) {
+      widget.controller?._flush = null;
+    }
     _controller.dispose();
     _focus.dispose();
     super.dispose();

@@ -1,7 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/error_text.dart';
+import '../../../core/logging.dart';
 import '../../../design_system/colors.dart';
 import '../../../design_system/components/app_background.dart';
 import '../../../design_system/components/glass_card.dart';
@@ -37,11 +40,31 @@ class _ShipEditorViewState extends ConsumerState<ShipEditorView> {
   late final TextEditingController _note;
   late final Map<ShipRight, TextEditingController> _roleControllers;
   late List<String> _tags;
+  final _tagController = TagInputController();
+  final _messengerKey = GlobalKey<ScaffoldMessengerState>();
 
   String? _modelKey;
   String? _locationKey;
   bool _registered = false;
   bool _evilIntroPlayed = false;
+
+  // Snapshot of the initial field state, used for unsaved-changes detection
+  // (F14). Re-baselined after programmatic normalization (suffix split, EVIL
+  // defaults) so only genuine user edits count as dirty.
+  late String _iName;
+  late String _iSuffix;
+  late String _iCustomModel;
+  late String _iHull;
+  late String _iSector;
+  late String _iSl;
+  late String _iZone;
+  late String _iCustomLocation;
+  late String _iNote;
+  String? _iModelKey;
+  String? _iLocationKey;
+  bool _iRegistered = false;
+  late Map<ShipRight, String> _iRoles;
+  late List<String> _iTags;
 
   @override
   void initState() {
@@ -64,6 +87,23 @@ class _ShipEditorViewState extends ConsumerState<ShipEditorView> {
       for (final r in shipSeatOrder)
         r: TextEditingController(text: s?.roleName(r) ?? ''),
     };
+    _captureInitial();
+    // Keep PopScope.canPop fresh: rebuild whenever any free-text field changes
+    // so the dirty flag is re-evaluated (F14).
+    for (final c in [
+      _name,
+      _suffix,
+      _customModel,
+      _hull,
+      _sector,
+      _sl,
+      _zone,
+      _customLocation,
+      _note,
+      ..._roleControllers.values,
+    ]) {
+      c.addListener(_onFieldChanged);
+    }
     // Editing an existing EVIL ship → replay the intro on open. Also split
     // the saved name into prefix + suffix so the editor surfaces just the
     // number when the model has a known prefix (e.g. `MMC-1234` → `1234`).
@@ -75,7 +115,12 @@ class _ShipEditorViewState extends ConsumerState<ShipEditorView> {
       if (entry != null && entry.hasPrefix) {
         final stripped = _extractSuffix(_name.text, entry.prefix);
         if (stripped != _suffix.text) {
-          setState(() => _suffix.text = stripped);
+          setState(() {
+            _suffix.text = stripped;
+            // The suffix was derived from the saved name, not typed by the
+            // user — re-baseline so it doesn't read as an unsaved change.
+            _captureInitial();
+          });
         }
       }
       if (entry?.prefix == EvilShip.prefix && !_evilIntroPlayed) {
@@ -105,6 +150,93 @@ class _ShipEditorViewState extends ConsumerState<ShipEditorView> {
 
   bool get _evilLocked => _evilIntroPlayed;
 
+  void _onFieldChanged() {
+    if (mounted) setState(() {});
+  }
+
+  /// Snapshots the current field state as the baseline for dirty detection.
+  void _captureInitial() {
+    _iName = _name.text;
+    _iSuffix = _suffix.text;
+    _iCustomModel = _customModel.text;
+    _iHull = _hull.text;
+    _iSector = _sector.text;
+    _iSl = _sl.text;
+    _iZone = _zone.text;
+    _iCustomLocation = _customLocation.text;
+    _iNote = _note.text;
+    _iModelKey = _modelKey;
+    _iLocationKey = _locationKey;
+    _iRegistered = _registered;
+    _iRoles = {
+      for (final e in _roleControllers.entries) e.key: e.value.text,
+    };
+    _iTags = List.of(_tags);
+  }
+
+  bool get _dirty {
+    if (_name.text != _iName ||
+        _suffix.text != _iSuffix ||
+        _customModel.text != _iCustomModel ||
+        _hull.text != _iHull ||
+        _sector.text != _iSector ||
+        _sl.text != _iSl ||
+        _zone.text != _iZone ||
+        _customLocation.text != _iCustomLocation ||
+        _note.text != _iNote ||
+        _modelKey != _iModelKey ||
+        _locationKey != _iLocationKey ||
+        _registered != _iRegistered ||
+        !listEquals(_tags, _iTags)) {
+      return true;
+    }
+    for (final e in _roleControllers.entries) {
+      if (e.value.text != _iRoles[e.key]) return true;
+    }
+    return false;
+  }
+
+  /// Confirms discarding when the form is dirty. Returns true when the sheet
+  /// may close (either not dirty, or the user chose to discard).
+  Future<bool> _confirmDiscard() async {
+    if (!_dirty) return true;
+    final discard = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.bgElevated,
+        title: Text('Discard changes?', style: AppTypography.headline),
+        content: Text(
+          'You have unsaved changes.',
+          style: AppTypography.body,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(
+              'Keep editing',
+              style:
+                  AppTypography.body.copyWith(color: AppColors.textSecondary),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(
+              'Discard',
+              style: AppTypography.body.copyWith(color: AppColors.accentDanger),
+            ),
+          ),
+        ],
+      ),
+    );
+    return discard ?? false;
+  }
+
+  Future<void> _handleClose() async {
+    if (await _confirmDiscard() && mounted) {
+      Navigator.of(context).pop();
+    }
+  }
+
   void _applyEvilDefaults() {
     setState(() {
       _registered = true;
@@ -118,6 +250,9 @@ class _ShipEditorViewState extends ConsumerState<ShipEditorView> {
       for (final c in _roleControllers.values) {
         c.text = '';
       }
+      // EVIL defaults are auto-applied and locked — re-baseline so they don't
+      // trip the unsaved-changes guard on close.
+      _captureInitial();
     });
   }
 
@@ -174,6 +309,7 @@ class _ShipEditorViewState extends ConsumerState<ShipEditorView> {
       _suffix.text.trim().isNotEmpty;
 
   Future<void> _save(HangarCatalogs cat) async {
+    _tagController.commitPending();
     final entry = cat.shipForKey(_modelKey);
     final loc = cat.locationForKey(_locationKey);
     final hull = int.tryParse(_hull.text.trim());
@@ -187,7 +323,11 @@ class _ShipEditorViewState extends ConsumerState<ShipEditorView> {
       id: widget.ship?.id ?? '',
       name: _composedName(cat),
       modelKey: _modelKey,
-      customModelLabel: entry?.hasPrefix == true || _modelKey == null
+      // Persist the custom label exactly when its field is shown in the UI:
+      // no model selected, or a catalog model without a known prefix. This
+      // avoids saving stale hidden text and drops a prefix-less model's typed
+      // label correctly.
+      customModelLabel: _modelKey == null || entry?.hasPrefix == false
           ? (_customModel.text.trim().isEmpty
               ? null
               : _customModel.text.trim())
@@ -210,10 +350,21 @@ class _ShipEditorViewState extends ConsumerState<ShipEditorView> {
       createdAt: widget.ship?.createdAt ?? DateTime.now(),
       updatedAt: DateTime.now(),
     );
+    try {
+      await ref
+          .read(hangarRepositoryProvider)
+          .save(model, tagDisplayNames: _tags);
+    } catch (e, st) {
+      logError(e, st);
+      _messengerKey.currentState?.showSnackBar(
+        SnackBar(
+          content: Text(
+              friendlyError(e, fallback: "Couldn't save — please try again.")),
+        ),
+      );
+      return;
+    }
     Haptics.of(ref).success();
-    await ref
-        .read(hangarRepositoryProvider)
-        .save(model, tagDisplayNames: _tags);
     if (mounted) Navigator.of(context).pop();
   }
 
@@ -225,13 +376,20 @@ class _ShipEditorViewState extends ConsumerState<ShipEditorView> {
         .map((t) => t.displayName)
         .toList();
 
-    return DraggableScrollableSheet(
-      initialChildSize: 0.95,
-      minChildSize: 0.5,
-      maxChildSize: 0.97,
-      expand: false,
-      builder: (context, scroll) {
-        return ClipRRect(
+    return PopScope(
+      canPop: !_dirty,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _handleClose();
+      },
+      child: ScaffoldMessenger(
+        key: _messengerKey,
+        child: DraggableScrollableSheet(
+          initialChildSize: 0.95,
+          minChildSize: 0.5,
+          maxChildSize: 0.97,
+          expand: false,
+          builder: (context, scroll) {
+            return ClipRRect(
           borderRadius: const BorderRadius.vertical(
             top: Radius.circular(AppRadius.lg),
           ),
@@ -242,7 +400,7 @@ class _ShipEditorViewState extends ConsumerState<ShipEditorView> {
               backgroundColor: Colors.transparent,
               elevation: 0,
               leading: TextButton(
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: _handleClose,
                 child: Text(
                   'Cancel',
                   style: AppTypography.body.copyWith(
@@ -287,7 +445,7 @@ class _ShipEditorViewState extends ConsumerState<ShipEditorView> {
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (e, _) => Center(
                   child: Text(
-                    'Error: $e',
+                    friendlyError(e, fallback: "Couldn't load the ship catalog."),
                     style: AppTypography.body
                         .copyWith(color: AppColors.accentDanger),
                   ),
@@ -608,6 +766,7 @@ class _ShipEditorViewState extends ConsumerState<ShipEditorView> {
                       const SectionHeader(title: 'Tags', icon: Icons.tag),
                       const SizedBox(height: AppSpacing.sm),
                       TagInputField(
+                        controller: _tagController,
                         selectedTags: _tags,
                         onChanged: (tags) => setState(() => _tags = tags),
                         suggestionPool: pool,
@@ -619,7 +778,9 @@ class _ShipEditorViewState extends ConsumerState<ShipEditorView> {
             ),
           ),
         );
-      },
+          },
+        ),
+      ),
     );
   }
 
@@ -675,6 +836,15 @@ class _LabeledField extends StatelessWidget {
   }
 }
 
+/// Distinguishes an explicit picker choice (including "None", a [_PickResult]
+/// with a null [key]) from a barrier/swipe dismissal, which yields a null
+/// future. Without this, both dismissal and "No model/location" look identical
+/// and dismissing would wrongly clear the current selection.
+class _PickResult {
+  const _PickResult(this.key);
+  final String? key;
+}
+
 class _ModelPicker extends StatelessWidget {
   const _ModelPicker({
     required this.catalogs,
@@ -726,7 +896,7 @@ class _ModelPicker extends StatelessWidget {
   }
 
   Future<void> _open(BuildContext context) async {
-    final picked = await showModalBottomSheet<String?>(
+    final result = await showModalBottomSheet<_PickResult>(
       context: context,
       isScrollControlled: true,
       backgroundColor: AppColors.bgElevated,
@@ -735,7 +905,8 @@ class _ModelPicker extends StatelessWidget {
       ),
       builder: (ctx) => _ModelPickerSheet(catalogs: catalogs, current: modelKey),
     );
-    onChange(picked);
+    // Null = dismissed without choosing → leave the selection unchanged.
+    if (result != null) onChange(result.key);
   }
 }
 
@@ -763,7 +934,8 @@ class _ModelPickerSheet extends StatelessWidget {
                     leading: const Icon(Icons.cancel,
                         color: AppColors.textSecondary),
                     title: Text('No model', style: AppTypography.body),
-                    onTap: () => Navigator.of(context).pop(null),
+                    onTap: () =>
+                        Navigator.of(context).pop(const _PickResult(null)),
                     selected: current == null,
                   ),
                   for (final cat in HangarCatalogs.craftCategoriesInOrder) ...[
@@ -792,7 +964,8 @@ class _ModelPickerSheet extends StatelessWidget {
                                 style: AppTypography.caption)
                             : null,
                         selected: current == s.key,
-                        onTap: () => Navigator.of(context).pop(s.key),
+                        onTap: () =>
+                            Navigator.of(context).pop(_PickResult(s.key)),
                       ),
                   ],
                 ],
@@ -851,7 +1024,7 @@ class _LocationPicker extends StatelessWidget {
   }
 
   Future<void> _open(BuildContext context) async {
-    final picked = await showModalBottomSheet<String?>(
+    final result = await showModalBottomSheet<_PickResult>(
       context: context,
       isScrollControlled: true,
       backgroundColor: AppColors.bgElevated,
@@ -863,7 +1036,8 @@ class _LocationPicker extends StatelessWidget {
         current: locationKey,
       ),
     );
-    onChange(picked);
+    // Null = dismissed without choosing → leave the selection unchanged.
+    if (result != null) onChange(result.key);
   }
 }
 
@@ -892,7 +1066,8 @@ class _LocationPickerSheet extends StatelessWidget {
                     leading: const Icon(Icons.cancel,
                         color: AppColors.textSecondary),
                     title: Text('No location', style: AppTypography.body),
-                    onTap: () => Navigator.of(context).pop(null),
+                    onTap: () =>
+                        Navigator.of(context).pop(const _PickResult(null)),
                     selected: current == null,
                   ),
                   for (final g in groups.entries) ...[
@@ -915,7 +1090,8 @@ class _LocationPickerSheet extends StatelessWidget {
                             ? null
                             : Text(l.subtitle!, style: AppTypography.caption),
                         selected: current == l.key,
-                        onTap: () => Navigator.of(context).pop(l.key),
+                        onTap: () =>
+                            Navigator.of(context).pop(_PickResult(l.key)),
                       ),
                   ],
                 ],

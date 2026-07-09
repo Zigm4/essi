@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/error_text.dart';
 import '../../../design_system/colors.dart';
 import '../../../design_system/components/app_background.dart';
 import '../../../design_system/components/banner_page.dart';
@@ -43,6 +44,9 @@ class HangarListView extends ConsumerWidget {
                 showModalBottomSheet<void>(
                   context: context,
                   isScrollControlled: true,
+                  // F14: disable swipe-to-dismiss so the editor's unsaved-
+                  // changes PopScope guard isn't bypassed.
+                  enableDrag: false,
                   backgroundColor: Colors.transparent,
                   builder: (_) => const ShipEditorView(),
                 );
@@ -53,7 +57,7 @@ class HangarListView extends ConsumerWidget {
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (e, _) => Center(
               child: Text(
-                'Error: $e',
+                friendlyError(e, fallback: "Couldn't load your hangar."),
                 style: AppTypography.body.copyWith(color: AppColors.accentDanger),
               ),
             ),
@@ -197,6 +201,9 @@ class _ShipCard extends ConsumerWidget {
         showModalBottomSheet<void>(
           context: context,
           isScrollControlled: true,
+          // F14: disable swipe-to-dismiss so the editor's unsaved-changes
+          // PopScope guard isn't bypassed.
+          enableDrag: false,
           backgroundColor: Colors.transparent,
           builder: (_) => ShipEditorView(ship: ship),
         );

@@ -7,6 +7,8 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/app_constants.dart';
+import '../../../core/app_version.dart';
+import '../../../core/error_text.dart';
 import '../../../design_system/colors.dart';
 import '../../../design_system/components/app_background.dart';
 import '../../../design_system/components/glass_card.dart';
@@ -17,6 +19,7 @@ import '../../../design_system/components/transmission_header.dart';
 import '../../../design_system/spacing.dart';
 import '../../../design_system/typography.dart';
 import '../../../services/haptics.dart';
+import '../../../services/share_card.dart';
 import '../../captures/widgets/tag_chip.dart';
 
 enum _ContactCategory { feedback, bug, support, other }
@@ -57,7 +60,10 @@ class _ContactViewState extends ConsumerState<ContactView> {
     super.dispose();
   }
 
-  String get _versionLine => 'App: Underdeck v0.2.0 (Alpha)';
+  String get _versionLine {
+    final v = ref.read(appVersionProvider).valueOrNull ?? AppVersion.fallback;
+    return 'App: Underdeck ${v.fullLabel} (Alpha)';
+  }
   String get _deviceLine =>
       'Device: ${Platform.operatingSystem} ${Platform.operatingSystemVersion}';
 
@@ -78,7 +84,7 @@ class _ContactViewState extends ConsumerState<ContactView> {
       // Picker can fail silently on permission denial; surface a snackbar.
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Could not pick photo: $e'),
+        content: Text(friendlyError(e, fallback: "Couldn't pick that photo. Please try again.")),
         backgroundColor: AppColors.accentDanger,
       ));
     }
@@ -109,6 +115,7 @@ Sent to: ${AppConstants.contactEmail}''';
           files: [
             for (final a in _attachments) XFile(a.path),
           ],
+          sharePositionOrigin: ShareCardCapture.originRectFor(context),
         ),
       );
       return;
@@ -147,6 +154,9 @@ Sent to: ${AppConstants.contactEmail}''';
 
   @override
   Widget build(BuildContext context) {
+    // Watch so the auto-included version line rebuilds once the async lookup
+    // resolves (the getter itself reads the value).
+    ref.watch(appVersionProvider);
     final canSend = _message.text.trim().isNotEmpty || _attachments.isNotEmpty;
     return Scaffold(
       backgroundColor: AppColors.bgDeepest,

@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../colors.dart';
@@ -34,27 +35,32 @@ List<Particle> generateParticles({required int count, int? seed}) {
 class CyberParticlesPainter extends CustomPainter {
   CyberParticlesPainter({
     required this.particles,
-    required this.timeSeconds,
-  });
+    required this.time,
+  }) : super(repaint: time);
 
   final List<Particle> particles;
-  final double timeSeconds;
+
+  /// Elapsed seconds, driven by the ticker via a [ValueListenable] so the
+  /// painter repaints on tick without any per-frame `setState`/rebuild.
+  final ValueListenable<double> time;
 
   @override
   void paint(Canvas canvas, Size size) {
+    final timeSeconds = time.value;
+    // One reusable Paint for all particles; only its color changes per particle.
+    final paint = Paint();
     for (final p in particles) {
       final raw = (timeSeconds * p.speed + p.phase) % 1.0;
       final cycle = raw < 0 ? raw + 1.0 : raw;
       final y = size.height * (1.0 - cycle);
       final opacity = math.sin(cycle * math.pi);
-      final paint = Paint()
-        ..color = AppColors.accentSecondary.withValues(alpha: 0.55 * opacity);
+      paint.color = AppColors.accentSecondary.withValues(alpha: 0.55 * opacity);
       canvas.drawCircle(Offset(p.x * size.width, y), p.radius, paint);
     }
   }
 
   @override
   bool shouldRepaint(covariant CyberParticlesPainter oldDelegate) {
-    return oldDelegate.timeSeconds != timeSeconds;
+    return oldDelegate.time != time;
   }
 }

@@ -1,50 +1,60 @@
 import 'dart:convert';
 
-import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../../../core/logging.dart';
 import '../../../../data/database/app_database.dart';
+import '../../history/history_repository.dart';
 import '../domain/celestial_kind.dart';
 import '../domain/celestial_models.dart';
 
-class DiscoveryHistoryRecord {
-  final String id;
-  final DateTime date;
-  final CelestialKind kind;
-  final DateTime startDate;
-  final DateTime endDate;
-  final List<DiscoveredObject> results;
-
-  const DiscoveryHistoryRecord({
-    required this.id,
-    required this.date,
-    required this.kind,
+/// Lazily-decoded payload of a discovery history entry (F23). The [CelestialKind]
+/// lives in the row's `mode` column, so it stays available without decoding.
+class DiscoveryDetail {
+  const DiscoveryDetail({
     required this.startDate,
     required this.endDate,
     required this.results,
   });
 
-  static DiscoveryHistoryRecord fromRow(DiscoveryHistoryData row) {
-    final j = jsonDecode(row.payloadJson) as Map<String, dynamic>;
-    return DiscoveryHistoryRecord(
-      id: row.id,
-      date: row.date,
-      kind: CelestialKindX.fromId(row.mode),
-      startDate: DateTime.parse(j['startDate'] as String),
-      endDate: DateTime.parse(j['endDate'] as String),
-      results: ((j['results'] as List<dynamic>?) ?? const [])
-          .map((e) => DiscoveredObject.fromJson(e as Map<String, dynamic>))
-          .toList(),
-    );
-  }
+  final DateTime startDate;
+  final DateTime endDate;
+  final List<DiscoveredObject> results;
+
+  factory DiscoveryDetail.fromJson(Map<String, dynamic> j) => DiscoveryDetail(
+        startDate: DateTime.parse(j['startDate'] as String),
+        endDate: DateTime.parse(j['endDate'] as String),
+        results: ((j['results'] as List<dynamic>?) ?? const [])
+            .map((e) => DiscoveredObject.fromJson(e as Map<String, dynamic>))
+            .toList(),
+      );
 }
 
-class CelestialRepository {
-  CelestialRepository(this._db);
+typedef DiscoveryEntry = HistoryEntry<DiscoveryDetail>;
+
+class CelestialRepository
+    extends HistoryRepository<$DiscoveryHistoryTable, DiscoveryHistoryData,
+        DiscoveryDetail> {
+  CelestialRepository(this._db)
+      : super(
+          db: _db,
+          table: _db.discoveryHistory,
+          dateOf: (t) => t.date,
+          idOf: (t) => t.id,
+        );
+
   final AppDatabase _db;
   static const _uuid = Uuid();
+
+  @override
+  DiscoveryEntry entryFromRow(DiscoveryHistoryData row) => HistoryEntry(
+        id: row.id,
+        date: row.date,
+        mode: row.mode,
+        errored: row.errored,
+        payloadJson: row.payloadJson,
+        decode: DiscoveryDetail.fromJson,
+      );
 
   Future<void> save({
     required CelestialKind kind,
@@ -58,41 +68,13 @@ class CelestialRepository {
       'results': results.map((r) => r.toJson()).toList(),
     });
     await _db.into(_db.discoveryHistory).insert(
-      DiscoveryHistoryCompanion.insert(
-        id: _uuid.v4(),
-        date: DateTime.now(),
-        mode: kind.id,
-        payloadJson: payload,
-      ),
-    );
-  }
-
-  Stream<List<DiscoveryHistoryRecord>> watchAll() {
-    final q = _db.select(_db.discoveryHistory)
-      ..orderBy([(t) => OrderingTerm.desc(t.date)]);
-    return q.watch().map(
-      // F16/read-tolerance: skip rows whose fromRow throws so one corrupt
-      // payload can't error the whole discovery-history stream.
-      (rows) => rows
-          .map((r) {
-            try {
-              return DiscoveryHistoryRecord.fromRow(r);
-            } catch (e, st) {
-              logError(e, st);
-              return null;
-            }
-          })
-          .whereType<DiscoveryHistoryRecord>()
-          .toList(),
-    );
-  }
-
-  Future<void> delete(String id) async {
-    await (_db.delete(_db.discoveryHistory)..where((t) => t.id.equals(id))).go();
-  }
-
-  Future<void> clear() async {
-    await _db.delete(_db.discoveryHistory).go();
+          DiscoveryHistoryCompanion.insert(
+            id: _uuid.v4(),
+            date: DateTime.now(),
+            mode: kind.id,
+            payloadJson: payload,
+          ),
+        );
   }
 }
 
@@ -101,6 +83,6 @@ final celestialRepositoryProvider = Provider<CelestialRepository>((ref) {
 });
 
 final discoveryHistoryProvider =
-    StreamProvider<List<DiscoveryHistoryRecord>>((ref) {
+    StreamProvider.autoDispose<List<DiscoveryEntry>>((ref) {
   return ref.watch(celestialRepositoryProvider).watchAll();
 });

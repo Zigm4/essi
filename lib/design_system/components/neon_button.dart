@@ -32,7 +32,14 @@ class _NeonButtonState extends ConsumerState<NeonButton> {
   Widget build(BuildContext context) {
     final tint = widget.danger ? AppColors.accentDanger : AppColors.accentPrimary;
     final tint2 = widget.danger ? AppColors.accentWarn : AppColors.accentSecondary;
-    return Opacity(
+    return Semantics(
+      button: true,
+      enabled: widget.enabled,
+      label: widget.title,
+      // The visible Text below is a decorative label; expose one merged button
+      // node to assistive tech instead of a separate text leaf (F31).
+      excludeSemantics: true,
+      child: Opacity(
       opacity: widget.enabled ? 1 : 0.4,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
@@ -84,6 +91,7 @@ class _NeonButtonState extends ConsumerState<NeonButton> {
             ),
           ),
         ),
+      ),
       ),
     );
   }

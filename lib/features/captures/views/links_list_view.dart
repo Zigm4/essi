@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/error_text.dart';
 import '../../../design_system/colors.dart';
 import '../../../design_system/spacing.dart';
 import '../../../design_system/typography.dart';
@@ -10,7 +11,10 @@ import '../domain/captures_models.dart';
 import '../widgets/link_card.dart';
 import '../widgets/tag_chip.dart';
 
-final linksSearchProvider = StateProvider<String>((ref) => '');
+// autoDispose so re-entering the screen starts from an empty query, matching
+// the freshly-built (controller-less) search field instead of showing stale
+// results under a blank box.
+final linksSearchProvider = StateProvider.autoDispose<String>((ref) => '');
 final linksSelectedTagsProvider =
     StateProvider<Set<String>>((ref) => <String>{});
 
@@ -32,7 +36,7 @@ class LinksListView extends ConsumerWidget {
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(
         child: Text(
-          'Error: $e',
+          friendlyError(e, fallback: "Couldn't load your links."),
           style: AppTypography.body.copyWith(color: AppColors.accentDanger),
         ),
       ),

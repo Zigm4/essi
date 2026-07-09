@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/app_constants.dart';
+import '../../../core/app_version.dart';
 import '../../../design_system/colors.dart';
 import '../../../design_system/components/app_background.dart';
 import '../../../design_system/components/banner_page.dart';
@@ -18,6 +19,8 @@ class MenuView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final version =
+        ref.watch(appVersionProvider).valueOrNull ?? AppVersion.fallback;
     return Scaffold(
       backgroundColor: AppColors.bgDeepest,
       body: AppBackground(
@@ -78,7 +81,7 @@ class MenuView extends ConsumerWidget {
               const SizedBox(height: AppSpacing.md),
               _MenuRow(
                 title: 'About',
-                subtitle: 'v0.2.0 (Alpha)',
+                subtitle: '${version.shortLabel} (Alpha)',
                 icon: Icons.auto_awesome,
                 onTap: () => context.push('/menu/about'),
               ),

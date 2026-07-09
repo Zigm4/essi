@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,10 +16,9 @@ import '../../../../design_system/spacing.dart';
 import '../../../../design_system/typography.dart';
 import '../../../../services/haptics.dart';
 import '../../../../services/share_card.dart';
-import '../data/celestial_client.dart';
-import '../data/celestial_repository.dart';
 import '../domain/celestial_kind.dart';
 import '../domain/celestial_models.dart';
+import '../state/celestial_controller.dart';
 import '../widgets/discoveries_list_share_card.dart';
 import 'discoveries_how_it_works.dart';
 import 'discovery_detail_sheet.dart';
@@ -34,113 +32,10 @@ class CelestialView extends ConsumerStatefulWidget {
 }
 
 class _CelestialViewState extends ConsumerState<CelestialView> {
-  late DateTime _startDate;
-  late DateTime _endDate;
-  CelestialKind _kind = CelestialKind.comet;
-  bool _isSearching = false;
-  CancelToken? _cancel;
-  List<DiscoveredObject>? _results;
-  bool _resultsTruncated = false;
-  String? _errorMessage;
-  bool _timedOut = false;
-
-  @override
-  void initState() {
-    super.initState();
-    final today = DateTime.now();
-    final yesterday = DateTime(today.year, today.month, today.day)
-        .subtract(const Duration(days: 1));
-    _endDate = yesterday;
-    _startDate = yesterday.subtract(const Duration(days: 10));
-  }
-
-  @override
-  void dispose() {
-    _cancel?.cancel();
-    super.dispose();
-  }
-
-  int get _windowDays => _endDate.difference(_startDate).inDays;
-  bool get _isAsteroid => _kind == CelestialKind.asteroid;
-
-  /// Estimated request duration band, mirroring the iOS app.
-  ({int lo, int hi}) get _expectedSeconds {
-    final w = _windowDays;
-    if (!_isAsteroid && w < 11) return (lo: 1, hi: 4);
-    if (!_isAsteroid) return (lo: 4, hi: 20);
-    if (w < 11) return (lo: 5, hi: 30);
-    if (w < 31) return (lo: 20, hi: 60);
-    return (lo: 30, hi: 90);
-  }
-
-  bool get _isWideWindow {
-    if (_isAsteroid) return _windowDays > 10;
-    return _windowDays > 30;
-  }
-
-  Future<void> _search() async {
-    _cancel?.cancel();
-    final cancel = CancelToken();
-    _cancel = cancel;
-    setState(() {
-      _isSearching = true;
-      _errorMessage = null;
-      _timedOut = false;
-      _resultsTruncated = false;
-    });
-    try {
-      final result = await ref.read(celestialClientProvider).search(
-            start: _startDate,
-            end: _endDate,
-            kind: _kind,
-            cancel: cancel,
-          );
-      final results = result.objects;
-      await ref.read(celestialRepositoryProvider).save(
-            kind: _kind,
-            startDate: _startDate,
-            endDate: _endDate,
-            results: results,
-          );
-      if (!mounted || !identical(cancel, _cancel)) return;
-      setState(() {
-        _results = results;
-        _resultsTruncated = result.truncated;
-        _isSearching = false;
-      });
-      if (results.isEmpty) {
-        Haptics.of(ref).warning();
-      } else {
-        Haptics.of(ref).success();
-      }
-    } on CelestialError catch (e) {
-      // A superseded search's cancellation must not stamp an error over the
-      // newer search's state (F37).
-      if (!mounted || !identical(cancel, _cancel)) return;
-      if (e is CelestialCancelledError) {
-        // Preserve prior _results; don't surface a cancellation as an error.
-        setState(() => _isSearching = false);
-        return;
-      }
-      setState(() {
-        _isSearching = false;
-        _results = null;
-        _errorMessage = e.message;
-        _timedOut = e is CelestialOfflineError;
-        Haptics.of(ref).warning();
-      });
-    } catch (_) {
-      if (!mounted || !identical(cancel, _cancel)) return;
-      setState(() {
-        _isSearching = false;
-        _results = null;
-        _errorMessage = 'Unexpected error.';
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
+    final state = ref.watch(celestialControllerProvider);
+    final notifier = ref.read(celestialControllerProvider.notifier);
     return Scaffold(
       backgroundColor: AppColors.bgDeepest,
       extendBodyBehindAppBar: true,
@@ -171,13 +66,14 @@ class _CelestialViewState extends ConsumerState<CelestialView> {
                 isScrollControlled: true,
                 backgroundColor: Colors.transparent,
                 builder: (_) => DiscoveryHistorySheet(
-                  onReplay: (record) {
+                  onReplay: (entry) {
                     Navigator.of(context).pop();
-                    setState(() {
-                      _kind = record.kind;
-                      _startDate = record.startDate;
-                      _endDate = record.endDate;
-                    });
+                    final detail = entry.detail;
+                    notifier.applyReplay(
+                      kind: CelestialKindX.fromId(entry.mode),
+                      startDate: detail.startDate,
+                      endDate: detail.endDate,
+                    );
                   },
                 ),
               );
@@ -201,23 +97,23 @@ class _CelestialViewState extends ConsumerState<CelestialView> {
               const _TransparencyCard(),
               const SizedBox(height: AppSpacing.lg),
               _QueryCard(
-                kind: _kind,
-                startDate: _startDate,
-                endDate: _endDate,
-                isSearching: _isSearching,
-                isAsteroid: _isAsteroid,
-                isWideWindow: _isWideWindow,
-                expectedSeconds: _expectedSeconds,
+                kind: state.kind,
+                startDate: state.startDate,
+                endDate: state.endDate,
+                isSearching: state.isSearching,
+                isAsteroid: state.isAsteroid,
+                isWideWindow: state.isWideWindow,
+                expectedSeconds: state.expectedSeconds,
                 onKind: (k) {
                   Haptics.of(ref).selection();
-                  setState(() => _kind = k);
+                  notifier.setKind(k);
                 },
-                onPickStart: () => _pickDate(true),
-                onPickEnd: () => _pickDate(false),
+                onPickStart: () => _pickDate(true, state, notifier),
+                onPickEnd: () => _pickDate(false, state, notifier),
               ),
               const SizedBox(height: AppSpacing.lg),
               GlassCard(
-                child: _isSearching
+                child: state.isSearching
                     ? Row(
                         children: [
                           const SizedBox(
@@ -241,10 +137,7 @@ class _CelestialViewState extends ConsumerState<CelestialView> {
                             ),
                           ),
                           IconButton(
-                            onPressed: () {
-                              _cancel?.cancel();
-                              setState(() => _isSearching = false);
-                            },
+                            onPressed: notifier.cancel,
                             icon: const Icon(Icons.stop_circle,
                                 color: AppColors.accentDanger, size: 26),
                           ),
@@ -253,21 +146,21 @@ class _CelestialViewState extends ConsumerState<CelestialView> {
                     : NeonButton(
                         title: 'Search',
                         icon: Icons.travel_explore,
-                        onPressed: _search,
+                        onPressed: notifier.search,
                       ),
               ),
-              if (_errorMessage != null) ...[
+              if (state.errorMessage != null) ...[
                 const SizedBox(height: AppSpacing.lg),
-                _ErrorCard(message: _errorMessage!, isTimeout: _timedOut),
+                _ErrorCard(message: state.errorMessage!, isTimeout: state.timedOut),
               ],
-              if (_results != null) ...[
+              if (state.results != null) ...[
                 const SizedBox(height: AppSpacing.lg),
                 _ResultsSection(
-                  results: _results!,
-                  truncated: _resultsTruncated,
-                  kind: _kind,
-                  startDate: _startDate,
-                  endDate: _endDate,
+                  results: state.results!,
+                  truncated: state.resultsTruncated,
+                  kind: state.kind,
+                  startDate: state.startDate,
+                  endDate: state.endDate,
                 ),
               ],
             ],
@@ -277,10 +170,14 @@ class _CelestialViewState extends ConsumerState<CelestialView> {
     );
   }
 
-  Future<void> _pickDate(bool isStart) async {
+  Future<void> _pickDate(
+    bool isStart,
+    CelestialState state,
+    CelestialController notifier,
+  ) async {
     final today = DateTime.now();
     final maxDate = DateTime(today.year, today.month, today.day);
-    final initial = isStart ? _startDate : _endDate;
+    final initial = isStart ? state.startDate : state.endDate;
     DateTime? picked;
     if (Platform.isIOS) {
       picked = await _showCupertinoDatePicker(
@@ -309,15 +206,11 @@ class _CelestialViewState extends ConsumerState<CelestialView> {
       );
     }
     if (picked == null) return;
-    setState(() {
-      if (isStart) {
-        _startDate = picked!;
-        if (_startDate.isAfter(_endDate)) _endDate = _startDate;
-      } else {
-        _endDate = picked!;
-        if (_endDate.isBefore(_startDate)) _startDate = _endDate;
-      }
-    });
+    if (isStart) {
+      notifier.setStartDate(picked);
+    } else {
+      notifier.setEndDate(picked);
+    }
   }
 }
 
@@ -428,7 +321,10 @@ class _TransparencyCard extends StatelessWidget {
                   'Status icon + optional client-side date filter for pre-1900 dates'),
           const _Bullet(
               label: 'To NASA:', value: 'Your IP address (like any web request)'),
-          const _Bullet(label: 'Stored:', value: 'Nothing'),
+          const _Bullet(
+              label: 'Stored:',
+              value:
+                  'Nothing sent to a server (searches are saved locally on your device)'),
         ],
       ),
     );
@@ -828,7 +724,7 @@ class _ResultsSection extends ConsumerWidget {
 
   Future<void> _share(BuildContext context, WidgetRef ref) async {
     Haptics.of(ref).tap();
-    await ShareCardCapture.share(
+    final ok = await ShareCardCapture.share(
       context: context,
       card: DiscoveriesListShareCard(
         results: results,
@@ -839,7 +735,11 @@ class _ResultsSection extends ConsumerWidget {
       fileName:
           'underdeck-discoveries-${DateTime.now().millisecondsSinceEpoch}.png',
       text: 'Underdeck discoveries',
+      sharePositionOrigin: ShareCardCapture.originRectFor(context),
     );
+    if (!ok && context.mounted) {
+      ShareCardCapture.showShareFailure(context);
+    }
   }
 
   @override

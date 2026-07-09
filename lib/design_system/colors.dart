@@ -19,7 +19,11 @@ class AppColors {
 
   static const Color textPrimary = Color(0xFFE8F4FF);
   static const Color textSecondary = Color(0xFF8AA4C2);
-  static const Color textDim = Color(0xFF4F6A87);
+  // F32: lightened from #4F6A87 (~3:1 on bgCard) to reach ~4.7:1 on bgCard so
+  // the real 10px informational content (scan timestamps/status, editor helper
+  // text) and share-PNG captions clear WCAG AA. Applied at the token so every
+  // textDim usage benefits consistently.
+  static const Color textDim = Color(0xFF6E8AAB);
 
   static Color get borderSubtle => const Color(0xFF7AE3FF).withValues(alpha: 0.12);
   static Color get borderGlow => const Color(0xFF4FC3FF).withValues(alpha: 0.45);

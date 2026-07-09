@@ -18,16 +18,16 @@ class _CyberParticlesState extends ConsumerState<CyberParticles>
     with SingleTickerProviderStateMixin {
   late final Ticker _ticker;
   late final List<Particle> _particles;
-  double _seconds = 0;
+  final ValueNotifier<double> _seconds = ValueNotifier<double>(0);
 
   @override
   void initState() {
     super.initState();
     _particles = generateParticles(count: widget.count);
+    // Drive elapsed time through a ValueNotifier the painter listens to, so the
+    // ticker never triggers a widget rebuild — only the isolated painter repaints.
     _ticker = createTicker((elapsed) {
-      setState(() {
-        _seconds = elapsed.inMicroseconds / 1e6;
-      });
+      _seconds.value = elapsed.inMicroseconds / 1e6;
     });
     _ticker.start();
   }
@@ -35,6 +35,7 @@ class _CyberParticlesState extends ConsumerState<CyberParticles>
   @override
   void dispose() {
     _ticker.dispose();
+    _seconds.dispose();
     super.dispose();
   }
 
@@ -46,12 +47,14 @@ class _CyberParticlesState extends ConsumerState<CyberParticles>
     final mqReduce = MediaQuery.disableAnimationsOf(context);
     if (reduce || mqReduce) return const SizedBox.shrink();
     return IgnorePointer(
-      child: CustomPaint(
-        painter: CyberParticlesPainter(
-          particles: _particles,
-          timeSeconds: _seconds,
+      child: RepaintBoundary(
+        child: CustomPaint(
+          painter: CyberParticlesPainter(
+            particles: _particles,
+            time: _seconds,
+          ),
+          size: Size.infinite,
         ),
-        size: Size.infinite,
       ),
     );
   }

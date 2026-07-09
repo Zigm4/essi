@@ -42,7 +42,7 @@ const _entries = <_FAQItem>[
     section: 'privacy',
     question: 'Where is my data stored?',
     answer:
-        'On your device, in a local SQLite database. To move data between devices, use the export/import feature in Settings (when available).',
+        'On your device, in a local SQLite database. To move data between devices, use the export/import feature in Settings.',
   ),
   _FAQItem(
     section: 'network',

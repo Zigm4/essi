@@ -149,12 +149,9 @@ class _StaticPlanet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(
-      painter: _PlanetPainter(
-        kind: kind,
-        haloPhase: 0.5,
-        scanPhase: 0,
-        animated: false,
+    return RepaintBoundary(
+      child: CustomPaint(
+        painter: _PlanetPainter(kind: kind, animated: false),
       ),
     );
   }
@@ -188,19 +185,17 @@ class _AnimatedPlanetState extends State<_AnimatedPlanet>
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: Listenable.merge([_halo, _scan]),
-      builder: (context, _) {
-        final haloT = Curves.easeInOut.transform(_halo.value);
-        return CustomPaint(
-          painter: _PlanetPainter(
-            kind: widget.kind,
-            haloPhase: haloT,
-            scanPhase: _scan.value,
-            animated: true,
-          ),
-        );
-      },
+    // No AnimatedBuilder: the painter repaints directly off the controllers via
+    // `repaint:`, and RepaintBoundary keeps those repaints off the row/list.
+    return RepaintBoundary(
+      child: CustomPaint(
+        painter: _PlanetPainter(
+          kind: widget.kind,
+          animated: true,
+          halo: _halo,
+          scan: _scan,
+        ),
+      ),
     );
   }
 }
@@ -208,18 +203,22 @@ class _AnimatedPlanetState extends State<_AnimatedPlanet>
 class _PlanetPainter extends CustomPainter {
   _PlanetPainter({
     required this.kind,
-    required this.haloPhase,
-    required this.scanPhase,
     required this.animated,
-  });
+    this.halo,
+    this.scan,
+  }) : super(
+          repaint: animated ? Listenable.merge([halo, scan]) : null,
+        );
 
   final PlanetKind kind;
-  final double haloPhase;
-  final double scanPhase;
   final bool animated;
+  final Animation<double>? halo;
+  final Animation<double>? scan;
 
   @override
   void paint(Canvas canvas, Size size) {
+    final haloPhase = animated ? Curves.easeInOut.transform(halo!.value) : 0.5;
+    final scanPhase = animated ? scan!.value : 0.0;
     final center = Offset(size.width / 2, size.height / 2);
     final diameter = kind.diameter;
     final radius = diameter / 2;
@@ -308,9 +307,11 @@ class _PlanetPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _PlanetPainter oldDelegate) {
-    return oldDelegate.haloPhase != haloPhase ||
-        oldDelegate.scanPhase != scanPhase ||
-        oldDelegate.kind != kind ||
-        oldDelegate.animated != animated;
+    // Animated repaints are driven by `repaint:`; this only guards rebuilds that
+    // swap the painter (e.g. kind changes or animated/static toggles).
+    return oldDelegate.kind != kind ||
+        oldDelegate.animated != animated ||
+        oldDelegate.halo != halo ||
+        oldDelegate.scan != scan;
   }
 }

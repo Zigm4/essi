@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/error_text.dart';
 import '../../../../design_system/colors.dart';
 import '../../../../design_system/components/app_background.dart';
 import '../../../../design_system/components/glass_card.dart';
@@ -73,7 +74,7 @@ class _MarsExpressViewState extends ConsumerState<MarsExpressView> {
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => Center(
             child: Text(
-              'Error loading schedule: $e',
+              friendlyError(e, fallback: "Couldn't load the schedule."),
               style: AppTypography.body.copyWith(color: AppColors.accentDanger),
             ),
           ),

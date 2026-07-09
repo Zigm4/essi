@@ -1,80 +1,50 @@
 import 'dart:convert';
 
-import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../../../core/logging.dart';
 import '../../../../data/database/app_database.dart';
 import '../../celestial/domain/celestial_kind.dart';
+import '../../history/history_repository.dart';
 import '../domain/tracker_models.dart';
 
-class TrackerHistoryRecord {
-  final String id;
-  final DateTime date;
-  final TrackerResult result;
-  final bool errored;
+/// A tracker history list entry; its payload decodes lazily to the full
+/// [TrackerResult] (F23).
+typedef TrackerEntry = HistoryEntry<TrackerResult>;
 
-  const TrackerHistoryRecord({
-    required this.id,
-    required this.date,
-    required this.result,
-    required this.errored,
-  });
+class TrackerRepository
+    extends HistoryRepository<$TrackerHistoryTable, TrackerHistoryData,
+        TrackerResult> {
+  TrackerRepository(this._db)
+      : super(
+          db: _db,
+          table: _db.trackerHistory,
+          dateOf: (t) => t.date,
+          idOf: (t) => t.id,
+        );
 
-  static TrackerHistoryRecord fromRow(TrackerHistoryData row) {
-    final j = jsonDecode(row.payloadJson) as Map<String, dynamic>;
-    return TrackerHistoryRecord(
-      id: row.id,
-      date: row.date,
-      result: TrackerResult.fromJson(j),
-      errored: row.errored,
-    );
-  }
-}
-
-class TrackerRepository {
-  TrackerRepository(this._db);
   final AppDatabase _db;
   static const _uuid = Uuid();
 
+  @override
+  TrackerEntry entryFromRow(TrackerHistoryData row) => HistoryEntry(
+        id: row.id,
+        date: row.date,
+        mode: row.mode,
+        errored: row.errored,
+        payloadJson: row.payloadJson,
+        decode: TrackerResult.fromJson,
+      );
+
   Future<void> save(TrackerResult result) async {
     await _db.into(_db.trackerHistory).insert(
-      TrackerHistoryCompanion.insert(
-        id: _uuid.v4(),
-        date: DateTime.now(),
-        mode: result.kind.id,
-        payloadJson: jsonEncode(result.toJson()),
-      ),
-    );
-  }
-
-  Stream<List<TrackerHistoryRecord>> watchAll() {
-    final q = _db.select(_db.trackerHistory)
-      ..orderBy([(t) => OrderingTerm.desc(t.date)]);
-    // F16/read-tolerance: skip rows whose fromRow throws so a single corrupt
-    // payload can't error the entire history stream.
-    return q.watch().map(
-          (rows) => rows
-              .map((r) {
-                try {
-                  return TrackerHistoryRecord.fromRow(r);
-                } catch (e, st) {
-                  logError(e, st);
-                  return null;
-                }
-              })
-              .whereType<TrackerHistoryRecord>()
-              .toList(),
+          TrackerHistoryCompanion.insert(
+            id: _uuid.v4(),
+            date: DateTime.now(),
+            mode: result.kind.id,
+            payloadJson: jsonEncode(result.toJson()),
+          ),
         );
-  }
-
-  Future<void> delete(String id) async {
-    await (_db.delete(_db.trackerHistory)..where((t) => t.id.equals(id))).go();
-  }
-
-  Future<void> clear() async {
-    await _db.delete(_db.trackerHistory).go();
   }
 }
 
@@ -83,7 +53,6 @@ final trackerRepositoryProvider = Provider<TrackerRepository>((ref) {
 });
 
 final trackerHistoryProvider =
-    StreamProvider<List<TrackerHistoryRecord>>((ref) {
+    StreamProvider.autoDispose<List<TrackerEntry>>((ref) {
   return ref.watch(trackerRepositoryProvider).watchAll();
 });
-

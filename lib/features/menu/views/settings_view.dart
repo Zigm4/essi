@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/error_text.dart';
 import '../../../design_system/colors.dart';
 import '../../../design_system/components/app_background.dart';
 import '../../../design_system/components/glass_card.dart';
@@ -79,6 +80,14 @@ class SettingsView extends ConsumerWidget {
                       onChange: (v) =>
                           notifier.setReduceAnimations(!v),
                     ),
+                    const SizedBox(height: AppSpacing.md),
+                    _ToggleRow(
+                      title: 'Fast boot',
+                      subtitle:
+                          'Skip the boot intro and jump straight into the app on launch.',
+                      value: settings.fastBoot,
+                      onChange: (v) => notifier.setFastBoot(v),
+                    ),
                   ],
                 ),
               ),
@@ -106,7 +115,10 @@ class SettingsView extends ConsumerWidget {
                         } catch (e) {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Export failed: $e')),
+                              SnackBar(
+                                content: Text(friendlyError(e,
+                                    fallback: 'Export failed. Please try again.')),
+                              ),
                             );
                           }
                         }
@@ -258,7 +270,11 @@ class _ActionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return Semantics(
+      button: true,
+      label: label,
+      excludeSemantics: true,
+      child: GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: Container(
@@ -280,6 +296,7 @@ class _ActionRow extends StatelessWidget {
             const Icon(Icons.chevron_right, color: AppColors.textDim),
           ],
         ),
+      ),
       ),
     );
   }

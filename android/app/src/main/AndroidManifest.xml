@@ -8,8 +8,12 @@
     <!-- flutter_local_notifications: required permissions -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <!-- SCHEDULE_EXACT_ALARM only: user-grantable and Play-policy-safe for a
+         game companion. USE_EXACT_ALARM was removed (F25) — it is reserved for
+         alarm-clock/calendar apps and risks Play review rejection. When exact
+         alarms aren't permitted we fall back to inexact scheduling in
+         AppNotifications.schedule(). -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
-    <uses-permission android:name="android.permission.USE_EXACT_ALARM"/>
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
     <uses-permission android:name="android.permission.VIBRATE"/>
 

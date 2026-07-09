@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/app_version.dart';
 import '../../../design_system/colors.dart';
 import '../../../design_system/components/app_background.dart';
 import '../../../design_system/components/glass_card.dart';
@@ -9,11 +10,13 @@ import '../../../design_system/components/section_header.dart';
 import '../../../design_system/spacing.dart';
 import '../../../design_system/typography.dart';
 
-class AboutView extends StatelessWidget {
+class AboutView extends ConsumerWidget {
   const AboutView({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final version =
+        ref.watch(appVersionProvider).valueOrNull ?? AppVersion.fallback;
     return Scaffold(
       backgroundColor: AppColors.bgDeepest,
       extendBodyBehindAppBar: true,
@@ -40,7 +43,8 @@ class AboutView extends StatelessWidget {
                   children: [
                     Text(
                       'UNDERDECK',
-                      style: GoogleFonts.quicksand(
+                      style: const TextStyle(
+                        fontFamily: AppTypography.fontRounded,
                         fontSize: 30,
                         fontWeight: FontWeight.w900,
                         letterSpacing: 4,
@@ -50,7 +54,7 @@ class AboutView extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'v0.2.0 (Alpha · cross-platform)',
+                      '${version.shortLabel} (Alpha · cross-platform)',
                       style: AppTypography.mono.copyWith(
                         color: AppColors.textSecondary,
                       ),

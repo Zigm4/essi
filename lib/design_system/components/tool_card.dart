@@ -25,7 +25,13 @@ class ToolCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return GestureDetector(
+    return Semantics(
+      button: true,
+      label: title,
+      hint: subtitle,
+      // Merge title/subtitle into one button node for assistive tech.
+      excludeSemantics: true,
+      child: GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
         Haptics.of(ref).tap();
@@ -57,6 +63,7 @@ class ToolCard extends ConsumerWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }

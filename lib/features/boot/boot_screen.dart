@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../design_system/colors.dart';
 import '../../design_system/components/app_background.dart';
@@ -36,6 +35,17 @@ class BootScreen extends ConsumerStatefulWidget {
 class _BootScreenState extends ConsumerState<BootScreen> {
   bool _exiting = false;
   bool _bootDone = false;
+  bool _fastBoot = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // "Fast boot": skip the ~8-10s intro sequence and exit near-instantly.
+    _fastBoot = ref.read(appSettingsProvider).fastBoot;
+    if (_fastBoot) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _beginExit());
+    }
+  }
 
   void _onBootDone() {
     _bootDone = true;
@@ -47,11 +57,9 @@ class _BootScreenState extends ConsumerState<BootScreen> {
     setState(() => _exiting = true);
   }
 
-  void _onSkip() {
-    if (_bootDone) {
-      _beginExit();
-    }
-  }
+  // A tap skips the intro immediately at any moment — no need to wait for the
+  // boot sequence to finish first.
+  void _onSkip() => _beginExit();
 
   @override
   Widget build(BuildContext context) {
@@ -59,7 +67,11 @@ class _BootScreenState extends ConsumerState<BootScreen> {
       appSettingsProvider.select((s) => s.reduceAnimations),
     );
     final mqReduce = MediaQuery.disableAnimationsOf(context);
-    final skip = reduce || mqReduce;
+    final skip = reduce || mqReduce || _fastBoot;
+    // Fade out faster when the user has explicitly asked to skip the intro.
+    final exitDuration = _fastBoot
+        ? const Duration(milliseconds: 180)
+        : const Duration(milliseconds: 550);
     return Scaffold(
       backgroundColor: AppColors.bgDeepest,
       body: GestureDetector(
@@ -67,7 +79,7 @@ class _BootScreenState extends ConsumerState<BootScreen> {
         onTap: _onSkip,
         child: AnimatedOpacity(
           opacity: _exiting ? 0 : 1,
-          duration: const Duration(milliseconds: 550),
+          duration: exitDuration,
           curve: Curves.easeOut,
           onEnd: () {
             if (_exiting) widget.onComplete();
@@ -86,7 +98,8 @@ class _BootScreenState extends ConsumerState<BootScreen> {
                       const SizedBox(height: AppSpacing.xl),
                       Text(
                         'UNDERDECK',
-                        style: GoogleFonts.quicksand(
+                        style: TextStyle(
+                          fontFamily: AppTypography.fontRounded,
                           fontSize: 38,
                           fontWeight: FontWeight.w900,
                           letterSpacing: 6,
@@ -103,7 +116,8 @@ class _BootScreenState extends ConsumerState<BootScreen> {
                       const SizedBox(height: 6),
                       Text(
                         'UP55 FAN COMPANION',
-                        style: GoogleFonts.jetBrainsMono(
+                        style: const TextStyle(
+                          fontFamily: AppTypography.fontMono,
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 4,

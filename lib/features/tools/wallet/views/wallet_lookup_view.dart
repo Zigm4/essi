@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:underdeck_app/core/error_text.dart';
 import 'package:underdeck_app/core/logging.dart';
 
 import '../../../../services/haptics.dart';
@@ -87,7 +88,10 @@ final walletDataProvider = FutureProvider<WalletData>((ref) {
   return WalletData.load();
 });
 
-final walletQueryProvider = StateProvider<String>((ref) => '');
+// autoDispose so re-entering the screen starts from an empty query, matching
+// the freshly-built (controller-less) search field instead of showing stale
+// results under a blank box.
+final walletQueryProvider = StateProvider.autoDispose<String>((ref) => '');
 
 class WalletLookupView extends ConsumerWidget {
   const WalletLookupView({super.key});
@@ -111,7 +115,7 @@ class WalletLookupView extends ConsumerWidget {
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => Center(
             child: Text(
-              'Failed to load wallets: $e',
+              friendlyError(e, fallback: "Couldn't load wallet data."),
               style: AppTypography.body.copyWith(color: AppColors.accentDanger),
             ),
           ),
@@ -252,7 +256,7 @@ class _ResultsSection extends ConsumerWidget {
     required List<({String wallet, WalletEntry owner})> walletHits,
   }) async {
     Haptics.of(ref).tap();
-    await ShareCardCapture.share(
+    final ok = await ShareCardCapture.share(
       context: context,
       card: WalletShareCard(
         query: query,
@@ -262,7 +266,11 @@ class _ResultsSection extends ConsumerWidget {
       fileName:
           'underdeck-wallet-${DateTime.now().millisecondsSinceEpoch}.png',
       text: 'Underdeck wallet lookup',
+      sharePositionOrigin: ShareCardCapture.originRectFor(context),
     );
+    if (!ok && context.mounted) {
+      ShareCardCapture.showShareFailure(context);
+    }
   }
 
   @override

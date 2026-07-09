@@ -1,8 +1,15 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
+
+import '../core/logging.dart';
+import 'app_settings.dart';
 
 class AppNotifications {
   AppNotifications._();
@@ -13,7 +20,10 @@ class AppNotifications {
   static Future<void> initialize() async {
     if (_initialized) return;
     tz_data.initializeTimeZones();
-    const android = AndroidInitializationSettings('@mipmap/ic_launcher');
+    // F57: use a white-on-transparent monochrome status-bar icon. The full
+    // @mipmap/ic_launcher renders as a gray square on Android >= 5 because the
+    // status bar masks the notification icon to its alpha channel.
+    const android = AndroidInitializationSettings('ic_stat_underdeck');
     const ios = DarwinInitializationSettings(
       requestAlertPermission: false,
       requestBadgePermission: false,
@@ -38,9 +48,10 @@ class AppNotifications {
     if (android != null) {
       final granted = await android.requestNotificationsPermission();
       if (granted == false) return false;
-      // Android 12+ also requires explicit consent to schedule exact alarms.
-      // The manifest declares USE_EXACT_ALARM (auto-granted for alarm-like
-      // use cases), but request anyway for SCHEDULE_EXACT_ALARM fallbacks.
+      // Android 12+ requires explicit consent to schedule exact alarms. The
+      // manifest declares only SCHEDULE_EXACT_ALARM (USE_EXACT_ALARM was
+      // removed for Play-policy reasons, F25), which is user-revocable — so we
+      // request it here and schedule() falls back to inexact if it's denied.
       try {
         await android.requestExactAlarmsPermission();
       } catch (_) {
@@ -59,27 +70,66 @@ class AppNotifications {
     await initialize();
     final scheduled = tz.TZDateTime.from(when, tz.local);
     if (scheduled.isBefore(tz.TZDateTime.now(tz.local))) return;
-    await _plugin.zonedSchedule(
-      id,
-      title,
-      body,
-      scheduled,
-      const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'mars_express',
-          'Mars Express alerts',
-          channelDescription: 'Train arrival reminders',
-          importance: Importance.high,
-          priority: Priority.high,
-        ),
-        iOS: DarwinNotificationDetails(
-          interruptionLevel: InterruptionLevel.timeSensitive,
-        ),
+
+    const details = NotificationDetails(
+      android: AndroidNotificationDetails(
+        'mars_express',
+        'Mars Express alerts',
+        channelDescription: 'Train arrival reminders',
+        importance: Importance.high,
+        priority: Priority.high,
+        // F57: white-on-transparent monochrome status-bar icon.
+        icon: 'ic_stat_underdeck',
       ),
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      iOS: DarwinNotificationDetails(
+        interruptionLevel: InterruptionLevel.timeSensitive,
+      ),
     );
+
+    // F25: only ask for an exact alarm when the OS will actually grant one.
+    // On Android 12+ SCHEDULE_EXACT_ALARM is user-revocable, so gate on
+    // canScheduleExactNotifications() and fall back to inexact scheduling.
+    final android = _plugin.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
+    var mode = AndroidScheduleMode.exactAllowWhileIdle;
+    if (android != null) {
+      final canExact = await android.canScheduleExactNotifications();
+      if (canExact == false) {
+        mode = AndroidScheduleMode.inexactAllowWhileIdle;
+      }
+    }
+
+    try {
+      await _plugin.zonedSchedule(
+        id,
+        title,
+        body,
+        scheduled,
+        details,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        androidScheduleMode: mode,
+      );
+    } on PlatformException catch (e, st) {
+      // Some OEMs still reject exact alarms even after the gate above (revoked
+      // between check and schedule, vendor policy, etc.). Retry inexact so
+      // arming never throws an unhandled error.
+      if (mode == AndroidScheduleMode.exactAllowWhileIdle) {
+        logError(e, st);
+        await _plugin.zonedSchedule(
+          id,
+          title,
+          body,
+          scheduled,
+          details,
+          uiLocalNotificationDateInterpretation:
+              UILocalNotificationDateInterpretation.absoluteTime,
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        );
+      } else {
+        rethrow;
+      }
+    }
   }
 
   static Future<void> cancel(int id) async {
@@ -112,7 +162,49 @@ class TrainAlertState {
 }
 
 class TrainAlertController extends StateNotifier<TrainAlertState> {
-  TrainAlertController() : super(TrainAlertState.empty);
+  TrainAlertController(this._prefs) : super(_load(_prefs));
+
+  final SharedPreferences _prefs;
+
+  // Persist the armed zone + arrival so the UI can restore the armed state
+  // after a restart. Without this, TrainAlertState lived only in memory: the
+  // OS kept firing scheduled alerts while the app UI showed "not armed".
+  static const _kArmed = 'trainAlert.armed';
+
+  static TrainAlertState _load(SharedPreferences prefs) {
+    final raw = prefs.getString(_kArmed);
+    if (raw == null) return TrainAlertState.empty;
+    try {
+      final map = jsonDecode(raw) as Map<String, dynamic>;
+      final zone = map['armedZone'] as int?;
+      final arrivalMs = map['arrival'] as int?;
+      if (zone == null || arrivalMs == null) return TrainAlertState.empty;
+      final arrival = DateTime.fromMillisecondsSinceEpoch(arrivalMs);
+      // Drop stale state whose arrival is well in the past.
+      if (arrival.isBefore(
+          DateTime.now().subtract(const Duration(seconds: 10)))) {
+        return TrainAlertState.empty;
+      }
+      return TrainAlertState(armedZone: zone, arrival: arrival);
+    } catch (e, st) {
+      logError(e, st);
+      return TrainAlertState.empty;
+    }
+  }
+
+  Future<void> _persist(TrainAlertState s) async {
+    if (s.armedZone == null || s.arrival == null) {
+      await _prefs.remove(_kArmed);
+      return;
+    }
+    await _prefs.setString(
+      _kArmed,
+      jsonEncode({
+        'armedZone': s.armedZone,
+        'arrival': s.arrival!.millisecondsSinceEpoch,
+      }),
+    );
+  }
 
   // Reserved notification-ID band for train alerts. Only one zone can be armed
   // at a time and each arming schedules exactly three alerts, so we use three
@@ -149,23 +241,27 @@ class TrainAlertController extends StateNotifier<TrainAlertState> {
     }
     if (!scheduled) return false;
     state = TrainAlertState(armedZone: zone, arrival: alertDates.last);
+    await _persist(state);
     return true;
   }
 
   Future<void> cancel() async {
     await AppNotifications.cancelGroup(idMin: _idMin, idMax: _idMax);
     state = TrainAlertState.empty;
+    await _persist(state);
   }
 
   void refresh() {
     if (state.arrival == null) return;
     if (state.arrival!.isBefore(DateTime.now().subtract(const Duration(seconds: 10)))) {
       state = TrainAlertState.empty;
+      _persist(state);
     }
   }
 }
 
 final trainAlertControllerProvider =
     StateNotifierProvider<TrainAlertController, TrainAlertState>((ref) {
-  return TrainAlertController();
+  final prefs = ref.watch(sharedPreferencesProvider);
+  return TrainAlertController(prefs);
 });

@@ -44,6 +44,7 @@ dependencies:
   share_plus: ^11.0.0
   file_selector: ^1.0.3
   image_picker: ^1.1.2
+  package_info_plus: ^8.0.0
 
 dev_dependencies:
   flutter_test:
@@ -67,3 +68,22 @@ flutter:
     - assets/knowledge/03-guilds/
     - assets/knowledge/04-shires/
     - assets/knowledge/images/
+    # Bundled OFL license texts for the fonts below (registered in main()).
+    - assets/fonts/Inter-OFL.txt
+    - assets/fonts/JetBrainsMono-OFL.txt
+    - assets/fonts/Quicksand-OFL.txt
+
+  # Fonts bundled as assets so nothing is fetched from fonts.gstatic.com at
+  # runtime (privacy + offline first-paint). These are the upstream Google Fonts
+  # variable TTFs; Flutter interpolates the `wght` axis from TextStyle.fontWeight
+  # (Quicksand's axis maxes at 700, matching the previous runtime behaviour).
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Variable.ttf
+    - family: JetBrainsMono
+      fonts:
+        - asset: assets/fonts/JetBrainsMono-Variable.ttf
+    - family: Quicksand
+      fonts:
+        - asset: assets/fonts/Quicksand-Variable.ttf

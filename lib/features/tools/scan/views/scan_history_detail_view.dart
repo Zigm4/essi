@@ -19,25 +19,31 @@ import '../widgets/scan_share_card.dart';
 class ScanHistoryDetailView extends ConsumerWidget {
   const ScanHistoryDetailView({super.key, required this.entry});
 
-  final ScanHistoryRecord entry;
+  final ScanEntry entry;
 
   Future<void> _share(BuildContext context, WidgetRef ref) async {
     Haptics.of(ref).tap();
-    await ShareCardCapture.share(
+    final ok = await ShareCardCapture.share(
       context: context,
       card: ScanShareCard(
-        mode: entry.mode,
+        mode: ScanModeX.fromId(entry.mode),
         date: entry.date,
-        snapshots: entry.snapshots,
+        snapshots: entry.detail,
       ),
       fileName:
           'underdeck-scan-${DateTime.now().millisecondsSinceEpoch}.png',
       text: 'Underdeck system scan',
+      sharePositionOrigin: ShareCardCapture.originRectFor(context),
     );
+    if (!ok && context.mounted) {
+      ShareCardCapture.showShareFailure(context);
+    }
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final snapshots = entry.detail;
+    final mode = ScanModeX.fromId(entry.mode);
     return Scaffold(
       backgroundColor: AppColors.bgDeepest,
       extendBodyBehindAppBar: true,
@@ -103,7 +109,7 @@ class ScanHistoryDetailView extends ConsumerWidget {
                             ),
                           ),
                           child: Text(
-                            entry.mode.label.toUpperCase(),
+                            mode.label.toUpperCase(),
                             style: AppTypography.mono.copyWith(
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
@@ -130,7 +136,7 @@ class ScanHistoryDetailView extends ConsumerWidget {
                             icon: Icons.public,
                           ),
                         ),
-                        if (entry.snapshots.isNotEmpty)
+                        if (snapshots.isNotEmpty)
                           IconButton(
                             onPressed: () => _share(context, ref),
                             icon: const Icon(Icons.ios_share,
@@ -140,15 +146,15 @@ class ScanHistoryDetailView extends ConsumerWidget {
                       ],
                     ),
                     const SizedBox(height: AppSpacing.md),
-                    for (var i = 0; i < entry.snapshots.length; i++) ...[
+                    for (var i = 0; i < snapshots.length; i++) ...[
                       PlanetResultRow(
                         row: PlanetRow(
-                          name: entry.snapshots[i].name,
-                          emoji: entry.snapshots[i].emoji,
-                          status: PlanetRowOk(entry.snapshots[i]),
+                          name: snapshots[i].name,
+                          emoji: snapshots[i].emoji,
+                          status: PlanetRowOk(snapshots[i]),
                         ),
                       ),
-                      if (i < entry.snapshots.length - 1)
+                      if (i < snapshots.length - 1)
                         Container(
                           height: 1,
                           margin: const EdgeInsets.symmetric(vertical: 2),

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -40,34 +42,57 @@ class _AnimatedPulsingDot extends StatefulWidget {
   State<_AnimatedPulsingDot> createState() => _AnimatedPulsingDotState();
 }
 
-class _AnimatedPulsingDotState extends State<_AnimatedPulsingDot>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 1000),
-  )..repeat(reverse: true);
+class _AnimatedPulsingDotState extends State<_AnimatedPulsingDot> {
+  // This dot lives in an always-visible banner. A per-frame AnimationController
+  // would keep the whole app at full refresh forever. Instead we drive a low-rate
+  // implicit crossfade (AnimatedOpacity) from a periodic toggle, isolate it in a
+  // RepaintBoundary, and pause the toggle when the enclosing route isn't current
+  // (TickerMode) so it produces no frames off-screen.
+  static const _interval = Duration(milliseconds: 800);
+
+  bool _bright = true;
+  bool _enabled = true;
+  Timer? _timer;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // TickerMode.valuesOf registers an inherited dependency, so this runs again
+    // when the enclosing route is muted/unmuted (e.g. covered by another route).
+    _enabled = TickerMode.valuesOf(context).enabled;
+    _syncTimer();
+  }
+
+  void _syncTimer() {
+    if (_enabled && _timer == null) {
+      _timer = Timer.periodic(_interval, (_) {
+        if (mounted) setState(() => _bright = !_bright);
+      });
+    } else if (!_enabled && _timer != null) {
+      _timer!.cancel();
+      _timer = null;
+    }
+  }
 
   @override
   void dispose() {
-    _ctrl.dispose();
+    _timer?.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _ctrl,
-      builder: (context, _) {
-        final t = Curves.easeInOut.transform(_ctrl.value);
-        return Opacity(
-          opacity: 0.35 + (1.0 - 0.35) * t,
-          child: Container(
-            width: widget.size,
-            height: widget.size,
-            decoration: BoxDecoration(color: widget.color, shape: BoxShape.circle),
-          ),
-        );
-      },
+    return RepaintBoundary(
+      child: AnimatedOpacity(
+        opacity: _bright ? 1.0 : 0.35,
+        duration: _interval,
+        curve: Curves.easeInOut,
+        child: Container(
+          width: widget.size,
+          height: widget.size,
+          decoration: BoxDecoration(color: widget.color, shape: BoxShape.circle),
+        ),
+      ),
     );
   }
 }

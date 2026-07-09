@@ -44,6 +44,9 @@ class NoteDetailView extends ConsumerWidget {
               showModalBottomSheet<void>(
                 context: context,
                 isScrollControlled: true,
+                // F14: disable swipe-to-dismiss so the editor's unsaved-changes
+                // PopScope guard isn't bypassed.
+                enableDrag: false,
                 backgroundColor: Colors.transparent,
                 builder: (_) => NoteEditorView(note: note),
               );

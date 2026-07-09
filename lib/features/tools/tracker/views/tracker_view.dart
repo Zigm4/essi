@@ -138,7 +138,7 @@ class _TrackerViewState extends ConsumerState<TrackerView> {
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     Text(
-                      'This tool sends 1 to 4 GET requests to public NASA APIs (JPL Horizons + SBDB). Nothing happens until you tap Track.',
+                      'This tool sends up to 5 GET requests to public NASA APIs (JPL Horizons + SBDB). Nothing happens until you tap Track.',
                       style: AppTypography.caption,
                     ),
                   ],
@@ -374,13 +374,17 @@ class _ResultCard extends ConsumerWidget {
 
   Future<void> _share(BuildContext context, WidgetRef ref) async {
     Haptics.of(ref).tap();
-    await ShareCardCapture.share(
+    final ok = await ShareCardCapture.share(
       context: context,
       card: TrackerShareCard(result: result),
       fileName:
           'underdeck-track-${DateTime.now().millisecondsSinceEpoch}.png',
       text: 'Underdeck tracker',
+      sharePositionOrigin: ShareCardCapture.originRectFor(context),
     );
+    if (!ok && context.mounted) {
+      ShareCardCapture.showShareFailure(context);
+    }
   }
 
   @override

@@ -38,6 +38,9 @@ class CapturesHomeView extends ConsumerWidget {
                 showModalBottomSheet<void>(
                   context: context,
                   isScrollControlled: true,
+                  // Editors guard unsaved changes via PopScope; the modal's
+                  // swipe-to-dismiss bypasses that, so disable it (F14).
+                  enableDrag: false,
                   backgroundColor: Colors.transparent,
                   builder: (_) => mode == CapturesMode.notes
                       ? const NoteEditorView()

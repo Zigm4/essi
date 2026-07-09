@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-
+import '../../../core/error_text.dart';
 import '../../../design_system/colors.dart';
 import '../../../design_system/components/app_background.dart';
 import '../../../design_system/components/banner_page.dart';
@@ -14,7 +14,10 @@ import '../../captures/widgets/tag_chip.dart';
 import '../data/kb_loader.dart';
 import '../domain/kb_models.dart';
 
-final kbSearchProvider = StateProvider<String>((ref) => '');
+// autoDispose so re-entering the screen starts from an empty query, matching
+// the freshly-built (controller-less) search field instead of showing stale
+// results under a blank box.
+final kbSearchProvider = StateProvider.autoDispose<String>((ref) => '');
 
 class KBHomeView extends ConsumerWidget {
   const KBHomeView({super.key});
@@ -33,7 +36,7 @@ class KBHomeView extends ConsumerWidget {
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (e, _) => Center(
               child: Text(
-                'Failed to load Knowledge: $e',
+                friendlyError(e, fallback: "Couldn't load the knowledge base."),
                 style: AppTypography.body.copyWith(color: AppColors.accentDanger),
               ),
             ),

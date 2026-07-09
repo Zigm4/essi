@@ -119,7 +119,11 @@ class _EvilShipIntroViewState extends ConsumerState<EvilShipIntroView>
             child: const _EvilStarfield(),
           ),
           if (_phase != _IntroPhase.scrolling || _portalProgress > 0)
-            _VoidPortal(progress: _portalProgress, skipMotion: skipMotion),
+            _VoidPortal(
+              progress: _portalProgress,
+              skipMotion: skipMotion,
+              settled: _phase == _IntroPhase.portal,
+            ),
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(
@@ -586,10 +590,19 @@ class _StarfieldPainter extends CustomPainter {
 }
 
 class _VoidPortal extends StatefulWidget {
-  const _VoidPortal({required this.progress, required this.skipMotion});
+  const _VoidPortal({
+    required this.progress,
+    required this.skipMotion,
+    required this.settled,
+  });
 
   final double progress;
   final bool skipMotion;
+
+  /// True once the portal open animation has fully completed. When settled the
+  /// wobble ticker is stopped so we no longer recompute + blur the blob layers
+  /// every frame for a portal that is just sitting behind the "Step through" CTA.
+  final bool settled;
 
   @override
   State<_VoidPortal> createState() => _VoidPortalState();
@@ -603,13 +616,22 @@ class _VoidPortalState extends State<_VoidPortal>
   @override
   void initState() {
     super.initState();
-    if (!widget.skipMotion) {
+    if (!widget.skipMotion && !widget.settled) {
       _ticker = createTicker((elapsed) {
         setState(() {
           _t = elapsed.inMicroseconds / 1e6;
         });
       });
       _ticker!.start();
+    }
+  }
+
+  @override
+  void didUpdateWidget(_VoidPortal oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.settled && !oldWidget.settled) {
+      // Freeze the swirl once the portal has finished opening.
+      _ticker?.stop();
     }
   }
 
@@ -628,29 +650,18 @@ class _VoidPortalState extends State<_VoidPortal>
         return Stack(
           alignment: Alignment.center,
           children: [
-            // Far halo
-            _BlurredBlobLayer(
+            // Far halo — the two largest, most-blurred halos are rendered as
+            // plain radial gradients instead of live ImageFiltered blob blurs
+            // (a huge gaussian blur over a 180-segment path every frame is the
+            // most expensive layer, and at this softness the wobble is invisible).
+            _RadialHaloLayer(
               size: r * 2.6,
-              rotation: _t * 4 * math.pi / 180,
               color: AppColors.accentPrimary.withValues(alpha: 0.35),
-              blurSigma: 70,
-              time: _t * 0.18,
-              seed: 1.0,
-              lobes: 3,
-              amplitude: 0.18,
-              fillStyle: PaintingStyle.fill,
             ),
             // Outer corona
-            _BlurredBlobLayer(
+            _RadialHaloLayer(
               size: r * 1.9,
-              rotation: -_t * 6 * math.pi / 180,
               color: AppColors.accentPrimary.withValues(alpha: 0.65),
-              blurSigma: 38,
-              time: _t * 0.27,
-              seed: 4.7,
-              lobes: 4,
-              amplitude: 0.22,
-              fillStyle: PaintingStyle.fill,
             ),
             // Aqua halo
             _BlurredBlobLayer(
@@ -704,6 +715,32 @@ class _VoidPortalState extends State<_VoidPortal>
           ],
         );
       },
+    );
+  }
+}
+
+/// A soft circular halo drawn as a radial gradient. Much cheaper than an
+/// [ImageFiltered] gaussian blur of a wobbling path, used for the outermost
+/// portal halos where fine shape detail is not perceptible anyway.
+class _RadialHaloLayer extends StatelessWidget {
+  const _RadialHaloLayer({required this.size, required this.color});
+
+  final double size;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: size,
+      height: size,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: RadialGradient(
+            colors: [color, color.withValues(alpha: 0)],
+          ),
+        ),
+      ),
     );
   }
 }

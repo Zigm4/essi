@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/error_text.dart';
 import '../../../../design_system/colors.dart';
 import '../../../../design_system/components/app_background.dart';
 import '../../../../design_system/components/transmission_header.dart';
@@ -108,7 +109,7 @@ class _JobsViewState extends ConsumerState<JobsView> {
             child: Padding(
               padding: const EdgeInsets.all(AppSpacing.lg),
               child: Text(
-                'Error loading jobs: $e',
+                friendlyError(e, fallback: "Couldn't load jobs."),
                 style: AppTypography.body
                     .copyWith(color: AppColors.accentDanger),
               ),
@@ -183,7 +184,9 @@ class _JobsViewState extends ConsumerState<JobsView> {
                     child: filteredAsync.when(
                       loading: () =>
                           const Center(child: CircularProgressIndicator()),
-                      error: (e, _) => Center(child: Text('$e')),
+                      error: (e, _) => Center(
+                        child: Text(friendlyError(e, fallback: "Couldn't load jobs.")),
+                      ),
                       data: (jobs) {
                         if (jobs.isEmpty) {
                           return _EmptyState(

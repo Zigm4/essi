@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/error_text.dart';
 import '../../../../design_system/colors.dart';
 import '../../../../design_system/components/app_background.dart';
 import '../../../../design_system/components/glass_card.dart';
@@ -31,7 +32,7 @@ class FishingMapView extends ConsumerWidget {
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => Center(
             child: Text(
-              'Error: $e',
+              friendlyError(e, fallback: "Couldn't load the fishing data."),
               style: AppTypography.body.copyWith(color: AppColors.accentDanger),
             ),
           ),
@@ -152,7 +153,7 @@ class _FishingRoomViewState extends ConsumerState<FishingRoomView> {
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => Center(
             child: Text(
-              'Error: $e',
+              friendlyError(e, fallback: "Couldn't load the fishing data."),
               style: AppTypography.body.copyWith(color: AppColors.accentDanger),
             ),
           ),

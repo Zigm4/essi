@@ -112,13 +112,18 @@ class DiscoveryDetailSheet extends ConsumerWidget {
                   tooltip: 'Share discovery',
                   onPressed: () async {
                     Haptics.of(ref).tap();
-                    await ShareCardCapture.share(
+                    final ok = await ShareCardCapture.share(
                       context: context,
                       card: DiscoveryObjectShareCard(object: object),
                       fileName:
                           'underdeck-discovery-${DateTime.now().millisecondsSinceEpoch}.png',
                       text: 'Underdeck discovery',
+                      sharePositionOrigin:
+                          ShareCardCapture.originRectFor(context),
                     );
+                    if (!ok && context.mounted) {
+                      ShareCardCapture.showShareFailure(context);
+                    }
                   },
                 ),
               ],

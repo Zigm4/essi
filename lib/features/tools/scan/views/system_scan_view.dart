@@ -121,7 +121,7 @@ class _TransparencyCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            "This is the only feature in Underdeck that talks to a network. Calls are made one at a time with a small gap, to stay under JPL Horizons' rate limit.",
+            "This is one of a few Underdeck features that reach the network (System Scan, Tracker and Discoveries). Calls are made one at a time with a small gap, to stay under JPL Horizons' rate limit.",
             style: AppTypography.caption,
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -135,7 +135,7 @@ class _TransparencyCard extends StatelessWidget {
           const _Bullet(label: 'Received:', value: 'Public ephemeris text (X, Y, Z heliocentric vectors)'),
           const _Bullet(label: 'Locally:', value: 'Sector (1-12) and distance in SL'),
           const _Bullet(label: 'To NASA:', value: 'Your IP address (like any web request)'),
-          const _Bullet(label: 'Stored:', value: 'Nothing'),
+          const _Bullet(label: 'Stored:', value: 'Nothing sent to a server (scans are saved locally on your device)'),
           const SizedBox(height: AppSpacing.sm),
           Text(
             'This feature is opt-in: nothing happens until you tap Scan now.',
@@ -337,6 +337,7 @@ class _ActionCard extends ConsumerWidget {
                   ),
                 ),
                 IconButton(
+                  tooltip: 'Stop scan',
                   onPressed: () {
                     Haptics.of(ref).warning();
                     onCancel();
@@ -382,7 +383,7 @@ class _ResultsCard extends ConsumerWidget {
         .toList();
     if (snapshots.isEmpty) return;
     Haptics.of(ref).tap();
-    await ShareCardCapture.share(
+    final ok = await ShareCardCapture.share(
       context: context,
       card: ScanShareCard(
         mode: state.mode,
@@ -392,7 +393,11 @@ class _ResultsCard extends ConsumerWidget {
       fileName:
           'underdeck-scan-${DateTime.now().millisecondsSinceEpoch}.png',
       text: 'Underdeck system scan',
+      sharePositionOrigin: ShareCardCapture.originRectFor(context),
     );
+    if (!ok && context.mounted) {
+      ShareCardCapture.showShareFailure(context);
+    }
   }
 
   @override

@@ -51,7 +51,7 @@ class _Overview extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            'Each Track tap fires up to four GET requests across two NASA endpoints. No background work, no caching: every Track is a fresh round-trip.',
+            'Each Track tap fires up to five GET requests across two NASA endpoints. No background work, no caching: every Track is a fresh round-trip.',
             style: AppTypography.body,
           ),
         ],
@@ -170,7 +170,7 @@ class _Resolve extends StatelessWidget {
             tier: '1',
             title: 'Curated catalog',
             body:
-                'About 60 well-known bodies (Ceres, Vesta, Halley-class comets, recent ATLAS comets) are bundled in the app. Match by case-insensitive name. Zero network.',
+                '15 well-known bodies (Ceres, Vesta, Halley-class comets, recent ATLAS comets) are bundled in the app. Match by case-insensitive name. Zero network.',
           ),
           const TierRow(
             tier: '2',
