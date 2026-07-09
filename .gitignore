@@ -4,6 +4,12 @@
 *.pyc
 *.swp
 .DS_Store
+
+# macOS Finder / iCloud copy artifacts, e.g. "Podfile 2.lock",
+# "Generated 2.xcconfig", ".flutter-plugins-dependencies 2".
+# (Force-add with `git add -f` if you ever have a legitimately-named file.)
+* 2.*
+* 2
 .atom/
 .build/
 .buildlog/

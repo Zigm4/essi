@@ -4,6 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../services/haptics.dart';
+import '../../../../services/share_card.dart';
+import '../widgets/wallet_share_card.dart';
+
 import '../../../../design_system/colors.dart';
 import '../../../../design_system/components/app_background.dart';
 import '../../../../design_system/components/glass_card.dart';
@@ -231,15 +235,35 @@ class _StatRow extends StatelessWidget {
   }
 }
 
-class _ResultsSection extends StatelessWidget {
+class _ResultsSection extends ConsumerWidget {
   const _ResultsSection({required this.data, required this.query});
   final WalletData data;
   final String query;
 
   static const _maxVisible = 50;
 
+  Future<void> _share({
+    required BuildContext context,
+    required WidgetRef ref,
+    required List<WalletEntry> ownerHits,
+    required List<({String wallet, WalletEntry owner})> walletHits,
+  }) async {
+    Haptics.of(ref).tap();
+    await ShareCardCapture.share(
+      context: context,
+      card: WalletShareCard(
+        query: query,
+        ownerHits: ownerHits,
+        walletHits: walletHits,
+      ),
+      fileName:
+          'underdeck-wallet-${DateTime.now().millisecondsSinceEpoch}.png',
+      text: 'Underdeck wallet lookup',
+    );
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final r = data.search(query);
     final ownerIds = r.ownerHits.map((e) => e.id).toSet();
     final extraWallets =
@@ -275,6 +299,28 @@ class _ResultsSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Row(
+          children: [
+            Expanded(
+              child: SectionHeader(
+                title: '$total result${total == 1 ? '' : 's'}',
+                icon: Icons.list,
+              ),
+            ),
+            IconButton(
+              onPressed: () => _share(
+                context: context,
+                ref: ref,
+                ownerHits: r.ownerHits,
+                walletHits: r.walletHits,
+              ),
+              icon: const Icon(Icons.ios_share,
+                  color: AppColors.accentPrimary, size: 18),
+              tooltip: 'Share results',
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.sm),
         for (final owner in visibleOwners) ...[
           _OwnerCard(entry: owner),
           const SizedBox(height: AppSpacing.md),

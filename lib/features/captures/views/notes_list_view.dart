@@ -15,7 +15,11 @@ final notesSelectedTagsProvider =
     StateProvider<Set<String>>((ref) => <String>{});
 
 class NotesListView extends ConsumerWidget {
-  const NotesListView({super.key});
+  const NotesListView({super.key, this.scrollController});
+
+  /// Optional external controller so the surrounding banner can react to
+  /// the list's scroll offset.
+  final ScrollController? scrollController;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -44,6 +48,7 @@ class NotesListView extends ConsumerWidget {
         }).toList();
 
         return CustomScrollView(
+          controller: scrollController,
           slivers: [
             SliverToBoxAdapter(
               child: Padding(

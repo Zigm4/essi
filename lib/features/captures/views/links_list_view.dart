@@ -15,7 +15,11 @@ final linksSelectedTagsProvider =
     StateProvider<Set<String>>((ref) => <String>{});
 
 class LinksListView extends ConsumerWidget {
-  const LinksListView({super.key});
+  const LinksListView({super.key, this.scrollController});
+
+  /// Optional external controller so the surrounding banner can react to
+  /// the list's scroll offset.
+  final ScrollController? scrollController;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -45,6 +49,7 @@ class LinksListView extends ConsumerWidget {
         }).toList();
 
         return CustomScrollView(
+          controller: scrollController,
           slivers: [
             SliverToBoxAdapter(
               child: Padding(

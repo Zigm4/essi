@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:drift/drift.dart' as drift;
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/painting.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -130,21 +131,26 @@ class DataExportService {
     return file;
   }
 
-  Future<void> shareExport() async {
+  Future<void> shareExport({Rect? sharePositionOrigin}) async {
     final file = await exportToFile();
+    // Intentionally no `text` — share-sheet should not auto-fill a body so
+    // the user can compose their own message (or none).
     await SharePlus.instance.share(
       ShareParams(
         files: [XFile(file.path, mimeType: 'application/json')],
-        text: 'Underdeck data export',
+        sharePositionOrigin: sharePositionOrigin,
       ),
     );
   }
 
   Future<ImportSummary> importFromUserPick() async {
-    final typeGroup = const XTypeGroup(
+    // iOS requires `uniformTypeIdentifiers` to enable JSON files in the
+    // document picker; mimeTypes/extensions alone leave them disabled.
+    const typeGroup = XTypeGroup(
       label: 'JSON',
       extensions: ['json'],
       mimeTypes: ['application/json'],
+      uniformTypeIdentifiers: ['public.json'],
     );
     final picked = await openFile(acceptedTypeGroups: [typeGroup]);
     if (picked == null) return ImportSummary.empty();

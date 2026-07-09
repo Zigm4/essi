@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../design_system/colors.dart';
 import '../../../design_system/components/app_background.dart';
+import '../../../design_system/components/banner_page.dart';
 import '../../../design_system/spacing.dart';
 import '../../../design_system/typography.dart';
 import '../../../services/haptics.dart';
@@ -23,38 +24,30 @@ class CapturesHomeView extends ConsumerWidget {
     final mode = ref.watch(capturesModeProvider);
     return Scaffold(
       backgroundColor: AppColors.bgDeepest,
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        title: Text(
-          mode == CapturesMode.notes ? 'Notes' : 'Links',
-          style: AppTypography.headline,
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add_circle, color: AppColors.accentPrimary),
-            onPressed: () {
-              Haptics.of(ref).tap();
-              showModalBottomSheet<void>(
-                context: context,
-                isScrollControlled: true,
-                backgroundColor: Colors.transparent,
-                builder: (_) => mode == CapturesMode.notes
-                    ? const NoteEditorView()
-                    : const LinkEditorView(),
-              );
-            },
-          ),
-        ],
-      ),
       body: AppBackground(
         showsScanlines: false,
-        child: SafeArea(
-          child: Column(
+        child: BannerPage(
+          bannerLabel: mode == CapturesMode.notes
+              ? 'ESSI · Operator Logbook'
+              : 'ESSI · External Comms Cache',
+          bannerActions: [
+            _BannerIconButton(
+              icon: Icons.add,
+              onTap: () {
+                Haptics.of(ref).tap();
+                showModalBottomSheet<void>(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (_) => mode == CapturesMode.notes
+                      ? const NoteEditorView()
+                      : const LinkEditorView(),
+                );
+              },
+            ),
+          ],
+          builder: (context, ctrl) => Column(
             children: [
-              const SizedBox(height: kToolbarHeight + AppSpacing.sm),
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.md,
@@ -68,15 +61,32 @@ class CapturesHomeView extends ConsumerWidget {
                   },
                 ),
               ),
-              const SizedBox(height: AppSpacing.sm),
               Expanded(
                 child: mode == CapturesMode.notes
-                    ? const NotesListView()
-                    : const LinksListView(),
+                    ? NotesListView(scrollController: ctrl)
+                    : LinksListView(scrollController: ctrl),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _BannerIconButton extends StatelessWidget {
+  const _BannerIconButton({required this.icon, required this.onTap});
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        child: Icon(icon, color: AppColors.accentPrimary, size: 18),
       ),
     );
   }

@@ -18,6 +18,7 @@ import '../features/menu/views/settings_view.dart';
 import '../features/tools/asteroid/views/asteroid_analyzer_view.dart';
 import '../features/tools/celestial/views/celestial_view.dart';
 import '../features/tools/fishing/views/fishing_map_view.dart';
+import '../features/tools/jobs/views/jobs_view.dart';
 import '../features/tools/scan/views/system_scan_view.dart';
 import '../features/tools/tools_home_view.dart';
 import '../features/tools/tracker/domain/tracker_models.dart';
@@ -41,33 +42,12 @@ GoRouter buildRouter() {
       GoRoute(
         path: '/boot',
         builder: (context, state) => BootScreen(
-          onComplete: () => context.go('/captures'),
+          onComplete: () => context.go('/tools'),
         ),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navShell) => AppShell(navigationShell: navShell),
         branches: [
-          StatefulShellBranch(
-            navigatorKey: captures,
-            routes: [
-              GoRoute(
-                path: '/captures',
-                builder: (context, state) => const CapturesHomeView(),
-                routes: [
-                  GoRoute(
-                    path: 'note/:id',
-                    builder: (context, state) =>
-                        NoteDetailView(noteId: state.pathParameters['id']!),
-                  ),
-                  GoRoute(
-                    path: 'link/:id',
-                    builder: (context, state) =>
-                        LinkDetailView(linkId: state.pathParameters['id']!),
-                  ),
-                ],
-              ),
-            ],
-          ),
           StatefulShellBranch(
             navigatorKey: tools,
             routes: [
@@ -114,6 +94,31 @@ GoRouter buildRouter() {
                   GoRoute(
                     path: 'discoveries',
                     builder: (context, state) => const CelestialView(),
+                  ),
+                  GoRoute(
+                    path: 'jobs',
+                    builder: (context, state) => const JobsView(),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            navigatorKey: captures,
+            routes: [
+              GoRoute(
+                path: '/captures',
+                builder: (context, state) => const CapturesHomeView(),
+                routes: [
+                  GoRoute(
+                    path: 'note/:id',
+                    builder: (context, state) =>
+                        NoteDetailView(noteId: state.pathParameters['id']!),
+                  ),
+                  GoRoute(
+                    path: 'link/:id',
+                    builder: (context, state) =>
+                        LinkDetailView(linkId: state.pathParameters['id']!),
                   ),
                 ],
               ),

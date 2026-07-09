@@ -1,7 +1,9 @@
-import 'dart:io' show Platform;
+import 'dart:io' show File, Platform;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/app_constants.dart';
@@ -14,6 +16,7 @@ import '../../../design_system/components/section_header.dart';
 import '../../../design_system/components/transmission_header.dart';
 import '../../../design_system/spacing.dart';
 import '../../../design_system/typography.dart';
+import '../../../services/haptics.dart';
 import '../../captures/widgets/tag_chip.dart';
 
 enum _ContactCategory { feedback, bug, support, other }
@@ -45,6 +48,8 @@ class ContactView extends ConsumerStatefulWidget {
 class _ContactViewState extends ConsumerState<ContactView> {
   _ContactCategory _category = _ContactCategory.feedback;
   final _message = TextEditingController();
+  final _picker = ImagePicker();
+  final List<XFile> _attachments = [];
 
   @override
   void dispose() {
@@ -56,13 +61,59 @@ class _ContactViewState extends ConsumerState<ContactView> {
   String get _deviceLine =>
       'Device: ${Platform.operatingSystem} ${Platform.operatingSystemVersion}';
 
+  /// Picks one or more photos. We accept up to 4 to keep emails reasonable.
+  Future<void> _addPhotos() async {
+    Haptics.of(ref).selection();
+    final remaining = 4 - _attachments.length;
+    if (remaining <= 0) return;
+    try {
+      final picked = await _picker.pickMultiImage(
+        imageQuality: 80,
+        limit: remaining,
+      );
+      if (picked.isNotEmpty) {
+        setState(() => _attachments.addAll(picked.take(remaining)));
+      }
+    } catch (e) {
+      // Picker can fail silently on permission denial; surface a snackbar.
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Could not pick photo: $e'),
+        backgroundColor: AppColors.accentDanger,
+      ));
+    }
+  }
+
+  void _removeAttachment(int i) {
+    Haptics.of(ref).tap();
+    setState(() => _attachments.removeAt(i));
+  }
+
+  /// Sends the message via the OS share sheet when there are attachments
+  /// (so Mail / Gmail / etc. can attach the photos), or via mailto: when
+  /// the message is text-only (cleaner one-tap flow).
   Future<void> _send() async {
     final body = '''${_message.text.trim()}
 
 ---
 $_versionLine
 $_deviceLine
-Category: ${_category.label}''';
+Category: ${_category.label}
+Sent to: ${AppConstants.contactEmail}''';
+
+    if (_attachments.isNotEmpty) {
+      await SharePlus.instance.share(
+        ShareParams(
+          subject: _category.subject,
+          text: body,
+          files: [
+            for (final a in _attachments) XFile(a.path),
+          ],
+        ),
+      );
+      return;
+    }
+
     final uri = Uri(
       scheme: 'mailto',
       path: AppConstants.contactEmail,
@@ -83,12 +134,10 @@ Category: ${_category.label}''';
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
-              child: Text(
-                'OK',
-                style: AppTypography.body.copyWith(
-                  color: AppColors.accentPrimary,
-                ),
-              ),
+              child: Text('OK',
+                  style: AppTypography.body.copyWith(
+                    color: AppColors.accentPrimary,
+                  )),
             ),
           ],
         ),
@@ -98,7 +147,7 @@ Category: ${_category.label}''';
 
   @override
   Widget build(BuildContext context) {
-    final canSend = _message.text.trim().isNotEmpty;
+    final canSend = _message.text.trim().isNotEmpty || _attachments.isNotEmpty;
     return Scaffold(
       backgroundColor: AppColors.bgDeepest,
       extendBodyBehindAppBar: true,
@@ -172,6 +221,12 @@ Category: ${_category.label}''';
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
+              _AttachmentsCard(
+                attachments: _attachments,
+                onAdd: _addPhotos,
+                onRemove: _removeAttachment,
+              ),
+              const SizedBox(height: AppSpacing.lg),
               GlassCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -214,8 +269,8 @@ Category: ${_category.label}''';
               ),
               const SizedBox(height: AppSpacing.lg),
               NeonButton(
-                title: 'Open in Mail',
-                icon: Icons.mail,
+                title: _attachments.isEmpty ? 'Open in Mail' : 'Send via share sheet',
+                icon: _attachments.isEmpty ? Icons.mail : Icons.ios_share,
                 enabled: canSend,
                 onPressed: _send,
               ),
@@ -223,6 +278,133 @@ Category: ${_category.label}''';
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Attachments card: shows the current photos as thumbnails with a + tile
+/// at the end (until the cap of 4). Tap a thumbnail's × to remove it.
+class _AttachmentsCard extends StatelessWidget {
+  const _AttachmentsCard({
+    required this.attachments,
+    required this.onAdd,
+    required this.onRemove,
+  });
+
+  final List<XFile> attachments;
+  final VoidCallback onAdd;
+  final ValueChanged<int> onRemove;
+
+  static const _max = 4;
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SectionHeader(
+            title: 'Photos (optional)',
+            icon: Icons.photo_library_outlined,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            attachments.isEmpty
+                ? 'Up to $_max photos. Helpful for bug reports — '
+                    'attach a screenshot showing the issue.'
+                : '${attachments.length}/$_max attached. Photos travel '
+                    'through the OS share sheet so Mail / Gmail can attach them.',
+            style: AppTypography.caption,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          SizedBox(
+            height: 84,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: attachments.length + (attachments.length < _max ? 1 : 0),
+              separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.sm),
+              itemBuilder: (context, i) {
+                if (i >= attachments.length) {
+                  return _AddTile(onTap: onAdd);
+                }
+                return _ThumbTile(
+                  file: attachments[i],
+                  onRemove: () => onRemove(i),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AddTile extends StatelessWidget {
+  const _AddTile({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        width: 84, height: 84,
+        decoration: BoxDecoration(
+          color: AppColors.bgGlass,
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+          border: Border.all(
+            color: AppColors.accentPrimary.withValues(alpha: 0.4),
+            width: 1,
+          ),
+        ),
+        child: const Icon(Icons.add_a_photo,
+            color: AppColors.accentPrimary, size: 28),
+      ),
+    );
+  }
+}
+
+class _ThumbTile extends StatelessWidget {
+  const _ThumbTile({required this.file, required this.onRemove});
+  final XFile file;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+          child: Image.file(
+            File(file.path),
+            width: 84, height: 84, fit: BoxFit.cover,
+            errorBuilder: (_, _, _) => Container(
+              width: 84, height: 84,
+              color: AppColors.bgGlass,
+              alignment: Alignment.center,
+              child: const Icon(Icons.broken_image,
+                  color: AppColors.accentDanger),
+            ),
+          ),
+        ),
+        Positioned(
+          top: 2, right: 2,
+          child: GestureDetector(
+            onTap: onRemove,
+            child: Container(
+              decoration: const BoxDecoration(
+                color: AppColors.bgDeepest,
+                shape: BoxShape.circle,
+              ),
+              padding: const EdgeInsets.all(2),
+              child: const Icon(Icons.close,
+                  color: AppColors.accentDanger, size: 14),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

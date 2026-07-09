@@ -44,10 +44,17 @@ class TrackerCatalog {
   final List<TrackedObjectEntry> all;
   const TrackerCatalog(this.all);
 
-  List<TrackedObjectEntry> suggestions(String query, {int limit = 25}) {
+  List<TrackedObjectEntry> suggestions(
+    String query, {
+    int limit = 25,
+    CelestialKind? kind,
+  }) {
     final q = query.trim().toLowerCase();
-    if (q.isEmpty) return all.take(limit).toList();
-    return all
+    final pool = kind == null
+        ? all
+        : all.where((e) => e.kind == kind).toList();
+    if (q.isEmpty) return pool.take(limit).toList();
+    return pool
         .where((e) =>
             e.name.toLowerCase().contains(q) ||
             e.identifier.toLowerCase().contains(q))

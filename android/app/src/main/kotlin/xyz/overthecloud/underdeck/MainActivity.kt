@@ -1,4 +1,4 @@
-package xyz.overthecloud.underdeck_app
+package xyz.overthecloud.underdeck
 
 import io.flutter.embedding.android.FlutterActivity
 

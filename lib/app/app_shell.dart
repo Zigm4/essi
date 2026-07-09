@@ -1,8 +1,9 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../design_system/colors.dart';
-import '../design_system/typography.dart';
 
 class AppShell extends StatelessWidget {
   const AppShell({super.key, required this.navigationShell});
@@ -10,18 +11,30 @@ class AppShell extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
 
   static const _items = [
-    _NavItem(icon: Icons.notes_outlined, selectedIcon: Icons.notes, label: 'Notes'),
-    _NavItem(icon: Icons.build_outlined, selectedIcon: Icons.build, label: 'Tools'),
     _NavItem(
-      icon: Icons.archive_outlined,
-      selectedIcon: Icons.archive,
-      label: 'Hangar',
+      label: 'Tools',
+      icon: Icons.handyman_outlined,
+      selectedIcon: Icons.handyman,
     ),
-    _NavItem(icon: Icons.menu_book_outlined, selectedIcon: Icons.menu_book, label: 'Knowledge'),
     _NavItem(
-      icon: Icons.more_horiz_outlined,
-      selectedIcon: Icons.more_horiz,
+      label: 'Notes',
+      icon: Icons.note_alt_outlined,
+      selectedIcon: Icons.note_alt,
+    ),
+    _NavItem(
+      label: 'Hangar',
+      icon: Icons.inventory_2_outlined,
+      selectedIcon: Icons.inventory_2,
+    ),
+    _NavItem(
+      label: 'Knowledge',
+      icon: Icons.menu_book_outlined,
+      selectedIcon: Icons.menu_book,
+    ),
+    _NavItem(
       label: 'Menu',
+      icon: Icons.more_horiz,
+      selectedIcon: Icons.more_horiz,
     ),
   ];
 
@@ -29,9 +42,11 @@ class AppShell extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.bgDeepest,
-      extendBody: true,
+      // Bottom nav is opaque; the body should NOT extend behind it so that
+      // page content scrolls *between* the top ESSI banner and the nav.
+      extendBody: false,
       body: navigationShell,
-      bottomNavigationBar: _UnderdeckNavBar(
+      bottomNavigationBar: _UnderdeckTabBar(
         currentIndex: navigationShell.currentIndex,
         items: _items,
         onTap: (i) => navigationShell.goBranch(
@@ -54,12 +69,20 @@ class _NavItem {
   final String label;
 }
 
-class _UnderdeckNavBar extends StatelessWidget {
-  const _UnderdeckNavBar({
+/// Floating glass capsule wrapping all tabs, with a second glass layer that
+/// slides behind the active tab. Two stacked BackdropFilters give the
+/// "glass on glass" effect requested for the selected item.
+class _UnderdeckTabBar extends StatelessWidget {
+  const _UnderdeckTabBar({
     required this.currentIndex,
     required this.items,
     required this.onTap,
   });
+
+  static const double _outerHeight = 68;
+  static const double _innerInset = 6;
+  static const Duration _slide = Duration(milliseconds: 380);
+  static const Curve _slideCurve = Curves.easeOutCubic;
 
   final int currentIndex;
   final List<_NavItem> items;
@@ -67,27 +90,135 @@ class _UnderdeckNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppColors.bgDeepest,
-        border: Border(
-          top: BorderSide(color: AppColors.borderSubtle, width: 1),
+    final mq = MediaQuery.of(context);
+    return ColoredBox(
+      // Solid backdrop behind the floating capsule so no content can bleed
+      // through. The capsule itself stays styled; only the transparency goes.
+      color: AppColors.bgDeepest,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(14, 0, 14, 12 + mq.padding.bottom),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(_outerHeight / 2),
+          child: Container(
+            height: _outerHeight,
+            decoration: BoxDecoration(
+              // Outer capsule: fully opaque deep navy.
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF0B1422), Color(0xFF050A14)],
+              ),
+              borderRadius: BorderRadius.circular(_outerHeight / 2),
+              border: Border.all(
+                color: AppColors.accentPrimary.withValues(alpha: 0.18),
+                width: 1,
+              ),
+              boxShadow: [
+                // Ambient drop shadow.
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.55),
+                  blurRadius: 28,
+                  offset: const Offset(0, 12),
+                ),
+                // Faint accent glow under the bar.
+                BoxShadow(
+                  color: AppColors.accentPrimary.withValues(alpha: 0.14),
+                  blurRadius: 24,
+                  spreadRadius: -6,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: LayoutBuilder(
+              builder: (context, c) {
+                final innerWidth = c.maxWidth - 2 * _innerInset;
+                final cellWidth = innerWidth / items.length;
+                final pillHeight = _outerHeight - 2 * _innerInset;
+                return Stack(
+                  children: [
+                    // Sliding glass-on-glass selection pill.
+                    AnimatedPositioned(
+                      duration: _slide,
+                      curve: _slideCurve,
+                      left: _innerInset + currentIndex * cellWidth,
+                      top: _innerInset,
+                      width: cellWidth,
+                      height: pillHeight,
+                      child: const IgnorePointer(child: _SelectedPill()),
+                    ),
+                    // Tab cells. Positioned.fill forces the row to use the
+                    // full capsule height so each cell can vertically center
+                    // its icon + label.
+                    Positioned.fill(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: _innerInset,
+                        ),
+                        child: Row(
+                          children: [
+                            for (var i = 0; i < items.length; i++)
+                              Expanded(
+                                child: _TabCell(
+                                  item: items[i],
+                                  selected: currentIndex == i,
+                                  onTap: () => onTap(i),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
         ),
       ),
-      child: SafeArea(
-        top: false,
-        child: SizedBox(
-          height: 64,
-          child: Row(
-            children: [
-              for (var i = 0; i < items.length; i++)
-                Expanded(
-                  child: _NavTab(
-                    item: items[i],
-                    selected: currentIndex == i,
-                    onTap: () => onTap(i),
-                  ),
-                ),
+    );
+  }
+}
+
+/// Second-layer glass behind the active tab. Brighter frosted fill, accent
+/// border + inner highlight, soft cyan glow, and an extra blur pass on top
+/// of whatever the outer capsule already blurred.
+class _SelectedPill extends StatelessWidget {
+  const _SelectedPill();
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(28),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(28),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white.withValues(alpha: 0.18),
+                AppColors.accentPrimary.withValues(alpha: 0.16),
+              ],
+            ),
+            border: Border.all(
+              color: AppColors.accentPrimary.withValues(alpha: 0.55),
+              width: 1,
+            ),
+            boxShadow: [
+              // Outer cyan glow.
+              BoxShadow(
+                color: AppColors.accentPrimary.withValues(alpha: 0.45),
+                blurRadius: 18,
+                spreadRadius: -2,
+              ),
+              // Inner top highlight (faked with an offset white shadow).
+              BoxShadow(
+                color: Colors.white.withValues(alpha: 0.10),
+                blurRadius: 6,
+                offset: const Offset(0, -1),
+              ),
             ],
           ),
         ),
@@ -96,8 +227,8 @@ class _UnderdeckNavBar extends StatelessWidget {
   }
 }
 
-class _NavTab extends StatelessWidget {
-  const _NavTab({
+class _TabCell extends StatelessWidget {
+  const _TabCell({
     required this.item,
     required this.selected,
     required this.onTap,
@@ -109,23 +240,57 @@ class _NavTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = selected ? AppColors.accentPrimary : AppColors.textSecondary;
-    return InkWell(
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: onTap,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(selected ? item.selectedIcon : item.icon, color: color, size: 22),
-          const SizedBox(height: 2),
-          Text(
-            item.label,
-            style: AppTypography.caption.copyWith(
-              color: color,
-              fontSize: 10,
-              letterSpacing: 1,
+      child: TweenAnimationBuilder<double>(
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeOut,
+        tween: Tween(begin: 0, end: selected ? 1 : 0),
+        builder: (context, t, _) {
+          final color = Color.lerp(
+            const Color(0xFF8AA4C2), // dim
+            AppColors.accentPrimary, // active
+            t,
+          )!;
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  selected ? item.selectedIcon : item.icon,
+                  color: color,
+                  size: 22,
+                  shadows: selected
+                      ? [
+                          Shadow(
+                            color:
+                                AppColors.accentPrimary.withValues(alpha: 0.6),
+                            blurRadius: 8,
+                          ),
+                        ]
+                      : const [],
+                ),
+                const SizedBox(height: 3),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    item.label,
+                    maxLines: 1,
+                    softWrap: false,
+                    style: TextStyle(
+                      color: color,
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }

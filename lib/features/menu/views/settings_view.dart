@@ -97,13 +97,12 @@ class SettingsView extends ConsumerWidget {
                       style: AppTypography.caption,
                     ),
                     const SizedBox(height: AppSpacing.sm),
-                    _ActionRow(
-                      label: 'Export…',
-                      icon: Icons.upload,
-                      onTap: () async {
-                        Haptics.of(ref).tap();
+                    _ExportRow(
+                      onExport: (origin) async {
                         try {
-                          await exportService.shareExport();
+                          await exportService.shareExport(
+                            sharePositionOrigin: origin,
+                          );
                         } catch (e) {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -198,6 +197,47 @@ class _ToggleRow extends StatelessWidget {
           activeThumbColor: AppColors.accentSuccess,
         ),
       ],
+    );
+  }
+}
+
+/// Export action row that captures its on-screen rect at tap time and
+/// forwards it to share_plus so the iPad popover (and SceneDelegate-based
+/// iOS apps in general) can anchor the share sheet correctly.
+class _ExportRow extends ConsumerStatefulWidget {
+  const _ExportRow({required this.onExport});
+  final Future<void> Function(Rect origin) onExport;
+
+  @override
+  ConsumerState<_ExportRow> createState() => _ExportRowState();
+}
+
+class _ExportRowState extends ConsumerState<_ExportRow> {
+  final GlobalKey _key = GlobalKey();
+
+  Rect _originRect() {
+    final ctx = _key.currentContext;
+    if (ctx == null) return const Rect.fromLTWH(0, 0, 1, 1);
+    final box = ctx.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) {
+      return const Rect.fromLTWH(0, 0, 1, 1);
+    }
+    final topLeft = box.localToGlobal(Offset.zero);
+    return topLeft & box.size;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return KeyedSubtree(
+      key: _key,
+      child: _ActionRow(
+        label: 'Export…',
+        icon: Icons.upload,
+        onTap: () async {
+          Haptics.of(ref).tap();
+          await widget.onExport(_originRect());
+        },
+      ),
     );
   }
 }

@@ -2,7 +2,7 @@ name: underdeck_app
 description: "Underdeck companion app for Underpunks55, cross platform iOS and Android"
 publish_to: 'none'
 
-version: 0.2.0+1
+version: 0.2.0+5
 
 environment:
   sdk: ^3.11.5
@@ -43,6 +43,7 @@ dependencies:
   url_launcher: ^6.3.1
   share_plus: ^11.0.0
   file_selector: ^1.0.3
+  image_picker: ^1.1.2
 
 dev_dependencies:
   flutter_test:
@@ -62,4 +63,6 @@ flutter:
     - assets/knowledge/
     - assets/knowledge/01-maps/
     - assets/knowledge/02-systems/
+    - assets/knowledge/03-guilds/
+    - assets/knowledge/04-shires/
     - assets/knowledge/images/

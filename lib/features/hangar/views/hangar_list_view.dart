@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../design_system/colors.dart';
 import '../../../design_system/components/app_background.dart';
+import '../../../design_system/components/banner_page.dart';
 import '../../../design_system/components/glass_card.dart';
 import '../../../design_system/components/page_scroll_view.dart';
+import '../../../design_system/components/terminal_notes.dart';
 import '../../../design_system/spacing.dart';
 import '../../../design_system/typography.dart';
 import '../../../services/haptics.dart';
@@ -30,56 +32,50 @@ class HangarListView extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.bgDeepest,
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        title: Text('Hangar', style: AppTypography.headline),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add_circle, color: AppColors.accentPrimary),
-            onPressed: () {
-              Haptics.of(ref).tap();
-              showModalBottomSheet<void>(
-                context: context,
-                isScrollControlled: true,
-                backgroundColor: Colors.transparent,
-                builder: (_) => const ShipEditorView(),
-              );
-            },
-          ),
-        ],
-      ),
       body: AppBackground(
-        child: shipsAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(
-            child: Text(
-              'Error: $e',
-              style: AppTypography.body.copyWith(color: AppColors.accentDanger),
+        child: BannerPage(
+          bannerLabel: 'ESSI · Fleet Registry',
+          bannerActions: [
+            _BannerIconButton(
+              icon: Icons.add,
+              onTap: () {
+                Haptics.of(ref).tap();
+                showModalBottomSheet<void>(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (_) => const ShipEditorView(),
+                );
+              },
             ),
-          ),
-          data: (ships) {
-            final cat = catalogsAsync.valueOrNull;
-            final grouped = <String, List<ShipModel>>{};
-            for (final s in ships) {
-              final key =
-                  cat?.shipForKey(s.modelKey)?.category ?? 'other';
-              grouped.putIfAbsent(key, () => []).add(s);
-            }
-            return PageScrollView(
-              padding: EdgeInsets.fromLTRB(
-                AppSpacing.md,
-                MediaQuery.paddingOf(context).top +
-                    kToolbarHeight +
-                    AppSpacing.sm,
-                AppSpacing.md,
-                AppSpacing.xxl,
+          ],
+          builder: (context, ctrl) => shipsAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => Center(
+              child: Text(
+                'Error: $e',
+                style: AppTypography.body.copyWith(color: AppColors.accentDanger),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+            ),
+            data: (ships) {
+              final cat = catalogsAsync.valueOrNull;
+              final grouped = <String, List<ShipModel>>{};
+              for (final s in ships) {
+                final key =
+                    cat?.shipForKey(s.modelKey)?.category ?? 'other';
+                grouped.putIfAbsent(key, () => []).add(s);
+              }
+              return PageScrollView(
+                controller: ctrl,
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.md,
+                  AppSpacing.md,
+                  AppSpacing.xxl,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                   if (ships.isEmpty)
                     Padding(
                       padding: const EdgeInsets.symmetric(
@@ -143,13 +139,32 @@ class HangarListView extends ConsumerWidget {
                         ],
                         const SizedBox(height: AppSpacing.md),
                       ],
-                  const SizedBox(height: AppSpacing.lg),
-                  const _HangarNotesCard(),
-                ],
-              ),
-            );
-          },
+                    const SizedBox(height: AppSpacing.lg),
+                    const _HangarNotesCard(),
+                  ],
+                ),
+              );
+            },
+          ),
         ),
+      ),
+    );
+  }
+}
+
+class _BannerIconButton extends StatelessWidget {
+  const _BannerIconButton({required this.icon, required this.onTap});
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        child: Icon(icon, color: AppColors.accentPrimary, size: 18),
       ),
     );
   }
@@ -392,78 +407,12 @@ class _HangarNotesCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GlassCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text('> hangar.notes', style: AppTypography.terminal),
-              const Spacer(),
-              Container(
-                width: 6,
-                height: 6,
-                decoration: const BoxDecoration(
-                  color: AppColors.accentSuccess,
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Container(height: 1, color: AppColors.borderSubtle.withValues(alpha: 0.4)),
-          const SizedBox(height: AppSpacing.sm),
-          _NoteLine(
-            index: '01',
-            text:
-                'To locate a ship, type its entry command in #verified-perk-room and match the APM shown to a known place.',
-          ),
-          const SizedBox(height: 4),
-          _NoteLine(
-            index: '02',
-            text:
-                'A ship can be recalled at any time, but at a heavy stamina cost.',
-          ),
-          const SizedBox(height: 4),
-          _NoteLine(
-            index: '03',
-            text:
-                'To register a ship, just try to board it once. Spacecraft spawn at Mars space station, the Rat Raft at Rankle River; other vessels vary.',
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _NoteLine extends StatelessWidget {
-  const _NoteLine({required this.index, required this.text});
-  final String index;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: 28,
-          child: Text(
-            '[$index]',
-            style: AppTypography.mono.copyWith(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: AppColors.accentPrimary,
-            ),
-          ),
-        ),
-        const SizedBox(width: AppSpacing.sm),
-        Expanded(
-          child: Text(
-            text,
-            style: AppTypography.body.copyWith(color: AppColors.textSecondary),
-          ),
-        ),
+    return const TerminalNotes(
+      title: 'hangar.notes',
+      lines: [
+        'To locate a ship, type its entry command in #verified-perk-room and match the APM shown to a known place.',
+        'A ship can be recalled at any time, but at a heavy stamina cost.',
+        'To register a ship, just try to board it once. Spacecraft spawn at Mars space station, the Rat Raft at Rankle River; other vessels vary.',
       ],
     );
   }

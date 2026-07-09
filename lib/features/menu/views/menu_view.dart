@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../core/app_constants.dart';
 import '../../../design_system/colors.dart';
 import '../../../design_system/components/app_background.dart';
+import '../../../design_system/components/banner_page.dart';
 import '../../../design_system/components/glass_card.dart';
 import '../../../design_system/components/page_scroll_view.dart';
 import '../../../design_system/spacing.dart';
@@ -19,23 +20,20 @@ class MenuView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       backgroundColor: AppColors.bgDeepest,
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        title: Text('Menu', style: AppTypography.headline),
-      ),
       body: AppBackground(
-        child: PageScrollView(
-          padding: EdgeInsets.fromLTRB(
-            AppSpacing.md,
-            MediaQuery.paddingOf(context).top + kToolbarHeight + AppSpacing.sm,
-            AppSpacing.md,
-            AppSpacing.xxl,
-          ),
-          child: Column(
-            children: [
+        child: BannerPage(
+          bannerLabel: 'ESSI · Operator Support',
+          builder: (context, ctrl) => PageScrollView(
+            controller: ctrl,
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.xxl,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
               _MenuRow(
                 title: 'Settings',
                 subtitle: 'Animations · haptics',
@@ -84,7 +82,8 @@ class MenuView extends ConsumerWidget {
                 icon: Icons.auto_awesome,
                 onTap: () => context.push('/menu/about'),
               ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

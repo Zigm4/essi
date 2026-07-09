@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+
 import '../../../design_system/colors.dart';
 import '../../../design_system/components/app_background.dart';
+import '../../../design_system/components/banner_page.dart';
 import '../../../design_system/components/glass_card.dart';
 import '../../../design_system/components/section_header.dart';
 import '../../../design_system/spacing.dart';
@@ -24,31 +26,25 @@ class KBHomeView extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.bgDeepest,
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        title: Text('Knowledge', style: AppTypography.headline),
-      ),
       body: AppBackground(
-        child: dataAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(
-            child: Text(
-              'Failed to load Knowledge: $e',
-              style: AppTypography.body.copyWith(color: AppColors.accentDanger),
+        child: BannerPage(
+          bannerLabel: 'ESSI · Archive & Doctrine',
+          builder: (context, ctrl) => dataAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => Center(
+              child: Text(
+                'Failed to load Knowledge: $e',
+                style: AppTypography.body.copyWith(color: AppColors.accentDanger),
+              ),
             ),
-          ),
-          data: (data) => CustomScrollView(
-            slivers: [
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(
+            data: (data) => CustomScrollView(
+              controller: ctrl,
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
                     AppSpacing.md,
-                    MediaQuery.paddingOf(context).top +
-                        kToolbarHeight +
-                        AppSpacing.sm,
+                    AppSpacing.md,
                     AppSpacing.md,
                     AppSpacing.sm,
                   ),
@@ -84,14 +80,17 @@ class KBHomeView extends ConsumerWidget {
                   ),
                 ),
               ),
-              SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                sliver: search.isEmpty
-                    ? _CategoriesSliver(data: data)
-                    : _SearchResultsSliver(data: data, query: search),
-              ),
-              const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xxl)),
-            ],
+                if (search.isEmpty)
+                  const SliverToBoxAdapter(child: _DraftsBanner()),
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                  sliver: search.isEmpty
+                      ? _CategoriesSliver(data: data)
+                      : _SearchResultsSliver(data: data, query: search),
+                ),
+                const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xxl)),
+              ],
+            ),
           ),
         ),
       ),
@@ -117,6 +116,14 @@ class _CategoriesSliver extends StatelessWidget {
         return Icons.menu_book;
       case 'star.fill':
         return Icons.star;
+      case 'person.3.fill':
+      case 'person.3':
+      case 'people':
+        return Icons.groups;
+      case 'map.circle.fill':
+      case 'map.circle':
+      case 'public':
+        return Icons.public;
       default:
         return Icons.bookmark;
     }
@@ -228,6 +235,50 @@ class _SearchResultsSliver extends StatelessWidget {
             const SizedBox(height: AppSpacing.md),
           ],
       ],
+    );
+  }
+}
+
+/// Tiny banner shown above the categories list to set the expectation that
+/// every article is still a working draft. Reflects the iOS Swift reference's
+/// "info: drafts in progress" tone and the user feedback that called for it.
+class _DraftsBanner extends StatelessWidget {
+  const _DraftsBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md, 0, AppSpacing.md, AppSpacing.md,
+      ),
+      child: GlassCard(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.only(top: 2),
+              child: Icon(Icons.edit_note,
+                  color: AppColors.accentWarn, size: 18),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Drafts in progress', style: AppTypography.headline),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Every article here is a working draft. Writing takes '
+                    'time, so expect missing sections, light tables, and '
+                    'updates over the next builds.',
+                    style: AppTypography.caption,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

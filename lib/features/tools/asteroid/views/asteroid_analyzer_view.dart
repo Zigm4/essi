@@ -8,6 +8,7 @@ import '../../../../design_system/components/glass_card.dart';
 import '../../../../design_system/components/neon_button.dart';
 import '../../../../design_system/components/page_scroll_view.dart';
 import '../../../../design_system/components/section_header.dart';
+import '../../../../design_system/components/terminal_notes.dart';
 import '../../../../design_system/components/transmission_header.dart';
 import '../../../../design_system/spacing.dart';
 import '../../../../design_system/typography.dart';
@@ -113,17 +114,16 @@ class _AsteroidAnalyzerViewState extends ConsumerState<AsteroidAnalyzerView> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const TransmissionHeader(label: 'ESSI · asteroid analysis'),
+                const TransmissionHeader(
+                  label: 'ESSI · Asteroid Analysis Division',
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                const _UfoContextNote(),
                 const SizedBox(height: AppSpacing.lg),
                 GlassCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const SectionHeader(
-                        title: 'ESSI · Asteroid Analysis Division',
-                        icon: Icons.center_focus_strong,
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
                       Text(
                         'Enter a 9-digit asteroid ID',
                         style: AppTypography.caption,
@@ -466,6 +466,25 @@ class _InfoRow extends StatelessWidget {
             Text(suffix!, style: AppTypography.caption),
         ],
       ),
+    );
+  }
+}
+
+/// Terminal-style context note explaining who this tool is for. Mirrors the
+/// `_HangarNotesCard` look (`> tool.notes` header + indexed lines + blinking
+/// cursor for "more notes pending").
+class _UfoContextNote extends StatelessWidget {
+  const _UfoContextNote();
+
+  @override
+  Widget build(BuildContext context) {
+    return const TerminalNotes(
+      title: 'asteroid.notes',
+      lines: [
+        'This tool is for players who own a UFO, the type of ship that can mine multiple resources directly from asteroids.',
+        "Some players own several UFOs, you can ask them to grant you pilot rights if you want to try the gameplay.",
+        "Decomposing an asteroid's ID reveals its quality: resource composition, hazard level, size and other key characteristics.",
+      ],
     );
   }
 }

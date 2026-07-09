@@ -38,6 +38,14 @@ class AppNotifications {
     if (android != null) {
       final granted = await android.requestNotificationsPermission();
       if (granted == false) return false;
+      // Android 12+ also requires explicit consent to schedule exact alarms.
+      // The manifest declares USE_EXACT_ALARM (auto-granted for alarm-like
+      // use cases), but request anyway for SCHEDULE_EXACT_ALARM fallbacks.
+      try {
+        await android.requestExactAlarmsPermission();
+      } catch (_) {
+        // Older Android versions don't expose this method; ignore.
+      }
     }
     return true;
   }
@@ -106,6 +114,11 @@ class TrainAlertState {
 class TrainAlertController extends StateNotifier<TrainAlertState> {
   TrainAlertController() : super(TrainAlertState.empty);
 
+  // Reserved notification-ID band for train alerts. Only one zone can be armed
+  // at a time and each arming schedules exactly three alerts, so we use three
+  // FIXED ids inside this band. (A previous scheme, 70000 + zone*10 + i,
+  // produced ids outside the band for real zones — 234..346 — so cancelGroup
+  // never matched them and alerts could never be cancelled or replaced.)
   static const _idMin = 70000;
   static const _idMax = 70999;
 
@@ -120,7 +133,9 @@ class TrainAlertController extends StateNotifier<TrainAlertState> {
     for (var i = 0; i < alertDates.length; i++) {
       final date = alertDates[i];
       if (date.difference(now).inSeconds < 2) continue;
-      final id = _idMin + zone * 10 + i;
+      // Fixed ids within [_idMin, _idMax] so cancelGroup() below (and on the
+      // next arm/cancel) always matches them, regardless of the zone number.
+      final id = _idMin + i;
       final body = i == 2
           ? 'Train arriving at Zone $zone now.'
           : 'Train arriving at Zone $zone in ${labels[i]}.';

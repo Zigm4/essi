@@ -14,6 +14,7 @@ import '../../captures/domain/captures_models.dart';
 import '../../captures/widgets/tag_input_field.dart';
 import '../data/hangar_repository.dart';
 import '../domain/hangar_models.dart';
+import '../widgets/evil_ship_intro.dart';
 
 class ShipEditorView extends ConsumerStatefulWidget {
   const ShipEditorView({super.key, this.ship});
@@ -26,6 +27,7 @@ class ShipEditorView extends ConsumerStatefulWidget {
 
 class _ShipEditorViewState extends ConsumerState<ShipEditorView> {
   late final TextEditingController _name;
+  late final TextEditingController _suffix; // number-only part for prefixed models
   late final TextEditingController _customModel;
   late final TextEditingController _hull;
   late final TextEditingController _sector;
@@ -39,12 +41,14 @@ class _ShipEditorViewState extends ConsumerState<ShipEditorView> {
   String? _modelKey;
   String? _locationKey;
   bool _registered = false;
+  bool _evilIntroPlayed = false;
 
   @override
   void initState() {
     super.initState();
     final s = widget.ship;
     _name = TextEditingController(text: s?.name ?? '');
+    _suffix = TextEditingController();
     _customModel = TextEditingController(text: s?.customModelLabel ?? '');
     _hull = TextEditingController(text: s?.hull?.toString() ?? '');
     _sector = TextEditingController(text: s?.locationSector ?? '');
@@ -60,11 +64,83 @@ class _ShipEditorViewState extends ConsumerState<ShipEditorView> {
       for (final r in shipSeatOrder)
         r: TextEditingController(text: s?.roleName(r) ?? ''),
     };
+    // Editing an existing EVIL ship → replay the intro on open. Also split
+    // the saved name into prefix + suffix so the editor surfaces just the
+    // number when the model has a known prefix (e.g. `MMC-1234` → `1234`).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final cat = ref.read(hangarCatalogsProvider).valueOrNull;
+      if (cat == null) return;
+      final entry = cat.shipForKey(_modelKey);
+      if (entry != null && entry.hasPrefix) {
+        final stripped = _extractSuffix(_name.text, entry.prefix);
+        if (stripped != _suffix.text) {
+          setState(() => _suffix.text = stripped);
+        }
+      }
+      if (entry?.prefix == EvilShip.prefix && !_evilIntroPlayed) {
+        _showEvilIntro();
+      }
+    });
+  }
+
+  /// Extracts the editable number suffix from a `PREFIX-NNNN` string.
+  /// Falls back to the raw input if the prefix doesn't match.
+  static String _extractSuffix(String name, String? prefix) {
+    if (prefix == null || prefix.isEmpty) return '';
+    final expected = '$prefix-';
+    if (name.startsWith(expected)) {
+      return name.substring(expected.length);
+    }
+    // Tolerate prefix without dash, just in case.
+    if (name.startsWith(prefix)) {
+      final rest = name.substring(prefix.length);
+      return rest.startsWith('-') ? rest.substring(1) : rest;
+    }
+    return name;
+  }
+
+  bool _isEvilShip(HangarCatalogs cat) =>
+      cat.shipForKey(_modelKey)?.prefix == EvilShip.prefix;
+
+  bool get _evilLocked => _evilIntroPlayed;
+
+  void _applyEvilDefaults() {
+    setState(() {
+      _registered = true;
+      _locationKey = EvilShip.defaultLocationKey;
+      _customLocation.text = '';
+      _zone.text = '';
+      _sector.text = '';
+      _sl.text = '';
+      _name.text = EvilShip.fullIdentifier;
+      _suffix.text = EvilShip.instanceNumber;
+      for (final c in _roleControllers.values) {
+        c.text = '';
+      }
+    });
+  }
+
+  Future<void> _showEvilIntro() async {
+    Haptics.of(ref).warning();
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (ctx) => EvilShipIntroView(
+          onClose: () => Navigator.of(ctx).pop(),
+        ),
+      ),
+    );
+    if (!mounted) return;
+    setState(() => _evilIntroPlayed = true);
+    _applyEvilDefaults();
+    await EvilIntroState.markSeen(ref);
   }
 
   @override
   void dispose() {
     _name.dispose();
+    _suffix.dispose();
     _customModel.dispose();
     _hull.dispose();
     _sector.dispose();
@@ -78,7 +154,24 @@ class _ShipEditorViewState extends ConsumerState<ShipEditorView> {
     super.dispose();
   }
 
-  bool get _canSave => _name.text.trim().isNotEmpty;
+  /// Composes the full display name. When the selected model has a known
+  /// prefix, the user only types the suffix; otherwise [_name] is used as-is.
+  String _composedName(HangarCatalogs cat) {
+    final entry = cat.shipForKey(_modelKey);
+    if (entry != null && entry.hasPrefix) {
+      final suffix = _suffix.text.trim();
+      return suffix.isEmpty ? '' : '${entry.prefix}-$suffix';
+    }
+    return _name.text.trim();
+  }
+
+  bool _canSaveFor(HangarCatalogs cat) =>
+      _composedName(cat).trim().isNotEmpty;
+
+  // Fallback when catalogs haven't loaded yet — let the user save based on
+  // whatever is in the free-text name field.
+  bool get _canSave => _name.text.trim().isNotEmpty ||
+      _suffix.text.trim().isNotEmpty;
 
   Future<void> _save(HangarCatalogs cat) async {
     final entry = cat.shipForKey(_modelKey);
@@ -92,7 +185,7 @@ class _ShipEditorViewState extends ConsumerState<ShipEditorView> {
     };
     final model = ShipModel(
       id: widget.ship?.id ?? '',
-      name: _name.text.trim(),
+      name: _composedName(cat),
       modelKey: _modelKey,
       customModelLabel: entry?.hasPrefix == true || _modelKey == null
           ? (_customModel.text.trim().isEmpty
@@ -166,20 +259,25 @@ class _ShipEditorViewState extends ConsumerState<ShipEditorView> {
               actions: [
                 Padding(
                   padding: const EdgeInsets.only(right: AppSpacing.sm),
-                  child: TextButton(
-                    onPressed: catAsync.hasValue && _canSave
-                        ? () => _save(catAsync.requireValue)
-                        : null,
-                    child: Text(
-                      'Save',
-                      style: AppTypography.body.copyWith(
-                        color: _canSave
-                            ? AppColors.accentPrimary
-                            : AppColors.textDim,
-                        fontWeight: FontWeight.w600,
+                  child: Builder(builder: (context) {
+                    final canSave = catAsync.hasValue
+                        ? _canSaveFor(catAsync.requireValue)
+                        : _canSave;
+                    return TextButton(
+                      onPressed: catAsync.hasValue && canSave
+                          ? () => _save(catAsync.requireValue)
+                          : null,
+                      child: Text(
+                        'Save',
+                        style: AppTypography.body.copyWith(
+                          color: canSave
+                              ? AppColors.accentPrimary
+                              : AppColors.textDim,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ),
-                  ),
+                    );
+                  }),
                 ),
               ],
             ),
@@ -217,23 +315,66 @@ class _ShipEditorViewState extends ConsumerState<ShipEditorView> {
                           children: [
                             const SectionHeader(title: 'Identity'),
                             const SizedBox(height: AppSpacing.sm),
-                            _LabeledField(
-                              label: 'Name',
-                              child: TextField(
-                                controller: _name,
-                                decoration: _decoration(hint: "Ship's call sign"),
-                                style: AppTypography.body,
-                                onChanged: (_) => setState(() {}),
+                            if (entry != null && entry.hasPrefix)
+                              _LabeledField(
+                                label: 'Call sign',
+                                child: _PrefixNumberField(
+                                  prefix: entry.prefix!,
+                                  controller: _suffix,
+                                  enabled: !_evilLocked,
+                                  onChanged: (_) => setState(() {}),
+                                ),
+                              )
+                            else
+                              _LabeledField(
+                                label: 'Name',
+                                child: TextField(
+                                  controller: _name,
+                                  decoration:
+                                      _decoration(hint: "Ship's call sign"),
+                                  style: AppTypography.body,
+                                  onChanged: (_) => setState(() {}),
+                                ),
                               ),
-                            ),
                             const SizedBox(height: AppSpacing.md),
                             _LabeledField(
                               label: 'Model',
                               child: _ModelPicker(
                                 catalogs: cat,
                                 modelKey: _modelKey,
-                                onChange: (k) =>
-                                    setState(() => _modelKey = k),
+                                disabled: _evilLocked,
+                                onChange: (k) {
+                                  final next = cat.shipForKey(k);
+                                  // Switching models: split or join the
+                                  // identifier so the right input is shown
+                                  // pre-filled with whatever the user had.
+                                  setState(() {
+                                    _modelKey = k;
+                                    if (next != null && next.hasPrefix) {
+                                      final existing = _name.text.trim();
+                                      _suffix.text = _extractSuffix(
+                                          existing, next.prefix);
+                                    } else {
+                                      // Falling back to free-text — if we
+                                      // were on a prefixed model, promote
+                                      // the suffix back into the name.
+                                      if (_suffix.text.isNotEmpty &&
+                                          _name.text.trim().isEmpty) {
+                                        _name.text = _suffix.text.trim();
+                                      }
+                                      _suffix.clear();
+                                    }
+                                  });
+                                  if (next?.prefix == EvilShip.prefix) {
+                                    final seen = EvilIntroState.isSeen(ref);
+                                    if (seen) {
+                                      setState(() => _evilIntroPlayed = true);
+                                      _applyEvilDefaults();
+                                    } else {
+                                      _showEvilIntro();
+                                    }
+                                  }
+                                },
                               ),
                             ),
                             if (_modelKey == null ||
@@ -372,7 +513,48 @@ class _ShipEditorViewState extends ConsumerState<ShipEditorView> {
                         ),
                       ),
                       const SizedBox(height: AppSpacing.lg),
-                      if (availableRoles.isNotEmpty)
+                      if (_isEvilShip(cat))
+                        GlassCard(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const SectionHeader(
+                                title: 'Owner',
+                                icon: Icons.shield_moon,
+                              ),
+                              const SizedBox(height: AppSpacing.sm),
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.directions_boat_filled,
+                                    color: AppColors.accentSecondary,
+                                    size: 18,
+                                  ),
+                                  const SizedBox(width: AppSpacing.sm),
+                                  Text(
+                                    EvilShip.ownerLabel,
+                                    style: AppTypography.body,
+                                  ),
+                                  const Spacer(),
+                                  Text(
+                                    EvilShip.fullIdentifier,
+                                    style: AppTypography.mono.copyWith(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.accentSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: AppSpacing.sm),
+                              Text(
+                                'Roles do not apply to the void ship. She answers no captain.',
+                                style: AppTypography.caption,
+                              ),
+                            ],
+                          ),
+                        )
+                      else if (availableRoles.isNotEmpty)
                         GlassCard(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -498,17 +680,21 @@ class _ModelPicker extends StatelessWidget {
     required this.catalogs,
     required this.modelKey,
     required this.onChange,
+    this.disabled = false,
   });
   final HangarCatalogs catalogs;
   final String? modelKey;
   final ValueChanged<String?> onChange;
+  final bool disabled;
 
   @override
   Widget build(BuildContext context) {
     final selected = catalogs.shipForKey(modelKey);
-    return GestureDetector(
+    return Opacity(
+      opacity: disabled ? 0.55 : 1,
+      child: GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () => _open(context),
+      onTap: disabled ? null : () => _open(context),
       child: Container(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
@@ -535,6 +721,7 @@ class _ModelPicker extends StatelessWidget {
           ],
         ),
       ),
+    ),
     );
   }
 
@@ -736,6 +923,72 @@ class _LocationPickerSheet extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Two-part call-sign input: a static `PREFIX-` chip on the left and a
+/// number-only TextField on the right. Used in the Hangar identity card
+/// when the picked ship model has a known prefix — the user just types the
+/// instance number, matching the iOS Swift reference.
+class _PrefixNumberField extends StatelessWidget {
+  const _PrefixNumberField({
+    required this.prefix,
+    required this.controller,
+    required this.enabled,
+    required this.onChanged,
+  });
+
+  final String prefix;
+  final TextEditingController controller;
+  final bool enabled;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.bgGlass,
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        border: Border.all(color: AppColors.borderSubtle),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Row(
+        children: [
+          Text(
+            '$prefix-',
+            style: AppTypography.mono.copyWith(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: AppColors.accentSecondary,
+            ),
+          ),
+          const SizedBox(width: 2),
+          Expanded(
+            child: TextField(
+              controller: controller,
+              enabled: enabled,
+              onChanged: onChanged,
+              autocorrect: false,
+              enableSuggestions: false,
+              textCapitalization: TextCapitalization.characters,
+              style: AppTypography.mono.copyWith(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+              decoration: const InputDecoration(
+                isCollapsed: true,
+                hintText: 'number',
+                contentPadding: EdgeInsets.symmetric(vertical: 14),
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

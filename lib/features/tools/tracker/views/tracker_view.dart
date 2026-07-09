@@ -61,8 +61,10 @@ class _TrackerViewState extends ConsumerState<TrackerView> {
     final notifier = ref.read(trackerControllerProvider.notifier);
     final catalog =
         ref.watch(trackerCatalogProvider).valueOrNull ?? const TrackerCatalog([]);
-    final suggestions =
-        catalog.suggestions(state.query, limit: 8).where((e) => e.name != state.query).toList();
+    final suggestions = catalog
+        .suggestions(state.query, limit: 8, kind: state.kind)
+        .where((e) => e.name != state.query)
+        .toList();
     final isLoading = state.phase is TrackerLoading;
     final canTrack = state.query.trim().isNotEmpty && !isLoading;
 

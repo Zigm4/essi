@@ -50,6 +50,85 @@
           "order": 2
         }
       ]
+    },
+    {
+      "id": "guilds",
+      "title": "Guilds",
+      "icon": "person.3.fill",
+      "order": 3,
+      "articles": [
+        {
+          "slug": "spies",
+          "title": "Spies Guild",
+          "file": "03-guilds/spies.md",
+          "tags": ["kb:guild", "kb:draft"],
+          "order": 1
+        },
+        {
+          "slug": "guards",
+          "title": "Guards Guild",
+          "file": "03-guilds/guards.md",
+          "tags": ["kb:guild", "kb:draft"],
+          "order": 2
+        },
+        {
+          "slug": "monks",
+          "title": "Monks Guild",
+          "file": "03-guilds/monks.md",
+          "tags": ["kb:guild", "kb:draft"],
+          "order": 3
+        },
+        {
+          "slug": "thieves",
+          "title": "Thieves Guild",
+          "file": "03-guilds/thieves.md",
+          "tags": ["kb:guild", "kb:draft"],
+          "order": 4
+        }
+      ]
+    },
+    {
+      "id": "shires",
+      "title": "Shires",
+      "icon": "map.circle.fill",
+      "order": 4,
+      "articles": [
+        {
+          "slug": "northshire",
+          "title": "Northshire",
+          "file": "04-shires/northshire.md",
+          "tags": ["kb:shire", "kb:draft"],
+          "order": 1
+        },
+        {
+          "slug": "southshire",
+          "title": "Southshire",
+          "file": "04-shires/southshire.md",
+          "tags": ["kb:shire", "kb:draft"],
+          "order": 2
+        },
+        {
+          "slug": "eastshire",
+          "title": "Eastshire",
+          "file": "04-shires/eastshire.md",
+          "tags": ["kb:shire", "kb:draft"],
+          "order": 3
+        },
+        {
+          "slug": "westshire",
+          "title": "Westshire",
+          "file": "04-shires/westshire.md",
+          "tags": ["kb:shire", "kb:draft"],
+          "order": 4
+        },
+        {
+          "slug": "upshire",
+          "title": "Upshire",
+          "file": "04-shires/upshire.md",
+          "tags": ["kb:shire", "kb:draft"],
+          "order": 5
+        }
+      ]
     }
   ]
 }
