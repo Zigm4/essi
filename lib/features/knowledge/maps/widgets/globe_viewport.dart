@@ -27,11 +27,15 @@ class GlobeViewport extends ConsumerStatefulWidget {
   const GlobeViewport({
     super.key,
     required this.document,
+    this.mapTitle = '',
     this.dimmed,
     this.initialZoneId,
   });
 
   final MapDocument document;
+
+  /// Title of the owning map, forwarded to the [ZoneSheet] share card.
+  final String mapTitle;
 
   /// Zone ids failing the active filter — drawn dimmed on the globe. `null` (or
   /// empty) means no filter is active.
@@ -252,6 +256,7 @@ class _GlobeViewportState extends ConsumerState<GlobeViewport>
                       fieldsSchema: widget.document.fieldsSchema,
                       theme: _themeById[selectedId] ?? _render.theme,
                       mapId: _mapId,
+                      mapTitle: widget.mapTitle,
                       onClose: _clearSelection,
                     ),
                   ],

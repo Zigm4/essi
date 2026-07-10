@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://underdeck.app/schemas/manifest.schema.json",
+  "title": "Underdeck Maps — tag-pinned manifest",
+  "description": "The immutable catalogue of every map at a content release, with integrity metadata for each document and asset. Bounds mirror the app's MapContentValidator (MapLimits). File size cap: 256 KB; per-document cap: 2 MB; per-image cap: 8 MB / 4096 px per side (enforced by content-ci.yml).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "contentVersion", "minAppVersion", "cdnBase", "maps"],
+  "properties": {
+    "schemaVersion": { "type": "integer", "minimum": 1 },
+    "contentVersion": {
+      "type": "string",
+      "description": "Must match the pointer's contentVersion.",
+      "minLength": 1,
+      "maxLength": 40
+    },
+    "minAppVersion": { "type": "string", "minLength": 1, "maxLength": 40 },
+    "cdnBase": {
+      "type": "string",
+      "description": "Base URL every fileRef path is joined onto (e.g. the raw tag URL).",
+      "minLength": 1,
+      "maxLength": 512
+    },
+    "maps": {
+      "type": "array",
+      "description": "Catalogue entries. Cap: 60 maps.",
+      "maxItems": 60,
+      "items": { "$ref": "#/$defs/descriptor" }
+    },
+    "changelog": {
+      "description": "Optional \"What's new\" notes for this content version. A bare string, or a list of strings / {version, notes} objects. Malformed items are ignored by the app.",
+      "oneOf": [
+        { "type": "string" },
+        {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              { "type": "string" },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["notes"],
+                "properties": {
+                  "version": { "type": "string" },
+                  "notes": { "type": "string" }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "maxLength": 64
+    },
+    "fileRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "bytes"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "bytes": { "type": "integer", "minimum": 0 },
+        "kind": { "type": "string", "maxLength": 64 },
+        "pixelSize": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 1, "maximum": 4096 },
+          "minItems": 2,
+          "maxItems": 2
+        }
+      }
+    },
+    "documentRef": {
+      "allOf": [
+        { "$ref": "#/$defs/fileRef" },
+        {
+          "properties": {
+            "bytes": {
+              "description": "Map document byte length. Cap: 2 MB (2097152 B).",
+              "maximum": 2097152
+            }
+          }
+        }
+      ]
+    },
+    "assetRef": {
+      "description": "A binary asset (image / sphere texture). Rendered kinds (background, background_hd, texture) MUST declare pixelSize so the decode bound is a real pre-decode gate.",
+      "allOf": [
+        { "$ref": "#/$defs/fileRef" },
+        {
+          "properties": {
+            "bytes": {
+              "description": "Image byte length. Cap: 8 MB (8388608 B).",
+              "maximum": 8388608
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": { "enum": ["background", "background_hd", "texture"] }
+            },
+            "required": ["kind"]
+          },
+          "then": { "required": ["pixelSize"] }
+        }
+      ]
+    },
+    "descriptor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "title", "document"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Stable map id (slug). Used in underdeck://map/<id> deep links.",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "type": {
+          "type": "string",
+          "description": "flat = 2D image-space, sphere = orthographic globe. Unknown values render as \"update required\" in-app.",
+          "enum": ["flat", "sphere"]
+        },
+        "title": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "subtitle": { "type": "string", "maxLength": 240 },
+        "icon": {
+          "type": "string",
+          "description": "Gallery glyph. Unknown values fall back to a generic glyph in-app.",
+          "enum": ["map", "dungeon", "station", "sphere", "sector"]
+        },
+        "order": { "type": "integer", "description": "Gallery sort key (default 0)." },
+        "version": { "type": "integer", "description": "Content version of this map (default 1).", "minimum": 1 },
+        "draft": { "type": "boolean", "description": "Hidden from release builds when true (default false)." },
+        "tags": {
+          "type": "array",
+          "description": "Cap: 32 tags, each ≤ 40 chars.",
+          "maxItems": 32,
+          "items": { "type": "string", "minLength": 1, "maxLength": 40 }
+        },
+        "document": { "$ref": "#/$defs/documentRef" },
+        "assets": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/assetRef" }
+        }
+      }
+    }
+  }
+}

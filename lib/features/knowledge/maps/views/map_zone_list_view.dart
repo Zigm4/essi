@@ -94,6 +94,7 @@ class _MapZoneListViewState extends State<MapZoneListView> {
         fieldsSchema: widget.document.fieldsSchema,
         theme: theme,
         mapId: widget.document.id,
+        mapTitle: widget.title,
         onClose: () => Navigator.of(sheetContext).pop(),
       ),
     );

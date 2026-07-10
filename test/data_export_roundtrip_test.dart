@@ -523,4 +523,87 @@ void main() {
     expect(favs.map((f) => f.entityType), isNot(contains('totally_unknown_kind')),
         reason: 'E8: an unknown entityType must be skipped');
   });
+
+  test('(k) Phase E §6.1 map pins round-trip, idempotent, newer-wins', () async {
+    await source.into(source.mapPins).insert(MapPinsCompanion.insert(
+          id: 'pin-1',
+          mapId: 'hideous-dungeon',
+          zoneId: 'z-entry',
+          note: const Value('trapped floor'),
+          createdAt: now,
+          updatedAt: now,
+        ));
+    await source.into(source.mapPins).insert(MapPinsCompanion.insert(
+          id: 'pin-2',
+          mapId: 'keth-9',
+          zoneId: 's-01',
+          note: const Value('ferrous pact contact'),
+          createdAt: now,
+          updatedAt: now,
+        ));
+
+    final exported = await DataExportService(source).collect();
+    final file = _writeTempJson(exported);
+
+    final first = await DataExportService(target).importFromFile(file);
+    expect(first.mapPins, 2);
+
+    final pins = await target.select(target.mapPins).get();
+    expect(pins, hasLength(2));
+    expect(
+      pins.firstWhere((p) => p.id == 'pin-1').note,
+      'trapped floor',
+    );
+
+    // Re-import is a no-op: same-timestamp pins are not recounted (newer-wins).
+    final second = await DataExportService(target).importFromFile(file);
+    expect(second.mapPins, 0,
+        reason: 'same-timestamp pins must not be recounted');
+
+    // A strictly-newer edit to the same pin id IS applied and recounted.
+    final newer = {
+      'mapPins': [
+        {
+          'id': 'pin-1',
+          'mapId': 'hideous-dungeon',
+          'zoneId': 'z-entry',
+          'note': 'trapped floor — disarmed',
+          'createdAt': now.toIso8601String(),
+          'updatedAt': DateTime.utc(2027, 1, 1).toIso8601String(),
+        },
+      ],
+    };
+    final third = await DataExportService(target)
+        .importFromFile(_writeTempJson(_envelope(newer)));
+    expect(third.mapPins, 1);
+    final after = await target.select(target.mapPins).get();
+    expect(after.firstWhere((p) => p.id == 'pin-1').note,
+        'trapped floor — disarmed');
+  });
+
+  test('(l) a malformed map pin row is skipped, not fatal', () async {
+    final data = {
+      'mapPins': [
+        {
+          'id': 'ok',
+          'mapId': 'm',
+          'zoneId': 'z',
+          'note': 'good',
+          'createdAt': now.toIso8601String(),
+          'updatedAt': now.toIso8601String(),
+        },
+        {
+          // Missing mapId/zoneId — must be skipped, not abort the import.
+          'id': 'bad',
+          'note': 'orphan',
+        },
+      ],
+    };
+    final summary = await DataExportService(target)
+        .importFromFile(_writeTempJson(_envelope(data)));
+    expect(summary.mapPins, 1);
+    final pins = await target.select(target.mapPins).get();
+    expect(pins.map((p) => p.id), contains('ok'));
+    expect(pins.map((p) => p.id), isNot(contains('bad')));
+  });
 }

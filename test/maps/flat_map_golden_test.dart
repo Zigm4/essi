@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:underdeck_app/features/favorites/data/favorites_repository.dart';
+import 'package:underdeck_app/features/knowledge/maps/data/map_pins_repository.dart';
 import 'package:underdeck_app/features/knowledge/maps/domain/map_models.dart';
 import 'package:underdeck_app/features/knowledge/maps/domain/map_theme.dart';
 import 'package:underdeck_app/features/knowledge/maps/render/flat_map_render_model.dart';
@@ -178,6 +179,8 @@ void main() {
             favoriteIdsProvider.overrideWith(
               (ref, kind) => Stream.value(const <String>{}),
             ),
+            // Keep the zone-note lookup off the real database too.
+            zonePinProvider.overrideWith((ref, key) => Stream.value(null)),
           ],
           child: MaterialApp(
             debugShowCheckedModeBanner: false,

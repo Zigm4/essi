@@ -134,8 +134,8 @@ void main() {
         .get();
     expect(folded.single.read<String>('zone_id'), 'z-cafe');
 
-    // Schema version is now 4.
-    expect(db.schemaVersion, 4);
+    // Schema version reflects the app's current schema (bumped to 5 in Phase E).
+    expect(db.schemaVersion, 5);
 
     await db.close();
     raw.dispose();

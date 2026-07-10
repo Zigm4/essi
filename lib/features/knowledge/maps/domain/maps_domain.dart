@@ -6,6 +6,7 @@ export 'map_enums.dart';
 export 'map_geometry.dart';
 export 'map_integrity.dart';
 export 'map_models.dart';
+export 'map_ref.dart';
 export 'map_refs.dart';
 export 'map_theme.dart';
 export 'map_validator.dart';

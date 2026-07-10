@@ -112,6 +112,47 @@ void main() {
     });
   });
 
+  group('resolveNextArrival (clock supplied by caller)', () {
+    test('matches MarsExpressNextArrival.resolve for the same clock', () {
+      final snap = resolveNextArrival(
+        schedule: schedule,
+        armedZones: const [400],
+        now: DateTime(2026, 7, 10, 10, 0),
+      )!;
+      expect(snap.zone, 400);
+      expect(snap.minutesUntil, 20);
+      expect(snap.isArmed, isTrue);
+    });
+
+    test('re-reading with a later clock produces a fresher countdown', () {
+      final early = resolveNextArrival(
+        schedule: schedule,
+        armedZones: const [400],
+        now: DateTime(2026, 7, 10, 10, 0),
+      )!;
+      final later = resolveNextArrival(
+        schedule: schedule,
+        armedZones: const [400],
+        now: DateTime(2026, 7, 10, 10, 5),
+      )!;
+      // Same arrival instant, but the countdown shrinks as the clock advances —
+      // this is the contract the old memoized provider silently violated.
+      expect(later.arrival, early.arrival);
+      expect(later.minutesUntil, lessThan(early.minutesUntil));
+      expect(early.minutesUntil, 20);
+      expect(later.minutesUntil, 15);
+    });
+
+    test('is null when idle with nothing armed', () {
+      final snap = resolveNextArrival(
+        schedule: schedule,
+        armedZones: const [],
+        now: DateTime(2026, 7, 10, 10, 12),
+      );
+      expect(snap, isNull);
+    });
+  });
+
   test('toBridgeMap is flat and JSON-safe', () {
     final snap = MarsExpressNextArrival.build(
       zone: 400,

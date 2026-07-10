@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/error_text.dart';
+import '../../../../core/internal_link.dart';
 import '../../../../design_system/colors.dart';
 import '../../../../design_system/components/app_background.dart';
 import '../../../../design_system/components/glass_card.dart';
+import '../../../../design_system/components/neon_button.dart';
 import '../../../../design_system/components/page_scroll_view.dart';
 import '../../../../design_system/components/section_header.dart';
 import '../../../../design_system/spacing.dart';
@@ -485,6 +487,15 @@ class _ZoneSummaryCard extends ConsumerWidget {
               value: zone.accessible ? 'Yes' : 'No (Reef)'),
           _DetailRow(label: 'Depth', value: zone.depth ?? 'n/a'),
           _DetailRow(label: 'Pole', value: zone.pole ?? 'n/a'),
+          if (zone.mapRef != null) ...[
+            const SizedBox(height: AppSpacing.md),
+            NeonButton(
+              title: 'View on map',
+              icon: Icons.map_outlined,
+              onPressed: () =>
+                  resolveLink(context, zone.mapRef!.toInternalLink()),
+            ),
+          ],
         ],
       ),
     );

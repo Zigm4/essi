@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'tables/favorites_table.dart';
 import 'tables/links_table.dart';
+import 'tables/map_pins_table.dart';
 import 'tables/maps_tables.dart';
 import 'tables/notes_table.dart';
 import 'tables/scan_history_table.dart';
@@ -38,6 +39,7 @@ const String kMapZoneFtsTable = 'map_zone_fts';
   JobStatus,
   MapPacks,
   MapPackFiles,
+  MapPins,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
@@ -50,8 +52,9 @@ class AppDatabase extends _$AppDatabase {
   // progress tracking.
   // v4 (maps M0): MapPacks + MapPackFiles (blob-store index) + the map_zone_fts
   // FTS5 virtual table for zone search.
+  // v5 (Phase E §6.1): MapPins (personal per-zone pins/notes).
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -70,6 +73,9 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 4) {
             await _migrateToV4(m);
+          }
+          if (from < 5) {
+            await _migrateToV5(m);
           }
         },
         beforeOpen: (details) async {
@@ -198,6 +204,12 @@ class AppDatabase extends _$AppDatabase {
     await m.createTable(mapPacks);
     await m.createTable(mapPackFiles);
     await _createMapZoneFts();
+  }
+
+  /// v4 -> v5 migration (Phase E §6.1). Purely additive: create the MapPins
+  /// table backing personal per-zone notes. No existing data is touched.
+  Future<void> _migrateToV5(Migrator m) async {
+    await m.createTable(mapPins);
   }
 
   /// Creates the [kMapZoneFtsTable] FTS5 virtual table. Idempotent via

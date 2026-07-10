@@ -93,11 +93,42 @@ final walletDataProvider = FutureProvider<WalletData>((ref) {
 // results under a blank box.
 final walletQueryProvider = StateProvider.autoDispose<String>((ref) => '');
 
-class WalletLookupView extends ConsumerWidget {
-  const WalletLookupView({super.key});
+class WalletLookupView extends ConsumerStatefulWidget {
+  const WalletLookupView({super.key, this.initialQuery});
+
+  /// Optional query to pre-seed the lookup with (e.g. handed in from global
+  /// search via the `?q=` route param). Null / blank starts on the overview.
+  final String? initialQuery;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<WalletLookupView> createState() => _WalletLookupViewState();
+}
+
+class _WalletLookupViewState extends ConsumerState<WalletLookupView> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    final seed = widget.initialQuery?.trim() ?? '';
+    _controller = TextEditingController(text: seed);
+    if (seed.isNotEmpty) {
+      // Seed the (autoDispose) query provider once the first frame is up so the
+      // results section renders the incoming query immediately.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) ref.read(walletQueryProvider.notifier).state = seed;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final dataAsync = ref.watch(walletDataProvider);
     final query = ref.watch(walletQueryProvider);
 
@@ -145,6 +176,7 @@ class WalletLookupView extends ConsumerWidget {
                       ),
                       const SizedBox(height: AppSpacing.sm),
                       TextField(
+                        controller: _controller,
                         decoration: InputDecoration(
                           hintText: 'Search…',
                           hintStyle: AppTypography.mono.copyWith(

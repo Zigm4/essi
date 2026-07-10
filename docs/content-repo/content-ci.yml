@@ -1,0 +1,185 @@
+# =============================================================================
+# Underdeck Maps — content CI (TEMPLATE)
+#
+# Drop this file into your CONTENT repository at `.github/workflows/content-ci.yml`
+# (NOT the app repo — it does nothing there). It:
+#   1. validates every content file against the JSON Schemas in `schemas/`,
+#   2. enforces the hard bounds the app's MapContentValidator enforces
+#      (file-size caps, image dimensions, per-zone vertex count, …),
+#   3. verifies each declared `sha256` / `bytes` / `pixelSize` matches the real
+#      bytes on disk, and
+#   4. emits a copy-pasteable integrity block for every document + asset, so a
+#      contributor can paste the correct hashes back into `manifest.json`.
+#
+# Assumed repo layout (see CONTRIBUTING-MAPS.md):
+#   latest-v1.json · manifest.json · maps/<id>/map.json · maps/<id>/*.{png,webp}
+#   schemas/{pointer,manifest,map}.schema.json
+# =============================================================================
+name: content-ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+    tags: ["content-*"]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install validators
+        run: python3 -m pip install --quiet jsonschema Pillow
+
+      - name: Validate content + emit integrity
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, os, sys
+          from pathlib import Path
+          from jsonschema import Draft202012Validator
+          from PIL import Image
+
+          # --- bounds: mirror lib/.../map_validator.dart MapLimits -------------
+          POINTER_MAX   = 64 * 1024
+          MANIFEST_MAX  = 256 * 1024
+          DOCUMENT_MAX  = 2 * 1024 * 1024
+          IMAGE_MAX     = 8 * 1024 * 1024
+          IMAGE_MAX_DIM = 4096
+          MAX_VERTICES  = 5000
+          RENDERED_KINDS = {"background", "background_hd", "texture"}
+
+          root = Path(".")
+          errors, integrity = [], []
+
+          def err(msg): errors.append(msg)
+
+          def load(path):
+              try:
+                  return json.loads(Path(path).read_text())
+              except Exception as e:
+                  err(f"{path}: not valid JSON ({e})")
+                  return None
+
+          def validate(path, schema_name):
+              data = load(path)
+              if data is None:
+                  return None
+              schema = json.loads((root / "schemas" / schema_name).read_text())
+              v = Draft202012Validator(schema)
+              for e in sorted(v.iter_errors(data), key=lambda e: e.path):
+                  loc = "/".join(str(p) for p in e.path) or "<root>"
+                  err(f"{path}: schema [{loc}] {e.message}")
+              return data
+
+          def sha256_bytes(p):
+              b = Path(p).read_bytes()
+              return hashlib.sha256(b).hexdigest(), len(b)
+
+          def check_ref(ref, cdn_base, *, is_image, is_document):
+              """Verify a fileRef's declared sha256/bytes/pixelSize vs. real bytes."""
+              rel = ref["path"]
+              fp = root / rel
+              if not fp.exists():
+                  err(f"{rel}: referenced file missing on disk")
+                  return
+              actual_sha, actual_bytes = sha256_bytes(fp)
+              rec = {"path": rel, "sha256": actual_sha, "bytes": actual_bytes}
+
+              if ref.get("sha256") != actual_sha:
+                  err(f"{rel}: declared sha256 {ref.get('sha256')!r} != actual {actual_sha}")
+              if ref.get("bytes") != actual_bytes:
+                  err(f"{rel}: declared bytes {ref.get('bytes')} != actual {actual_bytes}")
+
+              if is_document and actual_bytes > DOCUMENT_MAX:
+                  err(f"{rel}: document {actual_bytes} B > {DOCUMENT_MAX} B cap")
+
+              if is_image:
+                  if actual_bytes > IMAGE_MAX:
+                      err(f"{rel}: image {actual_bytes} B > {IMAGE_MAX} B cap")
+                  try:
+                      with Image.open(fp) as im:
+                          w, h = im.size
+                  except Exception as e:
+                      err(f"{rel}: could not read image dimensions ({e})")
+                      w = h = None
+                  if w is not None:
+                      rec["pixelSize"] = [w, h]
+                      if w > IMAGE_MAX_DIM or h > IMAGE_MAX_DIM:
+                          err(f"{rel}: {w}x{h} > {IMAGE_MAX_DIM}px cap")
+                      kind = ref.get("kind")
+                      if kind in RENDERED_KINDS and "pixelSize" not in ref:
+                          err(f"{rel}: kind '{kind}' must declare pixelSize")
+                      if "pixelSize" in ref and ref["pixelSize"] != [w, h]:
+                          err(f"{rel}: declared pixelSize {ref['pixelSize']} != actual [{w}, {h}]")
+              integrity.append(rec)
+
+          def count_vertices(geom):
+              k = geom.get("kind")
+              if k in ("polygon", "sphericalPolygon"):
+                  return sum(len(r) for r in geom.get("rings", []))
+              if k in ("marker", "sphericalCap"):
+                  return 1
+              return 0
+
+          # --- file-size caps --------------------------------------------------
+          for name, cap in (("latest-v1.json", POINTER_MAX), ("manifest.json", MANIFEST_MAX)):
+              p = root / name
+              if p.exists() and p.stat().st_size > cap:
+                  err(f"{name}: {p.stat().st_size} B > {cap} B cap")
+
+          # --- schema validation ----------------------------------------------
+          validate("latest-v1.json", "pointer.schema.json")
+          manifest = validate("manifest.json", "manifest.schema.json")
+
+          # --- per-file integrity + bounds ------------------------------------
+          if manifest:
+              cdn = manifest.get("cdnBase", "")
+              maps = manifest.get("maps", [])
+              if len(maps) > 60:
+                  err(f"manifest: {len(maps)} maps > 60 cap")
+              for desc in maps:
+                  doc_ref = desc.get("document", {})
+                  check_ref(doc_ref, cdn, is_image=False, is_document=True)
+                  for asset in desc.get("assets", []):
+                      check_ref(asset, cdn, is_image=True, is_document=False)
+
+                  # Validate the map document itself (path is under the tag).
+                  doc_path = doc_ref.get("path")
+                  if doc_path and (root / doc_path).exists():
+                      doc = validate(doc_path, "map.schema.json")
+                      if doc:
+                          zones = doc.get("zones", [])
+                          if len(zones) > 500:
+                              err(f"{doc_path}: {len(zones)} zones > 500 cap")
+                          for z in zones:
+                              vc = count_vertices(z.get("geometry", {}))
+                              if vc > MAX_VERTICES:
+                                  err(f"{doc_path}: zone '{z.get('id')}' has {vc} vertices > {MAX_VERTICES} cap")
+
+          # --- report ----------------------------------------------------------
+          summary = os.environ.get("GITHUB_STEP_SUMMARY")
+          lines = ["## Content integrity (paste into manifest.json)\n"]
+          lines.append("| path | sha256 | bytes | pixelSize |")
+          lines.append("| ---- | ------ | ----- | --------- |")
+          for r in integrity:
+              px = r.get("pixelSize", "")
+              lines.append(f"| `{r['path']}` | `{r['sha256']}` | {r['bytes']} | {px} |")
+          report = "\n".join(lines)
+          print(report)
+          if summary:
+              Path(summary).write_text(report + "\n")
+
+          if errors:
+              print("\n::group::Validation errors")
+              for e in errors:
+                  print(f"::error::{e}")
+              print("::endgroup::")
+              print(f"\n{len(errors)} content error(s).", file=sys.stderr)
+              sys.exit(1)
+          print("\nAll content valid.")
+          PY

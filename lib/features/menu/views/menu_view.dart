@@ -26,6 +26,16 @@ class MenuView extends ConsumerWidget {
       body: AppBackground(
         child: BannerPage(
           bannerLabel: 'ESSI · Operator Support',
+          bannerActions: [
+            IconButton(
+              tooltip: 'Search',
+              icon: const Icon(Icons.search, color: AppColors.accentPrimary),
+              onPressed: () {
+                Haptics.of(ref).tap();
+                context.push('/menu/search');
+              },
+            ),
+          ],
           builder: (context, ctrl) => PageScrollView(
             controller: ctrl,
             padding: const EdgeInsets.fromLTRB(
@@ -37,6 +47,13 @@ class MenuView extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+              _MenuRow(
+                title: 'Search',
+                subtitle: 'Maps, KB, jobs, wallets, notes',
+                icon: Icons.search,
+                onTap: () => context.push('/menu/search'),
+              ),
+              const SizedBox(height: AppSpacing.md),
               _MenuRow(
                 title: 'Settings',
                 subtitle: 'Animations · haptics',

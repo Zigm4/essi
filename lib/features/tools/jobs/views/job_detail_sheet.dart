@@ -3,8 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/internal_link.dart';
 import '../../../../design_system/colors.dart';
 import '../../../../design_system/components/glass_card.dart';
+import '../../../../design_system/components/neon_button.dart';
 import '../../../../design_system/spacing.dart';
 import '../../../../design_system/typography.dart';
 import '../../../../services/haptics.dart';
@@ -186,6 +188,15 @@ class JobDetailSheet extends ConsumerWidget {
                     ],
                   ),
                 ),
+                if (job.mapRef != null) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  NeonButton(
+                    title: 'View on map',
+                    icon: Icons.map_outlined,
+                    onPressed: () =>
+                        resolveLink(context, job.mapRef!.toInternalLink()),
+                  ),
+                ],
                 const SizedBox(height: AppSpacing.md),
                 GlassCard(
                   child: Column(

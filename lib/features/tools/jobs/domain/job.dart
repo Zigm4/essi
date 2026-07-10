@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import '../../../knowledge/maps/domain/map_ref.dart';
+
 /// Pickup or dropoff coordinate inside the Underpunks galaxy.
 @immutable
 class JobLocation {
@@ -55,6 +57,11 @@ class Job {
   final String description;
   final String onComplete;
 
+  /// Optional cross-link to a place on a dynamic map (AUDIT-V2 §6.6). Dormant
+  /// capability: current jobs.json carries none, so this is `null` for shipped
+  /// data — content can start populating `mapRef` with no app change.
+  final MapRef? mapRef;
+
   const Job({
     required this.id,
     required this.factionRep,
@@ -77,6 +84,7 @@ class Job {
     required this.ship,
     required this.description,
     required this.onComplete,
+    this.mapRef,
   });
 
   bool get isCargoJob => capacity > 0;
@@ -162,6 +170,7 @@ class Job {
       ship: j['ship'] as String?,
       description: (j['description'] as String?) ?? '',
       onComplete: (j['onComplete'] as String?) ?? '',
+      mapRef: MapRef.tryParse(j['mapRef']),
     );
   }
 }

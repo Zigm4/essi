@@ -34,6 +34,69 @@ class MapsPointer {
   );
 }
 
+/// A single "what's new" note for a content version (AUDIT-V2 Phase E §6.3).
+///
+/// [version] is optional (a plain-string changelog, or an entry that omits it,
+/// leaves it `null`); [notes] carries the human copy (markdown-ish, rendered as
+/// plain text in the discreet gallery banner).
+@immutable
+class MapChangelogEntry {
+  final String? version;
+  final String notes;
+
+  const MapChangelogEntry({required this.version, required this.notes});
+
+  /// Tolerant parse of one changelog list item: a `{version, notes}` object, or
+  /// a bare string (→ `notes`, no version). Returns `null` when it carries no
+  /// usable notes text.
+  static MapChangelogEntry? tryParse(Object? raw) {
+    if (raw is String) {
+      final t = raw.trim();
+      return t.isEmpty ? null : MapChangelogEntry(version: null, notes: t);
+    }
+    if (raw is Map) {
+      final notesRaw = raw['notes'];
+      final notes = notesRaw is String ? notesRaw.trim() : '';
+      if (notes.isEmpty) return null;
+      final v = raw['version'];
+      final version = (v is String && v.trim().isNotEmpty) ? v.trim() : null;
+      return MapChangelogEntry(version: version, notes: notes);
+    }
+    return null;
+  }
+}
+
+/// Parses the optional `changelog` manifest field (AUDIT-V2 §6.3). Must-ignore:
+/// absent/malformed → empty list (never breaks old content). Accepts either a
+/// single string (one entry) or a list of strings / `{version, notes}` objects;
+/// non-conforming items are skipped.
+List<MapChangelogEntry> parseChangelog(Object? raw) {
+  if (raw == null) return const [];
+  if (raw is String) {
+    final e = MapChangelogEntry.tryParse(raw);
+    return e == null ? const [] : [e];
+  }
+  if (raw is List) {
+    return [
+      for (final item in raw) ?MapChangelogEntry.tryParse(item),
+    ];
+  }
+  return const [];
+}
+
+/// Whether the gallery "What's new" banner should surface for [contentVersion]
+/// (AUDIT-V2 §6.3). Shows only when there is changelog content AND this content
+/// version has not already been acknowledged (differs from [lastSeenVersion]).
+/// Pure — the once-per-version state lives in prefs; this just decides.
+bool shouldShowMapsChangelog({
+  required String contentVersion,
+  required String? lastSeenVersion,
+  required bool hasChangelog,
+}) =>
+    hasChangelog &&
+    contentVersion.isNotEmpty &&
+    contentVersion != lastSeenVersion;
+
 /// The tag-pinned manifest: the catalogue of every map available at a content
 /// version, with integrity metadata for each document and asset.
 @immutable
@@ -44,12 +107,17 @@ class MapsManifest {
   final String cdnBase;
   final List<MapDescriptor> maps;
 
+  /// Optional "what's new" notes for this content version (AUDIT-V2 §6.3).
+  /// Empty when the manifest omits `changelog` (must-ignore for old content).
+  final List<MapChangelogEntry> changelog;
+
   const MapsManifest({
     required this.schemaVersion,
     required this.contentVersion,
     required this.minAppVersion,
     required this.cdnBase,
     required this.maps,
+    this.changelog = const [],
   });
 
   factory MapsManifest.fromJson(Map<String, dynamic> j) => MapsManifest(
@@ -60,6 +128,7 @@ class MapsManifest {
     maps: ((j['maps'] as List<dynamic>?) ?? const [])
         .map((m) => MapDescriptor.fromJson(m as Map<String, dynamic>))
         .toList(growable: false),
+    changelog: parseChangelog(j['changelog']),
   );
 }
 

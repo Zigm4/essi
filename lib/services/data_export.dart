@@ -43,6 +43,7 @@ class DataExportService {
     final discoveryHistory = await _db.select(_db.discoveryHistory).get();
     final favorites = await _db.select(_db.favorites).get();
     final jobStatuses = await _db.select(_db.jobStatus).get();
+    final mapPins = await _db.select(_db.mapPins).get();
 
     Map<String, dynamic> noteMap(Note n) => {
       'id': n.id,
@@ -139,6 +140,15 @@ class DataExportService {
           'status': s.status,
           'updatedAt': s.updatedAt.toUtc().toIso8601String(),
         }).toList(),
+        // Phase E §6.1: personal map pins/notes. Additive; formatVersion stays 1.
+        'mapPins': mapPins.map((p) => {
+          'id': p.id,
+          'mapId': p.mapId,
+          'zoneId': p.zoneId,
+          'note': p.note,
+          'createdAt': p.createdAt.toUtc().toIso8601String(),
+          'updatedAt': p.updatedAt.toUtc().toIso8601String(),
+        }).toList(),
       },
     };
   }
@@ -232,6 +242,9 @@ class DataExportService {
       stat(_db.discoveryHistory, _db.discoveryHistory.date),
       stat(_db.favorites, _db.favorites.createdAt),
       stat(_db.jobStatus, _db.jobStatus.updatedAt),
+      // Phase E §6.1: map pins are user-generated too — count them so a
+      // pins-only user still gets the backup reminder.
+      stat(_db.mapPins, _db.mapPins.updatedAt),
     ]);
 
     var total = 0;
@@ -309,7 +322,7 @@ class DataExportService {
   Future<ImportSummary> _import(Map<String, dynamic> data) async {
     int notes = 0, links = 0, tags = 0, ships = 0;
     int scan = 0, tracker = 0, discovery = 0;
-    int favorites = 0, jobStatus = 0;
+    int favorites = 0, jobStatus = 0, mapPins = 0;
 
     // Tolerant: a malformed/absent date must never throw and abort the whole
     // import (a single poisoned row would otherwise take the file down).
@@ -787,6 +800,53 @@ class DataExportService {
             );
         jobStatus++;
       }
+
+      // Phase E §6.1: personal map pins/notes, keyed by uuid id. Newer-wins on
+      // updatedAt so a stale imported edit never regresses a newer local one;
+      // malformed rows are skipped (logged), never abort the import.
+      const maxMapPinIdLength = 128;
+      const maxMapPinNoteLength = 20000;
+      for (final raw in (data['mapPins'] as List<dynamic>? ?? const [])) {
+        try {
+          final m = raw as Map<String, dynamic>;
+          final id = m['id'] as String?;
+          final mapId = m['mapId'] as String?;
+          final zoneId = m['zoneId'] as String?;
+          var note = m['note'] as String?;
+          if (id == null ||
+              id.isEmpty ||
+              id.length > maxMapPinIdLength ||
+              mapId == null ||
+              mapId.isEmpty ||
+              zoneId == null ||
+              zoneId.isEmpty) {
+            continue;
+          }
+          note ??= '';
+          if (note.length > maxMapPinNoteLength) {
+            note = note.substring(0, maxMapPinNoteLength);
+          }
+          final updatedAt = parseUpdatedAt(m['updatedAt']);
+          final exists = await (_db.select(_db.mapPins)
+                ..where((p) => p.id.equals(id)))
+              .getSingleOrNull();
+          if (exists != null && !updatedAt.isAfter(exists.updatedAt)) continue;
+          await _db.into(_db.mapPins).insert(
+                MapPinsCompanion.insert(
+                  id: id,
+                  mapId: mapId,
+                  zoneId: zoneId,
+                  note: drift.Value(note),
+                  createdAt: parseDate(m['createdAt']),
+                  updatedAt: updatedAt,
+                ),
+                mode: drift.InsertMode.insertOrReplace,
+              );
+          mapPins++;
+        } catch (e, st) {
+          logError('data import: skipped malformed map pin row: $e', st);
+        }
+      }
     });
 
     return ImportSummary(
@@ -799,6 +859,7 @@ class DataExportService {
       discoveryHistory: discovery,
       favorites: favorites,
       jobStatus: jobStatus,
+      mapPins: mapPins,
     );
   }
 }
@@ -814,6 +875,7 @@ class ImportSummary {
   final int discoveryHistory;
   final int favorites;
   final int jobStatus;
+  final int mapPins;
 
   const ImportSummary({
     required this.notes,
@@ -825,6 +887,7 @@ class ImportSummary {
     required this.discoveryHistory,
     this.favorites = 0,
     this.jobStatus = 0,
+    this.mapPins = 0,
   });
 
   factory ImportSummary.empty() => const ImportSummary(
@@ -837,11 +900,12 @@ class ImportSummary {
     discoveryHistory: 0,
     favorites: 0,
     jobStatus: 0,
+    mapPins: 0,
   );
 
   bool get isEmpty =>
       notes + links + tags + ships + scanHistory + trackerHistory +
-          discoveryHistory + favorites + jobStatus ==
+          discoveryHistory + favorites + jobStatus + mapPins ==
       0;
 
   String describe() {
@@ -856,6 +920,7 @@ class ImportSummary {
     if (discoveryHistory > 0) parts.add('$discoveryHistory discoveries');
     if (favorites > 0) parts.add('$favorites favorite${favorites == 1 ? '' : 's'}');
     if (jobStatus > 0) parts.add('$jobStatus job status${jobStatus == 1 ? '' : 'es'}');
+    if (mapPins > 0) parts.add('$mapPins map note${mapPins == 1 ? '' : 's'}');
     return parts.join(', ');
   }
 }

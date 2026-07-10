@@ -20,6 +20,7 @@ import '../features/menu/views/disclaimer_view.dart';
 import '../features/menu/views/faq_view.dart';
 import '../features/menu/views/menu_view.dart';
 import '../features/menu/views/settings_view.dart';
+import '../features/search/views/global_search_view.dart';
 import '../features/tools/asteroid/views/asteroid_analyzer_view.dart';
 import '../features/tools/celestial/views/celestial_view.dart';
 import '../features/tools/fishing/views/fishing_map_view.dart';
@@ -84,7 +85,11 @@ GoRouter buildRouter() {
                   ),
                   GoRoute(
                     path: 'wallet',
-                    builder: (context, state) => const WalletLookupView(),
+                    // `?q=` (from global search) pre-seeds the lookup query so a
+                    // wallet result opens the tool already showing its matches.
+                    builder: (context, state) => WalletLookupView(
+                      initialQuery: state.uri.queryParameters['q'],
+                    ),
                   ),
                   GoRoute(
                     path: 'mars-express',
@@ -199,6 +204,10 @@ GoRouter buildRouter() {
                 path: '/menu',
                 builder: (context, state) => const MenuView(),
                 routes: [
+                  GoRoute(
+                    path: 'search',
+                    builder: (context, state) => const GlobalSearchView(),
+                  ),
                   GoRoute(
                     path: 'settings',
                     builder: (context, state) => const SettingsView(),

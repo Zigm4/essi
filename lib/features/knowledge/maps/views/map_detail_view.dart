@@ -13,10 +13,12 @@ import '../../../captures/widgets/tag_chip.dart';
 import '../../../favorites/data/favorites_repository.dart';
 import '../../../favorites/widgets/favorite_button.dart';
 import '../data/map_content_repository.dart';
+import '../data/map_pins_repository.dart';
 import '../domain/map_enums.dart';
 import '../domain/map_models.dart';
 import '../widgets/flat_map_viewport.dart';
 import '../widgets/globe_viewport.dart';
+import 'map_notes_list_view.dart';
 import 'map_zone_list_view.dart';
 
 /// Map detail route (`/knowledge/maps/:id`). Dispatches on the installed
@@ -91,6 +93,8 @@ class _MapDetailViewState extends ConsumerState<MapDetailView> {
               kind: FavoriteKind.map,
               id: widget.id,
             ),
+          if (doc != null)
+            _MyNotesButton(document: doc, title: title),
           if (canListZones)
             IconButton(
               tooltip: 'List of zones',
@@ -169,6 +173,7 @@ class _MapDetailViewState extends ConsumerState<MapDetailView> {
           _FlatPane(
             mapId: widget.id,
             document: doc,
+            mapTitle: descriptor?.title ?? doc.id,
             dimmed: _dimmed,
             initialZoneId: widget.initialZoneId,
           ),
@@ -185,6 +190,7 @@ class _MapDetailViewState extends ConsumerState<MapDetailView> {
           doc,
           _SpherePane(
             document: doc,
+            mapTitle: descriptor?.title ?? doc.id,
             dimmed: _dimmed,
             initialZoneId: widget.initialZoneId,
           ),
@@ -320,12 +326,14 @@ class _FlatPane extends ConsumerWidget {
   const _FlatPane({
     required this.mapId,
     required this.document,
+    required this.mapTitle,
     required this.dimmed,
     this.initialZoneId,
   });
 
   final String mapId;
   final MapDocument document;
+  final String mapTitle;
   final ValueListenable<Set<String>> dimmed;
   final String? initialZoneId;
 
@@ -339,6 +347,7 @@ class _FlatPane extends ConsumerWidget {
       child: FlatMapViewport(
         document: document,
         backgroundBytes: bytes,
+        mapTitle: mapTitle,
         dimmed: dimmed,
         initialZoneId: initialZoneId,
       ),
@@ -352,11 +361,13 @@ class _FlatPane extends ConsumerWidget {
 class _SpherePane extends StatelessWidget {
   const _SpherePane({
     required this.document,
+    required this.mapTitle,
     required this.dimmed,
     this.initialZoneId,
   });
 
   final MapDocument document;
+  final String mapTitle;
   final ValueListenable<Set<String>> dimmed;
   final String? initialZoneId;
 
@@ -368,8 +379,61 @@ class _SpherePane extends StatelessWidget {
           'for details, or use the List of zones button in the top bar.',
       child: GlobeViewport(
         document: document,
+        mapTitle: mapTitle,
         dimmed: dimmed,
         initialZoneId: initialZoneId,
+      ),
+    );
+  }
+}
+
+/// App-bar action opening "My map notes" (Phase E §6.1). Shows a small count
+/// badge when the user has pinned notes on this map.
+class _MyNotesButton extends ConsumerWidget {
+  const _MyNotesButton({required this.document, required this.title});
+
+  final MapDocument document;
+  final String title;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final count =
+        ref.watch(mapPinsForMapProvider(document.id)).valueOrNull?.length ?? 0;
+    return IconButton(
+      tooltip: 'My map notes',
+      icon: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          const Icon(Icons.push_pin_outlined),
+          if (count > 0)
+            Positioned(
+              right: -6,
+              top: -4,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                constraints: const BoxConstraints(minWidth: 14),
+                decoration: BoxDecoration(
+                  color: AppColors.accentPrimary,
+                  borderRadius: BorderRadius.circular(7),
+                ),
+                child: Text(
+                  '$count',
+                  textAlign: TextAlign.center,
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.bgDeepest,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w700,
+                    height: 1.2,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+      onPressed: () => Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => MapNotesListView(document: document, title: title),
+        ),
       ),
     );
   }

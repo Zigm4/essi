@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -157,22 +159,71 @@ class MarsExpressNextArrival {
   }
 }
 
-/// The current next-arrival snapshot for the Mars Express widget/Live Activity
+/// Pure entry point for the next-arrival snapshot. The **caller supplies the
+/// clock** ([now]), so the result is only ever as fresh as the instant passed
+/// in — there is no hidden memoization. This is the function the Live Activity
+/// bridge and the widget provider both drive; tests drive it with a fixed
+/// instant. Returns `null` when there is nothing to count down to (idle with
+/// nothing armed, or the focused zone is not in the schedule).
+///
+/// Thin delegate to [MarsExpressNextArrival.resolve]; kept as a top-level
+/// function so the "give me the current snapshot for this clock reading"
+/// contract has one obvious name.
+NextArrivalSnapshot? resolveNextArrival({
+  required MarsExpressSchedule schedule,
+  required List<int> armedZones,
+  required DateTime now,
+}) =>
+    MarsExpressNextArrival.resolve(
+      schedule: schedule,
+      armedZones: armedZones,
+      now: now,
+    );
+
+/// A minute-cadence wall clock that drives [nextArrivalProvider] so the
+/// countdown is genuinely live rather than a memoized value.
+///
+/// `autoDispose`: the timer only runs while something is actually listening,
+/// which matches the app's "no background execution" model — nothing ticks when
+/// the Mars Express surface is off-screen. Each emission is the current wall
+/// clock; a 20 s cadence keeps `minutesUntil` (whole minutes, rounded up)
+/// accurate to well within a minute without per-second churn.
+final nextArrivalClockProvider = StreamProvider.autoDispose<DateTime>((ref) {
+  final controller = StreamController<DateTime>();
+  controller.add(DateTime.now());
+  final timer = Timer.periodic(
+    const Duration(seconds: 20),
+    (_) => controller.add(DateTime.now()),
+  );
+  ref.onDispose(() {
+    timer.cancel();
+    controller.close();
+  });
+  return controller.stream;
+});
+
+/// The current next-arrival snapshot for the Mars Express widget / Live Activity
 /// bridge, or `null` when the schedule is still loading or there is nothing to
 /// track.
 ///
-/// This recomputes whenever the schedule loads or the armed-zone set changes.
-/// It reads the wall clock at build time; a pull-based consumer (the native
-/// bridge, or a periodic refresh) simply re-reads the provider to get a fresh
-/// countdown — matching the app's existing "no background execution, top up on
-/// resume" model.
-final nextArrivalProvider = Provider<NextArrivalSnapshot?>((ref) {
+/// Unlike a plain (memoized) provider, this recomputes as time passes: it
+/// watches [nextArrivalClockProvider], so every clock tick re-resolves the
+/// snapshot against the *current* wall clock. It also recomputes when the
+/// schedule loads or the armed-zone set changes. `autoDispose` so it — and the
+/// clock timer it depends on — tears down when nothing is listening.
+///
+/// The snapshot is derived purely from [resolveNextArrival]; no consumer should
+/// re-implement the schedule math. The native bridge reads
+/// [NextArrivalSnapshot.toBridgeMap]; see docs/LIVE_ACTIVITY_PLAN.md.
+final nextArrivalProvider = Provider.autoDispose<NextArrivalSnapshot?>((ref) {
   final schedule = ref.watch(marsExpressScheduleProvider).valueOrNull;
   if (schedule == null) return null;
   final armed = ref.watch(trainAlertControllerProvider);
+  final now = ref.watch(nextArrivalClockProvider).valueOrNull ?? DateTime.now();
   final armedZones = [for (final e in armed.zones) e.zone];
-  return MarsExpressNextArrival.resolve(
+  return resolveNextArrival(
     schedule: schedule,
     armedZones: armedZones,
+    now: now,
   );
 });

@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:underdeck_app/core/logging.dart';
+import 'package:underdeck_app/features/knowledge/maps/domain/map_ref.dart';
 
 @immutable
 class FishingZone {
@@ -16,6 +17,11 @@ class FishingZone {
   final String room;
   final bool isMapRoom;
 
+  /// Optional cross-link to a place on a dynamic map (AUDIT-V2 §6.6). Dormant
+  /// capability: current fishing data carries none, so this stays `null` for
+  /// shipped data — content can start populating `mapRef` with no app change.
+  final MapRef? mapRef;
+
   const FishingZone({
     required this.id,
     required this.name,
@@ -24,6 +30,7 @@ class FishingZone {
     this.pole,
     required this.room,
     required this.isMapRoom,
+    this.mapRef,
   });
 
   factory FishingZone.fromJson(Map<String, dynamic> j) => FishingZone(
@@ -34,6 +41,7 @@ class FishingZone {
     pole: j['pole'] as String?,
     room: j['room'] as String,
     isMapRoom: (j['isMapRoom'] as bool?) ?? false,
+    mapRef: MapRef.tryParse(j['mapRef']),
   );
 }
 

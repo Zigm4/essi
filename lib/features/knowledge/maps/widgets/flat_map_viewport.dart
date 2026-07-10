@@ -30,11 +30,15 @@ class FlatMapViewport extends ConsumerStatefulWidget {
     super.key,
     required this.document,
     required this.backgroundBytes,
+    this.mapTitle = '',
     this.dimmed,
     this.initialZoneId,
   });
 
   final MapDocument document;
+
+  /// Title of the owning map, forwarded to the [ZoneSheet] share card.
+  final String mapTitle;
 
   /// Raw background image bytes, decoded at a constrained size by the layer.
   final Uint8List? backgroundBytes;
@@ -245,6 +249,7 @@ class _FlatMapViewportState extends ConsumerState<FlatMapViewport> {
                         fieldsSchema: widget.document.fieldsSchema,
                         theme: item.theme,
                         mapId: _mapId,
+                        mapTitle: widget.mapTitle,
                         onClose: _clearSelection,
                       ),
                     ],

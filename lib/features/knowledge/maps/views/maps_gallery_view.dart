@@ -53,6 +53,10 @@ enum _UpdateBanner {
 class _MapsGalleryViewState extends ConsumerState<MapsGalleryView> {
   bool _seedActivated = false;
 
+  /// Set once the user dismisses the "What's new" banner this session, so it
+  /// disappears immediately without waiting for the prefs write to round-trip.
+  bool _changelogDismissed = false;
+
   /// Result of this session's background update check, surfaced as a banner.
   _UpdateBanner _banner = _UpdateBanner.none;
 
@@ -186,9 +190,29 @@ class _MapsGalleryViewState extends ConsumerState<MapsGalleryView> {
             ),
             data: (manifest) {
               final hasMaps = (manifest?.maps.isNotEmpty ?? false);
+              final settings = ref.watch(appSettingsProvider);
+              final showChangelog = !_changelogDismissed &&
+                  manifest != null &&
+                  shouldShowMapsChangelog(
+                    contentVersion: manifest.contentVersion,
+                    lastSeenVersion: settings.mapsLastSeenChangelogVersion,
+                    hasChangelog: manifest.changelog.isNotEmpty,
+                  );
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (showChangelog) ...[
+                    _ChangelogBanner(
+                      entries: manifest.changelog,
+                      onDismiss: () {
+                        ref
+                            .read(appSettingsProvider.notifier)
+                            .markMapsChangelogSeen(manifest.contentVersion);
+                        setState(() => _changelogDismissed = true);
+                      },
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                  ],
                   if (_banner != _UpdateBanner.none) ...[
                     _MapUpdateBanner(
                       kind: _banner,
@@ -461,6 +485,89 @@ class _MapUpdateBanner extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(message, style: AppTypography.caption),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              IconButton(
+                iconSize: 18,
+                visualDensity: VisualDensity.compact,
+                constraints: const BoxConstraints(),
+                padding: EdgeInsets.zero,
+                tooltip: 'Dismiss',
+                icon: const Icon(Icons.close, color: AppColors.textSecondary),
+                onPressed: onDismiss,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Discreet, dismissible "What's new" banner (AUDIT-V2 §6.3). Surfaced once per
+/// content version at the top of the gallery when the manifest carries a
+/// changelog the user hasn't acknowledged; dismissing persists the seen version.
+class _ChangelogBanner extends StatelessWidget {
+  const _ChangelogBanner({required this.entries, required this.onDismiss});
+
+  final List<MapChangelogEntry> entries;
+  final VoidCallback onDismiss;
+
+  @override
+  Widget build(BuildContext context) {
+    const accent = AppColors.accentSecondary;
+    final semanticsLabel = StringBuffer("What's new in maps. ");
+    for (final e in entries) {
+      if (e.version != null) semanticsLabel.write('${e.version}: ');
+      semanticsLabel.write('${e.notes}. ');
+    }
+    return Semantics(
+      liveRegion: true,
+      label: semanticsLabel.toString(),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: accent.withValues(alpha: 0.10),
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+          border: Border.all(color: accent.withValues(alpha: 0.45)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.auto_awesome, color: accent, size: 20),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "What's new",
+                      style: AppTypography.body.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: accent,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    for (final e in entries) ...[
+                      if (e.version != null)
+                        Text(
+                          e.version!,
+                          style: AppTypography.mono.copyWith(
+                            fontSize: 10,
+                            letterSpacing: 1.2,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      Text(e.notes, style: AppTypography.caption),
+                      const SizedBox(height: 4),
+                    ],
                   ],
                 ),
               ),

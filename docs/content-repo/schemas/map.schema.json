@@ -1,0 +1,247 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://underdeck.app/schemas/map.schema.json",
+  "title": "Underdeck Maps — map document (map.json)",
+  "description": "One fully-parsed map: canvas or sphere config, theme tokens, field schema, and zones. Bounds mirror the app's MapContentValidator (MapLimits). File size cap: 2 MB. Per-zone vertex cap: 5000 (enforced by content-ci.yml). Coordinates: flat geometries are canvas pixels [x, y]; spherical geometries are [lon, lat] degrees (GeoJSON order).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "id", "type"],
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "description": "Map-document schema. 1 for the current app; a higher value renders as \"update required\".",
+      "minimum": 1
+    },
+    "id": {
+      "type": "string",
+      "description": "Must match the manifest descriptor id.",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "type": { "type": "string", "enum": ["flat", "sphere"] },
+    "canvas": {
+      "type": "object",
+      "description": "Required for flat maps: the image pixel space geometry is authored in. width/height must be finite and > 0.",
+      "additionalProperties": false,
+      "required": ["width", "height"],
+      "properties": {
+        "width": { "type": "number", "exclusiveMinimum": 0 },
+        "height": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "sphere": {
+      "type": "object",
+      "description": "Required for sphere maps.",
+      "additionalProperties": false,
+      "required": ["textureAsset"],
+      "properties": {
+        "textureAsset": {
+          "type": "string",
+          "description": "The manifest asset `kind` that supplies the surface texture (e.g. \"texture\").",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "initialOrientation": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "lat": { "type": "number" },
+            "lon": { "type": "number" }
+          }
+        },
+        "autoRotateDegPerSec": { "type": "number" }
+      }
+    },
+    "theme": { "$ref": "#/$defs/theme" },
+    "fieldsSchema": {
+      "type": "array",
+      "description": "Field descriptors. Cap: 25 fields.",
+      "maxItems": 25,
+      "items": { "$ref": "#/$defs/fieldSpec" }
+    },
+    "zones": {
+      "type": "array",
+      "description": "Interactive regions. Cap: 500 zones.",
+      "maxItems": 500,
+      "items": { "$ref": "#/$defs/zone" }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "type": { "const": "flat" } } },
+      "then": {
+        "required": ["canvas"],
+        "description": "flat maps must declare a canvas."
+      }
+    },
+    {
+      "if": { "properties": { "type": { "const": "sphere" } } },
+      "then": {
+        "required": ["sphere"],
+        "description": "sphere maps must declare a sphere spec."
+      }
+    }
+  ],
+  "$defs": {
+    "hexColor": {
+      "type": "string",
+      "description": "#RRGGBB or #AARRGGBB (leading # optional, case-insensitive). Clamped by the app's dark-only WCAG guard; see CONTRIBUTING-MAPS.md.",
+      "pattern": "^#?[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$"
+    },
+    "fontFamily": {
+      "type": "string",
+      "description": "Restricted to the three bundled families; anything else falls back per-token.",
+      "enum": ["Inter", "JetBrainsMono", "Quicksand"]
+    },
+    "theme": {
+      "type": "object",
+      "description": "9 closed tokens, all optional (each missing/malformed token falls back to the app default).",
+      "additionalProperties": false,
+      "properties": {
+        "background": { "$ref": "#/$defs/hexColor" },
+        "surface": { "$ref": "#/$defs/hexColor" },
+        "zoneFill": { "$ref": "#/$defs/hexColor" },
+        "zoneStroke": { "$ref": "#/$defs/hexColor" },
+        "zoneSelectedFill": { "$ref": "#/$defs/hexColor" },
+        "glow": { "$ref": "#/$defs/hexColor" },
+        "label": { "$ref": "#/$defs/hexColor" },
+        "accent": { "$ref": "#/$defs/hexColor" },
+        "fontFamily": { "$ref": "#/$defs/fontFamily" }
+      }
+    },
+    "zoneThemeOverride": {
+      "type": "object",
+      "description": "Per-zone override. Only zoneFill / zoneStroke / glow are honoured; any other token is dropped by the app (a zone may not repaint map-level surfaces).",
+      "additionalProperties": false,
+      "properties": {
+        "zoneFill": { "$ref": "#/$defs/hexColor" },
+        "zoneStroke": { "$ref": "#/$defs/hexColor" },
+        "glow": { "$ref": "#/$defs/hexColor" }
+      }
+    },
+    "fieldSpec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "label", "type"],
+      "properties": {
+        "key": {
+          "type": "string",
+          "description": "Stable field key; zone `fields` are keyed by this.",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "label": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "type": {
+          "type": "string",
+          "description": "Note the wire name for enumeration is \"enum\".",
+          "enum": ["text", "longText", "number", "enum", "stringList", "link"]
+        },
+        "options": {
+          "type": "array",
+          "description": "Enum options. Cap: 12 options, each ≤ 60 chars.",
+          "maxItems": 12,
+          "items": { "type": "string", "minLength": 1, "maxLength": 60 }
+        },
+        "unit": { "type": "string", "maxLength": 24 },
+        "style": { "type": "string", "maxLength": 32 },
+        "searchable": { "type": "boolean", "description": "Include this field in FTS (default false)." },
+        "filterable": {
+          "type": "boolean",
+          "description": "Show as a filter chip (default false). Honoured only for type \"enum\"; dropped otherwise by the app."
+        }
+      }
+    },
+    "point2d": {
+      "type": "array",
+      "description": "Flat canvas point [x, y] in pixels.",
+      "items": { "type": "number" },
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "geoPoint": {
+      "type": "array",
+      "description": "Spherical point [lon, lat] in degrees.",
+      "items": { "type": "number" },
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "geometry": {
+      "description": "Zone geometry. Unknown `kind` is retained but not drawn/picked by the app.",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "rings"],
+          "properties": {
+            "kind": { "const": "polygon" },
+            "rings": {
+              "type": "array",
+              "description": "First ring is the outline; the rest are holes (even-odd). Total vertices per zone ≤ 5000 (checked by content-ci.yml).",
+              "items": {
+                "type": "array",
+                "items": { "$ref": "#/$defs/point2d" },
+                "minItems": 3
+              },
+              "minItems": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "at", "hitRadius"],
+          "properties": {
+            "kind": { "const": "marker" },
+            "at": { "$ref": "#/$defs/point2d" },
+            "hitRadius": { "type": "number", "exclusiveMinimum": 0 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "rings"],
+          "properties": {
+            "kind": { "const": "sphericalPolygon" },
+            "rings": {
+              "type": "array",
+              "description": "Pre-resampled to short arcs by content CI; the app never tessellates.",
+              "items": {
+                "type": "array",
+                "items": { "$ref": "#/$defs/geoPoint" },
+                "minItems": 3
+              },
+              "minItems": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "center", "radiusDeg"],
+          "properties": {
+            "kind": { "const": "sphericalCap" },
+            "center": { "$ref": "#/$defs/geoPoint" },
+            "radiusDeg": { "type": "number", "exclusiveMinimum": 0, "maximum": 180 }
+          }
+        }
+      ]
+    },
+    "zone": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "geometry"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "name": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "geometry": { "$ref": "#/$defs/geometry" },
+        "labelAnchor": { "$ref": "#/$defs/point2d" },
+        "themeOverride": { "$ref": "#/$defs/zoneThemeOverride" },
+        "fields": {
+          "type": "object",
+          "description": "Free-form values keyed by fieldsSchema[].key. Interpretation is driven by the field's type.",
+          "additionalProperties": true
+        }
+      }
+    }
+  }
+}

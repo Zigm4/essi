@@ -49,6 +49,26 @@ The native side should prefer driving the countdown off `arrivalEpochMs` with a
 native `Text(timerInterval:)` / `TimeInterval` timer rather than pushing a new
 snapshot every minute — that keeps updates cheap and battery-friendly (see §5).
 
+Concrete example of one `toBridgeMap()` payload (zone 400 "Olympus", armed, 20
+min out) as it crosses the channel:
+
+```json
+{
+  "zone": 400,
+  "zoneName": "Olympus",
+  "arrivalMinute": 20,
+  "minutesUntil": 20,
+  "arrivalEpochMs": 1783080000000,
+  "isArmed": true,
+  "generatedAtEpochMs": 1783078800000
+}
+```
+
+The map is intentionally flat (no nesting) and JSON-safe (ints / string /
+bool). This is asserted by `test/live_activity_bridge_test.dart` and
+`test/next_arrival_snapshot_test.dart` so a schema drift breaks the build, not
+the device.
+
 ## 3. Recommended packages
 
 - **`home_widget`** — home-screen widgets on both platforms and a shared
@@ -124,35 +144,85 @@ pushes:
 
 ```
 marsExpressScheduleProvider  ─┐
-                              ├─▶ nextArrivalProvider ─▶ NextArrivalSnapshot
+nextArrivalClockProvider ─────┼─▶ nextArrivalProvider ─▶ NextArrivalSnapshot
 trainAlertControllerProvider ─┘        (single source of truth)
                                             │  .toBridgeMap()
                                             ▼
-                           MarsExpressWidgetBridge  (device-work phase)
-                             ├─ HomeWidget.saveWidgetData / updateWidget
-                             └─ LiveActivities.createActivity / updateActivity
+                             LiveActivityBridge.sync(snapshot)
+                                            │        (bridge, landed)
+                                            ▼
+                                    LiveActivitySink
+                     ┌──────────────────┴───────────────────┐
+              NoopLiveActivitySink                  <native sink>
+                (default, landed)              (device-work phase)
+                                        ├─ HomeWidget.saveWidgetData / updateWidget
+                                        └─ LiveActivities.createActivity / updateActivity
 ```
 
-The bridge to add later (e.g. `lib/services/mars_express_widget_bridge.dart`):
+### 7.1 The bridge — landed, no native deps
 
-- listens to `nextArrivalProvider` (and app-resume) and writes
-  `snapshot.toBridgeMap()` to the App-Group store;
-- starts a Live Activity when a snapshot with `isArmed == true` appears and ends
-  it once the arrival passes or the zone is disarmed;
-- is a **no-op on unsupported platforms** so the core app is unaffected.
+`lib/features/tools/train/state/live_activity_bridge.dart` is the ONE seam
+between the pure snapshot and the native side. It ships today with **zero**
+native dependencies:
+
+- **`LiveActivitySink`** — the abstract platform sink. `push(payload)` writes
+  the flat map to the shared App-Group store and (when `isArmed`) starts/updates
+  a Live Activity; `clear()` ends it. Nothing else in the app talks to the
+  native layer directly.
+- **`NoopLiveActivitySink`** — the default: a deliberate no-op so the wiring is
+  live and unit-tested before any plugin exists.
+- **`LiveActivityBridge`** — `payloadFor(snapshot)` (a straight passthrough of
+  `NextArrivalSnapshot.toBridgeMap()`, so the payload contract has one owner)
+  and `sync(snapshot)` (push when there is a snapshot, else clear).
+- **Providers** — `liveActivitySinkProvider` (defaults to the no-op),
+  `liveActivityBridgeProvider`, and `liveActivitySyncProvider` (an
+  `autoDispose` listener that forwards every recomputed `nextArrivalProvider`
+  snapshot to the sink). The Mars Express surface `ref.watch`es
+  `liveActivitySyncProvider` so the wiring is active whenever that surface is on
+  screen.
+
+### 7.2 Installing the real native sink (device-work phase)
+
+Adding native support is a **single override** — no call site changes:
+
+```dart
+ProviderScope(
+  overrides: [
+    liveActivitySinkProvider.overrideWithValue(NativeLiveActivitySink()),
+  ],
+  child: const UnderdeckApp(),
+);
+```
+
+`NativeLiveActivitySink implements LiveActivitySink` wraps `home_widget` +
+`live_activities` (added to `pubspec.yaml` only in this phase) and is a **no-op
+on unsupported platforms** so the core app is unaffected.
 
 Because everything derives from `nextArrivalProvider`, which derives purely from
-`MarsExpressService` + the wall clock, the schedule logic lives in exactly one
-place. The pure resolver (`MarsExpressNextArrival`) is unit-tested in
-`test/next_arrival_snapshot_test.dart`.
+`resolveNextArrival` (`MarsExpressService` + a caller-supplied wall clock), the
+schedule logic lives in exactly one place. The countdown is genuinely live: the
+provider watches `nextArrivalClockProvider`, a minute-cadence `autoDispose`
+clock, so it re-resolves as time passes instead of serving a memoized value.
 
 ## 8. Groundwork already landed
 
 - `lib/features/tools/train/state/next_arrival_provider.dart`
   - `NextArrivalSnapshot` (+ `toBridgeMap()`),
   - `MarsExpressNextArrival` pure resolver (`focusedZone` / `build` / `resolve`),
-  - `nextArrivalProvider` combining schedule + armed zones.
-- `test/next_arrival_snapshot_test.dart` — 10 passing cases.
+  - `resolveNextArrival({schedule, armedZones, required now})` — the pure,
+    caller-clocked entry point (no hidden memoization),
+  - `nextArrivalClockProvider` — an `autoDispose` minute-cadence wall clock,
+  - `nextArrivalProvider` — `autoDispose`, combines schedule + armed zones + the
+    live clock so the countdown is genuinely fresh (fixes E3: the old plain
+    `Provider` was memoized and could serve a stale countdown despite the
+    "re-read = fresh" doc).
+- `lib/features/tools/train/state/live_activity_bridge.dart`
+  - `LiveActivitySink` / `NoopLiveActivitySink`, `LiveActivityBridge`,
+    `liveActivitySinkProvider` / `liveActivityBridgeProvider` /
+    `liveActivitySyncProvider` (see §7.1).
+- `test/next_arrival_snapshot_test.dart` — snapshot + `resolveNextArrival` cases
+  (incl. the "later clock → fresher countdown" contract).
+- `test/live_activity_bridge_test.dart` — bridge push/clear + flat-payload cases.
 
 No native dependencies were added to `pubspec.yaml`; no extension targets or
 manifests were touched.

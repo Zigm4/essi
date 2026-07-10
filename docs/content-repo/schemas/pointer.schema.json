@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://underdeck.app/schemas/pointer.schema.json",
+  "title": "Underdeck Maps — mutable pointer (latest-v1.json)",
+  "description": "The tiny, mutable pointer at the top of the content chain. It names the tag-pinned manifest for the current content release. Bounds mirror the app's MapContentValidator (MapLimits). File size cap: 64 KB (enforced by content-ci.yml, not expressible in JSON Schema).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "contentVersion", "tag", "minAppVersion", "manifest"],
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "description": "Pointer schema version. 1 for the current app.",
+      "minimum": 1
+    },
+    "contentVersion": {
+      "type": "string",
+      "description": "Human content version string (e.g. \"2026.07.0\"). Drives the gallery \"What's new\" banner.",
+      "minLength": 1,
+      "maxLength": 40
+    },
+    "tag": {
+      "type": "string",
+      "description": "The immutable git tag the manifest + documents + assets are pinned to (e.g. \"content-2026.07.0\").",
+      "minLength": 1,
+      "maxLength": 40
+    },
+    "minAppVersion": {
+      "type": "string",
+      "description": "Lowest app version that may load this content. Older apps ignore the pointer.",
+      "minLength": 1,
+      "maxLength": 40
+    },
+    "manifest": { "$ref": "#/$defs/fileRef" }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "description": "Lowercase hex SHA-256 of the referenced bytes. Emitted by content-ci.yml.",
+      "pattern": "^[0-9a-f]{64}$",
+      "maxLength": 64
+    },
+    "fileRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "bytes"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Repo-relative path under the tag, joined onto the manifest cdnBase.",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "bytes": {
+          "type": "integer",
+          "description": "Declared byte length of the referenced file. Used by the app's pre-download size gate.",
+          "minimum": 0
+        },
+        "kind": {
+          "type": "string",
+          "description": "Optional free-form role hint.",
+          "maxLength": 64
+        },
+        "pixelSize": {
+          "type": "array",
+          "description": "Optional [width, height] in pixels (images only).",
+          "items": { "type": "integer", "minimum": 1 },
+          "minItems": 2,
+          "maxItems": 2
+        }
+      }
+    }
+  }
+}

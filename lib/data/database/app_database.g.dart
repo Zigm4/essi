@@ -5540,6 +5540,407 @@ class MapPackFilesCompanion extends UpdateCompanion<MapPackFile> {
   }
 }
 
+class $MapPinsTable extends MapPins with TableInfo<$MapPinsTable, MapPin> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MapPinsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _mapIdMeta = const VerificationMeta('mapId');
+  @override
+  late final GeneratedColumn<String> mapId = GeneratedColumn<String>(
+    'map_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _zoneIdMeta = const VerificationMeta('zoneId');
+  @override
+  late final GeneratedColumn<String> zoneId = GeneratedColumn<String>(
+    'zone_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    mapId,
+    zoneId,
+    note,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'map_pins';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<MapPin> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('map_id')) {
+      context.handle(
+        _mapIdMeta,
+        mapId.isAcceptableOrUnknown(data['map_id']!, _mapIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_mapIdMeta);
+    }
+    if (data.containsKey('zone_id')) {
+      context.handle(
+        _zoneIdMeta,
+        zoneId.isAcceptableOrUnknown(data['zone_id']!, _zoneIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_zoneIdMeta);
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  MapPin map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MapPin(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      mapId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}map_id'],
+      )!,
+      zoneId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}zone_id'],
+      )!,
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $MapPinsTable createAlias(String alias) {
+    return $MapPinsTable(attachedDatabase, alias);
+  }
+}
+
+class MapPin extends DataClass implements Insertable<MapPin> {
+  final String id;
+  final String mapId;
+  final String zoneId;
+  final String note;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const MapPin({
+    required this.id,
+    required this.mapId,
+    required this.zoneId,
+    required this.note,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['map_id'] = Variable<String>(mapId);
+    map['zone_id'] = Variable<String>(zoneId);
+    map['note'] = Variable<String>(note);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  MapPinsCompanion toCompanion(bool nullToAbsent) {
+    return MapPinsCompanion(
+      id: Value(id),
+      mapId: Value(mapId),
+      zoneId: Value(zoneId),
+      note: Value(note),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory MapPin.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MapPin(
+      id: serializer.fromJson<String>(json['id']),
+      mapId: serializer.fromJson<String>(json['mapId']),
+      zoneId: serializer.fromJson<String>(json['zoneId']),
+      note: serializer.fromJson<String>(json['note']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'mapId': serializer.toJson<String>(mapId),
+      'zoneId': serializer.toJson<String>(zoneId),
+      'note': serializer.toJson<String>(note),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  MapPin copyWith({
+    String? id,
+    String? mapId,
+    String? zoneId,
+    String? note,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => MapPin(
+    id: id ?? this.id,
+    mapId: mapId ?? this.mapId,
+    zoneId: zoneId ?? this.zoneId,
+    note: note ?? this.note,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  MapPin copyWithCompanion(MapPinsCompanion data) {
+    return MapPin(
+      id: data.id.present ? data.id.value : this.id,
+      mapId: data.mapId.present ? data.mapId.value : this.mapId,
+      zoneId: data.zoneId.present ? data.zoneId.value : this.zoneId,
+      note: data.note.present ? data.note.value : this.note,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MapPin(')
+          ..write('id: $id, ')
+          ..write('mapId: $mapId, ')
+          ..write('zoneId: $zoneId, ')
+          ..write('note: $note, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, mapId, zoneId, note, createdAt, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MapPin &&
+          other.id == this.id &&
+          other.mapId == this.mapId &&
+          other.zoneId == this.zoneId &&
+          other.note == this.note &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class MapPinsCompanion extends UpdateCompanion<MapPin> {
+  final Value<String> id;
+  final Value<String> mapId;
+  final Value<String> zoneId;
+  final Value<String> note;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const MapPinsCompanion({
+    this.id = const Value.absent(),
+    this.mapId = const Value.absent(),
+    this.zoneId = const Value.absent(),
+    this.note = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  MapPinsCompanion.insert({
+    required String id,
+    required String mapId,
+    required String zoneId,
+    this.note = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       mapId = Value(mapId),
+       zoneId = Value(zoneId),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<MapPin> custom({
+    Expression<String>? id,
+    Expression<String>? mapId,
+    Expression<String>? zoneId,
+    Expression<String>? note,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (mapId != null) 'map_id': mapId,
+      if (zoneId != null) 'zone_id': zoneId,
+      if (note != null) 'note': note,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  MapPinsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? mapId,
+    Value<String>? zoneId,
+    Value<String>? note,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return MapPinsCompanion(
+      id: id ?? this.id,
+      mapId: mapId ?? this.mapId,
+      zoneId: zoneId ?? this.zoneId,
+      note: note ?? this.note,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (mapId.present) {
+      map['map_id'] = Variable<String>(mapId.value);
+    }
+    if (zoneId.present) {
+      map['zone_id'] = Variable<String>(zoneId.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MapPinsCompanion(')
+          ..write('id: $id, ')
+          ..write('mapId: $mapId, ')
+          ..write('zoneId: $zoneId, ')
+          ..write('note: $note, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -5559,6 +5960,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $JobStatusTable jobStatus = $JobStatusTable(this);
   late final $MapPacksTable mapPacks = $MapPacksTable(this);
   late final $MapPackFilesTable mapPackFiles = $MapPackFilesTable(this);
+  late final $MapPinsTable mapPins = $MapPinsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -5578,6 +5980,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     jobStatus,
     mapPacks,
     mapPackFiles,
+    mapPins,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -9783,6 +10186,219 @@ typedef $$MapPackFilesTableProcessedTableManager =
       MapPackFile,
       PrefetchHooks Function()
     >;
+typedef $$MapPinsTableCreateCompanionBuilder =
+    MapPinsCompanion Function({
+      required String id,
+      required String mapId,
+      required String zoneId,
+      Value<String> note,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<int> rowid,
+    });
+typedef $$MapPinsTableUpdateCompanionBuilder =
+    MapPinsCompanion Function({
+      Value<String> id,
+      Value<String> mapId,
+      Value<String> zoneId,
+      Value<String> note,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$MapPinsTableFilterComposer
+    extends Composer<_$AppDatabase, $MapPinsTable> {
+  $$MapPinsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get mapId => $composableBuilder(
+    column: $table.mapId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get zoneId => $composableBuilder(
+    column: $table.zoneId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$MapPinsTableOrderingComposer
+    extends Composer<_$AppDatabase, $MapPinsTable> {
+  $$MapPinsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get mapId => $composableBuilder(
+    column: $table.mapId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get zoneId => $composableBuilder(
+    column: $table.zoneId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$MapPinsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $MapPinsTable> {
+  $$MapPinsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get mapId =>
+      $composableBuilder(column: $table.mapId, builder: (column) => column);
+
+  GeneratedColumn<String> get zoneId =>
+      $composableBuilder(column: $table.zoneId, builder: (column) => column);
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$MapPinsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $MapPinsTable,
+          MapPin,
+          $$MapPinsTableFilterComposer,
+          $$MapPinsTableOrderingComposer,
+          $$MapPinsTableAnnotationComposer,
+          $$MapPinsTableCreateCompanionBuilder,
+          $$MapPinsTableUpdateCompanionBuilder,
+          (MapPin, BaseReferences<_$AppDatabase, $MapPinsTable, MapPin>),
+          MapPin,
+          PrefetchHooks Function()
+        > {
+  $$MapPinsTableTableManager(_$AppDatabase db, $MapPinsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MapPinsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MapPinsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$MapPinsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> mapId = const Value.absent(),
+                Value<String> zoneId = const Value.absent(),
+                Value<String> note = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MapPinsCompanion(
+                id: id,
+                mapId: mapId,
+                zoneId: zoneId,
+                note: note,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String mapId,
+                required String zoneId,
+                Value<String> note = const Value.absent(),
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => MapPinsCompanion.insert(
+                id: id,
+                mapId: mapId,
+                zoneId: zoneId,
+                note: note,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$MapPinsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $MapPinsTable,
+      MapPin,
+      $$MapPinsTableFilterComposer,
+      $$MapPinsTableOrderingComposer,
+      $$MapPinsTableAnnotationComposer,
+      $$MapPinsTableCreateCompanionBuilder,
+      $$MapPinsTableUpdateCompanionBuilder,
+      (MapPin, BaseReferences<_$AppDatabase, $MapPinsTable, MapPin>),
+      MapPin,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -9814,4 +10430,6 @@ class $AppDatabaseManager {
       $$MapPacksTableTableManager(_db, _db.mapPacks);
   $$MapPackFilesTableTableManager get mapPackFiles =>
       $$MapPackFilesTableTableManager(_db, _db.mapPackFiles);
+  $$MapPinsTableTableManager get mapPins =>
+      $$MapPinsTableTableManager(_db, _db.mapPins);
 }

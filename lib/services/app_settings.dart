@@ -39,6 +39,12 @@ class AppSettingsState {
   /// [mapsNetworkEnabled]. Off => updates are manual only.
   final bool mapsAutoUpdate;
 
+  // AUDIT-V2 §6.3 — the maps "What's new" banner shows once per content version.
+  /// The maps `contentVersion` whose changelog the user has already seen
+  /// (dismissed the banner for), or `null` if none yet. Drives the once-per-
+  /// version gate via [shouldShowMapsChangelog].
+  final String? mapsLastSeenChangelogVersion;
+
   const AppSettingsState({
     required this.hapticsEnabled,
     required this.reduceAnimations,
@@ -49,6 +55,7 @@ class AppSettingsState {
     required this.autoBackupEnabled,
     required this.mapsNetworkEnabled,
     required this.mapsAutoUpdate,
+    required this.mapsLastSeenChangelogVersion,
   });
 
   static const defaults = AppSettingsState(
@@ -61,6 +68,7 @@ class AppSettingsState {
     autoBackupEnabled: false,
     mapsNetworkEnabled: true,
     mapsAutoUpdate: true,
+    mapsLastSeenChangelogVersion: null,
   );
 
   AppSettingsState copyWith({
@@ -73,6 +81,7 @@ class AppSettingsState {
     bool? autoBackupEnabled,
     bool? mapsNetworkEnabled,
     bool? mapsAutoUpdate,
+    Object? mapsLastSeenChangelogVersion = _unset,
   }) {
     return AppSettingsState(
       hapticsEnabled: hapticsEnabled ?? this.hapticsEnabled,
@@ -88,6 +97,10 @@ class AppSettingsState {
       autoBackupEnabled: autoBackupEnabled ?? this.autoBackupEnabled,
       mapsNetworkEnabled: mapsNetworkEnabled ?? this.mapsNetworkEnabled,
       mapsAutoUpdate: mapsAutoUpdate ?? this.mapsAutoUpdate,
+      mapsLastSeenChangelogVersion:
+          identical(mapsLastSeenChangelogVersion, _unset)
+              ? this.mapsLastSeenChangelogVersion
+              : mapsLastSeenChangelogVersion as String?,
     );
   }
 }
@@ -102,6 +115,7 @@ class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
   static const _kAutoBackup = 'settings.autoBackupEnabled';
   static const _kMapsNetwork = 'settings.mapsNetworkEnabled';
   static const _kMapsAutoUpdate = 'settings.mapsAutoUpdate';
+  static const _kMapsLastSeenChangelog = 'settings.mapsLastSeenChangelogVersion';
 
   AppSettingsNotifier(this._prefs) : super(_load(_prefs));
 
@@ -127,6 +141,7 @@ class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
           AppSettingsState.defaults.mapsNetworkEnabled,
       mapsAutoUpdate: prefs.getBool(_kMapsAutoUpdate) ??
           AppSettingsState.defaults.mapsAutoUpdate,
+      mapsLastSeenChangelogVersion: prefs.getString(_kMapsLastSeenChangelog),
     );
   }
 
@@ -183,6 +198,17 @@ class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
   Future<void> setMapsAutoUpdate(bool value) async {
     state = state.copyWith(mapsAutoUpdate: value);
     await _prefs.setBool(_kMapsAutoUpdate, value);
+  }
+
+  /// AUDIT-V2 §6.3: record that the user has seen the "What's new" banner for
+  /// [contentVersion], so it stays dismissed until the next content version.
+  Future<void> markMapsChangelogSeen(String contentVersion) async {
+    if (contentVersion.isEmpty ||
+        state.mapsLastSeenChangelogVersion == contentVersion) {
+      return;
+    }
+    state = state.copyWith(mapsLastSeenChangelogVersion: contentVersion);
+    await _prefs.setString(_kMapsLastSeenChangelog, contentVersion);
   }
 }
 
