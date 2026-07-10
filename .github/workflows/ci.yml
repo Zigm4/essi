@@ -1,0 +1,40 @@
+# Underdeck CI — analyze + test on every push and pull request.
+#
+# Activates automatically once the repo has a GitHub remote (push this file,
+# then push a branch / open a PR). No secrets or external accounts required.
+#
+# Flutter 3.41.x ships Dart 3.11 (see pubspec `environment.sdk: ^3.11.5`).
+# We build_runner first so drift/riverpod generated sources exist before
+# `flutter analyze` and `flutter test` run.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  analyze-and-test:
+    name: Analyze & Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.41.9
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate code (drift / riverpod)
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test

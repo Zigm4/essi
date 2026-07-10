@@ -162,11 +162,12 @@ class SettingsView extends ConsumerWidget {
                     ),
                     const SizedBox(height: AppSpacing.md),
                     _ToggleRow(
-                      title: 'Auto-backup to Files',
+                      title: 'Auto-backup',
                       subtitle:
                           'After you make a batch of changes, quietly save a '
-                          'timestamped copy into the app\'s Documents folder '
-                          '(reachable from Files). Keeps the latest few.',
+                          'timestamped safety copy inside the app and keep the '
+                          'latest few. For a file you control, use Export above '
+                          'to share the JSON somewhere durable.',
                       value: settings.autoBackupEnabled,
                       onChange: (v) => notifier.setAutoBackupEnabled(v),
                     ),

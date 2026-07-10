@@ -247,6 +247,21 @@ class TrainAlertIds {
   /// little headroom.
   static const int slotSize = 20;
 
+  /// P2/E6 — global cap on how many notifications may be pending at once across
+  /// *all* armed zones. iOS silently keeps only the nearest 64 pending; we stay
+  /// safely under that so the farthest alerts are never dropped without notice.
+  static const int pendingBudget = 60;
+
+  /// E9 — ids scheduled by the pre-P2 alert scheme (`70000 + zone*10 + i`, for
+  /// the zones the schedule used, 234–346). These fall *outside* the reserved
+  /// band [bandMin, bandMax], so the band-scoped cancels can never reach them;
+  /// a one-shot cleanup sweeps them on first launch of the P2+ build. Only ids
+  /// actually pending are ever cancelled, so an over-wide sweep is harmless.
+  static List<int> legacyPrePlanIds() => [
+        for (var zone = 234; zone <= 346; zone++)
+          for (var i = 0; i < 10; i++) 70000 + zone * 10 + i,
+      ];
+
   /// Number of slots that fit in the band.
   static int get slotCount => (bandMax - bandMin + 1) ~/ slotSize;
 

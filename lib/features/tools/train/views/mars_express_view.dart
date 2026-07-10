@@ -34,6 +34,14 @@ class _MarsExpressViewState extends ConsumerState<MarsExpressView>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // E9 — one-shot cleanup of legacy notification ids left outside the
+    // reserved band by the pre-P2 scheme. Guarded internally; no-ops after the
+    // first successful run.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref.read(trainAlertControllerProvider.notifier).cleanupLegacyIdsOnce();
+      }
+    });
     _ticker = Timer.periodic(const Duration(seconds: 5), (_) {
       if (mounted) {
         setState(() => _now = DateTime.now());
@@ -55,6 +63,10 @@ class _MarsExpressViewState extends ConsumerState<MarsExpressView>
     // background execution, this is when we can extend the schedule horizon.
     if (state == AppLifecycleState.resumed) {
       setState(() => _now = DateTime.now());
+      // The exact-alarm capability can change while we were backgrounded (user
+      // toggled "Alarms & reminders" in system settings), so re-check it — the
+      // one-shot FutureProvider would otherwise show a stale "approximate" hint.
+      ref.invalidate(exactAlarmCapabilityProvider);
       _refreshAlerts();
     }
   }
@@ -90,6 +102,10 @@ class _MarsExpressViewState extends ConsumerState<MarsExpressView>
   Widget build(BuildContext context) {
     final scheduleAsync = ref.watch(marsExpressScheduleProvider);
     final alert = ref.watch(trainAlertControllerProvider);
+    // P3 — when exact alarms are unavailable (Android 12+ with the exact-alarm
+    // permission revoked) delivery is approximate; surface that on the card.
+    final approximate =
+        !(ref.watch(exactAlarmCapabilityProvider).valueOrNull ?? true);
     return Scaffold(
       backgroundColor: AppColors.bgDeepest,
       extendBodyBehindAppBar: true,
@@ -255,6 +271,7 @@ class _MarsExpressViewState extends ConsumerState<MarsExpressView>
                           for (final entry in alert.zones)
                             _ArmedZoneRow(
                               entry: entry,
+                              approximate: approximate,
                               nextArrival: _nextArrivalFor(
                                 entry.zone,
                                 schedule,
@@ -353,10 +370,14 @@ class _ScheduleRow extends StatelessWidget {
 class _ArmedZoneRow extends StatelessWidget {
   const _ArmedZoneRow({
     required this.entry,
+    required this.approximate,
     required this.nextArrival,
     required this.onCancel,
   });
   final TrainAlertEntry entry;
+
+  /// P3 — exact alarms unavailable, so delivery timing is approximate.
+  final bool approximate;
   final DateTime? nextArrival;
   final VoidCallback onCancel;
 
@@ -389,6 +410,22 @@ class _ArmedZoneRow extends StatelessWidget {
                       : (entry.repeat ? 'Recurring alert' : 'Alert armed'),
                   style: AppTypography.caption,
                 ),
+                if (approximate) ...[
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      const Icon(Icons.schedule,
+                          color: AppColors.accentWarn, size: 12),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Approximate timing',
+                        style: AppTypography.caption.copyWith(
+                          color: AppColors.accentWarn,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
@@ -454,27 +491,61 @@ class _ZoneDetailSheetState extends ConsumerState<ZoneDetailSheet> {
 
   Future<void> _arm() async {
     final notifier = ref.read(trainAlertControllerProvider.notifier);
-    final ok = await notifier.arm(
+    // E4 — pass a fresh now, not the up-to-5s-stale ticker value, so the <2s
+    // schedulability guard reflects the real moment the user tapped.
+    final outcome = await notifier.arm(
       zone: widget.zone,
       stops: widget.schedule.stops,
       repeat: _repeat,
-      now: _now,
+      now: DateTime.now(),
     );
     if (!mounted) return;
-    if (ok) {
-      Haptics.of(ref).success();
-      Navigator.of(context).pop();
-    } else {
-      Haptics.of(ref).error();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            "Couldn't arm alerts. Check notification permissions in system "
-            'settings, or cancel another armed zone if the limit is reached.',
+    switch (outcome) {
+      case ArmOutcome.armed:
+        Haptics.of(ref).success();
+        Navigator.of(context).pop();
+      case ArmOutcome.armedTruncated:
+        // Armed, but the global notification budget dropped the farthest
+        // occurrences (P2/E6). Still useful — confirm with a heads-up.
+        Haptics.of(ref).success();
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Alert armed, but some later occurrences were skipped — too many '
+              'zones are armed at once. Cancel a zone to cover them.',
+            ),
           ),
-        ),
-      );
+        );
+      case ArmOutcome.permissionDenied:
+        Haptics.of(ref).error();
+        _showArmError(
+          'Notifications are turned off. Enable them for Underdeck in system '
+          'settings to arm alerts.',
+        );
+      case ArmOutcome.bandFull:
+        Haptics.of(ref).error();
+        _showArmError(
+          'Too many zones are armed. Cancel one before arming another.',
+        );
+      case ArmOutcome.budgetFull:
+        Haptics.of(ref).error();
+        _showArmError(
+          'The notification limit is full. Cancel an armed zone to make room.',
+        );
+      case ArmOutcome.nothingToSchedule:
+        Haptics.of(ref).error();
+        _showArmError(
+          "The next arrival is too soon to schedule alerts. Try again once "
+          "there's more time before it.",
+        );
     }
+  }
+
+  void _showArmError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   Future<void> _cancel() async {

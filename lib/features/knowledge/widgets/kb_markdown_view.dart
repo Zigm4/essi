@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
 import '../../../core/external_link.dart';
 import '../../../core/logging.dart';
@@ -20,8 +20,13 @@ class KBMarkdownView extends StatelessWidget {
         // R4: allowlist schemes before handing an imported href to the OS.
         launchExternal(context, href);
       },
-      sizedImageBuilder: (config) {
-        final raw = config.uri.toString();
+      // R3: flutter_markdown_plus replaced sizedImageBuilder with imageBuilder
+      // (uri, title, alt) — it no longer surfaces a per-image width, so the
+      // constrained decode below falls back to the layout width from
+      // MediaQuery (the same value the old builder used when no explicit
+      // width was present in the markdown).
+      imageBuilder: (uri, title, alt) {
+        final raw = uri.toString();
         if (raw.startsWith('http://') || raw.startsWith('https://')) {
           // R7: reject insecure image URLs outright — KB images are trusted
           // https assets; anything on plain http is broken/unsafe.
@@ -52,7 +57,7 @@ class KBMarkdownView extends StatelessWidget {
         // R7: decode at display resolution so oversized PNGs (the KB ships a
         // 4086×4086 asset) don't OOM low-end Android devices.
         final dpr = MediaQuery.devicePixelRatioOf(context);
-        final displayWidth = config.width ?? MediaQuery.sizeOf(context).width;
+        final displayWidth = MediaQuery.sizeOf(context).width;
         final cacheWidth = (displayWidth * dpr).round().clamp(1, 4096);
         return Image.asset(
           'assets/knowledge/$base',

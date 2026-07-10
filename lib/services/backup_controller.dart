@@ -15,7 +15,7 @@ final backupStatusProvider = FutureProvider.autoDispose<BackupStatus>((ref) {
   return ref.watch(dataExportServiceProvider).backupStatus();
 });
 
-/// P3/25: drives the opt-in "Auto-backup to Files" feature. Subscribes to the
+/// P3/25: drives the opt-in "Auto-backup" feature. Subscribes to the
 /// database's write stream and, once enough changes have accrued (and the
 /// setting is on), fires a Documents-directory export. Fire-and-forget: a
 /// failure is logged and never surfaces to or blocks the UI.

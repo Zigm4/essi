@@ -26,7 +26,7 @@ dependencies:
   flutter_local_notifications: ^18.0.1
   timezone: ^0.10.0
 
-  flutter_markdown: ^0.7.4
+  flutter_markdown_plus: ^1.0.11
 
   shared_preferences: ^2.3.3
 
