@@ -8,12 +8,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'tables/favorites_table.dart';
 import 'tables/links_table.dart';
+import 'tables/maps_tables.dart';
 import 'tables/notes_table.dart';
 import 'tables/scan_history_table.dart';
 import 'tables/ships_table.dart';
 import 'tables/tags_table.dart';
 
 part 'app_database.g.dart';
+
+/// Name of the FTS5 virtual table backing zone search. Declared via a raw
+/// `CREATE VIRTUAL TABLE` (drift has no first-class FTS5 table type), so it is
+/// NOT listed in [DriftDatabase.tables]; queries go through [customStatement] /
+/// [customSelect]. `unicode61 remove_diacritics 2` fixes the ASCII-only limit
+/// of the legacy KB index (AUDIT-V2 §4.7).
+const String kMapZoneFtsTable = 'map_zone_fts';
 
 @DriftDatabase(tables: [
   Notes,
@@ -28,6 +36,8 @@ part 'app_database.g.dart';
   DiscoveryHistory,
   Favorites,
   JobStatus,
+  MapPacks,
+  MapPackFiles,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
@@ -38,13 +48,18 @@ class AppDatabase extends _$AppDatabase {
   // three join tables, with PRAGMA foreign_keys enabled.
   // v3 (P3/22): Favorites + JobStatus tables for star/pin/bookmark and job
   // progress tracking.
+  // v4 (maps M0): MapPacks + MapPackFiles (blob-store index) + the map_zone_fts
+  // FTS5 virtual table for zone search.
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) async {
           await m.createAll();
+          // createAll() builds the registered relational tables; the FTS5
+          // virtual table is raw SQL and must be created explicitly.
+          await _createMapZoneFts();
         },
         onUpgrade: (m, from, to) async {
           if (from < 2) {
@@ -52,6 +67,9 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 3) {
             await _migrateToV3(m);
+          }
+          if (from < 4) {
+            await _migrateToV4(m);
           }
         },
         beforeOpen: (details) async {
@@ -172,6 +190,29 @@ class AppDatabase extends _$AppDatabase {
   Future<void> _migrateToV3(Migrator m) async {
     await m.createTable(favorites);
     await m.createTable(jobStatus);
+  }
+
+  /// v3 -> v4 migration (maps M0). Purely additive: the blob-store index tables
+  /// plus the FTS5 zone-search virtual table. No existing data is touched.
+  Future<void> _migrateToV4(Migrator m) async {
+    await m.createTable(mapPacks);
+    await m.createTable(mapPackFiles);
+    await _createMapZoneFts();
+  }
+
+  /// Creates the [kMapZoneFtsTable] FTS5 virtual table. Idempotent via
+  /// `IF NOT EXISTS` so a fresh onCreate and an onUpgrade both land safely.
+  /// `zone_id`/`map_id` are UNINDEXED (stored, not tokenized) so a match can be
+  /// mapped straight back to a zone without a join.
+  Future<void> _createMapZoneFts() async {
+    await customStatement(
+      'CREATE VIRTUAL TABLE IF NOT EXISTS $kMapZoneFtsTable USING fts5('
+      'zone_id UNINDEXED, '
+      'map_id UNINDEXED, '
+      'name, '
+      'fields_text, '
+      "tokenize = 'unicode61 remove_diacritics 2');",
+    );
   }
 
   /// Repoints join rows that reference a duplicate tag id onto its canonical

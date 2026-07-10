@@ -109,8 +109,10 @@ void main() {
     expect(after, hasLength(1));
     expect(after.single.status, 'done');
 
-    // Schema version is now 3.
-    expect(db.schemaVersion, 3);
+    // The app's current schema constant (opening a v2 db upgrades all the way
+    // to it — 4 since the maps M0 tables landed). This suite still proves the
+    // v3 favorites/jobStatus tables are created along the way.
+    expect(db.schemaVersion, 4);
 
     await db.close();
     raw.dispose();

@@ -9,6 +9,8 @@ import '../features/captures/views/captures_home_view.dart';
 import '../features/captures/views/link_detail_view.dart';
 import '../features/captures/views/note_detail_view.dart';
 import '../features/hangar/views/hangar_list_view.dart';
+import '../features/knowledge/maps/views/map_detail_view.dart';
+import '../features/knowledge/maps/views/maps_gallery_view.dart';
 import '../features/knowledge/views/kb_article_view.dart';
 import '../features/knowledge/views/kb_category_view.dart';
 import '../features/knowledge/views/kb_home_view.dart';
@@ -41,6 +43,9 @@ GoRouter buildRouter() {
   return GoRouter(
     initialLocation: '/boot',
     navigatorKey: root,
+    // A deep link to a path we don't recognise (e.g. a renamed/removed route)
+    // lands on a real dead-end screen with a way back, never a blank spinner.
+    errorBuilder: (context, state) => _RouteNotFound(location: state.uri.path),
     routes: [
       GoRoute(
         path: '/boot',
@@ -165,6 +170,21 @@ GoRouter buildRouter() {
                       slug: state.pathParameters['slug']!,
                     ),
                   ),
+                  GoRoute(
+                    path: 'maps',
+                    builder: (context, state) => const MapsGalleryView(),
+                    routes: [
+                      GoRoute(
+                        path: ':id',
+                        // MapDetailView renders a real "map not found" pane when
+                        // the id no longer resolves in the installed manifest —
+                        // a stale deep link never spins forever (audit fallback).
+                        builder: (context, state) => MapDetailView(
+                          id: state.pathParameters['id']!,
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ],
@@ -204,4 +224,46 @@ GoRouter buildRouter() {
       ),
     ],
   );
+}
+
+/// Terminal fallback for an unmatched route (bad/stale deep link). Kept
+/// dependency-light on purpose so it renders even if a feature is unavailable.
+class _RouteNotFound extends StatelessWidget {
+  const _RouteNotFound({required this.location});
+
+  final String location;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Not found')),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.explore_off, size: 40),
+              const SizedBox(height: 12),
+              Text(
+                "This screen doesn't exist.",
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                location,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 12),
+              ),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: () => context.go('/tools'),
+                child: const Text('Back to Underdeck'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

@@ -72,11 +72,14 @@ class _OnboardingViewState extends ConsumerState<OnboardingView> {
       body:
           'Underdeck has no backend operated by us and ships no telemetry or '
           'analytics SDK. Your data stays on your device.\n\n'
-          'The only outbound network is opt-in (a Discord invite, System Scan, '
-          'Discoveries, Tracker). You own your data: back it up or move devices '
-          'with a plain JSON export from Settings.',
+          'Most outbound network is opt-in (a Discord invite, System Scan, '
+          'Discoveries, Tracker). Interactive maps are the exception: they '
+          'download content from GitHub (Pages/Fastly + jsDelivr) at most once '
+          'a day, on by default — you can switch that off in Settings. You own '
+          'your data: back it up or move devices with a plain JSON export.',
       bullets: [
         'No backend. No telemetry. No ads.',
+        'Maps fetch from GitHub by default — toggle in Settings › Maps.',
         'Full JSON export & import lives in Settings › Data.',
       ],
     ),

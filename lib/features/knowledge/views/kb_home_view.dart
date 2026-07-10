@@ -13,6 +13,7 @@ import '../../../design_system/typography.dart';
 import '../../captures/widgets/tag_chip.dart';
 import '../data/kb_loader.dart';
 import '../domain/kb_models.dart';
+import '../maps/views/maps_home_section.dart';
 
 // autoDispose so re-entering the screen starts from an empty query, matching
 // the freshly-built (controller-less) search field instead of showing stale
@@ -83,6 +84,16 @@ class KBHomeView extends ConsumerWidget {
                   ),
                 ),
               ),
+                if (search.isEmpty)
+                  const SliverPadding(
+                    padding: EdgeInsets.fromLTRB(
+                      AppSpacing.md,
+                      0,
+                      AppSpacing.md,
+                      0,
+                    ),
+                    sliver: SliverToBoxAdapter(child: MapsHomeSection()),
+                  ),
                 if (search.isEmpty)
                   const SliverToBoxAdapter(child: _DraftsBanner()),
                 SliverPadding(

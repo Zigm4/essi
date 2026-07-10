@@ -127,6 +127,30 @@ class DisclaimerView extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    const SectionHeader(
+                      title: 'Map content & updates',
+                      icon: Icons.public,
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      'Interactive maps are downloaded from GitHub — GitHub '
+                      'Pages (fronted by Fastly) for the version pointer and '
+                      'jsDelivr (with raw.githubusercontent.com as a fallback) '
+                      'for the files — at most once a day, and verified by '
+                      'SHA-256 before use. A built-in sample map ships with the '
+                      'app so maps work offline. Downloads are on by default '
+                      'and can be turned off, or cleared, in Settings › '
+                      'Interactive maps.',
+                      style: AppTypography.body,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              GlassCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     const SectionHeader(title: 'Trademarks & assets'),
                     const SizedBox(height: AppSpacing.sm),
                     Text(

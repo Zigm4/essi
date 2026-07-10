@@ -85,7 +85,12 @@ class AboutView extends ConsumerWidget {
                       'No backend operated by us. Data stays on your device.',
                     ),
                     const _Bullet(
-                      'Outbound network: opt-in only (Discord invite, System Scan, Discoveries, Tracker).',
+                      'Most outbound network is opt-in (Discord invite, System Scan, Discoveries, Tracker).',
+                    ),
+                    const _Bullet(
+                      'Interactive maps download from GitHub (Pages/Fastly + '
+                      'jsDelivr), at most once a day. On by default — turn it '
+                      'off in Settings › Interactive maps.',
                     ),
                   ],
                 ),

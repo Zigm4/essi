@@ -27,6 +27,18 @@ class AppSettingsState {
   /// into the app's Documents directory (visible via Files/file manager).
   final bool autoBackupEnabled;
 
+  // Dynamic maps (AUDIT-V2 §4). Per the owner's decision the module fetches
+  // from the network BY DEFAULT — [mapsNetworkEnabled] defaults to `true` and
+  // is the user's off-switch (transparency/disclosure copy names the
+  // endpoints). [mapsAutoUpdate] gates the throttled ≤1/24h pointer poll.
+  /// Whether the maps module may reach the network at all (pointer/manifest/
+  /// asset fetches). Off => render only from the offline blob store.
+  final bool mapsNetworkEnabled;
+
+  /// Whether the app auto-checks for a newer content pointer (≤1/24h) when
+  /// [mapsNetworkEnabled]. Off => updates are manual only.
+  final bool mapsAutoUpdate;
+
   const AppSettingsState({
     required this.hapticsEnabled,
     required this.reduceAnimations,
@@ -35,6 +47,8 @@ class AppSettingsState {
     required this.lastBackupAt,
     required this.backupReminderSnoozedUntil,
     required this.autoBackupEnabled,
+    required this.mapsNetworkEnabled,
+    required this.mapsAutoUpdate,
   });
 
   static const defaults = AppSettingsState(
@@ -45,6 +59,8 @@ class AppSettingsState {
     lastBackupAt: null,
     backupReminderSnoozedUntil: null,
     autoBackupEnabled: false,
+    mapsNetworkEnabled: true,
+    mapsAutoUpdate: true,
   );
 
   AppSettingsState copyWith({
@@ -55,6 +71,8 @@ class AppSettingsState {
     Object? lastBackupAt = _unset,
     Object? backupReminderSnoozedUntil = _unset,
     bool? autoBackupEnabled,
+    bool? mapsNetworkEnabled,
+    bool? mapsAutoUpdate,
   }) {
     return AppSettingsState(
       hapticsEnabled: hapticsEnabled ?? this.hapticsEnabled,
@@ -68,6 +86,8 @@ class AppSettingsState {
           ? this.backupReminderSnoozedUntil
           : backupReminderSnoozedUntil as DateTime?,
       autoBackupEnabled: autoBackupEnabled ?? this.autoBackupEnabled,
+      mapsNetworkEnabled: mapsNetworkEnabled ?? this.mapsNetworkEnabled,
+      mapsAutoUpdate: mapsAutoUpdate ?? this.mapsAutoUpdate,
     );
   }
 }
@@ -80,6 +100,8 @@ class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
   static const _kLastBackupAt = 'settings.lastBackupAt';
   static const _kBackupSnoozedUntil = 'settings.backupReminderSnoozedUntil';
   static const _kAutoBackup = 'settings.autoBackupEnabled';
+  static const _kMapsNetwork = 'settings.mapsNetworkEnabled';
+  static const _kMapsAutoUpdate = 'settings.mapsAutoUpdate';
 
   AppSettingsNotifier(this._prefs) : super(_load(_prefs));
 
@@ -101,6 +123,10 @@ class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
       backupReminderSnoozedUntil: _readDate(prefs, _kBackupSnoozedUntil),
       autoBackupEnabled:
           prefs.getBool(_kAutoBackup) ?? AppSettingsState.defaults.autoBackupEnabled,
+      mapsNetworkEnabled: prefs.getBool(_kMapsNetwork) ??
+          AppSettingsState.defaults.mapsNetworkEnabled,
+      mapsAutoUpdate: prefs.getBool(_kMapsAutoUpdate) ??
+          AppSettingsState.defaults.mapsAutoUpdate,
     );
   }
 
@@ -145,6 +171,18 @@ class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
   Future<void> setAutoBackupEnabled(bool value) async {
     state = state.copyWith(autoBackupEnabled: value);
     await _prefs.setBool(_kAutoBackup, value);
+  }
+
+  /// Master off-switch for all maps network access (default on).
+  Future<void> setMapsNetworkEnabled(bool value) async {
+    state = state.copyWith(mapsNetworkEnabled: value);
+    await _prefs.setBool(_kMapsNetwork, value);
+  }
+
+  /// Toggle the throttled auto-check for newer content (default on).
+  Future<void> setMapsAutoUpdate(bool value) async {
+    state = state.copyWith(mapsAutoUpdate: value);
+    await _prefs.setBool(_kMapsAutoUpdate, value);
   }
 }
 

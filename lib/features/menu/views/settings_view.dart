@@ -14,6 +14,8 @@ import '../../../design_system/typography.dart';
 import '../../../services/app_settings.dart';
 import '../../../services/data_export.dart';
 import '../../../services/haptics.dart';
+import '../../knowledge/maps/data/map_content_repository.dart';
+import '../../knowledge/maps/data/map_seed_importer.dart';
 
 class SettingsView extends ConsumerWidget {
   const SettingsView({super.key});
@@ -175,6 +177,8 @@ class SettingsView extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
+              const _MapsSettingsCard(),
+              const SizedBox(height: AppSpacing.lg),
               GlassCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -232,6 +236,7 @@ class _ToggleRow extends StatelessWidget {
     required this.subtitle,
     required this.value,
     required this.onChange,
+    this.enabled = true,
   });
 
   final String title;
@@ -239,25 +244,210 @@ class _ToggleRow extends StatelessWidget {
   final bool value;
   final ValueChanged<bool> onChange;
 
+  /// When false the switch is dimmed and inert (e.g. auto-update while the
+  /// master maps-network switch is off).
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    return Opacity(
+      opacity: enabled ? 1 : 0.45,
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: AppTypography.body),
+                const SizedBox(height: 2),
+                Text(subtitle, style: AppTypography.caption),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Switch(
+            value: value,
+            onChanged: enabled ? onChange : null,
+            activeThumbColor: AppColors.accentSuccess,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Maps module controls: the network-default off-switch, the auto-update
+/// toggle, and a "Downloaded maps" size + clear affordance. Fetch-by-default
+/// per the owner's decision — [AppSettingsState.mapsNetworkEnabled] defaults on
+/// and this is where the user turns it off.
+class _MapsSettingsCard extends ConsumerWidget {
+  const _MapsSettingsCard();
+
+  static String _formatBytes(int bytes) {
+    if (bytes <= 0) return 'none';
+    const units = ['B', 'KB', 'MB', 'GB'];
+    var value = bytes.toDouble();
+    var unit = 0;
+    while (value >= 1024 && unit < units.length - 1) {
+      value /= 1024;
+      unit++;
+    }
+    final rounded = value >= 10 || unit == 0
+        ? value.toStringAsFixed(0)
+        : value.toStringAsFixed(1);
+    return '$rounded ${units[unit]}';
+  }
+
+  Future<void> _clear(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: AppColors.bgElevated,
+        title: Text('Clear downloaded maps?', style: AppTypography.headline),
+        content: Text(
+          'This frees up space by removing downloaded map content. The '
+          'built-in sample map is restored, and maps re-download the next '
+          'time you open them (if downloads are on).',
+          style: AppTypography.body,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text('Clear',
+                style: TextStyle(color: AppColors.accentDanger)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    try {
+      final repo = await ref.read(mapContentRepositoryProvider.future);
+      await repo.clearAllContent();
+      // Forget the seed-imported flag so the bundled baseline re-imports at the
+      // next Knowledge entry, and refresh the dependent providers.
+      await ref.read(sharedPreferencesProvider).remove(kMapSeedImportedPref);
+      ref.invalidate(mapsStoreSizeProvider);
+      ref.invalidate(mapsManifestProvider);
+      ref.invalidate(mapSeedImportProvider);
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not clear maps. Try again.')),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(appSettingsProvider);
+    final notifier = ref.read(appSettingsProvider.notifier);
+    final size = ref.watch(mapsStoreSizeProvider).valueOrNull;
+
+    return GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SectionHeader(
+            title: 'Interactive maps',
+            icon: Icons.map,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          _ToggleRow(
+            title: 'Download interactive maps',
+            subtitle:
+                'Fetch new and updated maps from GitHub (Pages/Fastly + '
+                'jsDelivr), at most once a day. Off keeps only what is already '
+                'on your device.',
+            value: settings.mapsNetworkEnabled,
+            onChange: (v) => notifier.setMapsNetworkEnabled(v),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          _ToggleRow(
+            title: 'Auto-update maps',
+            subtitle:
+                'Automatically check for newer map content in the background. '
+                'Turn off to update only when you choose.',
+            value: settings.mapsAutoUpdate,
+            enabled: settings.mapsNetworkEnabled,
+            onChange: (v) => notifier.setMapsAutoUpdate(v),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          _ManagementRow(
+            label: 'Downloaded maps',
+            value: size == null ? '…' : _formatBytes(size),
+            onClear: () => _clear(context, ref),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// "Downloaded maps: X   [Clear]" row for the maps card.
+class _ManagementRow extends StatelessWidget {
+  const _ManagementRow({
+    required this.label,
+    required this.value,
+    required this.onClear,
+  });
+
+  final String label;
+  final String value;
+  final VoidCallback onClear;
+
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: AppTypography.body),
-              const SizedBox(height: 2),
-              Text(subtitle, style: AppTypography.caption),
-            ],
+          child: RichText(
+            text: TextSpan(
+              style: AppTypography.body,
+              children: [
+                TextSpan(text: '$label: '),
+                TextSpan(
+                  text: value,
+                  style: AppTypography.body.copyWith(
+                    fontFamily: AppTypography.fontMono,
+                    color: AppColors.accentSecondary,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-        const SizedBox(width: AppSpacing.md),
-        Switch(
-          value: value,
-          onChanged: onChange,
-          activeThumbColor: AppColors.accentSuccess,
+        const SizedBox(width: AppSpacing.sm),
+        Semantics(
+          button: true,
+          label: 'Clear downloaded maps',
+          excludeSemantics: true,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: onClear,
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: 8,
+              ),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+                border: Border.all(
+                  color: AppColors.accentDanger.withValues(alpha: 0.5),
+                ),
+              ),
+              child: Text(
+                'Clear',
+                style: AppTypography.body
+                    .copyWith(color: AppColors.accentDanger),
+              ),
+            ),
+          ),
         ),
       ],
     );

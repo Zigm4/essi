@@ -4789,6 +4789,757 @@ class JobStatusCompanion extends UpdateCompanion<JobStatusData> {
   }
 }
 
+class $MapPacksTable extends MapPacks with TableInfo<$MapPacksTable, MapPack> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MapPacksTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _contentVersionMeta = const VerificationMeta(
+    'contentVersion',
+  );
+  @override
+  late final GeneratedColumn<String> contentVersion = GeneratedColumn<String>(
+    'content_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _tagMeta = const VerificationMeta('tag');
+  @override
+  late final GeneratedColumn<String> tag = GeneratedColumn<String>(
+    'tag',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _manifestSha256Meta = const VerificationMeta(
+    'manifestSha256',
+  );
+  @override
+  late final GeneratedColumn<String> manifestSha256 = GeneratedColumn<String>(
+    'manifest_sha256',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _installedAtMeta = const VerificationMeta(
+    'installedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> installedAt = GeneratedColumn<DateTime>(
+    'installed_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _stateMeta = const VerificationMeta('state');
+  @override
+  late final GeneratedColumn<String> state = GeneratedColumn<String>(
+    'state',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    contentVersion,
+    tag,
+    manifestSha256,
+    installedAt,
+    state,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'map_packs';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<MapPack> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('content_version')) {
+      context.handle(
+        _contentVersionMeta,
+        contentVersion.isAcceptableOrUnknown(
+          data['content_version']!,
+          _contentVersionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_contentVersionMeta);
+    }
+    if (data.containsKey('tag')) {
+      context.handle(
+        _tagMeta,
+        tag.isAcceptableOrUnknown(data['tag']!, _tagMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_tagMeta);
+    }
+    if (data.containsKey('manifest_sha256')) {
+      context.handle(
+        _manifestSha256Meta,
+        manifestSha256.isAcceptableOrUnknown(
+          data['manifest_sha256']!,
+          _manifestSha256Meta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_manifestSha256Meta);
+    }
+    if (data.containsKey('installed_at')) {
+      context.handle(
+        _installedAtMeta,
+        installedAt.isAcceptableOrUnknown(
+          data['installed_at']!,
+          _installedAtMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_installedAtMeta);
+    }
+    if (data.containsKey('state')) {
+      context.handle(
+        _stateMeta,
+        state.isAcceptableOrUnknown(data['state']!, _stateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_stateMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {contentVersion};
+  @override
+  MapPack map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MapPack(
+      contentVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content_version'],
+      )!,
+      tag: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tag'],
+      )!,
+      manifestSha256: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}manifest_sha256'],
+      )!,
+      installedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}installed_at'],
+      )!,
+      state: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}state'],
+      )!,
+    );
+  }
+
+  @override
+  $MapPacksTable createAlias(String alias) {
+    return $MapPacksTable(attachedDatabase, alias);
+  }
+}
+
+class MapPack extends DataClass implements Insertable<MapPack> {
+  final String contentVersion;
+  final String tag;
+  final String manifestSha256;
+  final DateTime installedAt;
+
+  /// One of {'installed','downloading','failed'}.
+  final String state;
+  const MapPack({
+    required this.contentVersion,
+    required this.tag,
+    required this.manifestSha256,
+    required this.installedAt,
+    required this.state,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['content_version'] = Variable<String>(contentVersion);
+    map['tag'] = Variable<String>(tag);
+    map['manifest_sha256'] = Variable<String>(manifestSha256);
+    map['installed_at'] = Variable<DateTime>(installedAt);
+    map['state'] = Variable<String>(state);
+    return map;
+  }
+
+  MapPacksCompanion toCompanion(bool nullToAbsent) {
+    return MapPacksCompanion(
+      contentVersion: Value(contentVersion),
+      tag: Value(tag),
+      manifestSha256: Value(manifestSha256),
+      installedAt: Value(installedAt),
+      state: Value(state),
+    );
+  }
+
+  factory MapPack.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MapPack(
+      contentVersion: serializer.fromJson<String>(json['contentVersion']),
+      tag: serializer.fromJson<String>(json['tag']),
+      manifestSha256: serializer.fromJson<String>(json['manifestSha256']),
+      installedAt: serializer.fromJson<DateTime>(json['installedAt']),
+      state: serializer.fromJson<String>(json['state']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'contentVersion': serializer.toJson<String>(contentVersion),
+      'tag': serializer.toJson<String>(tag),
+      'manifestSha256': serializer.toJson<String>(manifestSha256),
+      'installedAt': serializer.toJson<DateTime>(installedAt),
+      'state': serializer.toJson<String>(state),
+    };
+  }
+
+  MapPack copyWith({
+    String? contentVersion,
+    String? tag,
+    String? manifestSha256,
+    DateTime? installedAt,
+    String? state,
+  }) => MapPack(
+    contentVersion: contentVersion ?? this.contentVersion,
+    tag: tag ?? this.tag,
+    manifestSha256: manifestSha256 ?? this.manifestSha256,
+    installedAt: installedAt ?? this.installedAt,
+    state: state ?? this.state,
+  );
+  MapPack copyWithCompanion(MapPacksCompanion data) {
+    return MapPack(
+      contentVersion: data.contentVersion.present
+          ? data.contentVersion.value
+          : this.contentVersion,
+      tag: data.tag.present ? data.tag.value : this.tag,
+      manifestSha256: data.manifestSha256.present
+          ? data.manifestSha256.value
+          : this.manifestSha256,
+      installedAt: data.installedAt.present
+          ? data.installedAt.value
+          : this.installedAt,
+      state: data.state.present ? data.state.value : this.state,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MapPack(')
+          ..write('contentVersion: $contentVersion, ')
+          ..write('tag: $tag, ')
+          ..write('manifestSha256: $manifestSha256, ')
+          ..write('installedAt: $installedAt, ')
+          ..write('state: $state')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(contentVersion, tag, manifestSha256, installedAt, state);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MapPack &&
+          other.contentVersion == this.contentVersion &&
+          other.tag == this.tag &&
+          other.manifestSha256 == this.manifestSha256 &&
+          other.installedAt == this.installedAt &&
+          other.state == this.state);
+}
+
+class MapPacksCompanion extends UpdateCompanion<MapPack> {
+  final Value<String> contentVersion;
+  final Value<String> tag;
+  final Value<String> manifestSha256;
+  final Value<DateTime> installedAt;
+  final Value<String> state;
+  final Value<int> rowid;
+  const MapPacksCompanion({
+    this.contentVersion = const Value.absent(),
+    this.tag = const Value.absent(),
+    this.manifestSha256 = const Value.absent(),
+    this.installedAt = const Value.absent(),
+    this.state = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  MapPacksCompanion.insert({
+    required String contentVersion,
+    required String tag,
+    required String manifestSha256,
+    required DateTime installedAt,
+    required String state,
+    this.rowid = const Value.absent(),
+  }) : contentVersion = Value(contentVersion),
+       tag = Value(tag),
+       manifestSha256 = Value(manifestSha256),
+       installedAt = Value(installedAt),
+       state = Value(state);
+  static Insertable<MapPack> custom({
+    Expression<String>? contentVersion,
+    Expression<String>? tag,
+    Expression<String>? manifestSha256,
+    Expression<DateTime>? installedAt,
+    Expression<String>? state,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (contentVersion != null) 'content_version': contentVersion,
+      if (tag != null) 'tag': tag,
+      if (manifestSha256 != null) 'manifest_sha256': manifestSha256,
+      if (installedAt != null) 'installed_at': installedAt,
+      if (state != null) 'state': state,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  MapPacksCompanion copyWith({
+    Value<String>? contentVersion,
+    Value<String>? tag,
+    Value<String>? manifestSha256,
+    Value<DateTime>? installedAt,
+    Value<String>? state,
+    Value<int>? rowid,
+  }) {
+    return MapPacksCompanion(
+      contentVersion: contentVersion ?? this.contentVersion,
+      tag: tag ?? this.tag,
+      manifestSha256: manifestSha256 ?? this.manifestSha256,
+      installedAt: installedAt ?? this.installedAt,
+      state: state ?? this.state,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (contentVersion.present) {
+      map['content_version'] = Variable<String>(contentVersion.value);
+    }
+    if (tag.present) {
+      map['tag'] = Variable<String>(tag.value);
+    }
+    if (manifestSha256.present) {
+      map['manifest_sha256'] = Variable<String>(manifestSha256.value);
+    }
+    if (installedAt.present) {
+      map['installed_at'] = Variable<DateTime>(installedAt.value);
+    }
+    if (state.present) {
+      map['state'] = Variable<String>(state.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MapPacksCompanion(')
+          ..write('contentVersion: $contentVersion, ')
+          ..write('tag: $tag, ')
+          ..write('manifestSha256: $manifestSha256, ')
+          ..write('installedAt: $installedAt, ')
+          ..write('state: $state, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $MapPackFilesTable extends MapPackFiles
+    with TableInfo<$MapPackFilesTable, MapPackFile> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MapPackFilesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _contentVersionMeta = const VerificationMeta(
+    'contentVersion',
+  );
+  @override
+  late final GeneratedColumn<String> contentVersion = GeneratedColumn<String>(
+    'content_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _logicalPathMeta = const VerificationMeta(
+    'logicalPath',
+  );
+  @override
+  late final GeneratedColumn<String> logicalPath = GeneratedColumn<String>(
+    'logical_path',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sha256Meta = const VerificationMeta('sha256');
+  @override
+  late final GeneratedColumn<String> sha256 = GeneratedColumn<String>(
+    'sha256',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bytesMeta = const VerificationMeta('bytes');
+  @override
+  late final GeneratedColumn<int> bytes = GeneratedColumn<int>(
+    'bytes',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    contentVersion,
+    logicalPath,
+    sha256,
+    bytes,
+    kind,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'map_pack_files';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<MapPackFile> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('content_version')) {
+      context.handle(
+        _contentVersionMeta,
+        contentVersion.isAcceptableOrUnknown(
+          data['content_version']!,
+          _contentVersionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_contentVersionMeta);
+    }
+    if (data.containsKey('logical_path')) {
+      context.handle(
+        _logicalPathMeta,
+        logicalPath.isAcceptableOrUnknown(
+          data['logical_path']!,
+          _logicalPathMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_logicalPathMeta);
+    }
+    if (data.containsKey('sha256')) {
+      context.handle(
+        _sha256Meta,
+        sha256.isAcceptableOrUnknown(data['sha256']!, _sha256Meta),
+      );
+    } else if (isInserting) {
+      context.missing(_sha256Meta);
+    }
+    if (data.containsKey('bytes')) {
+      context.handle(
+        _bytesMeta,
+        bytes.isAcceptableOrUnknown(data['bytes']!, _bytesMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bytesMeta);
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+        _kindMeta,
+        kind.isAcceptableOrUnknown(data['kind']!, _kindMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {contentVersion, logicalPath};
+  @override
+  MapPackFile map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MapPackFile(
+      contentVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content_version'],
+      )!,
+      logicalPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}logical_path'],
+      )!,
+      sha256: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sha256'],
+      )!,
+      bytes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}bytes'],
+      )!,
+      kind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kind'],
+      ),
+    );
+  }
+
+  @override
+  $MapPackFilesTable createAlias(String alias) {
+    return $MapPackFilesTable(attachedDatabase, alias);
+  }
+}
+
+class MapPackFile extends DataClass implements Insertable<MapPackFile> {
+  final String contentVersion;
+  final String logicalPath;
+  final String sha256;
+  final int bytes;
+  final String? kind;
+  const MapPackFile({
+    required this.contentVersion,
+    required this.logicalPath,
+    required this.sha256,
+    required this.bytes,
+    this.kind,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['content_version'] = Variable<String>(contentVersion);
+    map['logical_path'] = Variable<String>(logicalPath);
+    map['sha256'] = Variable<String>(sha256);
+    map['bytes'] = Variable<int>(bytes);
+    if (!nullToAbsent || kind != null) {
+      map['kind'] = Variable<String>(kind);
+    }
+    return map;
+  }
+
+  MapPackFilesCompanion toCompanion(bool nullToAbsent) {
+    return MapPackFilesCompanion(
+      contentVersion: Value(contentVersion),
+      logicalPath: Value(logicalPath),
+      sha256: Value(sha256),
+      bytes: Value(bytes),
+      kind: kind == null && nullToAbsent ? const Value.absent() : Value(kind),
+    );
+  }
+
+  factory MapPackFile.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MapPackFile(
+      contentVersion: serializer.fromJson<String>(json['contentVersion']),
+      logicalPath: serializer.fromJson<String>(json['logicalPath']),
+      sha256: serializer.fromJson<String>(json['sha256']),
+      bytes: serializer.fromJson<int>(json['bytes']),
+      kind: serializer.fromJson<String?>(json['kind']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'contentVersion': serializer.toJson<String>(contentVersion),
+      'logicalPath': serializer.toJson<String>(logicalPath),
+      'sha256': serializer.toJson<String>(sha256),
+      'bytes': serializer.toJson<int>(bytes),
+      'kind': serializer.toJson<String?>(kind),
+    };
+  }
+
+  MapPackFile copyWith({
+    String? contentVersion,
+    String? logicalPath,
+    String? sha256,
+    int? bytes,
+    Value<String?> kind = const Value.absent(),
+  }) => MapPackFile(
+    contentVersion: contentVersion ?? this.contentVersion,
+    logicalPath: logicalPath ?? this.logicalPath,
+    sha256: sha256 ?? this.sha256,
+    bytes: bytes ?? this.bytes,
+    kind: kind.present ? kind.value : this.kind,
+  );
+  MapPackFile copyWithCompanion(MapPackFilesCompanion data) {
+    return MapPackFile(
+      contentVersion: data.contentVersion.present
+          ? data.contentVersion.value
+          : this.contentVersion,
+      logicalPath: data.logicalPath.present
+          ? data.logicalPath.value
+          : this.logicalPath,
+      sha256: data.sha256.present ? data.sha256.value : this.sha256,
+      bytes: data.bytes.present ? data.bytes.value : this.bytes,
+      kind: data.kind.present ? data.kind.value : this.kind,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MapPackFile(')
+          ..write('contentVersion: $contentVersion, ')
+          ..write('logicalPath: $logicalPath, ')
+          ..write('sha256: $sha256, ')
+          ..write('bytes: $bytes, ')
+          ..write('kind: $kind')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(contentVersion, logicalPath, sha256, bytes, kind);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MapPackFile &&
+          other.contentVersion == this.contentVersion &&
+          other.logicalPath == this.logicalPath &&
+          other.sha256 == this.sha256 &&
+          other.bytes == this.bytes &&
+          other.kind == this.kind);
+}
+
+class MapPackFilesCompanion extends UpdateCompanion<MapPackFile> {
+  final Value<String> contentVersion;
+  final Value<String> logicalPath;
+  final Value<String> sha256;
+  final Value<int> bytes;
+  final Value<String?> kind;
+  final Value<int> rowid;
+  const MapPackFilesCompanion({
+    this.contentVersion = const Value.absent(),
+    this.logicalPath = const Value.absent(),
+    this.sha256 = const Value.absent(),
+    this.bytes = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  MapPackFilesCompanion.insert({
+    required String contentVersion,
+    required String logicalPath,
+    required String sha256,
+    required int bytes,
+    this.kind = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : contentVersion = Value(contentVersion),
+       logicalPath = Value(logicalPath),
+       sha256 = Value(sha256),
+       bytes = Value(bytes);
+  static Insertable<MapPackFile> custom({
+    Expression<String>? contentVersion,
+    Expression<String>? logicalPath,
+    Expression<String>? sha256,
+    Expression<int>? bytes,
+    Expression<String>? kind,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (contentVersion != null) 'content_version': contentVersion,
+      if (logicalPath != null) 'logical_path': logicalPath,
+      if (sha256 != null) 'sha256': sha256,
+      if (bytes != null) 'bytes': bytes,
+      if (kind != null) 'kind': kind,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  MapPackFilesCompanion copyWith({
+    Value<String>? contentVersion,
+    Value<String>? logicalPath,
+    Value<String>? sha256,
+    Value<int>? bytes,
+    Value<String?>? kind,
+    Value<int>? rowid,
+  }) {
+    return MapPackFilesCompanion(
+      contentVersion: contentVersion ?? this.contentVersion,
+      logicalPath: logicalPath ?? this.logicalPath,
+      sha256: sha256 ?? this.sha256,
+      bytes: bytes ?? this.bytes,
+      kind: kind ?? this.kind,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (contentVersion.present) {
+      map['content_version'] = Variable<String>(contentVersion.value);
+    }
+    if (logicalPath.present) {
+      map['logical_path'] = Variable<String>(logicalPath.value);
+    }
+    if (sha256.present) {
+      map['sha256'] = Variable<String>(sha256.value);
+    }
+    if (bytes.present) {
+      map['bytes'] = Variable<int>(bytes.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MapPackFilesCompanion(')
+          ..write('contentVersion: $contentVersion, ')
+          ..write('logicalPath: $logicalPath, ')
+          ..write('sha256: $sha256, ')
+          ..write('bytes: $bytes, ')
+          ..write('kind: $kind, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -4806,6 +5557,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $FavoritesTable favorites = $FavoritesTable(this);
   late final $JobStatusTable jobStatus = $JobStatusTable(this);
+  late final $MapPacksTable mapPacks = $MapPacksTable(this);
+  late final $MapPackFilesTable mapPackFiles = $MapPackFilesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -4823,6 +5576,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     discoveryHistory,
     favorites,
     jobStatus,
+    mapPacks,
+    mapPackFiles,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -8624,6 +9379,410 @@ typedef $$JobStatusTableProcessedTableManager =
       JobStatusData,
       PrefetchHooks Function()
     >;
+typedef $$MapPacksTableCreateCompanionBuilder =
+    MapPacksCompanion Function({
+      required String contentVersion,
+      required String tag,
+      required String manifestSha256,
+      required DateTime installedAt,
+      required String state,
+      Value<int> rowid,
+    });
+typedef $$MapPacksTableUpdateCompanionBuilder =
+    MapPacksCompanion Function({
+      Value<String> contentVersion,
+      Value<String> tag,
+      Value<String> manifestSha256,
+      Value<DateTime> installedAt,
+      Value<String> state,
+      Value<int> rowid,
+    });
+
+class $$MapPacksTableFilterComposer
+    extends Composer<_$AppDatabase, $MapPacksTable> {
+  $$MapPacksTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get contentVersion => $composableBuilder(
+    column: $table.contentVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tag => $composableBuilder(
+    column: $table.tag,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get manifestSha256 => $composableBuilder(
+    column: $table.manifestSha256,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get installedAt => $composableBuilder(
+    column: $table.installedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get state => $composableBuilder(
+    column: $table.state,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$MapPacksTableOrderingComposer
+    extends Composer<_$AppDatabase, $MapPacksTable> {
+  $$MapPacksTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get contentVersion => $composableBuilder(
+    column: $table.contentVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tag => $composableBuilder(
+    column: $table.tag,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get manifestSha256 => $composableBuilder(
+    column: $table.manifestSha256,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get installedAt => $composableBuilder(
+    column: $table.installedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get state => $composableBuilder(
+    column: $table.state,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$MapPacksTableAnnotationComposer
+    extends Composer<_$AppDatabase, $MapPacksTable> {
+  $$MapPacksTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get contentVersion => $composableBuilder(
+    column: $table.contentVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get tag =>
+      $composableBuilder(column: $table.tag, builder: (column) => column);
+
+  GeneratedColumn<String> get manifestSha256 => $composableBuilder(
+    column: $table.manifestSha256,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get installedAt => $composableBuilder(
+    column: $table.installedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get state =>
+      $composableBuilder(column: $table.state, builder: (column) => column);
+}
+
+class $$MapPacksTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $MapPacksTable,
+          MapPack,
+          $$MapPacksTableFilterComposer,
+          $$MapPacksTableOrderingComposer,
+          $$MapPacksTableAnnotationComposer,
+          $$MapPacksTableCreateCompanionBuilder,
+          $$MapPacksTableUpdateCompanionBuilder,
+          (MapPack, BaseReferences<_$AppDatabase, $MapPacksTable, MapPack>),
+          MapPack,
+          PrefetchHooks Function()
+        > {
+  $$MapPacksTableTableManager(_$AppDatabase db, $MapPacksTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MapPacksTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MapPacksTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$MapPacksTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> contentVersion = const Value.absent(),
+                Value<String> tag = const Value.absent(),
+                Value<String> manifestSha256 = const Value.absent(),
+                Value<DateTime> installedAt = const Value.absent(),
+                Value<String> state = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MapPacksCompanion(
+                contentVersion: contentVersion,
+                tag: tag,
+                manifestSha256: manifestSha256,
+                installedAt: installedAt,
+                state: state,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String contentVersion,
+                required String tag,
+                required String manifestSha256,
+                required DateTime installedAt,
+                required String state,
+                Value<int> rowid = const Value.absent(),
+              }) => MapPacksCompanion.insert(
+                contentVersion: contentVersion,
+                tag: tag,
+                manifestSha256: manifestSha256,
+                installedAt: installedAt,
+                state: state,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$MapPacksTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $MapPacksTable,
+      MapPack,
+      $$MapPacksTableFilterComposer,
+      $$MapPacksTableOrderingComposer,
+      $$MapPacksTableAnnotationComposer,
+      $$MapPacksTableCreateCompanionBuilder,
+      $$MapPacksTableUpdateCompanionBuilder,
+      (MapPack, BaseReferences<_$AppDatabase, $MapPacksTable, MapPack>),
+      MapPack,
+      PrefetchHooks Function()
+    >;
+typedef $$MapPackFilesTableCreateCompanionBuilder =
+    MapPackFilesCompanion Function({
+      required String contentVersion,
+      required String logicalPath,
+      required String sha256,
+      required int bytes,
+      Value<String?> kind,
+      Value<int> rowid,
+    });
+typedef $$MapPackFilesTableUpdateCompanionBuilder =
+    MapPackFilesCompanion Function({
+      Value<String> contentVersion,
+      Value<String> logicalPath,
+      Value<String> sha256,
+      Value<int> bytes,
+      Value<String?> kind,
+      Value<int> rowid,
+    });
+
+class $$MapPackFilesTableFilterComposer
+    extends Composer<_$AppDatabase, $MapPackFilesTable> {
+  $$MapPackFilesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get contentVersion => $composableBuilder(
+    column: $table.contentVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get logicalPath => $composableBuilder(
+    column: $table.logicalPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sha256 => $composableBuilder(
+    column: $table.sha256,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get bytes => $composableBuilder(
+    column: $table.bytes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$MapPackFilesTableOrderingComposer
+    extends Composer<_$AppDatabase, $MapPackFilesTable> {
+  $$MapPackFilesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get contentVersion => $composableBuilder(
+    column: $table.contentVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get logicalPath => $composableBuilder(
+    column: $table.logicalPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sha256 => $composableBuilder(
+    column: $table.sha256,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get bytes => $composableBuilder(
+    column: $table.bytes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$MapPackFilesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $MapPackFilesTable> {
+  $$MapPackFilesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get contentVersion => $composableBuilder(
+    column: $table.contentVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get logicalPath => $composableBuilder(
+    column: $table.logicalPath,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sha256 =>
+      $composableBuilder(column: $table.sha256, builder: (column) => column);
+
+  GeneratedColumn<int> get bytes =>
+      $composableBuilder(column: $table.bytes, builder: (column) => column);
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+}
+
+class $$MapPackFilesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $MapPackFilesTable,
+          MapPackFile,
+          $$MapPackFilesTableFilterComposer,
+          $$MapPackFilesTableOrderingComposer,
+          $$MapPackFilesTableAnnotationComposer,
+          $$MapPackFilesTableCreateCompanionBuilder,
+          $$MapPackFilesTableUpdateCompanionBuilder,
+          (
+            MapPackFile,
+            BaseReferences<_$AppDatabase, $MapPackFilesTable, MapPackFile>,
+          ),
+          MapPackFile,
+          PrefetchHooks Function()
+        > {
+  $$MapPackFilesTableTableManager(_$AppDatabase db, $MapPackFilesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MapPackFilesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MapPackFilesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$MapPackFilesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> contentVersion = const Value.absent(),
+                Value<String> logicalPath = const Value.absent(),
+                Value<String> sha256 = const Value.absent(),
+                Value<int> bytes = const Value.absent(),
+                Value<String?> kind = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MapPackFilesCompanion(
+                contentVersion: contentVersion,
+                logicalPath: logicalPath,
+                sha256: sha256,
+                bytes: bytes,
+                kind: kind,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String contentVersion,
+                required String logicalPath,
+                required String sha256,
+                required int bytes,
+                Value<String?> kind = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MapPackFilesCompanion.insert(
+                contentVersion: contentVersion,
+                logicalPath: logicalPath,
+                sha256: sha256,
+                bytes: bytes,
+                kind: kind,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$MapPackFilesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $MapPackFilesTable,
+      MapPackFile,
+      $$MapPackFilesTableFilterComposer,
+      $$MapPackFilesTableOrderingComposer,
+      $$MapPackFilesTableAnnotationComposer,
+      $$MapPackFilesTableCreateCompanionBuilder,
+      $$MapPackFilesTableUpdateCompanionBuilder,
+      (
+        MapPackFile,
+        BaseReferences<_$AppDatabase, $MapPackFilesTable, MapPackFile>,
+      ),
+      MapPackFile,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -8651,4 +9810,8 @@ class $AppDatabaseManager {
       $$FavoritesTableTableManager(_db, _db.favorites);
   $$JobStatusTableTableManager get jobStatus =>
       $$JobStatusTableTableManager(_db, _db.jobStatus);
+  $$MapPacksTableTableManager get mapPacks =>
+      $$MapPacksTableTableManager(_db, _db.mapPacks);
+  $$MapPackFilesTableTableManager get mapPackFiles =>
+      $$MapPackFilesTableTableManager(_db, _db.mapPackFiles);
 }

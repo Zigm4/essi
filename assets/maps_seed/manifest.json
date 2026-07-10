@@ -1,0 +1,35 @@
+{
+  "_comment": "SEED manifest bundled with the app for offline-first launch. The MapSeedImporter loads each `path` from the asset bundle and RECOMPUTES sha256 + bytes locally (the seed is authenticated by the app-store signature, not re-hashed over the wire), so the sha256/bytes below are placeholders. The background reuses the EXISTING bundled KB image (assets/knowledge/images/hideous-dungeon-map.jpg) — no duplicated binary. The owner replaces all of this via the content repo. See AUDIT-V2 §4.1/§4.7.",
+  "schemaVersion": 1,
+  "contentVersion": "0-seed",
+  "minAppVersion": "0.1.0",
+  "cdnBase": "asset:///seed",
+  "maps": [
+    {
+      "id": "hideous-dungeon",
+      "type": "flat",
+      "title": "Hideous Dungeon",
+      "subtitle": "Sample map — replace via content repo",
+      "icon": "dungeon",
+      "order": 0,
+      "version": 1,
+      "draft": false,
+      "tags": ["sample", "dungeon"],
+      "document": {
+        "path": "assets/maps_seed/hideous-dungeon.map.json",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "bytes": 0,
+        "kind": "document"
+      },
+      "assets": [
+        {
+          "path": "assets/knowledge/images/hideous-dungeon-map.jpg",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "bytes": 0,
+          "kind": "background",
+          "pixelSize": [2448, 3264]
+        }
+      ]
+    }
+  ]
+}

@@ -11,6 +11,13 @@ abstract final class FavoriteKind {
   static const kbArticle = 'kb_article';
   static const fishingZone = 'fishing_zone';
   static const trackedObject = 'tracked_object';
+
+  /// A dynamic map (favorited from the maps gallery).
+  static const map = 'map';
+
+  /// A single zone within a dynamic map. Ids are namespaced `mapId/zoneId` by
+  /// callers so the same zone id in two maps never collides.
+  static const mapZone = 'map_zone';
 }
 
 /// Reactive store for star/pin/bookmark across entity kinds. All reads go
