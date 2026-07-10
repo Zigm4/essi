@@ -25,15 +25,38 @@ class ScrollOffsetScope extends InheritedNotifier<ValueNotifier<double>> {
 /// Drop-in scroll wrapper. Shows a floating back-to-top button once the user
 /// has scrolled past one screen height, and broadcasts the current scroll
 /// offset to descendants via [ScrollOffsetScope].
+///
+/// Two flavours share the same back-to-top / offset / controller plumbing:
+///  * default constructor — a single [child] in a non-virtualized [ListView];
+///    convenient for short pages.
+///  * [PageScrollView.slivers] — a [CustomScrollView] driven by caller-provided
+///    slivers, so long lists can lazily build their items (e.g. via
+///    `SliverList.builder`). Use this on high-item-count pages.
 class PageScrollView extends ConsumerStatefulWidget {
   const PageScrollView({
     super.key,
-    required this.child,
+    required Widget this.child,
     this.padding,
     this.controller,
-  });
+  }) : slivers = null;
 
-  final Widget child;
+  /// Virtualized variant. [slivers] are laid out inside a [CustomScrollView],
+  /// so items built with `SliverList.builder` / `SliverGrid.builder` are only
+  /// constructed as they scroll into view. [padding] (if any) is applied around
+  /// the whole sliver group.
+  const PageScrollView.slivers({
+    super.key,
+    required List<Widget> this.slivers,
+    this.padding,
+    this.controller,
+  }) : child = null;
+
+  /// Single body widget for the non-virtualized default constructor.
+  final Widget? child;
+
+  /// Slivers for the [PageScrollView.slivers] variant.
+  final List<Widget>? slivers;
+
   final EdgeInsetsGeometry? padding;
   final ScrollController? controller;
 
@@ -86,16 +109,31 @@ class _PageScrollViewState extends ConsumerState<PageScrollView> {
   Widget build(BuildContext context) {
     // The bottom nav is opaque and `extendBody:false` on AppShell, so the
     // body is naturally bounded above the nav — no extra inset needed here.
+    final slivers = widget.slivers;
+    final Widget scrollable = slivers == null
+        ? ListView(
+            controller: _ctrl,
+            padding: widget.padding ?? EdgeInsets.zero,
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            children: [widget.child!],
+          )
+        : CustomScrollView(
+            controller: _ctrl,
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            slivers: widget.padding == null
+                ? slivers
+                : [
+                    SliverPadding(
+                      padding: widget.padding!,
+                      sliver: SliverMainAxisGroup(slivers: slivers),
+                    ),
+                  ],
+          );
     return ScrollOffsetScope(
       offset: _offset,
       child: Stack(
         children: [
-          ListView(
-            controller: _ctrl,
-            padding: widget.padding ?? EdgeInsets.zero,
-            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-            children: [widget.child],
-          ),
+          scrollable,
           Positioned(
             right: AppSpacing.lg,
             bottom: AppSpacing.lg,

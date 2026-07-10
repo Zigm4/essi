@@ -11,7 +11,9 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:uuid/uuid.dart';
 
+import '../core/logging.dart';
 import '../data/database/app_database.dart';
+import '../features/favorites/data/favorites_repository.dart';
 import '../features/tools/celestial/domain/celestial_models.dart';
 import '../features/tools/scan/domain/scan_models.dart';
 import '../features/tools/tracker/domain/tracker_models.dart';
@@ -334,26 +336,32 @@ class DataExportService {
       final tagRemap = <String, String>{};
 
       for (final t in (data['tags'] as List<dynamic>? ?? const [])) {
-        final m = t as Map<String, dynamic>;
-        final importedId = (m['id'] as String?) ?? _uuid.v4();
-        final key = (m['name'] as String? ?? '').toLowerCase();
-        if (tagsByKey.containsKey(key)) {
-          // Name collision: reuse the existing local tag id.
-          tagRemap[importedId] = tagsByKey[key]!;
-          continue;
+        // E8: a single mistyped tag row must skip (logged), not abort the whole
+        // import — matching the history sections' per-row resilience.
+        try {
+          final m = t as Map<String, dynamic>;
+          final importedId = (m['id'] as String?) ?? _uuid.v4();
+          final key = (m['name'] as String? ?? '').toLowerCase();
+          if (tagsByKey.containsKey(key)) {
+            // Name collision: reuse the existing local tag id.
+            tagRemap[importedId] = tagsByKey[key]!;
+            continue;
+          }
+          await _db.into(_db.tags).insert(
+            TagsCompanion.insert(
+              id: importedId,
+              displayName: (m['displayName'] as String?) ?? key,
+              name: key,
+              colorHex: drift.Value(m['colorHex'] as String?),
+            ),
+            mode: drift.InsertMode.insertOrIgnore,
+          );
+          tagsByKey[key] = importedId;
+          tagRemap[importedId] = importedId;
+          tags++;
+        } catch (e, st) {
+          logError('data import: skipped malformed tag row: $e', st);
         }
-        await _db.into(_db.tags).insert(
-          TagsCompanion.insert(
-            id: importedId,
-            displayName: (m['displayName'] as String?) ?? key,
-            name: key,
-            colorHex: drift.Value(m['colorHex'] as String?),
-          ),
-          mode: drift.InsertMode.insertOrIgnore,
-        );
-        tagsByKey[key] = importedId;
-        tagRemap[importedId] = importedId;
-        tags++;
       }
 
       // Resolves an imported tag id to a real local tag id (via the remap for
@@ -373,7 +381,13 @@ class DataExportService {
       }) async {
         var count = 0;
         for (final raw in items) {
-          if (await insertFn(raw as Map<String, dynamic>)) count++;
+          // E8: a single mistyped note/link/ship row must skip (logged), not
+          // abort the whole import — matching the history sections.
+          try {
+            if (await insertFn(raw as Map<String, dynamic>)) count++;
+          } catch (e, st) {
+            logError('data import: skipped malformed row: $e', st);
+          }
         }
         return count;
       }
@@ -514,18 +528,24 @@ class DataExportService {
         required Future<void> Function(String, String) insertFn,
       }) async {
         for (final raw in items) {
-          final m = raw as Map<String, dynamic>;
-          final a = m[idA] as String?;
-          final b = m[idB] as String?;
-          if (a == null || b == null) continue;
-          final tagOK = await ensureTagId(b);
-          if (tagOK == null) continue;
-          // F44: the join tables now enforce foreign keys, so inserting a row
-          // whose parent doesn't exist locally would abort the whole import.
-          // Skip such orphan rows instead.
-          if (!await parentExists(a)) continue;
-          // H3: use the resolved local tag id, not the raw imported one.
-          await insertFn(a, tagOK);
+          // E8: a single mistyped join row must skip (logged), not abort the
+          // whole import — matching the history sections.
+          try {
+            final m = raw as Map<String, dynamic>;
+            final a = m[idA] as String?;
+            final b = m[idB] as String?;
+            if (a == null || b == null) continue;
+            final tagOK = await ensureTagId(b);
+            if (tagOK == null) continue;
+            // F44: the join tables now enforce foreign keys, so inserting a row
+            // whose parent doesn't exist locally would abort the whole import.
+            // Skip such orphan rows instead.
+            if (!await parentExists(a)) continue;
+            // H3: use the resolved local tag id, not the raw imported one.
+            await insertFn(a, tagOK);
+          } catch (e, st) {
+            logError('data import: skipped malformed join row: $e', st);
+          }
         }
       }
       await insertJoin(
@@ -611,14 +631,18 @@ class DataExportService {
       }) async {
         var count = 0;
         for (final raw in (data[key] as List<dynamic>? ?? const [])) {
-          final m = raw as Map<String, dynamic>;
+          // E8: the WHOLE per-row body (cast, validate, write) is guarded so a
+          // non-Map row or a wrong-typed top-level field (e.g. errored:"yes")
+          // skips that row instead of aborting the entire import — matching the
+          // notes/links/ships/tags sections' per-row tolerance.
           try {
+            final m = raw as Map<String, dynamic>;
             if (!validate(m)) continue; // F16: malformed shape → skip
-          } catch (_) {
-            continue; // F16: unparseable payload → skip
+            // F36/F42: count a row only when it is actually newly inserted.
+            if (await write(m)) count++;
+          } catch (e, st) {
+            logError(e, st); // F16/E8: unparseable/mistyped row → skip
           }
-          // F36/F42: count a row only when it is actually newly inserted.
-          if (await write(m)) count++;
         }
         return count;
       }
@@ -695,27 +719,46 @@ class DataExportService {
       // P3/22: favorites are idempotent on the composite PK (entityType,
       // entityId). insertOrIgnore keeps an existing row (and its original
       // createdAt) rather than clobbering it, so re-importing is a no-op.
+      // E8: entityType is whitelisted against the known FavoriteKind constants
+      // and entityId is length-bounded, so a hostile/corrupt file can't seed
+      // unbounded junk rows that would never surface in the UI.
+      const validFavoriteKinds = {
+        FavoriteKind.job,
+        FavoriteKind.kbArticle,
+        FavoriteKind.fishingZone,
+        FavoriteKind.trackedObject,
+      };
+      const maxEntityIdLength = 256;
       for (final raw in (data['favorites'] as List<dynamic>? ?? const [])) {
-        final m = raw as Map<String, dynamic>;
-        final type = m['entityType'] as String?;
-        final entId = m['entityId'] as String?;
-        if (type == null || type.isEmpty || entId == null || entId.isEmpty) {
-          continue;
+        // E8: skip (logged) a single malformed favorite row rather than abort.
+        try {
+          final m = raw as Map<String, dynamic>;
+          final type = m['entityType'] as String?;
+          final entId = m['entityId'] as String?;
+          if (type == null ||
+              !validFavoriteKinds.contains(type) ||
+              entId == null ||
+              entId.isEmpty ||
+              entId.length > maxEntityIdLength) {
+            continue;
+          }
+          final exists = await (_db.select(_db.favorites)
+                ..where((f) =>
+                    f.entityType.equals(type) & f.entityId.equals(entId)))
+              .getSingleOrNull();
+          if (exists != null) continue;
+          await _db.into(_db.favorites).insert(
+                FavoritesCompanion.insert(
+                  entityType: type,
+                  entityId: entId,
+                  createdAt: parseDate(m['createdAt']),
+                ),
+                mode: drift.InsertMode.insertOrIgnore,
+              );
+          favorites++;
+        } catch (e, st) {
+          logError('data import: skipped malformed favorite row: $e', st);
         }
-        final exists = await (_db.select(_db.favorites)
-              ..where((f) =>
-                  f.entityType.equals(type) & f.entityId.equals(entId)))
-            .getSingleOrNull();
-        if (exists != null) continue;
-        await _db.into(_db.favorites).insert(
-              FavoritesCompanion.insert(
-                entityType: type,
-                entityId: entId,
-                createdAt: parseDate(m['createdAt']),
-              ),
-              mode: drift.InsertMode.insertOrIgnore,
-            );
-        favorites++;
       }
 
       // P3/22: job status keyed by jobId. Newer-wins on updatedAt so a stale

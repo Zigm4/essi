@@ -394,4 +394,133 @@ void main() {
     expect(scans.map((s) => s.id), contains('good'),
         reason: 'the valid row must still import despite a sibling bad date');
   });
+
+  test('(i) E8 one garbage row per section still imports the good rows',
+      () async {
+    // Every non-history section carries a malformed entry (a non-Map value that
+    // throws on cast) next to a valid row. Previously a single such row threw a
+    // TypeError and rejected the WHOLE file; now each is skipped per-row.
+    final data = {
+      'notes': [
+        'garbage-not-a-map',
+        {
+          'id': 'gn-note',
+          'title': 'Good note',
+          'body': '',
+          'createdAt': now.toIso8601String(),
+          'updatedAt': now.toIso8601String(),
+        },
+      ],
+      'links': [
+        42,
+        {
+          'id': 'gn-link',
+          'title': 'Good link',
+          'url': 'https://example.com',
+          'note': '',
+          'createdAt': now.toIso8601String(),
+          'updatedAt': now.toIso8601String(),
+        },
+      ],
+      'ships': [
+        ['not', 'a', 'map'],
+        {
+          'id': 'gn-ship',
+          'name': 'Good ship',
+          'createdAt': now.toIso8601String(),
+          'updatedAt': now.toIso8601String(),
+        },
+      ],
+      'tags': [
+        'garbage-tag',
+        {
+          'id': 'gn-tag',
+          'displayName': 'Garden',
+          'name': 'garden',
+          'colorHex': null,
+        },
+      ],
+      'noteTags': [
+        'garbage',
+        {'noteId': 'gn-note', 'tagId': 'gn-tag'},
+      ],
+      'linkTags': [
+        99,
+        {'linkId': 'gn-link', 'tagId': 'gn-tag'},
+      ],
+      'shipTags': [
+        ['garbage'],
+        {'shipId': 'gn-ship', 'tagId': 'gn-tag'},
+      ],
+      // E8: the history sections must be per-row tolerant too — a non-Map row
+      // and a wrong-typed top-level field (errored:"yes") next to a good row.
+      'scanHistory': [
+        'garbage-not-a-map',
+        {
+          'id': 'gn-scan',
+          'date': now.toIso8601String(),
+          'mode': 'light',
+          'payloadJson': jsonEncode({'snapshots': const []}),
+          'errored': 'yes', // wrong type → this row skips, not the whole file
+        },
+        {
+          'id': 'gn-scan-ok',
+          'date': now.toIso8601String(),
+          'mode': 'light',
+          'payloadJson': jsonEncode({'snapshots': const []}),
+          'errored': false,
+        },
+      ],
+    };
+    final file = _writeTempJson(_envelope(data));
+
+    // Must not throw (previously a single bad row aborted the whole import).
+    final summary = await DataExportService(target).importFromFile(file);
+    expect(summary.notes, 1);
+    expect(summary.links, 1);
+    expect(summary.ships, 1);
+    expect(summary.tags, 1);
+    expect(summary.scanHistory, 1,
+        reason: 'the well-formed scan row imports despite garbage/mistyped siblings');
+    final scans = await target.select(target.scanHistory).get();
+    expect(scans.map((s) => s.id), contains('gn-scan-ok'));
+
+    final noteTags = await target.select(target.noteTags).get();
+    expect(noteTags.any((nt) => nt.noteId == 'gn-note' && nt.tagId == 'gn-tag'),
+        isTrue,
+        reason: 'the good note/tag join must survive despite a garbage sibling');
+    final linkTags = await target.select(target.linkTags).get();
+    expect(linkTags.any((lt) => lt.linkId == 'gn-link' && lt.tagId == 'gn-tag'),
+        isTrue);
+    final shipTags = await target.select(target.shipTags).get();
+    expect(shipTags.any((st) => st.shipId == 'gn-ship' && st.tagId == 'gn-tag'),
+        isTrue);
+  });
+
+  test('(j) E8 a favorite with an unknown entityType is skipped', () async {
+    final data = {
+      'favorites': [
+        {
+          'entityType': 'job',
+          'entityId': '7',
+          'createdAt': now.toIso8601String(),
+        },
+        {
+          // Not one of the FavoriteKind constants — must be rejected.
+          'entityType': 'totally_unknown_kind',
+          'entityId': 'x',
+          'createdAt': now.toIso8601String(),
+        },
+      ],
+    };
+    final file = _writeTempJson(_envelope(data));
+    final summary = await DataExportService(target).importFromFile(file);
+
+    expect(summary.favorites, 1,
+        reason: 'only the whitelisted job favorite may import');
+    final favs = await target.select(target.favorites).get();
+    expect(favs.map((f) => f.entityType), contains('job'));
+    expect(favs.map((f) => f.entityType), isNot(contains('totally_unknown_kind')),
+        reason: 'E8: an unknown entityType must be skipped');
+  });
 }

@@ -69,19 +69,14 @@ class HangarListView extends ConsumerWidget {
                     cat?.shipForKey(s.modelKey)?.category ?? 'other';
                 grouped.putIfAbsent(key, () => []).add(s);
               }
-              return PageScrollView(
-                controller: ctrl,
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.md,
-                  AppSpacing.md,
-                  AppSpacing.md,
-                  AppSpacing.xxl,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                  if (ships.isEmpty)
-                    Padding(
+              // R8: virtualize the ship list. Each category becomes a header
+              // sliver + a lazily-built SliverList over its ships, so only the
+              // visible cards are constructed. Banner/empty-state/notes are
+              // preserved.
+              final slivers = <Widget>[
+                if (ships.isEmpty)
+                  SliverToBoxAdapter(
+                    child: Padding(
                       padding: const EdgeInsets.symmetric(
                         vertical: AppSpacing.xxl,
                       ),
@@ -91,7 +86,8 @@ class HangarListView extends ConsumerWidget {
                             Icon(
                               Icons.archive_outlined,
                               size: 48,
-                              color: AppColors.accentPrimary.withValues(alpha: 0.4),
+                              color: AppColors.accentPrimary
+                                  .withValues(alpha: 0.4),
                             ),
                             const SizedBox(height: AppSpacing.sm),
                             Text('Hangar empty',
@@ -104,11 +100,13 @@ class HangarListView extends ConsumerWidget {
                           ],
                         ),
                       ),
-                    )
-                  else
-                    for (final c in _categoryOrder)
-                      if ((grouped[c.$1] ?? const []).isNotEmpty) ...[
-                        Padding(
+                    ),
+                  )
+                else
+                  for (final c in _categoryOrder)
+                    if ((grouped[c.$1] ?? const []).isNotEmpty) ...[
+                      SliverToBoxAdapter(
+                        child: Padding(
                           padding: const EdgeInsets.symmetric(
                             vertical: AppSpacing.sm,
                           ),
@@ -137,16 +135,36 @@ class HangarListView extends ConsumerWidget {
                             ],
                           ),
                         ),
-                        for (final ship in grouped[c.$1]!) ...[
-                          _ShipCard(ship: ship, catalogs: cat),
-                          const SizedBox(height: AppSpacing.sm),
-                        ],
-                        const SizedBox(height: AppSpacing.md),
-                      ],
-                    const SizedBox(height: AppSpacing.lg),
-                    const _HangarNotesCard(),
-                  ],
+                      ),
+                      SliverList.builder(
+                        itemCount: grouped[c.$1]!.length,
+                        itemBuilder: (context, i) => Padding(
+                          padding:
+                              const EdgeInsets.only(bottom: AppSpacing.sm),
+                          child: _ShipCard(
+                            ship: grouped[c.$1]![i],
+                            catalogs: cat,
+                          ),
+                        ),
+                      ),
+                      const SliverToBoxAdapter(
+                        child: SizedBox(height: AppSpacing.md),
+                      ),
+                    ],
+                const SliverToBoxAdapter(
+                  child: SizedBox(height: AppSpacing.lg),
                 ),
+                const SliverToBoxAdapter(child: _HangarNotesCard()),
+              ];
+              return PageScrollView.slivers(
+                controller: ctrl,
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.md,
+                  AppSpacing.md,
+                  AppSpacing.xxl,
+                ),
+                slivers: slivers,
               );
             },
           ),

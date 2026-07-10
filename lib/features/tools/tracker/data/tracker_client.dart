@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/app_dio.dart';
@@ -128,6 +129,15 @@ class TrackerClient {
     s = _stripParenSuffix(s);
     return s.trim();
   }
+
+  // R12 — test-only seams exposing the pure name-cleaning helpers so their
+  // table behaviour can be asserted directly without driving a full track().
+  @visibleForTesting
+  String debugNormalize(String raw) => _normalize(raw);
+  @visibleForTesting
+  String debugStripParenSuffix(String raw) => _stripParenSuffix(raw);
+  @visibleForTesting
+  String debugCleanCometForHorizons(String raw) => _cleanCometForHorizons(raw);
 
   Future<String?> _sbdbLookup(String query, CancelToken cancel) async {
     try {
