@@ -64,6 +64,26 @@ void main() {
     expect(buildZoneFtsRows(d), isEmpty);
   });
 
+  test('a document with a newer schema than supported is excluded', () {
+    final d = doc({
+      // Known type, but a schema this build does not understand → not indexed
+      // (renders as "update required", must not lead search to a dead end).
+      'schemaVersion': kSupportedMapSchemaVersion + 1,
+      'id': 'future',
+      'type': 'flat',
+      'canvas': {'width': 10, 'height': 10},
+      'zones': [
+        {
+          'id': 'z1',
+          'name': 'From tomorrow',
+          'geometry': {'kind': 'marker', 'at': [1, 1], 'hitRadius': 4},
+          'fields': <String, dynamic>{},
+        },
+      ],
+    });
+    expect(buildZoneFtsRows(d), isEmpty);
+  });
+
   test('zones with no searchable values still index their name', () {
     final d = doc({
       'schemaVersion': 1,

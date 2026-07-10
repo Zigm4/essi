@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
-import '../../../core/external_link.dart';
+import '../../../core/internal_link.dart';
 import '../../../core/logging.dart';
 import '../../../design_system/colors.dart';
 import '../../../design_system/typography.dart';
@@ -17,8 +17,9 @@ class KBMarkdownView extends StatelessWidget {
       data: markdown,
       onTapLink: (text, href, title) {
         if (href == null) return;
-        // R4: allowlist schemes before handing an imported href to the OS.
-        launchExternal(context, href);
+        // Internal `underdeck://` links jump to a KB article / map in-app; R4:
+        // external links are allow-listed before being handed to the OS (§4.8).
+        resolveLink(context, href);
       },
       // R3: flutter_markdown_plus replaced sizedImageBuilder with imageBuilder
       // (uri, title, alt) — it no longer surfaces a per-image width, so the

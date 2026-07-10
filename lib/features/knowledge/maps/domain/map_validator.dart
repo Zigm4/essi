@@ -23,6 +23,16 @@ class MapLimits {
   static const int maxImageBytes = 8 * 1024 * 1024; // 8 MB
   static const int maxImageDimension = 4096; // px per side
 
+  /// Asset roles that are decoded into a rendered surface (a flat background or a
+  /// sphere texture). For these, [MapFileRef.pixelSize] is REQUIRED so the
+  /// dimension bound is a real pre-decode gate — an undeclared image can't ship
+  /// and then blow past the decode cap at render time (thumbnails stay lenient).
+  static const Set<String> renderedImageKinds = {
+    'background',
+    'background_hd',
+    'texture',
+  };
+
   // String length caps.
   static const int maxIdLength = 64;
   static const int maxTitleLength = 160;
@@ -65,6 +75,10 @@ enum MapValidationCode {
 
   /// An image asset's declared pixel size exceeded [MapLimits.maxImageDimension].
   imageDimensionsTooLarge,
+
+  /// A rendered image asset (background/background_hd/texture) omitted the
+  /// required `pixelSize`, so its decode size could not be bounded up front.
+  imageDimensionsMissing,
 
   /// A numeric value was out of range (negative bytes, non-finite/≤0 canvas…).
   invalidBounds,
@@ -256,9 +270,17 @@ class MapContentValidator {
           'asset ${a.path} ${a.bytes} B > ${MapLimits.maxImageBytes} B cap');
     }
     final px = a.pixelSize;
-    if (px != null &&
-        (px.width > MapLimits.maxImageDimension ||
-            px.height > MapLimits.maxImageDimension)) {
+    // Rendered images MUST declare pixelSize so the dimension bound is a real
+    // pre-decode gate (thumbnails and other roles stay lenient).
+    if (px == null) {
+      if (a.kind != null && MapLimits.renderedImageKinds.contains(a.kind)) {
+        return _Fail(MapValidationCode.imageDimensionsMissing,
+            'asset ${a.path} (kind ${a.kind}) must declare pixelSize');
+      }
+      return null;
+    }
+    if (px.width > MapLimits.maxImageDimension ||
+        px.height > MapLimits.maxImageDimension) {
       return _Fail(MapValidationCode.imageDimensionsTooLarge,
           'asset ${a.path} ${px.width}x${px.height} > ${MapLimits.maxImageDimension}px cap');
     }

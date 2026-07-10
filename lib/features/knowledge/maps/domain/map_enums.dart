@@ -8,6 +8,14 @@
 /// bounds violations (handled by [MapContentValidator]) reject a file.
 library;
 
+/// The highest map-document `schemaVersion` this app build understands. A
+/// document declaring a higher schema is rendered as "update required" (not
+/// openable, excluded from search) rather than mis-rendered — the same posture
+/// as an unknown [MapType], but keyed on the schema integer so a *future* additive
+/// bump that this build can't interpret is caught even when the type is known
+/// (AUDIT-V2 §4.7). Bump this when the app gains support for a new schema.
+const int kSupportedMapSchemaVersion = 1;
+
 /// How a map is rendered. `flat` = 2D image-space, `sphere` = orthographic globe.
 enum MapType {
   flat,

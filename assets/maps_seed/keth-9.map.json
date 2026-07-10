@@ -1,0 +1,113 @@
+{
+  "_comment": "SAMPLE / SEED DATA — a stylized neon GLOBE (sphere map) bundled so the 3D dynamic-maps feature is demonstrably functional OFFLINE on first launch. The owner REPLACES all of this over the content repo; nothing here is authoritative lore. Coordinates are [lon, lat] in DEGREES (GeoJSON order). Edges are great-circle arcs, densified by the app for rendering + hit-testing. Pole-covering zones use `sphericalCap` (angular distance), never a polygon. NO texture asset is shipped — the globe is rendered stylized (radial-shaded neon), so `sphere.textureAsset` names a kind that simply is not present. See AUDIT-V2 §4.5 (Plan A) / §4.7.",
+  "schemaVersion": 1,
+  "id": "keth-9",
+  "type": "sphere",
+  "sphere": {
+    "textureAsset": "texture",
+    "initialOrientation": { "lat": 8.0, "lon": 0.0 },
+    "autoRotateDegPerSec": 3.0
+  },
+  "theme": {
+    "_comment": "Dark-only, on-brand green/teal palette. Survives MapTheme.sanitize() unchanged (§4.6).",
+    "background": "#03060B",
+    "surface": "#08221B",
+    "zoneFill": "#0E3A2E",
+    "zoneStroke": "#5FE8A0",
+    "zoneSelectedFill": "#1C6A50",
+    "glow": "#5FE8A0",
+    "label": "#EAFFF6",
+    "accent": "#FFB347",
+    "fontFamily": "JetBrainsMono"
+  },
+  "fieldsSchema": [
+    {
+      "key": "faction",
+      "label": "Faction",
+      "type": "enum",
+      "options": ["Ferrous Pact", "Rustwinds", "Neutral"],
+      "searchable": true,
+      "filterable": true
+    },
+    {
+      "key": "gravity",
+      "label": "Gravity",
+      "type": "number",
+      "unit": "g"
+    },
+    {
+      "key": "brief",
+      "label": "Briefing",
+      "type": "longText",
+      "searchable": true
+    }
+  ],
+  "zones": [
+    {
+      "id": "s-crucible",
+      "name": "Crucible Sector",
+      "geometry": {
+        "kind": "sphericalPolygon",
+        "rings": [[[-70, -22], [-47, -22], [-25, -22], [-25, 0], [-25, 22], [-47, 22], [-70, 22], [-70, 0]]]
+      },
+      "fields": {
+        "faction": "Ferrous Pact",
+        "gravity": 1.4,
+        "brief": "Slag foundries ring the western terminator. The Pact smelts hull-ore here around the clock."
+      }
+    },
+    {
+      "id": "s-rustwind",
+      "name": "Rustwind Reach",
+      "geometry": {
+        "kind": "sphericalPolygon",
+        "rings": [[[-22, -22], [0, -22], [22, -22], [22, 0], [22, 22], [0, 22], [-22, 22], [-22, 0]]]
+      },
+      "fields": {
+        "faction": "Rustwinds",
+        "gravity": 1.1,
+        "brief": "Ochre dust-storms scour the equatorial plate. Nomad convoys read the wind for safe passage."
+      }
+    },
+    {
+      "id": "s-ferrous",
+      "name": "Ferrous Flats",
+      "geometry": {
+        "kind": "sphericalPolygon",
+        "rings": [[[25, -22], [47, -22], [70, -22], [70, 0], [70, 22], [47, 22], [25, 22], [25, 0]]]
+      },
+      "fields": {
+        "faction": "Ferrous Pact",
+        "gravity": 1.4,
+        "brief": "Mag-rail yards stretch to the eastern limb. Contested with the Rustwinds every dry season."
+      }
+    },
+    {
+      "id": "s-umbral",
+      "name": "Umbral Basin",
+      "geometry": {
+        "kind": "sphericalPolygon",
+        "rings": [[[-30, -55], [0, -55], [30, -55], [30, -40], [30, -28], [0, -28], [-30, -28], [-30, -40]]]
+      },
+      "fields": {
+        "faction": "Neutral",
+        "gravity": 0.9,
+        "brief": "A sunken southern caldera, permanently in shadow. Neither faction claims the cold."
+      }
+    },
+    {
+      "id": "s-glass-cap",
+      "name": "Glass Cap",
+      "geometry": {
+        "kind": "sphericalCap",
+        "center": [0, 90],
+        "radiusDeg": 20.0
+      },
+      "fields": {
+        "faction": "Neutral",
+        "gravity": 1.0,
+        "brief": "The polar ice-glass fields. A free port sits at the exact pole, beholden to no one."
+      }
+    }
+  ]
+}

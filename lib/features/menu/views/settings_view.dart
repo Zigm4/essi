@@ -332,6 +332,7 @@ class _MapsSettingsCard extends ConsumerWidget {
       // next Knowledge entry, and refresh the dependent providers.
       await ref.read(sharedPreferencesProvider).remove(kMapSeedImportedPref);
       ref.invalidate(mapsStoreSizeProvider);
+      ref.invalidate(mapsInstalledVersionProvider);
       ref.invalidate(mapsManifestProvider);
       ref.invalidate(mapSeedImportProvider);
     } catch (_) {
@@ -348,6 +349,7 @@ class _MapsSettingsCard extends ConsumerWidget {
     final settings = ref.watch(appSettingsProvider);
     final notifier = ref.read(appSettingsProvider.notifier);
     final size = ref.watch(mapsStoreSizeProvider).valueOrNull;
+    final version = ref.watch(mapsInstalledVersionProvider).valueOrNull;
 
     return GlassCard(
       child: Column(
@@ -378,10 +380,43 @@ class _MapsSettingsCard extends ConsumerWidget {
             onChange: (v) => notifier.setMapsAutoUpdate(v),
           ),
           const SizedBox(height: AppSpacing.md),
+          _InfoLine(
+            label: 'Installed version',
+            value: version == null || version.isEmpty ? 'none' : version,
+          ),
+          const SizedBox(height: 6),
           _ManagementRow(
             label: 'Downloaded maps',
             value: size == null ? '…' : _formatBytes(size),
             onClear: () => _clear(context, ref),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A read-only "label: value" line (installed content version) in the maps card,
+/// styled to match [_ManagementRow]'s label/value pairing.
+class _InfoLine extends StatelessWidget {
+  const _InfoLine({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return RichText(
+      text: TextSpan(
+        style: AppTypography.body,
+        children: [
+          TextSpan(text: '$label: '),
+          TextSpan(
+            text: value,
+            style: AppTypography.body.copyWith(
+              fontFamily: AppTypography.fontMono,
+              color: AppColors.accentSecondary,
+            ),
           ),
         ],
       ),

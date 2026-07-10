@@ -193,6 +193,30 @@ void main() {
       );
       expect(r.isOk, isTrue);
     });
+
+    test('rendered image asset missing pixelSize is rejected', () {
+      for (final kind in const ['background', 'background_hd', 'texture']) {
+        final asset = _asset()..remove('pixelSize');
+        asset['kind'] = kind;
+        final r = _validator.validateManifest(
+          _manifest(maps: [_descriptor(assets: [asset])]),
+          byteLength: 1000,
+        );
+        expect((r as MapParseError).code,
+            MapValidationCode.imageDimensionsMissing,
+            reason: 'kind=$kind must require pixelSize');
+      }
+    });
+
+    test('thumbnail (and other roles) may omit pixelSize', () {
+      final thumb = _asset()..remove('pixelSize');
+      thumb['kind'] = 'thumbnail';
+      final r = _validator.validateManifest(
+        _manifest(maps: [_descriptor(assets: [thumb])]),
+        byteLength: 1000,
+      );
+      expect(r.isOk, isTrue);
+    });
   });
 
   group('string caps', () {

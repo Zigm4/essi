@@ -181,6 +181,9 @@ GoRouter buildRouter() {
                         // a stale deep link never spins forever (audit fallback).
                         builder: (context, state) => MapDetailView(
                           id: state.pathParameters['id']!,
+                          // `?zone=` (from search / an underdeck://map deep link)
+                          // pre-selects + centers that zone on entry.
+                          initialZoneId: state.uri.queryParameters['zone'],
                         ),
                       ),
                     ],

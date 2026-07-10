@@ -24,10 +24,15 @@ class MapZoneListView extends StatefulWidget {
     super.key,
     required this.document,
     required this.title,
+    this.initialFilters = const {},
   });
 
   final MapDocument document;
   final String title;
+
+  /// Filters carried over from the map-detail canvas so the two stay in sync
+  /// (canvas dims failing zones; this list hides them). Copied on init.
+  final Map<String, Set<String>> initialFilters;
 
   @override
   State<MapZoneListView> createState() => _MapZoneListViewState();
@@ -38,8 +43,10 @@ class _MapZoneListViewState extends State<MapZoneListView> {
   bool _ascending = true;
 
   /// Selected option values per filterable enum field key (AND across fields,
-  /// OR within a field).
-  final Map<String, Set<String>> _filters = {};
+  /// OR within a field). Seeded from the canvas filters.
+  late final Map<String, Set<String>> _filters = {
+    for (final e in widget.initialFilters.entries) e.key: {...e.value},
+  };
 
   late final MapTheme _baseTheme = widget.document.theme.sanitize();
 
@@ -77,7 +84,7 @@ class _MapZoneListViewState extends State<MapZoneListView> {
   }
 
   void _openZone(MapZone zone) {
-    final theme = _baseTheme.withOverride(zone.themeOverride);
+    final theme = zoneTheme(_baseTheme, zone.themeOverride);
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,

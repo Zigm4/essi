@@ -30,6 +30,24 @@
           "pixelSize": [2448, 3264]
         }
       ]
+    },
+    {
+      "id": "keth-9",
+      "type": "sphere",
+      "title": "Keth-9",
+      "subtitle": "Sample globe — replace via content repo",
+      "icon": "sphere",
+      "order": 1,
+      "version": 1,
+      "draft": false,
+      "tags": ["sample", "sphere"],
+      "document": {
+        "path": "assets/maps_seed/keth-9.map.json",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "bytes": 0,
+        "kind": "document"
+      },
+      "assets": []
     }
   ]
 }

@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -29,12 +30,21 @@ class FlatMapViewport extends ConsumerStatefulWidget {
     super.key,
     required this.document,
     required this.backgroundBytes,
+    this.dimmed,
+    this.initialZoneId,
   });
 
   final MapDocument document;
 
   /// Raw background image bytes, decoded at a constrained size by the layer.
   final Uint8List? backgroundBytes;
+
+  /// Zone ids failing the active filter — drawn dimmed on the canvas. `null`
+  /// (or empty) means no filter is active.
+  final ValueListenable<Set<String>>? dimmed;
+
+  /// Zone to pre-select + center on first layout (from search / a deep link).
+  final String? initialZoneId;
 
   @override
   ConsumerState<FlatMapViewport> createState() => _FlatMapViewportState();
@@ -44,6 +54,11 @@ class _FlatMapViewportState extends ConsumerState<FlatMapViewport> {
   final TransformationController _controller = TransformationController();
   final ValueNotifier<double> _scale = ValueNotifier<double>(1);
   final ValueNotifier<bool> _labelsVisible = ValueNotifier<bool>(false);
+
+  /// Stand-in when no external filter set is supplied, so [_MapLayers] can always
+  /// listen to a real notifier.
+  final ValueNotifier<Set<String>> _noDimmed =
+      ValueNotifier<Set<String>>(const {});
 
   late FlatMapRender _render;
   late ZoneHitIndex _hitIndex;
@@ -58,6 +73,18 @@ class _FlatMapViewportState extends ConsumerState<FlatMapViewport> {
     super.initState();
     _rebuildModel();
     _controller.addListener(_syncFromController);
+    _scheduleInitialSelection();
+  }
+
+  /// Pre-selects the deep-linked zone once the tree is mounted (the centering is
+  /// handled by [_ensureInitialTransform] on first layout).
+  void _scheduleInitialSelection() {
+    final zoneId = widget.initialZoneId;
+    if (zoneId == null || !_zonesById.containsKey(zoneId)) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(selectedZoneProvider(_mapId).notifier).state = zoneId;
+    });
   }
 
   @override
@@ -75,6 +102,7 @@ class _FlatMapViewportState extends ConsumerState<FlatMapViewport> {
     _controller.dispose();
     _scale.dispose();
     _labelsVisible.dispose();
+    _noDimmed.dispose();
     super.dispose();
   }
 
@@ -104,11 +132,28 @@ class _FlatMapViewportState extends ConsumerState<FlatMapViewport> {
     final fit = _fitScale(vw, vh);
     final cw = _render.canvasSize.width;
     final ch = _render.canvasSize.height;
-    final tx = (vw - cw * fit) / 2;
-    final ty = (vh - ch * fit) / 2;
+
+    // Deep-linked to a zone: zoom in and center on it instead of fitting the
+    // whole canvas. Otherwise fit + center the canvas as usual.
+    final focus = _focusItem();
+    double scale;
+    double tx;
+    double ty;
+    if (focus != null && focus.bounds.width > 0 && focus.bounds.height > 0) {
+      final b = focus.bounds;
+      // Frame the zone at ~55% of the viewport, clamped to a sane zoom band.
+      final target = math.min(vw / (b.width / 0.55), vh / (b.height / 0.55));
+      scale = target.clamp(fit, math.max(8.0, fit));
+      tx = vw / 2 - b.center.dx * scale;
+      ty = vh / 2 - b.center.dy * scale;
+    } else {
+      scale = fit;
+      tx = (vw - cw * fit) / 2;
+      ty = (vh - ch * fit) / 2;
+    }
     // Scale about the origin, then translate to center — T * S.
     final m = Matrix4.translationValues(tx, ty, 0)
-      ..multiply(Matrix4.diagonal3Values(fit, fit, 1));
+      ..multiply(Matrix4.diagonal3Values(scale, scale, 1));
     // Mutating the controller fires listeners → setState-free notifier updates;
     // defer to after this build so we never mutate during layout.
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -116,6 +161,13 @@ class _FlatMapViewportState extends ConsumerState<FlatMapViewport> {
       _controller.value = m;
       _syncFromController();
     });
+  }
+
+  /// The render item for the deep-linked zone, if it has drawable bounds.
+  ZoneRenderItem? _focusItem() {
+    final id = widget.initialZoneId;
+    if (id == null) return null;
+    return _itemsById[id];
   }
 
   void _onTap(Offset canvasPoint) {
@@ -160,6 +212,7 @@ class _FlatMapViewportState extends ConsumerState<FlatMapViewport> {
                         backgroundBytes: widget.backgroundBytes,
                         scale: _scale,
                         labelsVisible: _labelsVisible,
+                        dimmed: widget.dimmed ?? _noDimmed,
                         mapId: _mapId,
                         itemsById: _itemsById,
                       ),
@@ -214,6 +267,7 @@ class _MapLayers extends StatelessWidget {
     required this.backgroundBytes,
     required this.scale,
     required this.labelsVisible,
+    required this.dimmed,
     required this.mapId,
     required this.itemsById,
   });
@@ -222,6 +276,7 @@ class _MapLayers extends StatelessWidget {
   final Uint8List? backgroundBytes;
   final ValueNotifier<double> scale;
   final ValueNotifier<bool> labelsVisible;
+  final ValueListenable<Set<String>> dimmed;
   final String mapId;
   final Map<String, ZoneRenderItem> itemsById;
 
@@ -239,14 +294,19 @@ class _MapLayers extends StatelessWidget {
             fill: render.theme.background,
           ),
         ),
-        // 2. Zone fills / strokes / glow (+ label scrims, LOD-gated).
+        // 2. Zone fills / strokes / glow (+ label scrims, LOD-gated). Repaints on
+        //    LOD (labels) or the active filter (dimming) changing.
         RepaintBoundary(
-          child: ValueListenableBuilder<bool>(
-            valueListenable: labelsVisible,
-            builder: (context, visible, _) => CustomPaint(
+          child: AnimatedBuilder(
+            animation: Listenable.merge([labelsVisible, dimmed]),
+            builder: (context, _) => CustomPaint(
               size: size,
               isComplex: true,
-              painter: ZonePainter(render: render, labelsVisible: visible),
+              painter: ZonePainter(
+                render: render,
+                labelsVisible: labelsVisible.value,
+                dimmed: dimmed.value,
+              ),
             ),
           ),
         ),
@@ -265,13 +325,17 @@ class _MapLayers extends StatelessWidget {
             },
           ),
         ),
-        // 4. Labels (LOD-gated).
+        // 4. Labels (LOD-gated), dimmed to match filtered-out zones.
         RepaintBoundary(
-          child: ValueListenableBuilder<bool>(
-            valueListenable: labelsVisible,
-            builder: (context, visible, _) => CustomPaint(
+          child: AnimatedBuilder(
+            animation: Listenable.merge([labelsVisible, dimmed]),
+            builder: (context, _) => CustomPaint(
               size: size,
-              painter: LabelPainter(render: render, visible: visible),
+              painter: LabelPainter(
+                render: render,
+                visible: labelsVisible.value,
+                dimmed: dimmed.value,
+              ),
             ),
           ),
         ),

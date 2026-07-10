@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/external_link.dart';
+import '../../../../core/internal_link.dart';
 import '../../../../design_system/components/neon_button.dart' show NeonButton;
 import '../../../../design_system/spacing.dart';
 import '../../../../design_system/typography.dart';
@@ -98,7 +98,9 @@ class ZoneFieldsRenderer extends StatelessWidget {
           child: NeonButton(
             title: spec.label,
             icon: Icons.open_in_new_rounded,
-            onPressed: () => launchExternal(context, s),
+            // Internal `underdeck://` links jump to a KB article / map in-app;
+            // external links go through the allow-listed launcher (§4.8).
+            onPressed: () => resolveLink(context, s),
           ),
         );
       case ZoneFieldType.unknown:

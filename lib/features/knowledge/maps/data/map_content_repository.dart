@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/logging.dart';
 import '../../../../data/database/app_database.dart';
 import '../../../../services/app_settings.dart';
+import '../domain/map_enums.dart';
 import '../domain/map_models.dart';
 import '../domain/map_validator.dart';
 import 'map_blob_store.dart';
@@ -448,9 +449,120 @@ class MapContentRepository {
     await _prefs.remove(_kLastCheckAt);
   }
 
+  // --- full-text search ------------------------------------------------------
+
+  /// Full-text search over installed zones via [kMapZoneFtsTable] (unicode61
+  /// tokenizer, diacritics removed → non-ASCII / accent-insensitive). Matches
+  /// zone names and searchable field text; hits are ranked by relevance (bm25).
+  ///
+  /// Maps of *unknown* type never contribute rows (excluded when the index is
+  /// built — [buildZoneFtsRows]), so results only ever point at openable maps.
+  /// A blank / operator-only query yields no hits (never a syntax error).
+  Future<List<ZoneSearchHit>> searchZones(String query, {int limit = 50}) async {
+    final match = ftsMatchExpression(query);
+    if (match == null) return const [];
+    try {
+      final rows = await _db.customSelect(
+        'SELECT zone_id, map_id, name FROM $kMapZoneFtsTable '
+        'WHERE $kMapZoneFtsTable MATCH ? ORDER BY rank LIMIT ?',
+        variables: [Variable.withString(match), Variable.withInt(limit)],
+      ).get();
+      return [
+        for (final r in rows)
+          ZoneSearchHit(
+            mapId: r.read<String>('map_id'),
+            zoneId: r.read<String>('zone_id'),
+            zoneName: r.read<String>('name'),
+          ),
+      ];
+    } catch (e, s) {
+      // Defensive: a MATCH the sanitizer somehow let through must not surface as
+      // a crash in the search box.
+      logError(e, s);
+      return const [];
+    }
+  }
+
   Map<String, dynamic> _decodeJson(Uint8List bytes) =>
       jsonDecode(utf8.decode(bytes)) as Map<String, dynamic>;
 }
+
+/// A single FTS hit: the zone that matched and the map it belongs to. Enriched
+/// with the map's manifest metadata by [mapZoneSearchProvider].
+class ZoneSearchHit {
+  final String mapId;
+  final String zoneId;
+  final String zoneName;
+  const ZoneSearchHit({
+    required this.mapId,
+    required this.zoneId,
+    required this.zoneName,
+  });
+}
+
+/// Builds a safe FTS5 `MATCH` expression from free user input: split into terms,
+/// neutralise every FTS operator by wrapping each term in double quotes, `AND`
+/// them (space), and make the final term a prefix match so results appear while
+/// typing. Returns `null` when the query holds no usable term (so callers skip
+/// the query rather than issue a malformed MATCH).
+String? ftsMatchExpression(String query) {
+  final terms = query
+      .split(RegExp(r'\s+'))
+      .map((t) => t.trim())
+      .where((t) => t.isNotEmpty)
+      .toList();
+  if (terms.isEmpty) return null;
+  final quoted = [
+    for (final t in terms) '"${t.replaceAll('"', '""')}"',
+  ];
+  // Prefix-match the last token so partial words match as the user types.
+  quoted[quoted.length - 1] = '${quoted.last}*';
+  return quoted.join(' ');
+}
+
+/// A search result ready for the gallery UI: an FTS hit enriched with the map's
+/// title + icon from the installed manifest. Rendered as "Map › Zone".
+class MapZoneSearchResult {
+  final String mapId;
+  final String mapTitle;
+  final MapIcon mapIcon;
+  final String zoneId;
+  final String zoneName;
+  const MapZoneSearchResult({
+    required this.mapId,
+    required this.mapTitle,
+    required this.mapIcon,
+    required this.zoneId,
+    required this.zoneName,
+  });
+}
+
+/// FTS search results for [query], joined against the installed manifest so each
+/// hit carries its map's title/icon and non-openable maps are dropped (unknown
+/// type, drafts, or ids no longer present). Debouncing is the caller's job (the
+/// gallery search field). Empty/blank query → no results.
+final mapZoneSearchProvider = FutureProvider.autoDispose
+    .family<List<MapZoneSearchResult>, String>((ref, query) async {
+  if (query.trim().isEmpty) return const [];
+  final repo = await ref.watch(mapContentRepositoryProvider.future);
+  final manifest = await ref.watch(mapsManifestProvider.future);
+  final hits = await repo.searchZones(query);
+  final byId = {for (final m in manifest?.maps ?? const <MapDescriptor>[]) m.id: m};
+  final results = <MapZoneSearchResult>[];
+  for (final h in hits) {
+    final d = byId[h.mapId];
+    // Only surface hits that open to a real, current, non-unknown map.
+    if (d == null || d.draft || d.type == MapType.unknown) continue;
+    results.add(MapZoneSearchResult(
+      mapId: d.id,
+      mapTitle: d.title,
+      mapIcon: d.icon,
+      zoneId: h.zoneId,
+      zoneName: h.zoneName,
+    ));
+  }
+  return results;
+});
 
 /// Async because it depends on the resolved [mapBlobStoreProvider].
 final mapContentRepositoryProvider =
@@ -496,4 +608,12 @@ final mapBackgroundBytesProvider =
 final mapsStoreSizeProvider = FutureProvider<int>((ref) async {
   final repo = await ref.watch(mapContentRepositoryProvider.future);
   return repo.storeSizeBytes();
+});
+
+/// Content version of the currently installed pack (`null` when nothing is
+/// installed). Ref-invalidatable so the Settings management row refreshes after a
+/// clear or a freshly activated pack.
+final mapsInstalledVersionProvider = FutureProvider<String?>((ref) async {
+  final repo = await ref.watch(mapContentRepositoryProvider.future);
+  return repo.installedContentVersion();
 });

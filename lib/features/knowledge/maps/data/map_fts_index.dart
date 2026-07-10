@@ -27,13 +27,17 @@ class ZoneFtsRow {
 /// Projects a parsed [doc] into the FTS rows to index.
 ///
 /// Rules (AUDIT-V2 §4.7):
-/// - a map of *unknown* type is excluded entirely (it renders as "update
-///   required" and must not lead search to a dead end);
+/// - a map of *unknown* type OR a schema newer than this build understands is
+///   excluded entirely (it renders as "update required" and must not lead search
+///   to a dead end);
 /// - only fields whose schema entry is `searchable` AND of a known type
 ///   contribute to `fields_text`;
 /// - the zone `name` is always indexed.
 List<ZoneFtsRow> buildZoneFtsRows(MapDocument doc) {
-  if (doc.type == MapType.unknown) return const [];
+  if (doc.type == MapType.unknown ||
+      doc.schemaVersion > kSupportedMapSchemaVersion) {
+    return const [];
+  }
 
   final searchableKeys = <String>{
     for (final f in doc.fieldsSchema)

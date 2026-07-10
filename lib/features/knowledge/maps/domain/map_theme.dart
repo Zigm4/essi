@@ -320,3 +320,12 @@ class MapThemeOverride {
 
 String? _parseFont(Object? raw) =>
     (raw is String && kMapFontWhitelist.contains(raw)) ? raw : null;
+
+/// Resolves a zone's effective theme from an already-sanitized [base] map theme
+/// and its (restricted) [override]. The override's zone-scoped tokens
+/// ({zoneFill, zoneStroke, glow}) are re-run through [MapTheme.sanitize] so a
+/// per-zone standout colour still clears the contrast / selection guards (§4.6) —
+/// content cannot dim a stroke into invisibility or hide selection. Zones with no
+/// override return [base] unchanged (sanitize is idempotent, so this is a no-op).
+MapTheme zoneTheme(MapTheme base, MapThemeOverride? override) =>
+    override == null ? base : base.withOverride(override).sanitize();

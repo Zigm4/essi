@@ -121,7 +121,7 @@ FlatMapRender buildFlatMapRender(MapDocument doc) {
 
   final items = <ZoneRenderItem>[
     for (final z in doc.zones)
-      _buildItem(z, base.withOverride(z.themeOverride), fontSize, markerRadius),
+      _buildItem(z, zoneTheme(base, z.themeOverride), fontSize, markerRadius),
   ];
 
   return FlatMapRender(
