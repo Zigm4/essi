@@ -186,6 +186,9 @@ class HistorySheet<D> extends ConsumerWidget {
             ],
           ),
         );
+        // E11: the dialog await can outlive the sheet; don't touch ref/context
+        // if it's already gone.
+        if (!context.mounted) return;
         if (confirm == true) {
           Haptics.of(ref).warning();
           await onClearAll(ref);
@@ -235,6 +238,8 @@ Future<void> _confirmDelete(
       ],
     ),
   );
+  // E11: the dialog await can outlive the caller's context; bail if it's gone.
+  if (!context.mounted) return;
   if (confirm == true) {
     Haptics.of(ref).warning();
     await onConfirm();

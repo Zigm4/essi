@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app/app.dart';
@@ -27,15 +26,10 @@ Future<void> main() async {
       return true;
     };
 
-    // Type is bundled as assets (see pubspec `fonts:`); never fetch from
-    // fonts.gstatic.com at runtime (privacy + offline first-paint). The app no
-    // longer calls GoogleFonts.* directly, but this is a hard guard in case a
-    // stray call sneaks back in.
-    GoogleFonts.config.allowRuntimeFetching = false;
-
     // Register the bundled fonts' SIL Open Font Licenses so they surface in the
-    // in-app license page (google_fonts only self-registers licences for the
-    // fonts it fetches at runtime, which we no longer do).
+    // in-app license page. Type is bundled as assets (see pubspec `fonts:`) and
+    // never fetched at runtime (privacy + offline first-paint), so we register
+    // the licences manually here.
     LicenseRegistry.addLicense(() async* {
       for (final family in const ['Inter', 'JetBrainsMono', 'Quicksand']) {
         final license =
@@ -50,6 +44,7 @@ Future<void> main() async {
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor: Color(0x00000000),
       statusBarIconBrightness: Brightness.light,
+      statusBarBrightness: Brightness.dark,
       systemNavigationBarColor: Color(0xFF03060B),
       systemNavigationBarIconBrightness: Brightness.light,
     ));

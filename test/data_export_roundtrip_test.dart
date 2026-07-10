@@ -238,6 +238,51 @@ void main() {
         reason: 'F43: update must not clobber the original createdAt');
   });
 
+  test('(e2) E5 a row with a garbage/absent date must NOT overwrite a newer '
+      'local row on the update path', () async {
+    final localUpdated = DateTime.utc(2026, 1, 1);
+
+    // Target already has a recently-edited note.
+    await target.into(target.notes).insert(NotesCompanion.insert(
+          id: 'note-e5',
+          title: const Value('Local'),
+          body: const Value('local body'),
+          createdAt: DateTime.utc(2025, 1, 1),
+          updatedAt: localUpdated,
+        ));
+
+    // Backup carries the same note but with an unparseable updatedAt (and one
+    // with the field absent entirely). Neither must win the newer-wins race —
+    // an epoch fallback means they LOSE, so the local row stays intact.
+    final data = {
+      'notes': [
+        {
+          'id': 'note-e5',
+          'title': 'Hostile',
+          'body': 'hostile body',
+          'updatedAt': 'not-a-real-date',
+        },
+        {
+          'id': 'note-e5',
+          'title': 'AbsentDate',
+          'body': 'absent-date body',
+          // updatedAt intentionally omitted
+        },
+      ],
+    };
+    final summary = await DataExportService(target)
+        .importFromFile(_writeTempJson(_envelope(data)));
+    expect(summary.notes, 0,
+        reason: 'E5: a corrupt/absent date must lose the newer-wins compare');
+
+    final row = await (target.select(target.notes)
+          ..where((t) => t.id.equals('note-e5')))
+        .getSingle();
+    expect(row.body, 'local body',
+        reason: 'E5: the newer local row must not be overwritten');
+    expect(row.title, 'Local');
+  });
+
   test('(g) P3/22 favorites + jobStatus round-trip, idempotent, newer-wins',
       () async {
     await source.into(source.favorites).insert(FavoritesCompanion.insert(

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/logging.dart';
 import '../domain/kb_models.dart';
 
 class KBData {
@@ -41,7 +42,9 @@ class KBData {
         String md;
         try {
           md = await rootBundle.loadString(assetPath);
-        } catch (_) {
+        } catch (e, st) {
+          // R15: keep the placeholder, but don't swallow the failure silently.
+          logError(e, st);
           md = '# ${ref.title}\n\n(Article content missing.)';
         }
         final article = KBArticle(

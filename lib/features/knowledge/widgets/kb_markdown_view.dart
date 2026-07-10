@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
-import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/external_link.dart';
+import '../../../core/logging.dart';
 import '../../../design_system/colors.dart';
 import '../../../design_system/typography.dart';
 
@@ -14,20 +15,53 @@ class KBMarkdownView extends StatelessWidget {
   Widget build(BuildContext context) {
     return MarkdownBody(
       data: markdown,
-      onTapLink: (text, href, title) async {
+      onTapLink: (text, href, title) {
         if (href == null) return;
-        final uri = Uri.tryParse(href);
-        if (uri == null) return;
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        // R4: allowlist schemes before handing an imported href to the OS.
+        launchExternal(context, href);
       },
       sizedImageBuilder: (config) {
         final raw = config.uri.toString();
         if (raw.startsWith('http://') || raw.startsWith('https://')) {
-          return Image.network(raw);
+          // R7: reject insecure image URLs outright — KB images are trusted
+          // https assets; anything on plain http is broken/unsafe.
+          if (!raw.startsWith('https://')) return _brokenImageTile();
+          return Image.network(
+            raw,
+            errorBuilder: (context, error, stack) {
+              logError(error, stack);
+              return _brokenImageTile();
+            },
+            loadingBuilder: (context, child, progress) {
+              if (progress == null) return child;
+              return const SizedBox(
+                height: 120,
+                child: Center(
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+              );
+            },
+          );
         }
         final clean = raw.startsWith('./') ? raw.substring(2) : raw;
         final base = clean.startsWith('images/') ? clean : 'images/$clean';
-        return Image.asset('assets/knowledge/$base');
+        // R7: decode at display resolution so oversized PNGs (the KB ships a
+        // 4086×4086 asset) don't OOM low-end Android devices.
+        final dpr = MediaQuery.devicePixelRatioOf(context);
+        final displayWidth = config.width ?? MediaQuery.sizeOf(context).width;
+        final cacheWidth = (displayWidth * dpr).round().clamp(1, 4096);
+        return Image.asset(
+          'assets/knowledge/$base',
+          cacheWidth: cacheWidth,
+          errorBuilder: (context, error, stack) {
+            logError(error, stack);
+            return _brokenImageTile();
+          },
+        );
       },
       styleSheet: MarkdownStyleSheet(
         p: AppTypography.body,
@@ -65,4 +99,24 @@ class KBMarkdownView extends StatelessWidget {
       ),
     );
   }
+}
+
+/// R7: small placeholder shown when a KB image fails to load or is rejected,
+/// instead of an unbounded exception widget.
+Widget _brokenImageTile() {
+  return Container(
+    height: 120,
+    decoration: BoxDecoration(
+      color: AppColors.bgGlass,
+      borderRadius: BorderRadius.circular(6),
+      border: Border.all(color: AppColors.borderSubtle),
+    ),
+    child: const Center(
+      child: Icon(
+        Icons.broken_image_outlined,
+        color: AppColors.textSecondary,
+        size: 28,
+      ),
+    ),
+  );
 }

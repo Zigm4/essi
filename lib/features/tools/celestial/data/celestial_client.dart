@@ -8,7 +8,7 @@ import '../domain/celestial_kind.dart';
 import '../domain/celestial_models.dart';
 
 class CelestialClient {
-  CelestialClient({Dio? dio}) : _dio = dio ?? Dio();
+  CelestialClient({required Dio dio}) : _dio = dio;
   final Dio _dio;
 
   static const _baseUrl = 'https://ssd-api.jpl.nasa.gov/sbdb_query.api';

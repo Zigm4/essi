@@ -141,18 +141,35 @@ class DataExportService {
     };
   }
 
-  /// P3/25: file-name-safe, lexically-sortable timestamp (drops sub-second and
-  /// zone) shared by the temp-file export and the Documents auto-backup.
-  static String _stamp() => DateTime.now()
-      .toIso8601String()
-      .replaceAll(':', '-')
-      .replaceAll('.', '-')
-      .substring(0, 19);
+  // E10: a monotonic per-run sequence appended to the stamp so two backups in
+  // the same second (or millisecond) get distinct, still lexically-ordered
+  // names instead of overwriting each other.
+  static var _stampSeq = 0;
+
+  /// P3/25: file-name-safe, lexically-sortable timestamp shared by the
+  /// Documents auto-backup. E10: keeps second granularity for readability but
+  /// appends milliseconds and a per-run sequence for uniqueness, so newest
+  /// still sorts last (the Documents pruning stays correct).
+  static String _stamp() {
+    final now = DateTime.now();
+    final base = now
+        .toIso8601String()
+        .replaceAll(':', '-')
+        .replaceAll('.', '-')
+        .substring(0, 19);
+    final ms = now.millisecond.toString().padLeft(3, '0');
+    final seq = (_stampSeq++).toRadixString(36).padLeft(4, '0');
+    return '$base-$ms-$seq';
+  }
 
   Future<File> exportToFile() async {
     final payload = await _collect();
     final tempDir = await getTemporaryDirectory();
-    final file = File(p.join(tempDir.path, 'underdeck-export-${_stamp()}.json'));
+    // R6: a single stable filename (overwrite) so plaintext exports don't
+    // accumulate in the temp/cache dir after each share — bounded to one file,
+    // matching how the PNG share cards already overwrite. The Documents
+    // auto-backup keeps its own timestamped, pruned copies.
+    final file = File(p.join(tempDir.path, 'underdeck-export.json'));
     await file.writeAsString(jsonEncode(payload));
     return file;
   }
@@ -227,11 +244,13 @@ class DataExportService {
     return BackupStatus(hasData: total > 0, lastChangedAt: lastChanged);
   }
 
-  Future<void> shareExport({Rect? sharePositionOrigin}) async {
+  /// E1: returns the SharePlus [ShareResult] so callers can mark the backup
+  /// done only when the share actually succeeded (not when it was dismissed).
+  Future<ShareResult> shareExport({Rect? sharePositionOrigin}) async {
     final file = await exportToFile();
     // Intentionally no `text` — share-sheet should not auto-fill a body so
     // the user can compose their own message (or none).
-    await SharePlus.instance.share(
+    return SharePlus.instance.share(
       ShareParams(
         files: [XFile(file.path, mimeType: 'application/json')],
         sharePositionOrigin: sharePositionOrigin,
@@ -292,11 +311,16 @@ class DataExportService {
 
     // Tolerant: a malformed/absent date must never throw and abort the whole
     // import (a single poisoned row would otherwise take the file down).
+    // Used for createdAt on INSERT, where "now" is a sane default.
     DateTime parseDate(dynamic v) =>
         (v is String ? DateTime.tryParse(v) : null) ?? DateTime.now();
 
-    String dedupeId(String fallback) => _uuid.v4();
-    final unused = dedupeId; // ignore: unused_local_variable
+    // E5: for the newer-wins updatedAt comparison, an unreadable/absent date
+    // must LOSE (fall back to epoch), never win — otherwise a hostile/corrupt
+    // row would always overwrite a newer local one via a now() fallback.
+    DateTime parseUpdatedAt(dynamic v) =>
+        (v is String ? DateTime.tryParse(v) : null) ??
+        DateTime.fromMillisecondsSinceEpoch(0);
 
     await _db.transaction(() async {
       // Tags first (to satisfy foreign-key-like checks even though we don't have hard FKs)
@@ -358,7 +382,7 @@ class DataExportService {
         items: (data['notes'] as List<dynamic>? ?? const []),
         insertFn: (m) async {
           final id = m['id'] as String? ?? _uuid.v4();
-          final updatedAt = parseDate(m['updatedAt']);
+          final updatedAt = parseUpdatedAt(m['updatedAt']);
           final exists = await (_db.select(_db.notes)
                 ..where((t) => t.id.equals(id)))
               .getSingleOrNull();
@@ -395,7 +419,7 @@ class DataExportService {
         items: (data['links'] as List<dynamic>? ?? const []),
         insertFn: (m) async {
           final id = m['id'] as String? ?? _uuid.v4();
-          final updatedAt = parseDate(m['updatedAt']);
+          final updatedAt = parseUpdatedAt(m['updatedAt']);
           final exists = await (_db.select(_db.links)
                 ..where((t) => t.id.equals(id)))
               .getSingleOrNull();
@@ -433,7 +457,7 @@ class DataExportService {
         items: (data['ships'] as List<dynamic>? ?? const []),
         insertFn: (m) async {
           final id = m['id'] as String? ?? _uuid.v4();
-          final updatedAt = parseDate(m['updatedAt']);
+          final updatedAt = parseUpdatedAt(m['updatedAt']);
           final values = ShipsCompanion(
             id: drift.Value(id),
             name: drift.Value(m['name'] as String? ?? ''),
@@ -705,7 +729,7 @@ class DataExportService {
         if (id == null || id.isEmpty || !validStatuses.contains(status)) {
           continue;
         }
-        final updatedAt = parseDate(m['updatedAt']);
+        final updatedAt = parseUpdatedAt(m['updatedAt']);
         final exists = await (_db.select(_db.jobStatus)
               ..where((s) => s.jobId.equals(id)))
             .getSingleOrNull();

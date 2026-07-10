@@ -157,7 +157,7 @@ class LineSplitter {
 }
 
 class HorizonsClient {
-  HorizonsClient({Dio? dio}) : _dio = dio ?? Dio();
+  HorizonsClient({required Dio dio}) : _dio = dio;
 
   final Dio _dio;
 

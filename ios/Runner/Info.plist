@@ -28,8 +28,6 @@
 	<false/>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Attach screenshots to bug reports and feedback emails.</string>
-	<key>NSCameraUsageDescription</key>
-	<string>Capture a quick photo when reporting an issue to the team.</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>

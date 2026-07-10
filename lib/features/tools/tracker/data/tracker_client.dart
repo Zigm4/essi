@@ -10,7 +10,7 @@ import '../../scan/data/horizons_client.dart';
 import '../domain/tracker_models.dart';
 
 class TrackerClient {
-  TrackerClient({Dio? dio}) : _dio = dio ?? Dio();
+  TrackerClient({required Dio dio}) : _dio = dio;
   final Dio _dio;
 
   static const _horizonsUrl = 'https://ssd.jpl.nasa.gov/api/horizons.api';

@@ -39,10 +39,13 @@ class AutoBackupController {
     }
     _changes++;
     if (_changes < BackupReminder.autoBackupChangeThreshold) return;
-    _changes = 0;
     // Guard against overlap: the export itself only reads, so it won't retrigger
-    // this listener, but a slow write could arrive mid-export.
+    // this listener, but a slow write could arrive mid-export. E7: bail before
+    // resetting the counter so writes that accrue during an in-flight export
+    // stay counted and re-trigger a backup once it finishes, instead of being
+    // dropped.
     if (_running) return;
+    _changes = 0;
     _running = true;
     try {
       await _ref.read(dataExportServiceProvider).exportToDocuments();

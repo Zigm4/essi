@@ -587,22 +587,34 @@ class _ZoneDetailSheetState extends ConsumerState<ZoneDetailSheet> {
                         style: AppTypography.caption,
                       ),
                       const SizedBox(height: AppSpacing.sm),
-                      SwitchListTile.adaptive(
-                        contentPadding: EdgeInsets.zero,
-                        dense: true,
-                        value: _repeat,
-                        onChanged: (v) => setState(() => _repeat = v),
-                        activeThumbColor: AppColors.accentPrimary,
-                        title: Text('Repeat every hour',
-                            style: AppTypography.body),
-                        subtitle: Text(
-                          'Schedules the next '
-                          '${TrainAlertIds.repeatOccurrences} arrivals '
-                          '(up to ~${TrainAlertIds.repeatOccurrences} h ahead). '
-                          'Reopen the app to extend further — alerts can only '
-                          'be scheduled while the app is running.',
-                          style: AppTypography.caption,
-                        ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Repeat every hour',
+                                    style: AppTypography.body),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Schedules the next '
+                                  '${TrainAlertIds.repeatOccurrences} arrivals '
+                                  '(up to ~${TrainAlertIds.repeatOccurrences} h '
+                                  'ahead). Reopen the app to extend further — '
+                                  'alerts can only be scheduled while the app is '
+                                  'running.',
+                                  style: AppTypography.caption,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.md),
+                          Switch(
+                            value: _repeat,
+                            onChanged: (v) => setState(() => _repeat = v),
+                            activeThumbColor: AppColors.accentPrimary,
+                          ),
+                        ],
                       ),
                       const SizedBox(height: AppSpacing.md),
                       if (isArmed) ...[

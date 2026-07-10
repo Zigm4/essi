@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../../core/error_text.dart';
 import '../../../design_system/colors.dart';
@@ -110,11 +111,16 @@ class SettingsView extends ConsumerWidget {
                     _ExportRow(
                       onExport: (origin) async {
                         try {
-                          await exportService.shareExport(
+                          final result = await exportService.shareExport(
                             sharePositionOrigin: origin,
                           );
                           // P3/25: an export is a backup — refresh the reminder.
-                          await notifier.markBackedUp();
+                          // E1: but only when the share wasn't dismissed. Some
+                          // platforms report `unavailable` even on success, so
+                          // treat anything that isn't a dismissal as done.
+                          if (result.status != ShareResultStatus.dismissed) {
+                            await notifier.markBackedUp();
+                          }
                         } catch (e) {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(

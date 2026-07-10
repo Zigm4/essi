@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../../core/error_text.dart';
 import '../../../design_system/colors.dart';
@@ -40,11 +41,16 @@ class _BackupReminderBannerState extends ConsumerState<BackupReminderBanner> {
     Haptics.of(ref).tap();
     final origin = _originRect();
     try {
-      await ref.read(dataExportServiceProvider).shareExport(
+      final result = await ref.read(dataExportServiceProvider).shareExport(
             sharePositionOrigin: origin,
           );
-      await ref.read(appSettingsProvider.notifier).markBackedUp();
-      ref.invalidate(backupStatusProvider);
+      // E1: only count it as a backup when the share wasn't dismissed. Many
+      // platforms report `unavailable` (unknown outcome) even on success, so
+      // treat anything that isn't an explicit dismissal as done.
+      if (result.status != ShareResultStatus.dismissed) {
+        await ref.read(appSettingsProvider.notifier).markBackedUp();
+        ref.invalidate(backupStatusProvider);
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

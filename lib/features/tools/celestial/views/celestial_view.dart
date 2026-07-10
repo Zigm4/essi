@@ -1,6 +1,3 @@
-import 'dart:io';
-
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -178,33 +175,30 @@ class _CelestialViewState extends ConsumerState<CelestialView> {
     final today = DateTime.now();
     final maxDate = DateTime(today.year, today.month, today.day);
     final initial = isStart ? state.startDate : state.endDate;
-    DateTime? picked;
-    if (Platform.isIOS) {
-      picked = await _showCupertinoDatePicker(
-        context: context,
-        initial: initial,
-        firstDate: DateTime(1800),
-        lastDate: maxDate,
-      );
-    } else {
-      picked = await showDatePicker(
-        context: context,
-        initialDate: initial,
-        firstDate: DateTime(1800),
-        lastDate: maxDate,
-        builder: (context, child) => Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.dark(
-              primary: AppColors.accentPrimary,
-              onPrimary: AppColors.bgDeepest,
-              surface: AppColors.bgElevated,
-              onSurface: AppColors.textPrimary,
-            ),
+    // Unified Material date picker on all platforms: its year grid gives fast
+    // navigation across the wide 1800→today range, better than a spinner.
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(1800),
+      lastDate: maxDate,
+      builder: (context, child) => Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: const ColorScheme.dark(
+            primary: AppColors.accentPrimary,
+            onPrimary: AppColors.bgDeepest,
+            surface: AppColors.bgCard,
+            onSurface: AppColors.textPrimary,
+            surfaceContainerHigh: AppColors.bgElevated,
+            onSurfaceVariant: AppColors.textSecondary,
           ),
-          child: child!,
+          dialogTheme: const DialogThemeData(
+            backgroundColor: AppColors.bgCard,
+          ),
         ),
-      );
-    }
+        child: child!,
+      ),
+    );
     if (picked == null) return;
     if (isStart) {
       notifier.setStartDate(picked);
@@ -212,68 +206,6 @@ class _CelestialViewState extends ConsumerState<CelestialView> {
       notifier.setEndDate(picked);
     }
   }
-}
-
-Future<DateTime?> _showCupertinoDatePicker({
-  required BuildContext context,
-  required DateTime initial,
-  required DateTime firstDate,
-  required DateTime lastDate,
-}) {
-  DateTime selected = initial;
-  return showCupertinoModalPopup<DateTime>(
-    context: context,
-    builder: (ctx) => Container(
-      height: 280,
-      color: AppColors.bgElevated,
-      child: SafeArea(
-        top: false,
-        child: Column(
-          children: [
-            SizedBox(
-              height: 44,
-              child: Row(
-                children: [
-                  CupertinoButton(
-                    onPressed: () => Navigator.of(ctx).pop(),
-                    child: const Text('Cancel',
-                        style: TextStyle(color: AppColors.textSecondary)),
-                  ),
-                  const Spacer(),
-                  CupertinoButton(
-                    onPressed: () => Navigator.of(ctx).pop(selected),
-                    child: const Text('Done',
-                        style: TextStyle(color: AppColors.accentPrimary)),
-                  ),
-                ],
-              ),
-            ),
-            const Divider(height: 1, color: AppColors.bgDeepest),
-            Expanded(
-              child: CupertinoTheme(
-                data: const CupertinoThemeData(
-                  brightness: Brightness.dark,
-                  textTheme: CupertinoTextThemeData(
-                    dateTimePickerTextStyle: TextStyle(
-                      color: AppColors.textPrimary,
-                      fontSize: 18,
-                    ),
-                  ),
-                ),
-                child: CupertinoDatePicker(
-                  mode: CupertinoDatePickerMode.date,
-                  initialDateTime: initial,
-                  minimumDate: firstDate,
-                  maximumDate: lastDate,
-                  onDateTimeChanged: (d) => selected = d,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
 }
 
 class _TransparencyCard extends StatelessWidget {

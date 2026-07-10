@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
-import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/external_link.dart';
 import '../../../design_system/colors.dart';
 import '../../../design_system/typography.dart';
 
@@ -14,11 +14,10 @@ class UnderdeckMarkdownView extends StatelessWidget {
   Widget build(BuildContext context) {
     return MarkdownBody(
       data: markdown,
-      onTapLink: (text, href, title) async {
+      onTapLink: (text, href, title) {
         if (href == null) return;
-        final uri = Uri.tryParse(href);
-        if (uri == null) return;
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        // R4: allowlist schemes before handing an imported href to the OS.
+        launchExternal(context, href);
       },
       styleSheet: MarkdownStyleSheet(
         p: AppTypography.body,

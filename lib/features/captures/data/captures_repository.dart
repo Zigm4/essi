@@ -132,27 +132,25 @@ class CapturesRepository {
   }
 
   Future<void> pruneOrphanTags() async {
-    final all = await _db.select(_db.tags).get();
-    for (final tag in all) {
-      final n = await (_db.selectOnly(_db.noteTags)
-            ..addColumns([_db.noteTags.tagId.count()])
-            ..where(_db.noteTags.tagId.equals(tag.id)))
-          .map((r) => r.read(_db.noteTags.tagId.count()) ?? 0)
-          .getSingle();
-      final l = await (_db.selectOnly(_db.linkTags)
-            ..addColumns([_db.linkTags.tagId.count()])
-            ..where(_db.linkTags.tagId.equals(tag.id)))
-          .map((r) => r.read(_db.linkTags.tagId.count()) ?? 0)
-          .getSingle();
-      final s = await (_db.selectOnly(_db.shipTags)
-            ..addColumns([_db.shipTags.tagId.count()])
-            ..where(_db.shipTags.tagId.equals(tag.id)))
-          .map((r) => r.read(_db.shipTags.tagId.count()) ?? 0)
-          .getSingle();
-      if (n + l + s == 0) {
-        await (_db.delete(_db.tags)..where((t) => t.id.equals(tag.id))).go();
-      }
-    }
+    // R9a: delete every tag referenced by none of the three join tables in a
+    // single statement. Replaces the former per-tag triple-COUNT loop; three
+    // correlated NOT EXISTS subqueries let SQLite do the work in one DELETE.
+    await (_db.delete(_db.tags)
+          ..where((tag) {
+            final inNotes = _db.selectOnly(_db.noteTags)
+              ..addColumns([_db.noteTags.tagId])
+              ..where(_db.noteTags.tagId.equalsExp(tag.id));
+            final inLinks = _db.selectOnly(_db.linkTags)
+              ..addColumns([_db.linkTags.tagId])
+              ..where(_db.linkTags.tagId.equalsExp(tag.id));
+            final inShips = _db.selectOnly(_db.shipTags)
+              ..addColumns([_db.shipTags.tagId])
+              ..where(_db.shipTags.tagId.equalsExp(tag.id));
+            return notExistsQuery(inNotes) &
+                notExistsQuery(inLinks) &
+                notExistsQuery(inShips);
+          }))
+        .go();
   }
 
   Future<List<TagModel>> resolveAndAttachShipTags(

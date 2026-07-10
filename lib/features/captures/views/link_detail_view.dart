@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/external_link.dart';
 import '../../../core/relative_date.dart';
 import '../../../design_system/colors.dart';
 import '../../../design_system/components/app_background.dart';
@@ -87,9 +87,10 @@ class LinkDetailView extends ConsumerWidget {
                     ],
                     GestureDetector(
                       onTap: uri == null
+                          // R4: route through the scheme allowlist rather than
+                          // launching the raw URL directly.
                           ? null
-                          : () =>
-                              launchUrl(uri, mode: LaunchMode.externalApplication),
+                          : () => launchExternal(context, link.url),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [

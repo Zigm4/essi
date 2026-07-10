@@ -17,7 +17,7 @@ import 'package:underdeck_app/services/app_settings.dart';
 /// can interleave two in-flight searches and assert the F37 superseded-cancel
 /// guard.
 class _FakeClient extends CelestialClient {
-  _FakeClient() : super();
+  _FakeClient() : super(dio: Dio());
 
   final List<CancelToken> tokens = [];
   final List<Completer<DiscoverySearchResult>> completers = [];
