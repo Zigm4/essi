@@ -10,7 +10,12 @@ import '../../../../design_system/components/page_scroll_view.dart';
 import '../../../../design_system/components/section_header.dart';
 import '../../../../design_system/spacing.dart';
 import '../../../../design_system/typography.dart';
+import '../../../../services/haptics.dart';
+import '../../../../services/share_card.dart';
+import '../../../favorites/data/favorites_repository.dart';
+import '../../../favorites/widgets/favorite_button.dart';
 import '../domain/fishing_models.dart';
+import '../widgets/fishing_share_card.dart';
 
 class FishingMapView extends ConsumerWidget {
   const FishingMapView({super.key});
@@ -171,6 +176,7 @@ class _FishingRoomViewState extends ConsumerState<FishingRoomView> {
                     style: AppTypography.caption),
               );
             }
+            final roomLabel = room.displayName;
             if (room.isSolo) {
               return PageScrollView(
                 padding: EdgeInsets.fromLTRB(
@@ -184,6 +190,7 @@ class _FishingRoomViewState extends ConsumerState<FishingRoomView> {
                 child: _ZoneSummaryCard(
                   zone: room.zones.first,
                   showsZoneNumber: false,
+                  roomLabel: roomLabel,
                 ),
               );
             }
@@ -331,7 +338,7 @@ class _FishingRoomViewState extends ConsumerState<FishingRoomView> {
                       final z = visible[i];
                       return _ZoneCell(
                         zone: z,
-                        onTap: () => _showZone(context, z),
+                        onTap: () => _showZone(context, z, roomLabel),
                       );
                     },
                   ),
@@ -344,7 +351,7 @@ class _FishingRoomViewState extends ConsumerState<FishingRoomView> {
     );
   }
 
-  void _showZone(BuildContext context, FishingZone zone) {
+  void _showZone(BuildContext context, FishingZone zone, String roomLabel) {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: AppColors.bgElevated,
@@ -353,7 +360,11 @@ class _FishingRoomViewState extends ConsumerState<FishingRoomView> {
       ),
       builder: (_) => Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
-        child: _ZoneSummaryCard(zone: zone, showsZoneNumber: true),
+        child: _ZoneSummaryCard(
+          zone: zone,
+          showsZoneNumber: true,
+          roomLabel: roomLabel,
+        ),
       ),
     );
   }
@@ -399,16 +410,32 @@ class _ZoneCell extends StatelessWidget {
   }
 }
 
-class _ZoneSummaryCard extends StatelessWidget {
+class _ZoneSummaryCard extends ConsumerWidget {
   const _ZoneSummaryCard({
     required this.zone,
     required this.showsZoneNumber,
+    required this.roomLabel,
   });
   final FishingZone zone;
   final bool showsZoneNumber;
+  final String roomLabel;
+
+  Future<void> _share(BuildContext context, WidgetRef ref) async {
+    Haptics.of(ref).tap();
+    final ok = await ShareCardCapture.share(
+      context: context,
+      card: FishingShareCard(zone: zone, roomLabel: roomLabel),
+      fileName: 'underdeck-fishing-zone-${zone.id}.png',
+      text: 'Underdeck fishing zone',
+      sharePositionOrigin: ShareCardCapture.originRectFor(context),
+    );
+    if (!ok && context.mounted) {
+      ShareCardCapture.showShareFailure(context);
+    }
+  }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final depth = FishingDepth.fromName(zone.depth);
     return GlassCard(
       child: Column(
@@ -426,6 +453,18 @@ class _ZoneSummaryCard extends StatelessWidget {
                     Text(zone.name, style: AppTypography.title),
                   ],
                 ),
+              ),
+              FavoriteButton(
+                kind: FavoriteKind.fishingZone,
+                id: zone.id.toString(),
+                tooltip: 'Star zone',
+              ),
+              IconButton(
+                onPressed: () => _share(context, ref),
+                icon: const Icon(Icons.ios_share,
+                    color: AppColors.accentPrimary, size: 18),
+                tooltip: 'Share zone',
+                visualDensity: VisualDensity.compact,
               ),
               if (depth != null)
                 Container(

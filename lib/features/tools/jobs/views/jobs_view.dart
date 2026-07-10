@@ -11,6 +11,7 @@ import '../../../../services/haptics.dart';
 import '../data/jobs_repository.dart';
 import '../domain/job.dart';
 import '../domain/job_filter.dart';
+import '../domain/job_progress.dart';
 import '../domain/job_taxonomies.dart';
 import '../state/jobs_controller.dart';
 import '../widgets/job_card.dart';
@@ -179,6 +180,7 @@ class _JobsViewState extends ConsumerState<JobsView> {
                       ],
                     ),
                   ),
+                  _QuickFilters(filter: filter),
                   _ActiveChipsRow(filter: filter),
                   Expanded(
                     child: filteredAsync.when(
@@ -407,6 +409,127 @@ class _FilterButton extends StatelessWidget {
                 ),
               ),
             ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Always-visible quick toggles for the P3/22 companion filters: Starred and
+/// job status (Not done / Done). Tapping flips the filter; active chips glow.
+class _QuickFilters extends ConsumerWidget {
+  const _QuickFilters({required this.filter});
+  final JobFilter filter;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final n = ref.read(jobFilterControllerProvider.notifier);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.xs,
+        AppSpacing.md,
+        0,
+      ),
+      child: SizedBox(
+        height: 32,
+        child: ListView(
+          scrollDirection: Axis.horizontal,
+          children: [
+            _ToggleChip(
+              label: 'Starred',
+              icon: Icons.star_rounded,
+              tint: AppColors.accentWarn,
+              active: filter.starredOnly,
+              onTap: () {
+                Haptics.of(ref).selection();
+                n.toggleStarredOnly();
+              },
+            ),
+            const SizedBox(width: 6),
+            _ToggleChip(
+              label: 'Not done',
+              icon: Icons.radio_button_unchecked,
+              tint: AppColors.accentSecondary,
+              active: filter.statuses.contains(JobProgress.todo),
+              onTap: () {
+                Haptics.of(ref).selection();
+                n.toggleStatus(JobProgress.todo);
+              },
+            ),
+            const SizedBox(width: 6),
+            _ToggleChip(
+              label: 'In progress',
+              icon: Icons.pending_outlined,
+              tint: AppColors.accentWarn,
+              active: filter.statuses.contains(JobProgress.inProgress),
+              onTap: () {
+                Haptics.of(ref).selection();
+                n.toggleStatus(JobProgress.inProgress);
+              },
+            ),
+            const SizedBox(width: 6),
+            _ToggleChip(
+              label: 'Done',
+              icon: Icons.check_circle_outline,
+              tint: AppColors.accentSuccess,
+              active: filter.statuses.contains(JobProgress.done),
+              onTap: () {
+                Haptics.of(ref).selection();
+                n.toggleStatus(JobProgress.done);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ToggleChip extends StatelessWidget {
+  const _ToggleChip({
+    required this.label,
+    required this.icon,
+    required this.tint,
+    required this.active,
+    required this.onTap,
+  });
+  final String label;
+  final IconData icon;
+  final Color tint;
+  final bool active;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: active ? tint.withValues(alpha: 0.18) : AppColors.bgGlass,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(
+            color: active
+                ? tint.withValues(alpha: 0.7)
+                : AppColors.borderSubtle,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon,
+                size: 13, color: active ? tint : AppColors.textSecondary),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: AppTypography.mono.copyWith(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: active ? tint : AppColors.textSecondary,
+              ),
+            ),
           ],
         ),
       ),

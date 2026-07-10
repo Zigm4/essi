@@ -1,15 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/app_constants.dart';
 import '../../../core/error_text.dart';
 import '../../../design_system/colors.dart';
 import '../../../design_system/components/app_background.dart';
+import '../../../design_system/components/glass_card.dart';
+import '../../../design_system/components/neon_button.dart';
 import '../../../design_system/components/page_scroll_view.dart';
 import '../../../design_system/components/section_header.dart';
 import '../../../design_system/spacing.dart';
 import '../../../design_system/typography.dart';
+import '../../../services/haptics.dart';
 import '../../captures/widgets/tag_chip.dart';
+import '../../favorites/data/favorites_repository.dart';
+import '../../favorites/widgets/favorite_button.dart';
+import '../../menu/views/contact_view.dart';
 import '../data/kb_loader.dart';
+import '../domain/kb_models.dart';
 import '../widgets/kb_markdown_view.dart';
 
 class KBArticleView extends ConsumerWidget {
@@ -33,6 +42,16 @@ class KBArticleView extends ConsumerWidget {
           overflow: TextOverflow.ellipsis,
         ),
         iconTheme: const IconThemeData(color: AppColors.accentPrimary),
+        actions: [
+          FavoriteButton(
+            kind: FavoriteKind.kbArticle,
+            id: slug,
+            icon: Icons.bookmark_border_rounded,
+            activeIcon: Icons.bookmark_rounded,
+            tooltip: 'Bookmark article',
+            activeColor: AppColors.accentPrimary,
+          ),
+        ],
       ),
       body: AppBackground(
         child: dataAsync.when(
@@ -75,6 +94,10 @@ class KBArticleView extends ConsumerWidget {
                   Text(article.title, style: AppTypography.title),
                   const SizedBox(height: AppSpacing.lg),
                   KBMarkdownView(markdown: article.markdown),
+                  if (article.isPlaceholder) ...[
+                    const SizedBox(height: AppSpacing.lg),
+                    _ContributeIntelCard(article: article),
+                  ],
                   if (article.tags.isNotEmpty) ...[
                     const SizedBox(height: AppSpacing.lg),
                     Container(
@@ -97,6 +120,95 @@ class KBArticleView extends ConsumerWidget {
             );
           },
         ),
+      ),
+    );
+  }
+}
+
+/// Call-to-action shown on draft/placeholder KB articles inviting the
+/// community to fill the missing sections. Routes to the in-app Contact form
+/// pre-filled with the article slug, or opens the Discord invite.
+class _ContributeIntelCard extends ConsumerWidget {
+  const _ContributeIntelCard({required this.article});
+
+  final KBArticle article;
+
+  String get _prefill =>
+      "Contributing intel for the KB article \"${article.title}\" "
+      "(${article.slug}).\n\n"
+      "Section: \n"
+      "What I know: \n";
+
+  Future<void> _openContact(BuildContext context, WidgetRef ref) async {
+    Haptics.of(ref).tap();
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ContactView(initialMessage: _prefill),
+      ),
+    );
+  }
+
+  Future<void> _openDiscord(BuildContext context, WidgetRef ref) async {
+    Haptics.of(ref).tap();
+    final ok = await launchUrl(
+      Uri.parse(AppConstants.discordInviteUrl),
+      mode: LaunchMode.externalApplication,
+    );
+    if (!ok && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Couldn't open Discord — try again"),
+          backgroundColor: AppColors.accentDanger,
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SectionHeader(
+            title: 'Contribute intel',
+            icon: Icons.volunteer_activism,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            'This article is still a draft. If you have first-hand info, '
+            'corrections or screenshots, send them in and help fill it out.',
+            style: AppTypography.caption,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          NeonButton(
+            title: 'Contribute intel',
+            icon: Icons.mail_outline,
+            onPressed: () => _openContact(context, ref),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => _openDiscord(context, ref),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.forum_outlined,
+                      color: AppColors.accentSecondary, size: 16),
+                  const SizedBox(width: 6),
+                  Text(
+                    'or discuss on Discord',
+                    style: AppTypography.body.copyWith(
+                      color: AppColors.accentSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -25,25 +25,55 @@ class MarsExpressView extends ConsumerStatefulWidget {
   ConsumerState<MarsExpressView> createState() => _MarsExpressViewState();
 }
 
-class _MarsExpressViewState extends ConsumerState<MarsExpressView> {
+class _MarsExpressViewState extends ConsumerState<MarsExpressView>
+    with WidgetsBindingObserver {
   Timer? _ticker;
   DateTime _now = DateTime.now();
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _ticker = Timer.periodic(const Duration(seconds: 5), (_) {
       if (mounted) {
         setState(() => _now = DateTime.now());
-        ref.read(trainAlertControllerProvider.notifier).refresh();
+        _refreshAlerts();
       }
     });
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _ticker?.cancel();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Top up repeating alerts when the app returns to the foreground: with no
+    // background execution, this is when we can extend the schedule horizon.
+    if (state == AppLifecycleState.resumed) {
+      setState(() => _now = DateTime.now());
+      _refreshAlerts();
+    }
+  }
+
+  void _refreshAlerts() {
+    final stops =
+        ref.read(marsExpressScheduleProvider).valueOrNull?.stops ?? const [];
+    ref.read(trainAlertControllerProvider.notifier).refresh(stops);
+  }
+
+  /// The next live arrival instant for an armed zone, for banner display.
+  DateTime? _nextArrivalFor(int zone, MarsExpressSchedule schedule) {
+    final occ = MarsExpressService.nextOccurrences(
+      zone: zone,
+      stops: schedule.stops,
+      count: 1,
+      now: _now,
+    );
+    return occ.isEmpty ? null : occ.first;
   }
 
   void _openZoneDetail(int zone, MarsExpressSchedule schedule) {
@@ -170,7 +200,7 @@ class _MarsExpressViewState extends ConsumerState<MarsExpressView> {
                             isCurrent: !entries[i].nextHour &&
                                 minute >= entries[i].startMinute &&
                                 minute <= entries[i].endMinute,
-                            isArmed: alert.armedZone == entries[i].zone,
+                            isArmed: alert.isArmed(entries[i].zone),
                             onTap: () =>
                                 _openZoneDetail(entries[i].zone, schedule),
                           ),
@@ -187,42 +217,56 @@ class _MarsExpressViewState extends ConsumerState<MarsExpressView> {
                       ],
                     ),
                   ),
-                  if (alert.armedZone != null) ...[
+                  if (alert.zones.isNotEmpty) ...[
                     const SizedBox(height: AppSpacing.lg),
                     GlassCard(
-                      child: Row(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(Icons.notifications_active,
-                              color: AppColors.accentWarn),
-                          const SizedBox(width: AppSpacing.sm),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Alerts armed for Zone ${alert.armedZone}',
-                                  style: AppTypography.body,
+                          Row(
+                            children: [
+                              Expanded(
+                                child: SectionHeader(
+                                  title: alert.zones.length == 1
+                                      ? 'Armed alert'
+                                      : 'Armed alerts (${alert.zones.length})',
+                                  icon: Icons.notifications_active,
                                 ),
-                                if (alert.arrival != null)
-                                  Text(
-                                    'Arrival ${DateFormat('HH:mm').format(alert.arrival!)}',
-                                    style: AppTypography.caption,
+                              ),
+                              if (alert.zones.length > 1)
+                                TextButton(
+                                  onPressed: () async {
+                                    await ref
+                                        .read(trainAlertControllerProvider
+                                            .notifier)
+                                        .cancelAll();
+                                    if (mounted) Haptics.of(ref).warning();
+                                  },
+                                  child: Text(
+                                    'Cancel all',
+                                    style: AppTypography.caption.copyWith(
+                                      color: AppColors.accentDanger,
+                                    ),
                                   ),
-                              ],
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: AppSpacing.xs),
+                          for (final entry in alert.zones)
+                            _ArmedZoneRow(
+                              entry: entry,
+                              nextArrival: _nextArrivalFor(
+                                entry.zone,
+                                schedule,
+                              ),
+                              onCancel: () async {
+                                await ref
+                                    .read(
+                                        trainAlertControllerProvider.notifier)
+                                    .cancelZone(entry.zone);
+                                if (mounted) Haptics.of(ref).warning();
+                              },
                             ),
-                          ),
-                          IconButton(
-                            onPressed: () async {
-                              await ref
-                                  .read(trainAlertControllerProvider.notifier)
-                                  .cancel();
-                              if (mounted) {
-                                Haptics.of(ref).warning();
-                              }
-                            },
-                            icon: const Icon(Icons.cancel,
-                                color: AppColors.accentDanger),
-                          ),
                         ],
                       ),
                     ),
@@ -306,6 +350,58 @@ class _ScheduleRow extends StatelessWidget {
   }
 }
 
+class _ArmedZoneRow extends StatelessWidget {
+  const _ArmedZoneRow({
+    required this.entry,
+    required this.nextArrival,
+    required this.onCancel,
+  });
+  final TrainAlertEntry entry;
+  final DateTime? nextArrival;
+  final VoidCallback onCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          const Icon(Icons.notifications_active,
+              color: AppColors.accentWarn, size: 18),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text('Zone ${entry.zone}', style: AppTypography.body),
+                    if (entry.repeat) ...[
+                      const SizedBox(width: AppSpacing.xs),
+                      const Icon(Icons.repeat,
+                          color: AppColors.accentPrimary, size: 14),
+                    ],
+                  ],
+                ),
+                Text(
+                  nextArrival != null
+                      ? 'Next arrival ${DateFormat('HH:mm').format(nextArrival!)}'
+                      : (entry.repeat ? 'Recurring alert' : 'Alert armed'),
+                  style: AppTypography.caption,
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: onCancel,
+            icon: const Icon(Icons.cancel, color: AppColors.accentDanger),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// Bottom sheet that mirrors the iOS `ZoneDetailView`. Shows zone identity,
 /// minutes-until-next-arrival, and the alert arming control.
 class ZoneDetailSheet extends ConsumerStatefulWidget {
@@ -325,10 +421,14 @@ class ZoneDetailSheet extends ConsumerStatefulWidget {
 class _ZoneDetailSheetState extends ConsumerState<ZoneDetailSheet> {
   Timer? _ticker;
   DateTime _now = DateTime.now();
+  bool _repeat = false;
 
   @override
   void initState() {
     super.initState();
+    // Preselect the repeat toggle to match an already-armed zone.
+    final entry = ref.read(trainAlertControllerProvider).entryFor(widget.zone);
+    _repeat = entry?.repeat ?? false;
     _ticker = Timer.periodic(const Duration(seconds: 5), (_) {
       if (mounted) setState(() => _now = DateTime.now());
     });
@@ -354,16 +454,12 @@ class _ZoneDetailSheetState extends ConsumerState<ZoneDetailSheet> {
 
   Future<void> _arm() async {
     final notifier = ref.read(trainAlertControllerProvider.notifier);
-    final dates = MarsExpressService.alertDates(
+    final ok = await notifier.arm(
       zone: widget.zone,
       stops: widget.schedule.stops,
+      repeat: _repeat,
       now: _now,
     );
-    if (dates.isEmpty) {
-      Haptics.of(ref).warning();
-      return;
-    }
-    final ok = await notifier.arm(zone: widget.zone, alertDates: dates);
     if (!mounted) return;
     if (ok) {
       Haptics.of(ref).success();
@@ -373,7 +469,8 @@ class _ZoneDetailSheetState extends ConsumerState<ZoneDetailSheet> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Notifications permission denied. Enable notifications in system settings to receive alerts.',
+            "Couldn't arm alerts. Check notification permissions in system "
+            'settings, or cancel another armed zone if the limit is reached.',
           ),
         ),
       );
@@ -381,7 +478,7 @@ class _ZoneDetailSheetState extends ConsumerState<ZoneDetailSheet> {
   }
 
   Future<void> _cancel() async {
-    await ref.read(trainAlertControllerProvider.notifier).cancel();
+    await ref.read(trainAlertControllerProvider.notifier).cancelZone(widget.zone);
     if (!mounted) return;
     Haptics.of(ref).warning();
     Navigator.of(context).pop();
@@ -390,7 +487,7 @@ class _ZoneDetailSheetState extends ConsumerState<ZoneDetailSheet> {
   @override
   Widget build(BuildContext context) {
     final alert = ref.watch(trainAlertControllerProvider);
-    final isArmed = alert.armedZone == widget.zone;
+    final isArmed = alert.isArmed(widget.zone);
     final minsRaw = _minutesUntilNext;
 
     return DraggableScrollableSheet(
@@ -484,17 +581,43 @@ class _ZoneDetailSheetState extends ConsumerState<ZoneDetailSheet> {
                       ),
                       const SizedBox(height: AppSpacing.sm),
                       Text(
-                        "You'll get 3 notifications: 2 min before, 1 min before, and on arrival. Only one zone can be armed at a time.",
+                        "You'll get 3 notifications per arrival: 2 min before, "
+                        '1 min before, and on arrival. You can arm several '
+                        'zones at once.',
                         style: AppTypography.caption,
                       ),
+                      const SizedBox(height: AppSpacing.sm),
+                      SwitchListTile.adaptive(
+                        contentPadding: EdgeInsets.zero,
+                        dense: true,
+                        value: _repeat,
+                        onChanged: (v) => setState(() => _repeat = v),
+                        activeThumbColor: AppColors.accentPrimary,
+                        title: Text('Repeat every hour',
+                            style: AppTypography.body),
+                        subtitle: Text(
+                          'Schedules the next '
+                          '${TrainAlertIds.repeatOccurrences} arrivals '
+                          '(up to ~${TrainAlertIds.repeatOccurrences} h ahead). '
+                          'Reopen the app to extend further — alerts can only '
+                          'be scheduled while the app is running.',
+                          style: AppTypography.caption,
+                        ),
+                      ),
                       const SizedBox(height: AppSpacing.md),
-                      if (isArmed)
+                      if (isArmed) ...[
+                        NeonButton(
+                          title: 'Update alert',
+                          icon: Icons.notifications_active,
+                          onPressed: _arm,
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
                         NeonButton(
                           title: 'Cancel alerts',
                           icon: Icons.notifications_off,
                           onPressed: _cancel,
-                        )
-                      else
+                        ),
+                      ] else
                         NeonButton(
                           title: 'Set alert',
                           icon: Icons.notifications_active,

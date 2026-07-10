@@ -9,6 +9,7 @@ import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../core/logging.dart';
+import '../features/tools/train/domain/mars_express_models.dart';
 import 'app_settings.dart';
 
 class AppNotifications {
@@ -151,14 +152,80 @@ class AppNotifications {
       }
     }
   }
+
+  /// Cancel a specific set of ids (only those actually pending are touched).
+  static Future<void> cancelIds(Iterable<int> ids) async {
+    await initialize();
+    final wanted = ids.toSet();
+    if (wanted.isEmpty) return;
+    final pending = (await _plugin.pendingNotificationRequests())
+        .map((p) => p.id)
+        .toSet();
+    for (final id in wanted) {
+      if (pending.contains(id)) await _plugin.cancel(id);
+    }
+  }
+}
+
+/// One armed zone. [slot] is its reserved id sub-range (see [TrainAlertIds]).
+/// [repeat] arms the next N hourly occurrences and is topped up on refresh.
+/// [lastArrival] is the last occurrence currently scheduled — used both for
+/// display and to decide when a repeating slot needs topping up.
+@immutable
+class TrainAlertEntry {
+  final int zone;
+  final int slot;
+  final bool repeat;
+  final DateTime lastArrival;
+  const TrainAlertEntry({
+    required this.zone,
+    required this.slot,
+    required this.repeat,
+    required this.lastArrival,
+  });
+
+  TrainAlertEntry copyWith({DateTime? lastArrival, bool? repeat}) =>
+      TrainAlertEntry(
+        zone: zone,
+        slot: slot,
+        repeat: repeat ?? this.repeat,
+        lastArrival: lastArrival ?? this.lastArrival,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'zone': zone,
+        'slot': slot,
+        'repeat': repeat,
+        'lastArrival': lastArrival.millisecondsSinceEpoch,
+      };
+
+  static TrainAlertEntry? fromJson(Map<String, dynamic> j) {
+    final zone = j['zone'] as int?;
+    final slot = j['slot'] as int?;
+    final ms = j['lastArrival'] as int?;
+    if (zone == null || slot == null || ms == null) return null;
+    return TrainAlertEntry(
+      zone: zone,
+      slot: slot,
+      repeat: j['repeat'] as bool? ?? false,
+      lastArrival: DateTime.fromMillisecondsSinceEpoch(ms),
+    );
+  }
 }
 
 @immutable
 class TrainAlertState {
-  final int? armedZone;
-  final DateTime? arrival;
-  const TrainAlertState({this.armedZone, this.arrival});
+  final List<TrainAlertEntry> zones;
+  const TrainAlertState({this.zones = const []});
   static const empty = TrainAlertState();
+
+  bool isArmed(int zone) => zones.any((e) => e.zone == zone);
+  TrainAlertEntry? entryFor(int zone) {
+    for (final e in zones) {
+      if (e.zone == zone) return e;
+    }
+    return null;
+  }
 }
 
 class TrainAlertController extends StateNotifier<TrainAlertState> {
@@ -166,96 +233,242 @@ class TrainAlertController extends StateNotifier<TrainAlertState> {
 
   final SharedPreferences _prefs;
 
-  // Persist the armed zone + arrival so the UI can restore the armed state
-  // after a restart. Without this, TrainAlertState lived only in memory: the
-  // OS kept firing scheduled alerts while the app UI showed "not armed".
-  static const _kArmed = 'trainAlert.armed';
+  // Multi-zone armed state, persisted as a JSON list so it survives restarts.
+  // (P2 stored a single {armedZone,arrival} under `_kArmedLegacy`; that shape
+  // is migrated on load.)
+  static const _kZones = 'trainAlert.zones';
+  static const _kArmedLegacy = 'trainAlert.armed';
 
   static TrainAlertState _load(SharedPreferences prefs) {
-    final raw = prefs.getString(_kArmed);
-    if (raw == null) return TrainAlertState.empty;
-    try {
-      final map = jsonDecode(raw) as Map<String, dynamic>;
-      final zone = map['armedZone'] as int?;
-      final arrivalMs = map['arrival'] as int?;
-      if (zone == null || arrivalMs == null) return TrainAlertState.empty;
-      final arrival = DateTime.fromMillisecondsSinceEpoch(arrivalMs);
-      // Drop stale state whose arrival is well in the past.
-      if (arrival.isBefore(
-          DateTime.now().subtract(const Duration(seconds: 10)))) {
+    final now = DateTime.now();
+    final staleBefore = now.subtract(const Duration(seconds: 10));
+    // Preferred multi-zone format.
+    final raw = prefs.getString(_kZones);
+    if (raw != null) {
+      try {
+        final list = (jsonDecode(raw) as List<dynamic>)
+            .map((e) => TrainAlertEntry.fromJson(e as Map<String, dynamic>))
+            .whereType<TrainAlertEntry>()
+            // Keep repeating entries even once their last scheduled occurrence
+            // has passed — refresh() re-arms them. Drop expired one-shots.
+            .where((e) => e.repeat || e.lastArrival.isAfter(staleBefore))
+            .toList();
+        return TrainAlertState(zones: list);
+      } catch (e, st) {
+        logError(e, st);
         return TrainAlertState.empty;
       }
-      return TrainAlertState(armedZone: zone, arrival: arrival);
-    } catch (e, st) {
-      logError(e, st);
-      return TrainAlertState.empty;
     }
+    // Legacy single-zone migration.
+    final legacy = prefs.getString(_kArmedLegacy);
+    if (legacy != null) {
+      try {
+        final map = jsonDecode(legacy) as Map<String, dynamic>;
+        final zone = map['armedZone'] as int?;
+        final arrivalMs = map['arrival'] as int?;
+        if (zone != null && arrivalMs != null) {
+          final arrival = DateTime.fromMillisecondsSinceEpoch(arrivalMs);
+          if (arrival.isAfter(staleBefore)) {
+            return TrainAlertState(zones: [
+              TrainAlertEntry(
+                zone: zone,
+                slot: 0,
+                repeat: false,
+                lastArrival: arrival,
+              ),
+            ]);
+          }
+        }
+      } catch (e, st) {
+        logError(e, st);
+      }
+    }
+    return TrainAlertState.empty;
   }
 
-  Future<void> _persist(TrainAlertState s) async {
-    if (s.armedZone == null || s.arrival == null) {
-      await _prefs.remove(_kArmed);
+  Future<void> _persist() async {
+    await _prefs.remove(_kArmedLegacy);
+    if (state.zones.isEmpty) {
+      await _prefs.remove(_kZones);
       return;
     }
     await _prefs.setString(
-      _kArmed,
-      jsonEncode({
-        'armedZone': s.armedZone,
-        'arrival': s.arrival!.millisecondsSinceEpoch,
-      }),
+      _kZones,
+      jsonEncode(state.zones.map((e) => e.toJson()).toList()),
     );
   }
 
-  // Reserved notification-ID band for train alerts. Only one zone can be armed
-  // at a time and each arming schedules exactly three alerts, so we use three
-  // FIXED ids inside this band. (A previous scheme, 70000 + zone*10 + i,
-  // produced ids outside the band for real zones — 234..346 — so cancelGroup
-  // never matched them and alerts could never be cancelled or replaced.)
-  static const _idMin = 70000;
-  static const _idMax = 70999;
+  /// Schedule (or reschedule) every occurrence for one slot. Returns the last
+  /// arrival actually scheduled, or null when there is nothing to schedule.
+  Future<DateTime?> _scheduleSlot({
+    required int zone,
+    required int slot,
+    required bool repeat,
+    required List<TrainStop> stops,
+    DateTime? now,
+  }) async {
+    final nowT = now ?? DateTime.now();
+    final count = repeat ? TrainAlertIds.repeatOccurrences : 1;
+    final occurrences = MarsExpressService.nextOccurrences(
+      zone: zone,
+      stops: stops,
+      count: count,
+      now: nowT,
+    );
+    if (occurrences.isEmpty) return null;
 
-  Future<bool> arm({required int zone, required List<DateTime> alertDates}) async {
+    const labels = ['2 minutes', '1 minute', 'now'];
+    DateTime? lastScheduled;
+    for (var o = 0; o < occurrences.length; o++) {
+      final arrival = occurrences[o];
+      final dates = MarsExpressService.alertsForArrival(arrival);
+      var anyForOccurrence = false;
+      for (var a = 0; a < dates.length; a++) {
+        final date = dates[a];
+        if (date.difference(nowT).inSeconds < 2) continue;
+        final body = a == 2
+            ? 'Train arriving at Zone $zone now.'
+            : 'Train arriving at Zone $zone in ${labels[a]}.';
+        await AppNotifications.schedule(
+          id: TrainAlertIds.alertId(slot, o, a),
+          title: 'Mars Express → Zone $zone',
+          body: body,
+          when: date,
+        );
+        anyForOccurrence = true;
+      }
+      if (anyForOccurrence) lastScheduled = arrival;
+    }
+    return lastScheduled;
+  }
+
+  /// Arm (or re-arm) [zone]. Reuses the zone's existing slot if already armed,
+  /// otherwise claims the lowest free slot in the band. Returns false on denied
+  /// permission, a full band, or nothing left to schedule this cycle.
+  Future<bool> arm({
+    required int zone,
+    required List<TrainStop> stops,
+    bool repeat = false,
+    DateTime? now,
+  }) async {
     final ok = await AppNotifications.requestPermissions();
     if (!ok) return false;
-    await AppNotifications.cancelGroup(idMin: _idMin, idMax: _idMax);
 
-    final labels = ['2 minutes', '1 minute', 'now'];
-    final now = DateTime.now();
-    var scheduled = false;
-    for (var i = 0; i < alertDates.length; i++) {
-      final date = alertDates[i];
-      if (date.difference(now).inSeconds < 2) continue;
-      // Fixed ids within [_idMin, _idMax] so cancelGroup() below (and on the
-      // next arm/cancel) always matches them, regardless of the zone number.
-      final id = _idMin + i;
-      final body = i == 2
-          ? 'Train arriving at Zone $zone now.'
-          : 'Train arriving at Zone $zone in ${labels[i]}.';
-      await AppNotifications.schedule(
-        id: id,
-        title: 'Mars Express → Zone $zone',
-        body: body,
-        when: date,
-      );
-      scheduled = true;
-    }
-    if (!scheduled) return false;
-    state = TrainAlertState(armedZone: zone, arrival: alertDates.last);
-    await _persist(state);
+    final existing = state.entryFor(zone);
+    final used = {
+      for (final e in state.zones)
+        if (e.zone != zone) e.slot,
+    };
+    final slot = existing?.slot ?? TrainAlertIds.lowestFreeSlot(used);
+    if (slot == null) return false; // band full
+
+    // Clear anything currently in this slot before rescheduling.
+    await AppNotifications.cancelIds(TrainAlertIds.slotIds(slot));
+
+    final last = await _scheduleSlot(
+      zone: zone,
+      slot: slot,
+      repeat: repeat,
+      stops: stops,
+      now: now,
+    );
+    if (last == null) return false;
+
+    final entry = TrainAlertEntry(
+      zone: zone,
+      slot: slot,
+      repeat: repeat,
+      lastArrival: last,
+    );
+    final zones = [
+      for (final e in state.zones)
+        if (e.zone != zone) e,
+      entry,
+    ];
+    state = TrainAlertState(zones: zones);
+    await _persist();
     return true;
   }
 
-  Future<void> cancel() async {
-    await AppNotifications.cancelGroup(idMin: _idMin, idMax: _idMax);
-    state = TrainAlertState.empty;
-    await _persist(state);
+  /// Cancel a single zone's alerts and forget it.
+  Future<void> cancelZone(int zone) async {
+    final entry = state.entryFor(zone);
+    if (entry == null) return;
+    await AppNotifications.cancelIds(TrainAlertIds.slotIds(entry.slot));
+    state = TrainAlertState(
+      zones: [for (final e in state.zones) if (e.zone != zone) e],
+    );
+    await _persist();
   }
 
-  void refresh() {
-    if (state.arrival == null) return;
-    if (state.arrival!.isBefore(DateTime.now().subtract(const Duration(seconds: 10)))) {
-      state = TrainAlertState.empty;
-      _persist(state);
+  /// Cancel every armed zone.
+  Future<void> cancelAll() async {
+    await AppNotifications.cancelGroup(
+      idMin: TrainAlertIds.bandMin,
+      idMax: TrainAlertIds.bandMax,
+    );
+    state = TrainAlertState.empty;
+    await _persist();
+  }
+
+  /// Called from the periodic view ticker (and on resume). Drops expired
+  /// one-shot zones and tops up repeating zones so they always have the next N
+  /// hourly occurrences scheduled ahead. [stops] is required to recompute the
+  /// recurrence; when unavailable, pass an empty list to only prune one-shots.
+  Future<void> refresh(List<TrainStop> stops) async {
+    if (state.zones.isEmpty) return;
+    final now = DateTime.now();
+    final staleBefore = now.subtract(const Duration(seconds: 10));
+    final next = <TrainAlertEntry>[];
+    var changed = false;
+
+    for (final e in state.zones) {
+      if (!e.repeat) {
+        if (e.lastArrival.isAfter(staleBefore)) {
+          next.add(e);
+        } else {
+          changed = true; // dropped an expired one-shot
+        }
+        continue;
+      }
+      // Repeating: top up only when the scheduled horizon has shifted.
+      if (stops.isEmpty) {
+        next.add(e);
+        continue;
+      }
+      final occ = MarsExpressService.nextOccurrences(
+        zone: e.zone,
+        stops: stops,
+        count: TrainAlertIds.repeatOccurrences,
+        now: now,
+      );
+      if (occ.isEmpty) {
+        next.add(e);
+        continue;
+      }
+      if (occ.last.isAtSameMomentAs(e.lastArrival)) {
+        next.add(e); // still fully scheduled, nothing to do
+        continue;
+      }
+      await AppNotifications.cancelIds(TrainAlertIds.slotIds(e.slot));
+      final last = await _scheduleSlot(
+        zone: e.zone,
+        slot: e.slot,
+        repeat: true,
+        stops: stops,
+        now: now,
+      );
+      if (last != null) {
+        next.add(e.copyWith(lastArrival: last));
+        changed = true;
+      } else {
+        changed = true; // could not reschedule -> drop
+      }
+    }
+
+    if (changed || next.length != state.zones.length) {
+      state = TrainAlertState(zones: next);
+      await _persist();
     }
   }
 }

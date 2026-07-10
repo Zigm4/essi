@@ -42,7 +42,12 @@ extension on _ContactCategory {
 }
 
 class ContactView extends ConsumerStatefulWidget {
-  const ContactView({super.key});
+  const ContactView({super.key, this.initialMessage});
+
+  /// Optional text to pre-fill the message field with (e.g. a KB "Contribute
+  /// intel" prompt carrying the article slug + section). Null leaves the
+  /// field empty as before.
+  final String? initialMessage;
 
   @override
   ConsumerState<ContactView> createState() => _ContactViewState();
@@ -50,7 +55,8 @@ class ContactView extends ConsumerStatefulWidget {
 
 class _ContactViewState extends ConsumerState<ContactView> {
   _ContactCategory _category = _ContactCategory.feedback;
-  final _message = TextEditingController();
+  late final _message =
+      TextEditingController(text: widget.initialMessage ?? '');
   final _picker = ImagePicker();
   final List<XFile> _attachments = [];
 

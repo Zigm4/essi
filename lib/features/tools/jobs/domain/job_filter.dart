@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' show RangeValues;
 
 import 'job.dart';
+import 'job_progress.dart';
 
 export 'package:flutter/material.dart' show RangeValues;
 
@@ -81,6 +82,12 @@ class JobFilter {
   final bool cargoJobsOnly;
   final bool rivalImpactOnly;
   final bool hidePlaceholder;
+  // P3/22: companion filters. [starredOnly] keeps only favorited jobs;
+  // [statuses] (when non-empty) keeps only jobs whose progress is in the set.
+  // Both are applied outside [accepts] because they depend on external state
+  // (favorites set + status map) rather than the Job itself.
+  final bool starredOnly;
+  final Set<JobProgress> statuses;
   final JobSort sort;
 
   const JobFilter({
@@ -105,6 +112,8 @@ class JobFilter {
     this.cargoJobsOnly = false,
     this.rivalImpactOnly = false,
     this.hidePlaceholder = false,
+    this.starredOnly = false,
+    this.statuses = const {},
     this.sort = JobSort.idAsc,
   });
 
@@ -141,6 +150,8 @@ class JobFilter {
     bool? cargoJobsOnly,
     bool? rivalImpactOnly,
     bool? hidePlaceholder,
+    bool? starredOnly,
+    Set<JobProgress>? statuses,
     JobSort? sort,
   }) =>
       JobFilter(
@@ -168,6 +179,8 @@ class JobFilter {
         cargoJobsOnly: cargoJobsOnly ?? this.cargoJobsOnly,
         rivalImpactOnly: rivalImpactOnly ?? this.rivalImpactOnly,
         hidePlaceholder: hidePlaceholder ?? this.hidePlaceholder,
+        starredOnly: starredOnly ?? this.starredOnly,
+        statuses: statuses ?? this.statuses,
         sort: sort ?? this.sort,
       );
 
@@ -196,7 +209,18 @@ class JobFilter {
     if (cargoJobsOnly) c++;
     if (rivalImpactOnly) c++;
     if (hidePlaceholder) c++;
+    if (starredOnly) c++;
+    if (statuses.isNotEmpty) c++;
     return c;
+  }
+
+  /// Companion predicate for the favorites/status filters, evaluated with
+  /// external state (a job's starred flag + its progress) since [accepts]
+  /// only sees the Job itself.
+  bool acceptsCompanion({required bool isStarred, required JobProgress status}) {
+    if (starredOnly && !isStarred) return false;
+    if (statuses.isNotEmpty && !statuses.contains(status)) return false;
+    return true;
   }
 
   bool accepts(Job j) {

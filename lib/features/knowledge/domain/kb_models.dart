@@ -73,6 +73,11 @@ class KBArticle {
     required this.markdown,
     required this.order,
   });
+
+  /// True for the scaffold/draft articles that ship with placeholder sections.
+  /// All such articles carry the "Draft in progress." callout at the top, so a
+  /// single substring check identifies them without a separate manifest flag.
+  bool get isPlaceholder => markdown.contains('Draft in progress');
 }
 
 class KBIndex {

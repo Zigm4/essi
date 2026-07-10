@@ -13,6 +13,8 @@ import '../../../../design_system/spacing.dart';
 import '../../../../design_system/typography.dart';
 import '../../../../services/haptics.dart';
 import '../../../../services/share_card.dart';
+import '../../../favorites/data/favorites_repository.dart';
+import '../../../favorites/widgets/favorite_button.dart';
 import '../../celestial/domain/celestial_kind.dart';
 import '../domain/tracker_models.dart';
 import '../state/tracker_controller.dart';
@@ -398,6 +400,15 @@ class _ResultCard extends ConsumerWidget {
             children: [
               const Expanded(
                 child: SectionHeader(title: 'Position', icon: Icons.public),
+              ),
+              FavoriteButton(
+                kind: FavoriteKind.trackedObject,
+                id: result.mpcID,
+                icon: Icons.push_pin_outlined,
+                activeIcon: Icons.push_pin,
+                size: 18,
+                tooltip: 'Pin object',
+                activeColor: AppColors.accentPrimary,
               ),
               IconButton(
                 onPressed: () => _share(context, ref),

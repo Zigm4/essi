@@ -1,25 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../design_system/colors.dart';
 import '../../../../design_system/components/glass_card.dart';
 import '../../../../design_system/spacing.dart';
 import '../../../../design_system/typography.dart';
+import '../../../favorites/data/favorites_repository.dart';
+import '../../../favorites/widgets/favorite_button.dart';
+import '../data/job_status_repository.dart';
 import '../domain/job.dart';
 import '../domain/job_taxonomies.dart';
 
 /// Compact card surfacing the most actionable fields for a job: type badge,
 /// allied/rival faction tints, description (truncated), and an at-a-glance
 /// row of skill / risk / reward / locations.
-class JobCard extends StatelessWidget {
+class JobCard extends ConsumerWidget {
   const JobCard({super.key, required this.job, required this.onTap});
 
   final Job job;
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final ally = JobTaxonomies.lookup(job.factionRep);
     final rival = JobTaxonomies.lookup(job.factionRival);
+    final progress = ref.watch(jobProgressProvider(job.id.toString()));
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
@@ -51,12 +56,21 @@ class JobCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 6),
+                if (progress != JobProgress.todo) ...[
+                  _StatusPill(progress: progress),
+                  const SizedBox(width: 6),
+                ],
                 Text(
                   '#${job.id}',
                   style: AppTypography.mono.copyWith(
                     fontSize: 10,
                     color: AppColors.textDim,
                   ),
+                ),
+                FavoriteButton(
+                  kind: FavoriteKind.job,
+                  id: job.id.toString(),
+                  size: 18,
                 ),
               ],
             ),
@@ -120,6 +134,50 @@ class JobCard extends StatelessWidget {
     if (r >= 7) return AppColors.accentDanger;
     if (r >= 3) return AppColors.accentWarn;
     return AppColors.accentSuccess;
+  }
+}
+
+/// Small pill shown on advanced jobs (in-progress / done). Colour-coded so the
+/// board reads at a glance.
+class _StatusPill extends StatelessWidget {
+  const _StatusPill({required this.progress});
+  final JobProgress progress;
+
+  @override
+  Widget build(BuildContext context) {
+    final tint = progress == JobProgress.done
+        ? AppColors.accentSuccess
+        : AppColors.accentWarn;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: tint.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: tint.withValues(alpha: 0.6), width: 0.7),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            progress == JobProgress.done
+                ? Icons.check_circle_outline
+                : Icons.pending_outlined,
+            size: 10,
+            color: tint,
+          ),
+          const SizedBox(width: 3),
+          Text(
+            progress == JobProgress.done ? 'DONE' : 'WIP',
+            style: AppTypography.mono.copyWith(
+              fontSize: 9,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.5,
+              color: tint,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

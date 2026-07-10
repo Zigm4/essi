@@ -8,8 +8,13 @@ import '../../../../design_system/components/glass_card.dart';
 import '../../../../design_system/spacing.dart';
 import '../../../../design_system/typography.dart';
 import '../../../../services/haptics.dart';
+import '../../../../services/share_card.dart';
+import '../../../favorites/data/favorites_repository.dart';
+import '../../../favorites/widgets/favorite_button.dart';
+import '../data/job_status_repository.dart';
 import '../domain/job.dart';
 import '../domain/job_taxonomies.dart';
+import '../widgets/job_share_card.dart';
 
 class JobDetailSheet extends ConsumerWidget {
   const JobDetailSheet({super.key, required this.job});
@@ -22,6 +27,20 @@ class JobDetailSheet extends ConsumerWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Copied #${job.id}')),
       );
+    }
+  }
+
+  Future<void> _share(BuildContext context, WidgetRef ref) async {
+    Haptics.of(ref).tap();
+    final ok = await ShareCardCapture.share(
+      context: context,
+      card: JobShareCard(job: job),
+      fileName: 'underdeck-job-${job.id}.png',
+      text: 'Underdeck job #${job.id}',
+      sharePositionOrigin: ShareCardCapture.originRectFor(context),
+    );
+    if (!ok && context.mounted) {
+      ShareCardCapture.showShareFailure(context);
     }
   }
 
@@ -73,6 +92,21 @@ class JobDetailSheet extends ConsumerWidget {
                         ),
                       ),
                     ),
+                    FavoriteButton(
+                      kind: FavoriteKind.job,
+                      id: job.id.toString(),
+                      size: 22,
+                    ),
+                    IconButton(
+                      onPressed: () => _share(context, ref),
+                      icon: const Icon(Icons.ios_share,
+                          color: AppColors.accentPrimary, size: 20),
+                      tooltip: 'Share job',
+                      visualDensity: VisualDensity.compact,
+                      constraints: const BoxConstraints(),
+                      padding: const EdgeInsets.all(6),
+                    ),
+                    const SizedBox(width: 2),
                     GestureDetector(
                       onTap: () => _copyId(context, ref),
                       child: Container(
@@ -102,6 +136,8 @@ class JobDetailSheet extends ConsumerWidget {
                     ),
                   ],
                 ),
+                const SizedBox(height: AppSpacing.md),
+                _StatusControl(jobId: job.id.toString()),
                 const SizedBox(height: AppSpacing.md),
                 GlassCard(
                   child: MarkdownBody(
@@ -260,4 +296,92 @@ class JobDetailSheet extends ConsumerWidget {
           borderRadius: BorderRadius.circular(AppRadius.sm),
         ),
       );
+}
+
+/// Segmented progress control on the job detail: Not done / In progress / Done.
+/// Writes through [JobStatusRepository]; the selection reflects the live status.
+class _StatusControl extends ConsumerWidget {
+  const _StatusControl({required this.jobId});
+  final String jobId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final current = ref.watch(jobProgressProvider(jobId));
+    Color tintOf(JobProgress p) {
+      switch (p) {
+        case JobProgress.todo:
+          return AppColors.textSecondary;
+        case JobProgress.inProgress:
+          return AppColors.accentWarn;
+        case JobProgress.done:
+          return AppColors.accentSuccess;
+      }
+    }
+
+    return Row(
+      children: [
+        for (final p in JobProgress.values) ...[
+          Expanded(
+            child: _StatusSegment(
+              label: p.label,
+              tint: tintOf(p),
+              selected: current == p,
+              onTap: () async {
+                Haptics.of(ref).selection();
+                await ref
+                    .read(jobStatusRepositoryProvider)
+                    .setStatus(jobId, p);
+              },
+            ),
+          ),
+          if (p != JobProgress.done) const SizedBox(width: 6),
+        ],
+      ],
+    );
+  }
+}
+
+class _StatusSegment extends StatelessWidget {
+  const _StatusSegment({
+    required this.label,
+    required this.tint,
+    required this.selected,
+    required this.onTap,
+  });
+  final String label;
+  final Color tint;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 9),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: selected
+              ? tint.withValues(alpha: 0.18)
+              : AppColors.bgGlass,
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+          border: Border.all(
+            color: selected
+                ? tint.withValues(alpha: 0.8)
+                : AppColors.borderSubtle,
+          ),
+        ),
+        child: Text(
+          label,
+          textAlign: TextAlign.center,
+          style: AppTypography.mono.copyWith(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: selected ? tint : AppColors.textSecondary,
+          ),
+        ),
+      ),
+    );
+  }
 }

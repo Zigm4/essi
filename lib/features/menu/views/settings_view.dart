@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/error_text.dart';
 import '../../../design_system/colors.dart';
@@ -112,6 +113,8 @@ class SettingsView extends ConsumerWidget {
                           await exportService.shareExport(
                             sharePositionOrigin: origin,
                           );
+                          // P3/25: an export is a backup — refresh the reminder.
+                          await notifier.markBackedUp();
                         } catch (e) {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -149,6 +152,43 @@ class SettingsView extends ConsumerWidget {
                             );
                           }
                         }
+                      },
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    _ToggleRow(
+                      title: 'Auto-backup to Files',
+                      subtitle:
+                          'After you make a batch of changes, quietly save a '
+                          'timestamped copy into the app\'s Documents folder '
+                          '(reachable from Files). Keeps the latest few.',
+                      value: settings.autoBackupEnabled,
+                      onChange: (v) => notifier.setAutoBackupEnabled(v),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              GlassCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SectionHeader(
+                      title: 'Intro',
+                      icon: Icons.satellite_alt,
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      'Replay the incoming-transmission intro that explains '
+                      'Underdeck, the tools and the privacy promise.',
+                      style: AppTypography.caption,
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    _ActionRow(
+                      label: 'Replay intro',
+                      icon: Icons.replay,
+                      onTap: () {
+                        Haptics.of(ref).tap();
+                        context.push('/onboarding');
                       },
                     ),
                   ],

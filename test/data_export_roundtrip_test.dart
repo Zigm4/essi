@@ -238,6 +238,87 @@ void main() {
         reason: 'F43: update must not clobber the original createdAt');
   });
 
+  test('(g) P3/22 favorites + jobStatus round-trip, idempotent, newer-wins',
+      () async {
+    await source.into(source.favorites).insert(FavoritesCompanion.insert(
+          entityType: 'job',
+          entityId: '42',
+          createdAt: now,
+        ));
+    await source.into(source.favorites).insert(FavoritesCompanion.insert(
+          entityType: 'kb_article',
+          entityId: 'combat-basics',
+          createdAt: now,
+        ));
+    await source.into(source.jobStatus).insert(JobStatusCompanion.insert(
+          jobId: '42',
+          status: 'in_progress',
+          updatedAt: now,
+        ));
+
+    final exported = await DataExportService(source).collect();
+    final file = _writeTempJson(exported);
+
+    final first = await DataExportService(target).importFromFile(file);
+    expect(first.favorites, 2);
+    expect(first.jobStatus, 1);
+
+    final favs = await target.select(target.favorites).get();
+    expect(favs, hasLength(2));
+    expect(
+      favs.any((f) => f.entityType == 'job' && f.entityId == '42'),
+      isTrue,
+    );
+    final statuses = await target.select(target.jobStatus).get();
+    expect(statuses.single.jobId, '42');
+    expect(statuses.single.status, 'in_progress');
+
+    // Re-import is a no-op: composite-PK favorites and same-timestamp status
+    // are not recounted.
+    final second = await DataExportService(target).importFromFile(file);
+    expect(second.favorites, 0,
+        reason: 'existing favorites must not be recounted');
+    expect(second.jobStatus, 0,
+        reason: 'same-timestamp status must not be recounted (newer-wins)');
+
+    // A strictly-newer status IS applied and recounted.
+    final newer = {
+      'jobStatus': [
+        {
+          'jobId': '42',
+          'status': 'done',
+          'updatedAt': DateTime.utc(2027, 1, 1).toIso8601String(),
+        },
+      ],
+    };
+    final third = await DataExportService(target)
+        .importFromFile(_writeTempJson(_envelope(newer)));
+    expect(third.jobStatus, 1);
+    final afterStatuses = await target.select(target.jobStatus).get();
+    expect(afterStatuses.single.status, 'done');
+  });
+
+  test('(h) an export file lacking the P3/22 arrays imports cleanly', () async {
+    // Old files simply omit favorites/jobStatus; import must treat them as
+    // empty, not throw.
+    final data = {
+      'notes': [
+        {
+          'id': 'note-old',
+          'title': 'Legacy',
+          'body': '',
+          'createdAt': now.toIso8601String(),
+          'updatedAt': now.toIso8601String(),
+        },
+      ],
+    };
+    final summary = await DataExportService(target)
+        .importFromFile(_writeTempJson(_envelope(data)));
+    expect(summary.notes, 1);
+    expect(summary.favorites, 0);
+    expect(summary.jobStatus, 0);
+  });
+
   test('(f) a history row with a garbage date does not abort the whole import',
       () async {
     final data = {

@@ -15,6 +15,7 @@ import '../data/database/app_database.dart';
 import '../features/tools/celestial/domain/celestial_models.dart';
 import '../features/tools/scan/domain/scan_models.dart';
 import '../features/tools/tracker/domain/tracker_models.dart';
+import 'backup_reminder.dart';
 
 class DataExportService {
   DataExportService(this._db);
@@ -38,6 +39,8 @@ class DataExportService {
     final scanHistory = await _db.select(_db.scanHistory).get();
     final trackerHistory = await _db.select(_db.trackerHistory).get();
     final discoveryHistory = await _db.select(_db.discoveryHistory).get();
+    final favorites = await _db.select(_db.favorites).get();
+    final jobStatuses = await _db.select(_db.jobStatus).get();
 
     Map<String, dynamic> noteMap(Note n) => {
       'id': n.id,
@@ -122,21 +125,106 @@ class DataExportService {
           'payloadJson': d.payloadJson,
           'errored': d.errored,
         }).toList(),
+        // P3/22: additive arrays. Old importers ignore unknown keys; old files
+        // simply lack them (handled as empty on import). formatVersion stays 1.
+        'favorites': favorites.map((f) => {
+          'entityType': f.entityType,
+          'entityId': f.entityId,
+          'createdAt': f.createdAt.toUtc().toIso8601String(),
+        }).toList(),
+        'jobStatus': jobStatuses.map((s) => {
+          'jobId': s.jobId,
+          'status': s.status,
+          'updatedAt': s.updatedAt.toUtc().toIso8601String(),
+        }).toList(),
       },
     };
   }
 
+  /// P3/25: file-name-safe, lexically-sortable timestamp (drops sub-second and
+  /// zone) shared by the temp-file export and the Documents auto-backup.
+  static String _stamp() => DateTime.now()
+      .toIso8601String()
+      .replaceAll(':', '-')
+      .replaceAll('.', '-')
+      .substring(0, 19);
+
   Future<File> exportToFile() async {
     final payload = await _collect();
     final tempDir = await getTemporaryDirectory();
-    final stamp = DateTime.now()
-        .toIso8601String()
-        .replaceAll(':', '-')
-        .replaceAll('.', '-')
-        .substring(0, 19);
-    final file = File(p.join(tempDir.path, 'underdeck-export-$stamp.json'));
+    final file = File(p.join(tempDir.path, 'underdeck-export-${_stamp()}.json'));
     await file.writeAsString(jsonEncode(payload));
     return file;
+  }
+
+  /// P3/25: writes a timestamped export JSON into the app's Documents
+  /// directory (visible via Files / a file manager — NOT the temp dir), then
+  /// prunes to the newest [keep] files. Used by the opt-in auto-backup. The
+  /// timestamped names sort lexically, so newest-first is a reverse path sort.
+  Future<File> exportToDocuments({
+    int keep = BackupReminder.autoBackupKeep,
+  }) async {
+    final payload = await _collect();
+    final docsDir = await getApplicationDocumentsDirectory();
+    final backupsDir = Directory(p.join(docsDir.path, 'backups'));
+    await backupsDir.create(recursive: true);
+    final file =
+        File(p.join(backupsDir.path, 'underdeck-backup-${_stamp()}.json'));
+    await file.writeAsString(jsonEncode(payload));
+
+    // Prune older backups, keeping only the newest [keep].
+    final existing = backupsDir
+        .listSync()
+        .whereType<File>()
+        .where((f) => p.basename(f.path).startsWith('underdeck-backup-'))
+        .toList()
+      ..sort((a, b) => b.path.compareTo(a.path));
+    for (final old in existing.skip(keep < 0 ? 0 : keep)) {
+      try {
+        old.deleteSync();
+      } catch (_) {
+        // Best-effort cleanup; a locked/removed file must not fail the backup.
+      }
+    }
+    return file;
+  }
+
+  /// P3/25: lightweight snapshot for the backup reminder — whether there is any
+  /// user data, and the newest mutation timestamp across all tables. Uses
+  /// COUNT/MAX aggregates so it stays cheap even with large histories.
+  Future<BackupStatus> backupStatus() async {
+    Future<(int, DateTime?)> stat(
+      drift.ResultSetImplementation<drift.HasResultSet, dynamic> table,
+      drift.GeneratedColumn<DateTime> ts,
+    ) async {
+      final count = drift.countAll();
+      final maxTs = ts.max();
+      final row = await (_db.selectOnly(table)..addColumns([count, maxTs]))
+          .getSingle();
+      return (row.read(count) ?? 0, row.read(maxTs));
+    }
+
+    final results = await Future.wait([
+      stat(_db.notes, _db.notes.updatedAt),
+      stat(_db.links, _db.links.updatedAt),
+      stat(_db.ships, _db.ships.updatedAt),
+      stat(_db.scanHistory, _db.scanHistory.date),
+      stat(_db.trackerHistory, _db.trackerHistory.date),
+      stat(_db.discoveryHistory, _db.discoveryHistory.date),
+      stat(_db.favorites, _db.favorites.createdAt),
+      stat(_db.jobStatus, _db.jobStatus.updatedAt),
+    ]);
+
+    var total = 0;
+    DateTime? lastChanged;
+    for (final (count, maxTs) in results) {
+      total += count;
+      if (maxTs != null &&
+          (lastChanged == null || maxTs.isAfter(lastChanged))) {
+        lastChanged = maxTs;
+      }
+    }
+    return BackupStatus(hasData: total > 0, lastChangedAt: lastChanged);
   }
 
   Future<void> shareExport({Rect? sharePositionOrigin}) async {
@@ -200,6 +288,7 @@ class DataExportService {
   Future<ImportSummary> _import(Map<String, dynamic> data) async {
     int notes = 0, links = 0, tags = 0, ships = 0;
     int scan = 0, tracker = 0, discovery = 0;
+    int favorites = 0, jobStatus = 0;
 
     // Tolerant: a malformed/absent date must never throw and abort the whole
     // import (a single poisoned row would otherwise take the file down).
@@ -578,6 +667,59 @@ class DataExportService {
           return true;
         },
       );
+
+      // P3/22: favorites are idempotent on the composite PK (entityType,
+      // entityId). insertOrIgnore keeps an existing row (and its original
+      // createdAt) rather than clobbering it, so re-importing is a no-op.
+      for (final raw in (data['favorites'] as List<dynamic>? ?? const [])) {
+        final m = raw as Map<String, dynamic>;
+        final type = m['entityType'] as String?;
+        final entId = m['entityId'] as String?;
+        if (type == null || type.isEmpty || entId == null || entId.isEmpty) {
+          continue;
+        }
+        final exists = await (_db.select(_db.favorites)
+              ..where((f) =>
+                  f.entityType.equals(type) & f.entityId.equals(entId)))
+            .getSingleOrNull();
+        if (exists != null) continue;
+        await _db.into(_db.favorites).insert(
+              FavoritesCompanion.insert(
+                entityType: type,
+                entityId: entId,
+                createdAt: parseDate(m['createdAt']),
+              ),
+              mode: drift.InsertMode.insertOrIgnore,
+            );
+        favorites++;
+      }
+
+      // P3/22: job status keyed by jobId. Newer-wins on updatedAt so a stale
+      // imported row never regresses a locally-advanced job; unknown status
+      // values are skipped.
+      const validStatuses = {'todo', 'in_progress', 'done'};
+      for (final raw in (data['jobStatus'] as List<dynamic>? ?? const [])) {
+        final m = raw as Map<String, dynamic>;
+        final id = m['jobId'] as String?;
+        final status = m['status'] as String?;
+        if (id == null || id.isEmpty || !validStatuses.contains(status)) {
+          continue;
+        }
+        final updatedAt = parseDate(m['updatedAt']);
+        final exists = await (_db.select(_db.jobStatus)
+              ..where((s) => s.jobId.equals(id)))
+            .getSingleOrNull();
+        if (exists != null && !updatedAt.isAfter(exists.updatedAt)) continue;
+        await _db.into(_db.jobStatus).insert(
+              JobStatusCompanion.insert(
+                jobId: id,
+                status: status!,
+                updatedAt: updatedAt,
+              ),
+              mode: drift.InsertMode.insertOrReplace,
+            );
+        jobStatus++;
+      }
     });
 
     return ImportSummary(
@@ -588,6 +730,8 @@ class DataExportService {
       scanHistory: scan,
       trackerHistory: tracker,
       discoveryHistory: discovery,
+      favorites: favorites,
+      jobStatus: jobStatus,
     );
   }
 }
@@ -601,6 +745,8 @@ class ImportSummary {
   final int scanHistory;
   final int trackerHistory;
   final int discoveryHistory;
+  final int favorites;
+  final int jobStatus;
 
   const ImportSummary({
     required this.notes,
@@ -610,6 +756,8 @@ class ImportSummary {
     required this.scanHistory,
     required this.trackerHistory,
     required this.discoveryHistory,
+    this.favorites = 0,
+    this.jobStatus = 0,
   });
 
   factory ImportSummary.empty() => const ImportSummary(
@@ -620,10 +768,14 @@ class ImportSummary {
     scanHistory: 0,
     trackerHistory: 0,
     discoveryHistory: 0,
+    favorites: 0,
+    jobStatus: 0,
   );
 
   bool get isEmpty =>
-      notes + links + tags + ships + scanHistory + trackerHistory + discoveryHistory == 0;
+      notes + links + tags + ships + scanHistory + trackerHistory +
+          discoveryHistory + favorites + jobStatus ==
+      0;
 
   String describe() {
     if (isEmpty) return 'Nothing imported.';
@@ -635,6 +787,8 @@ class ImportSummary {
     if (scanHistory > 0) parts.add('$scanHistory scan${scanHistory == 1 ? '' : 's'}');
     if (trackerHistory > 0) parts.add('$trackerHistory track${trackerHistory == 1 ? '' : 's'}');
     if (discoveryHistory > 0) parts.add('$discoveryHistory discoveries');
+    if (favorites > 0) parts.add('$favorites favorite${favorites == 1 ? '' : 's'}');
+    if (jobStatus > 0) parts.add('$jobStatus job status${jobStatus == 1 ? '' : 'es'}');
     return parts.join(', ');
   }
 }

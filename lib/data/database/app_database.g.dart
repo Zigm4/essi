@@ -4253,6 +4253,542 @@ class DiscoveryHistoryCompanion extends UpdateCompanion<DiscoveryHistoryData> {
   }
 }
 
+class $FavoritesTable extends Favorites
+    with TableInfo<$FavoritesTable, Favorite> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $FavoritesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _entityTypeMeta = const VerificationMeta(
+    'entityType',
+  );
+  @override
+  late final GeneratedColumn<String> entityType = GeneratedColumn<String>(
+    'entity_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _entityIdMeta = const VerificationMeta(
+    'entityId',
+  );
+  @override
+  late final GeneratedColumn<String> entityId = GeneratedColumn<String>(
+    'entity_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [entityType, entityId, createdAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'favorites';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Favorite> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('entity_type')) {
+      context.handle(
+        _entityTypeMeta,
+        entityType.isAcceptableOrUnknown(data['entity_type']!, _entityTypeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_entityTypeMeta);
+    }
+    if (data.containsKey('entity_id')) {
+      context.handle(
+        _entityIdMeta,
+        entityId.isAcceptableOrUnknown(data['entity_id']!, _entityIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_entityIdMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {entityType, entityId};
+  @override
+  Favorite map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Favorite(
+      entityType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}entity_type'],
+      )!,
+      entityId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}entity_id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $FavoritesTable createAlias(String alias) {
+    return $FavoritesTable(attachedDatabase, alias);
+  }
+}
+
+class Favorite extends DataClass implements Insertable<Favorite> {
+  final String entityType;
+  final String entityId;
+  final DateTime createdAt;
+  const Favorite({
+    required this.entityType,
+    required this.entityId,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['entity_type'] = Variable<String>(entityType);
+    map['entity_id'] = Variable<String>(entityId);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  FavoritesCompanion toCompanion(bool nullToAbsent) {
+    return FavoritesCompanion(
+      entityType: Value(entityType),
+      entityId: Value(entityId),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory Favorite.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Favorite(
+      entityType: serializer.fromJson<String>(json['entityType']),
+      entityId: serializer.fromJson<String>(json['entityId']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'entityType': serializer.toJson<String>(entityType),
+      'entityId': serializer.toJson<String>(entityId),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  Favorite copyWith({
+    String? entityType,
+    String? entityId,
+    DateTime? createdAt,
+  }) => Favorite(
+    entityType: entityType ?? this.entityType,
+    entityId: entityId ?? this.entityId,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  Favorite copyWithCompanion(FavoritesCompanion data) {
+    return Favorite(
+      entityType: data.entityType.present
+          ? data.entityType.value
+          : this.entityType,
+      entityId: data.entityId.present ? data.entityId.value : this.entityId,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Favorite(')
+          ..write('entityType: $entityType, ')
+          ..write('entityId: $entityId, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(entityType, entityId, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Favorite &&
+          other.entityType == this.entityType &&
+          other.entityId == this.entityId &&
+          other.createdAt == this.createdAt);
+}
+
+class FavoritesCompanion extends UpdateCompanion<Favorite> {
+  final Value<String> entityType;
+  final Value<String> entityId;
+  final Value<DateTime> createdAt;
+  final Value<int> rowid;
+  const FavoritesCompanion({
+    this.entityType = const Value.absent(),
+    this.entityId = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  FavoritesCompanion.insert({
+    required String entityType,
+    required String entityId,
+    required DateTime createdAt,
+    this.rowid = const Value.absent(),
+  }) : entityType = Value(entityType),
+       entityId = Value(entityId),
+       createdAt = Value(createdAt);
+  static Insertable<Favorite> custom({
+    Expression<String>? entityType,
+    Expression<String>? entityId,
+    Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (entityType != null) 'entity_type': entityType,
+      if (entityId != null) 'entity_id': entityId,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  FavoritesCompanion copyWith({
+    Value<String>? entityType,
+    Value<String>? entityId,
+    Value<DateTime>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return FavoritesCompanion(
+      entityType: entityType ?? this.entityType,
+      entityId: entityId ?? this.entityId,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (entityType.present) {
+      map['entity_type'] = Variable<String>(entityType.value);
+    }
+    if (entityId.present) {
+      map['entity_id'] = Variable<String>(entityId.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FavoritesCompanion(')
+          ..write('entityType: $entityType, ')
+          ..write('entityId: $entityId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $JobStatusTable extends JobStatus
+    with TableInfo<$JobStatusTable, JobStatusData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $JobStatusTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _jobIdMeta = const VerificationMeta('jobId');
+  @override
+  late final GeneratedColumn<String> jobId = GeneratedColumn<String>(
+    'job_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [jobId, status, updatedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'job_status';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<JobStatusData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('job_id')) {
+      context.handle(
+        _jobIdMeta,
+        jobId.isAcceptableOrUnknown(data['job_id']!, _jobIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_jobIdMeta);
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_statusMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {jobId};
+  @override
+  JobStatusData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return JobStatusData(
+      jobId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}job_id'],
+      )!,
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $JobStatusTable createAlias(String alias) {
+    return $JobStatusTable(attachedDatabase, alias);
+  }
+}
+
+class JobStatusData extends DataClass implements Insertable<JobStatusData> {
+  final String jobId;
+  final String status;
+  final DateTime updatedAt;
+  const JobStatusData({
+    required this.jobId,
+    required this.status,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['job_id'] = Variable<String>(jobId);
+    map['status'] = Variable<String>(status);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  JobStatusCompanion toCompanion(bool nullToAbsent) {
+    return JobStatusCompanion(
+      jobId: Value(jobId),
+      status: Value(status),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory JobStatusData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return JobStatusData(
+      jobId: serializer.fromJson<String>(json['jobId']),
+      status: serializer.fromJson<String>(json['status']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'jobId': serializer.toJson<String>(jobId),
+      'status': serializer.toJson<String>(status),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  JobStatusData copyWith({
+    String? jobId,
+    String? status,
+    DateTime? updatedAt,
+  }) => JobStatusData(
+    jobId: jobId ?? this.jobId,
+    status: status ?? this.status,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  JobStatusData copyWithCompanion(JobStatusCompanion data) {
+    return JobStatusData(
+      jobId: data.jobId.present ? data.jobId.value : this.jobId,
+      status: data.status.present ? data.status.value : this.status,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('JobStatusData(')
+          ..write('jobId: $jobId, ')
+          ..write('status: $status, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(jobId, status, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is JobStatusData &&
+          other.jobId == this.jobId &&
+          other.status == this.status &&
+          other.updatedAt == this.updatedAt);
+}
+
+class JobStatusCompanion extends UpdateCompanion<JobStatusData> {
+  final Value<String> jobId;
+  final Value<String> status;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const JobStatusCompanion({
+    this.jobId = const Value.absent(),
+    this.status = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  JobStatusCompanion.insert({
+    required String jobId,
+    required String status,
+    required DateTime updatedAt,
+    this.rowid = const Value.absent(),
+  }) : jobId = Value(jobId),
+       status = Value(status),
+       updatedAt = Value(updatedAt);
+  static Insertable<JobStatusData> custom({
+    Expression<String>? jobId,
+    Expression<String>? status,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (jobId != null) 'job_id': jobId,
+      if (status != null) 'status': status,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  JobStatusCompanion copyWith({
+    Value<String>? jobId,
+    Value<String>? status,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return JobStatusCompanion(
+      jobId: jobId ?? this.jobId,
+      status: status ?? this.status,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (jobId.present) {
+      map['job_id'] = Variable<String>(jobId.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('JobStatusCompanion(')
+          ..write('jobId: $jobId, ')
+          ..write('status: $status, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -4268,6 +4804,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $DiscoveryHistoryTable discoveryHistory = $DiscoveryHistoryTable(
     this,
   );
+  late final $FavoritesTable favorites = $FavoritesTable(this);
+  late final $JobStatusTable jobStatus = $JobStatusTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -4283,6 +4821,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     scanHistory,
     trackerHistory,
     discoveryHistory,
+    favorites,
+    jobStatus,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -7764,6 +8304,326 @@ typedef $$DiscoveryHistoryTableProcessedTableManager =
       DiscoveryHistoryData,
       PrefetchHooks Function()
     >;
+typedef $$FavoritesTableCreateCompanionBuilder =
+    FavoritesCompanion Function({
+      required String entityType,
+      required String entityId,
+      required DateTime createdAt,
+      Value<int> rowid,
+    });
+typedef $$FavoritesTableUpdateCompanionBuilder =
+    FavoritesCompanion Function({
+      Value<String> entityType,
+      Value<String> entityId,
+      Value<DateTime> createdAt,
+      Value<int> rowid,
+    });
+
+class $$FavoritesTableFilterComposer
+    extends Composer<_$AppDatabase, $FavoritesTable> {
+  $$FavoritesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get entityType => $composableBuilder(
+    column: $table.entityType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get entityId => $composableBuilder(
+    column: $table.entityId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$FavoritesTableOrderingComposer
+    extends Composer<_$AppDatabase, $FavoritesTable> {
+  $$FavoritesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get entityType => $composableBuilder(
+    column: $table.entityType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get entityId => $composableBuilder(
+    column: $table.entityId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$FavoritesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $FavoritesTable> {
+  $$FavoritesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get entityType => $composableBuilder(
+    column: $table.entityType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get entityId =>
+      $composableBuilder(column: $table.entityId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$FavoritesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $FavoritesTable,
+          Favorite,
+          $$FavoritesTableFilterComposer,
+          $$FavoritesTableOrderingComposer,
+          $$FavoritesTableAnnotationComposer,
+          $$FavoritesTableCreateCompanionBuilder,
+          $$FavoritesTableUpdateCompanionBuilder,
+          (Favorite, BaseReferences<_$AppDatabase, $FavoritesTable, Favorite>),
+          Favorite,
+          PrefetchHooks Function()
+        > {
+  $$FavoritesTableTableManager(_$AppDatabase db, $FavoritesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$FavoritesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$FavoritesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$FavoritesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> entityType = const Value.absent(),
+                Value<String> entityId = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => FavoritesCompanion(
+                entityType: entityType,
+                entityId: entityId,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String entityType,
+                required String entityId,
+                required DateTime createdAt,
+                Value<int> rowid = const Value.absent(),
+              }) => FavoritesCompanion.insert(
+                entityType: entityType,
+                entityId: entityId,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$FavoritesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $FavoritesTable,
+      Favorite,
+      $$FavoritesTableFilterComposer,
+      $$FavoritesTableOrderingComposer,
+      $$FavoritesTableAnnotationComposer,
+      $$FavoritesTableCreateCompanionBuilder,
+      $$FavoritesTableUpdateCompanionBuilder,
+      (Favorite, BaseReferences<_$AppDatabase, $FavoritesTable, Favorite>),
+      Favorite,
+      PrefetchHooks Function()
+    >;
+typedef $$JobStatusTableCreateCompanionBuilder =
+    JobStatusCompanion Function({
+      required String jobId,
+      required String status,
+      required DateTime updatedAt,
+      Value<int> rowid,
+    });
+typedef $$JobStatusTableUpdateCompanionBuilder =
+    JobStatusCompanion Function({
+      Value<String> jobId,
+      Value<String> status,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$JobStatusTableFilterComposer
+    extends Composer<_$AppDatabase, $JobStatusTable> {
+  $$JobStatusTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get jobId => $composableBuilder(
+    column: $table.jobId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$JobStatusTableOrderingComposer
+    extends Composer<_$AppDatabase, $JobStatusTable> {
+  $$JobStatusTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get jobId => $composableBuilder(
+    column: $table.jobId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$JobStatusTableAnnotationComposer
+    extends Composer<_$AppDatabase, $JobStatusTable> {
+  $$JobStatusTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get jobId =>
+      $composableBuilder(column: $table.jobId, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$JobStatusTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $JobStatusTable,
+          JobStatusData,
+          $$JobStatusTableFilterComposer,
+          $$JobStatusTableOrderingComposer,
+          $$JobStatusTableAnnotationComposer,
+          $$JobStatusTableCreateCompanionBuilder,
+          $$JobStatusTableUpdateCompanionBuilder,
+          (
+            JobStatusData,
+            BaseReferences<_$AppDatabase, $JobStatusTable, JobStatusData>,
+          ),
+          JobStatusData,
+          PrefetchHooks Function()
+        > {
+  $$JobStatusTableTableManager(_$AppDatabase db, $JobStatusTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$JobStatusTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$JobStatusTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$JobStatusTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> jobId = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => JobStatusCompanion(
+                jobId: jobId,
+                status: status,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String jobId,
+                required String status,
+                required DateTime updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => JobStatusCompanion.insert(
+                jobId: jobId,
+                status: status,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$JobStatusTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $JobStatusTable,
+      JobStatusData,
+      $$JobStatusTableFilterComposer,
+      $$JobStatusTableOrderingComposer,
+      $$JobStatusTableAnnotationComposer,
+      $$JobStatusTableCreateCompanionBuilder,
+      $$JobStatusTableUpdateCompanionBuilder,
+      (
+        JobStatusData,
+        BaseReferences<_$AppDatabase, $JobStatusTable, JobStatusData>,
+      ),
+      JobStatusData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -7787,4 +8647,8 @@ class $AppDatabaseManager {
       $$TrackerHistoryTableTableManager(_db, _db.trackerHistory);
   $$DiscoveryHistoryTableTableManager get discoveryHistory =>
       $$DiscoveryHistoryTableTableManager(_db, _db.discoveryHistory);
+  $$FavoritesTableTableManager get favorites =>
+      $$FavoritesTableTableManager(_db, _db.favorites);
+  $$JobStatusTableTableManager get jobStatus =>
+      $$JobStatusTableTableManager(_db, _db.jobStatus);
 }

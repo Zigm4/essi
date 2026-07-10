@@ -186,6 +186,21 @@ class _ShipCard extends ConsumerWidget {
     return AppColors.accentDanger;
   }
 
+  /// Clamp-and-persist a hull delta from the card stepper. Clamps to
+  /// [0, catalog hullMax] when the max is known; lower bound 0 otherwise.
+  /// Optimistic UI comes free via [shipsStreamProvider] re-emitting.
+  Future<void> _adjustHull(WidgetRef ref, int delta) async {
+    final current = ship.hull;
+    if (current == null) return;
+    final max = catalogs?.shipForKey(ship.modelKey)?.hullMax;
+    var next = current + delta;
+    if (next < 0) next = 0;
+    if (max != null && next > max) next = max;
+    if (next == current) return;
+    Haptics.of(ref).selection();
+    await ref.read(hangarRepositoryProvider).updateHull(ship.id, next);
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final entry = catalogs?.shipForKey(ship.modelKey);
@@ -292,6 +307,18 @@ class _ShipCard extends ConsumerWidget {
                         color: AppColors.accentSecondary,
                       ),
                     ),
+                  const Spacer(),
+                  _HullStepButton(
+                    icon: Icons.remove,
+                    enabled: ship.hull! > 0,
+                    onTap: () => _adjustHull(ref, -1),
+                  ),
+                  const SizedBox(width: 6),
+                  _HullStepButton(
+                    icon: Icons.add,
+                    enabled: entry?.hullMax == null || ship.hull! < entry!.hullMax!,
+                    onTap: () => _adjustHull(ref, 1),
+                  ),
                 ],
               ),
             ],
@@ -406,6 +433,44 @@ class _ShipCard extends ConsumerWidget {
       Haptics.of(ref).warning();
       await ref.read(hangarRepositoryProvider).delete(ship.id);
     }
+  }
+}
+
+/// Compact square +/- control for the ship-card hull stepper. Disabled state
+/// dims the glyph and swallows taps so clamping reads clearly.
+class _HullStepButton extends StatelessWidget {
+  const _HullStepButton({
+    required this.icon,
+    required this.enabled,
+    required this.onTap,
+  });
+  final IconData icon;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final color =
+        enabled ? AppColors.accentPrimary : AppColors.textDim;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: enabled ? onTap : null,
+      child: Container(
+        width: 28,
+        height: 28,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: AppColors.bgGlass,
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+          border: Border.all(
+            color: enabled
+                ? AppColors.accentPrimary.withValues(alpha: 0.4)
+                : AppColors.borderSubtle,
+          ),
+        ),
+        child: Icon(icon, color: color, size: 16),
+      ),
+    );
   }
 }
 

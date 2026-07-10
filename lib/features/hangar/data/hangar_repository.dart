@@ -145,6 +145,18 @@ class HangarRepository {
     );
   }
 
+  /// Lightweight hull-only update used by the Hangar card quick-stepper.
+  /// Writes just `hull` + `updatedAt` so callers can adjust hull without
+  /// loading the full ship editor. The watch stream re-emits on completion.
+  Future<void> updateHull(String id, int hull) async {
+    await (_db.update(_db.ships)..where((t) => t.id.equals(id))).write(
+      ShipsCompanion(
+        hull: Value(hull),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
   Future<void> delete(String id) async {
     // F45: atomic delete of the ship, its join rows and orphan pruning.
     await _db.transaction(() async {

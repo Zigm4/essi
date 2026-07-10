@@ -6,6 +6,7 @@ import 'package:drift_flutter/drift_flutter.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'tables/favorites_table.dart';
 import 'tables/links_table.dart';
 import 'tables/notes_table.dart';
 import 'tables/scan_history_table.dart';
@@ -25,6 +26,8 @@ part 'app_database.g.dart';
   ScanHistory,
   TrackerHistory,
   DiscoveryHistory,
+  Favorites,
+  JobStatus,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
@@ -33,8 +36,10 @@ class AppDatabase extends _$AppDatabase {
 
   // v2 (F44/F46): UNIQUE(tags.name) + ON DELETE CASCADE foreign keys on the
   // three join tables, with PRAGMA foreign_keys enabled.
+  // v3 (P3/22): Favorites + JobStatus tables for star/pin/bookmark and job
+  // progress tracking.
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -44,6 +49,9 @@ class AppDatabase extends _$AppDatabase {
         onUpgrade: (m, from, to) async {
           if (from < 2) {
             await _migrateToV2(m);
+          }
+          if (from < 3) {
+            await _migrateToV3(m);
           }
         },
         beforeOpen: (details) async {
@@ -157,6 +165,13 @@ class AppDatabase extends _$AppDatabase {
     await m.alterTable(TableMigration(noteTags));
     await m.alterTable(TableMigration(linkTags));
     await m.alterTable(TableMigration(shipTags));
+  }
+
+  /// v2 -> v3 migration (P3/22). Purely additive: create the two new tables
+  /// backing favorites and job progress tracking. No existing data is touched.
+  Future<void> _migrateToV3(Migrator m) async {
+    await m.createTable(favorites);
+    await m.createTable(jobStatus);
   }
 
   /// Repoints join rows that reference a duplicate tag id onto its canonical

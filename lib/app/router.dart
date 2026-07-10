@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../features/boot/boot_screen.dart';
+import '../features/onboarding/onboarding_view.dart';
+import '../services/app_settings.dart';
 import '../features/captures/views/captures_home_view.dart';
 import '../features/captures/views/link_detail_view.dart';
 import '../features/captures/views/note_detail_view.dart';
@@ -42,8 +45,19 @@ GoRouter buildRouter() {
       GoRoute(
         path: '/boot',
         builder: (context, state) => BootScreen(
-          onComplete: () => context.go('/tools'),
+          onComplete: () {
+            // First run only: send new pilots through the onboarding
+            // transmission before the main app; returning users skip it.
+            final seen = ProviderScope.containerOf(context, listen: false)
+                .read(appSettingsProvider)
+                .onboardingSeen;
+            context.go(seen ? '/tools' : '/onboarding');
+          },
         ),
+      ),
+      GoRoute(
+        path: '/onboarding',
+        builder: (context, state) => const OnboardingView(),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navShell) => AppShell(navigationShell: navShell),

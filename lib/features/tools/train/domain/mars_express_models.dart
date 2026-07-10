@@ -106,26 +106,60 @@ class MarsExpressService {
     required List<TrainStop> stops,
     DateTime? now,
   }) {
+    final occ = nextOccurrences(zone: zone, stops: stops, count: 1, now: now);
+    if (occ.isEmpty) return const [];
+    return alertsForArrival(occ.first);
+  }
+
+  /// The three alert instants for a single arrival: 2 min before, 1 min
+  /// before, and on arrival. Kept pure so the alert controller and tests can
+  /// share it.
+  static List<DateTime> alertsForArrival(DateTime arrival) => [
+        arrival.subtract(const Duration(minutes: 2)),
+        arrival.subtract(const Duration(minutes: 1)),
+        arrival,
+      ];
+
+  /// The next [count] future arrival instants for [zone], honouring the
+  /// schedule's hourly recurrence. A zone visited at multiple minutes within
+  /// the hour yields multiple occurrences per hour; the sequence then wraps
+  /// into subsequent hours (+1h each cycle) until [count] are collected.
+  ///
+  /// Only arrivals strictly after [now] are returned, so arming right on top
+  /// of an arrival rolls forward to the next full cycle rather than emitting a
+  /// past instant.
+  static List<DateTime> nextOccurrences({
+    required int zone,
+    required List<TrainStop> stops,
+    required int count,
+    DateTime? now,
+  }) {
+    if (count <= 0) return const [];
     final base = now ?? DateTime.now();
-    final arrivals = nextArrivals(
-      zone: zone,
-      currentMinute: base.minute,
-      stops: stops,
-    );
-    if (arrivals.isEmpty) return const [];
-    final raw = arrivals.first;
+    final minutes = <int>{
+      for (final s in stops)
+        if (s.zone == zone) s.minute,
+    }.toList()
+      ..sort();
+    if (minutes.isEmpty) return const [];
+
+    final result = <DateTime>[];
     var anchor = DateTime(base.year, base.month, base.day, base.hour);
-    if (raw >= 60) {
+    // Guard against pathological loops: at least one arrival per hour, so
+    // count hours plus a small margin always suffices.
+    var guard = 0;
+    while (result.length < count && guard <= count + 2) {
+      for (final m in minutes) {
+        final dt = anchor.add(Duration(minutes: m));
+        if (dt.isAfter(base)) {
+          result.add(dt);
+          if (result.length >= count) break;
+        }
+      }
       anchor = anchor.add(const Duration(hours: 1));
-      anchor = anchor.add(Duration(minutes: raw - 60));
-    } else {
-      anchor = anchor.add(Duration(minutes: raw));
+      guard++;
     }
-    return [
-      anchor.subtract(const Duration(minutes: 2)),
-      anchor.subtract(const Duration(minutes: 1)),
-      anchor,
-    ];
+    return result;
   }
 
   static List<ScheduleEntry> consolidated({
@@ -189,5 +223,55 @@ class MarsExpressService {
     }
     flush();
     return entries;
+  }
+}
+
+/// Notification-id allocation for train alerts inside the reserved band
+/// [bandMin, bandMax]. Each armed zone is assigned a *slot* (a fixed sub-range
+/// of the band); within a slot each scheduled occurrence gets
+/// [alertsPerOccurrence] consecutive ids. Zone numbers themselves are large
+/// (200+) so they can't index the band directly — slots decouple the band
+/// layout from zone identity. Pure so it is unit-testable.
+class TrainAlertIds {
+  const TrainAlertIds._();
+
+  static const int bandMin = 70000;
+  static const int bandMax = 70999;
+  static const int alertsPerOccurrence = 3;
+
+  /// How many occurrences a repeating zone schedules ahead. With no background
+  /// execution this is the "up to N hours ahead until reopened" horizon.
+  static const int repeatOccurrences = 6;
+
+  /// Ids reserved per slot: enough for [repeatOccurrences] occurrences, with a
+  /// little headroom.
+  static const int slotSize = 20;
+
+  /// Number of slots that fit in the band.
+  static int get slotCount => (bandMax - bandMin + 1) ~/ slotSize;
+
+  static int slotBase(int slot) => bandMin + slot * slotSize;
+
+  /// Every id belonging to [slot] (the whole reserved sub-range), for cancels.
+  static List<int> slotIds(int slot) => [
+        for (var i = 0; i < slotSize; i++) slotBase(slot) + i,
+      ];
+
+  /// The [alertsPerOccurrence] ids for occurrence [occurrenceIndex] in [slot].
+  static List<int> occurrenceIds(int slot, int occurrenceIndex) => [
+        for (var a = 0; a < alertsPerOccurrence; a++)
+          slotBase(slot) + occurrenceIndex * alertsPerOccurrence + a,
+      ];
+
+  /// The single id for one alert (2min/1min/now) of one occurrence.
+  static int alertId(int slot, int occurrenceIndex, int alertIndex) =>
+      slotBase(slot) + occurrenceIndex * alertsPerOccurrence + alertIndex;
+
+  /// Lowest slot index not present in [used], or null when the band is full.
+  static int? lowestFreeSlot(Set<int> used) {
+    for (var s = 0; s < slotCount; s++) {
+      if (!used.contains(s)) return s;
+    }
+    return null;
   }
 }

@@ -7,6 +7,7 @@ import '../../../design_system/components/banner_page.dart';
 import '../../../design_system/spacing.dart';
 import '../../../design_system/typography.dart';
 import '../../../services/haptics.dart';
+import '../widgets/backup_reminder_banner.dart';
 import 'link_editor_view.dart';
 import 'links_list_view.dart';
 import 'note_editor_view.dart';
@@ -51,6 +52,7 @@ class CapturesHomeView extends ConsumerWidget {
           ],
           builder: (context, ctrl) => Column(
             children: [
+              const BackupReminderBanner(),
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.md,
