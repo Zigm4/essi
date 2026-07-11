@@ -1,0 +1,19 @@
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  color: var(--accent-primary);
+  background: rgba(79, 195, 255, 0.15);
+  border: 1px solid rgba(79, 195, 255, 0.4);
+}
+
+.selected {
+  color: var(--bg-deepest);
+  background: var(--accent-primary);
+  border-color: transparent;
+}

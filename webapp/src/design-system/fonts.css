@@ -1,0 +1,26 @@
+/* Self-hosted variable fonts (SIL OFL) — never fetched from Google Fonts.
+   License texts ship in public/fonts/<Family>-OFL.txt and are linked from About. */
+
+@font-face {
+  font-family: 'Inter';
+  src: url('./fonts/Inter-Variable.ttf') format('truetype-variations');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'JetBrainsMono';
+  src: url('./fonts/JetBrainsMono-Variable.ttf') format('truetype-variations');
+  font-weight: 100 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Quicksand';
+  src: url('./fonts/Quicksand-Variable.ttf') format('truetype-variations');
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
+}

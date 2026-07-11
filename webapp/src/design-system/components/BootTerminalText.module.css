@@ -1,0 +1,14 @@
+.window {
+  width: 100%;
+  overflow: hidden;
+}
+
+.line {
+  display: flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent-primary);
+  white-space: pre;
+}

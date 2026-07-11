@@ -1,0 +1,45 @@
+.wrapper {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.backToTop {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--bg-deepest);
+  border: 1px solid rgba(79, 195, 255, 0.6);
+  box-shadow: 0 0 10px rgba(79, 195, 255, 0.4);
+  color: var(--accent-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  opacity: 0;
+  transform: scale(0.6);
+  pointer-events: none;
+  transition:
+    opacity 200ms var(--motion-subtle-ease),
+    transform 200ms var(--motion-subtle-ease);
+}
+
+.backToTopVisible {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+}

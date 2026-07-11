@@ -1,0 +1,39 @@
+.container {
+  position: relative;
+  background: rgba(3, 6, 11, 0.55);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+}
+
+.code {
+  display: block;
+  margin: 0;
+  padding: 8px 40px 8px 8px;
+  overflow-x: auto;
+  white-space: pre;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--accent-secondary);
+}
+
+.copyButton {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 28px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-deepest);
+  border: 1px solid var(--border-subtle);
+  border-radius: 5px;
+  color: var(--accent-primary);
+  cursor: pointer;
+  padding: 0;
+}
+
+.copied {
+  color: var(--accent-success);
+}

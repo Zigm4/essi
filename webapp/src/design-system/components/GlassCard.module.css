@@ -1,0 +1,31 @@
+.card {
+  background: var(--bg-card); /* opaque on purpose (perf) */
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 12px;
+  overflow: hidden;
+}
+
+.blur {
+  background: var(--bg-glass);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.glow {
+  box-shadow: 0 0 14px rgba(79, 195, 255, 0.18);
+}
+
+.interactive {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition: background-color var(--motion-subtle-duration) var(--motion-subtle-ease);
+}
+
+.interactive:active {
+  background-color: rgba(79, 195, 255, 0.08);
+}

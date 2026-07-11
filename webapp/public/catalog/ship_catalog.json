@@ -1,0 +1,18 @@
+[
+  {"key": "moon-buggy",         "displayName": "Moon Buggy",         "category": "landcraft",  "prefix": "MOOB", "crewSize": 1,    "hullMax": null},
+  {"key": "ork-grasshooper",    "displayName": "ORK Grasshooper",    "category": "landcraft",  "prefix": "ORKG", "crewSize": 1,    "hullMax": 4},
+  {"key": "rts-squeakter",      "displayName": "RTS Squeakter",      "category": "landcraft",  "prefix": "RTSS", "crewSize": null, "hullMax": 4},
+  {"key": "vst-ranger",         "displayName": "VST Ranger",         "category": "landcraft",  "prefix": "VSTR", "crewSize": null, "hullMax": null},
+
+  {"key": "evi-navigator",      "displayName": "EVI Navigator",      "category": "watercraft", "prefix": "EVIN", "crewSize": null, "hullMax": null},
+  {"key": "rat-raft",           "displayName": "Rat Raft",           "category": "watercraft", "prefix": "RATR", "crewSize": null, "hullMax": null},
+
+  {"key": "evil-lawless",       "displayName": "EVIL Lawless",       "category": "spacecraft", "prefix": "EVIL", "crewSize": 0,    "hullMax": null},
+  {"key": "mmc-shootingstar",   "displayName": "MMC Shootingstar",   "category": "spacecraft", "prefix": "MMCS", "crewSize": null, "hullMax": null},
+  {"key": "prq-coaster",        "displayName": "PRQ Coaster",        "category": "spacecraft", "prefix": "PRQC", "crewSize": null, "hullMax": null},
+  {"key": "ratship-one",        "displayName": "Ratship One",        "category": "spacecraft", "prefix": "RATS", "crewSize": null, "hullMax": null},
+  {"key": "solstice-trigrave",  "displayName": "Solstice Trigrave",  "category": "spacecraft", "prefix": "SOLT", "crewSize": 2,    "hullMax": 80},
+  {"key": "solstice-vanguard",  "displayName": "Solstice Vanguard",  "category": "spacecraft", "prefix": "SOLV", "crewSize": null, "hullMax": 8},
+  {"key": "sos-starfire",       "displayName": "SOS Starfire",       "category": "spacecraft", "prefix": "SOSS", "crewSize": null, "hullMax": null},
+  {"key": "ufo-oort",           "displayName": "UFO Oort",           "category": "spacecraft", "prefix": "OORT", "crewSize": null, "hullMax": null}
+]

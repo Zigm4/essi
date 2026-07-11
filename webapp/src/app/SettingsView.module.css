@@ -1,0 +1,230 @@
+.cardStack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.caption {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.toggleRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.toggleRowDisabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.toggleText {
+  flex: 1;
+  min-width: 0;
+}
+
+.toggleTitle {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--text-primary);
+}
+
+.toggleSubtitle {
+  margin-top: 2px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.switch {
+  flex: none;
+  position: relative;
+  width: 44px;
+  height: 24px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  background: rgba(110, 138, 171, 0.35);
+  transition: background-color var(--motion-subtle-duration) var(--motion-subtle-ease);
+  padding: 0;
+}
+
+.switchOn {
+  background: rgba(95, 232, 160, 0.35);
+}
+
+.thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #8aa4c2;
+  transition:
+    transform var(--motion-subtle-duration) var(--motion-subtle-ease),
+    background-color var(--motion-subtle-duration) var(--motion-subtle-ease);
+}
+
+.switchOn .thumb {
+  transform: translateX(20px);
+  background: var(--accent-success); /* active thumb color */
+}
+
+.actionRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-glass);
+  cursor: pointer;
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 15px;
+}
+
+.actionIcon {
+  display: inline-flex;
+  color: var(--accent-primary);
+}
+
+.actionChevron {
+  margin-left: auto;
+  display: inline-flex;
+  color: var(--text-dim);
+}
+
+.infoLine {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.infoValue {
+  font-family: var(--font-mono);
+  color: var(--accent-secondary);
+}
+
+.mapsManageRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.clearButton {
+  margin-left: auto;
+  flex: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 85, 119, 0.5);
+  background: none;
+  color: var(--accent-danger);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.bulletRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 2px 0;
+}
+
+.bulletIcon {
+  flex: none;
+  display: inline-flex;
+  color: var(--accent-success);
+  margin-top: 1px;
+}
+
+.proxyInput {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-glass);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  outline: none;
+}
+
+.proxyInput:focus {
+  border-color: var(--border-glow);
+}
+
+.proxyInput::placeholder {
+  color: var(--text-dim);
+}
+
+/* Confirmation dialog */
+.dialogScrim {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.dialog {
+  width: 100%;
+  max-width: 400px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 20px;
+}
+
+.dialogTitle {
+  font-family: var(--font-sans);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.dialogBody {
+  margin-top: 10px;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--text-secondary);
+}
+
+.dialogActions {
+  margin-top: 18px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.dialogButton {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--accent-primary);
+}
+
+.dialogDanger {
+  color: var(--accent-danger);
+}

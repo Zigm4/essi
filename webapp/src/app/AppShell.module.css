@@ -1,0 +1,28 @@
+.shell {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-deepest);
+}
+
+.content {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  /* Mobile-first: a single phone-width column, bottom capsule below. */
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+/* Desktop: sidebar rail on the left, content filling the rest. */
+@media (min-width: 900px) {
+  .shell {
+    flex-direction: row;
+  }
+
+  .content {
+    max-width: 1160px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+}

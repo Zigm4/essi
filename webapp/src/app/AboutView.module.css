@@ -1,0 +1,62 @@
+.wordmark {
+  font-family: var(--font-rounded);
+  font-size: 30px;
+  font-weight: 900;
+  letter-spacing: 4px;
+  color: var(--text-primary);
+}
+
+.version {
+  margin-top: 4px;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.divider {
+  margin: 8px 0;
+  height: 1px;
+  background: var(--border-subtle);
+}
+
+.body {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--text-primary);
+}
+
+.bulletRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 2px 0;
+}
+
+.bulletIcon {
+  flex: none;
+  display: inline-flex;
+  color: var(--accent-success);
+  margin-top: 2px;
+}
+
+.bullets {
+  margin-top: 12px;
+}
+
+.licenseLink {
+  color: var(--accent-secondary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.licenseLink:hover {
+  text-decoration: underline;
+}
+
+.licenseRow {
+  margin-top: 8px;
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}

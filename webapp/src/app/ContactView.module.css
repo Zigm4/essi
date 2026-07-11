@@ -1,0 +1,54 @@
+.chips {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.textarea {
+  margin-top: 12px;
+  width: 100%;
+  min-height: 110px;
+  max-height: 440px;
+  resize: vertical;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.textarea::placeholder {
+  color: var(--text-dim);
+}
+
+.autoHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.autoIcon {
+  display: inline-flex;
+  color: var(--accent-primary);
+}
+
+.autoLabel {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent-primary);
+}
+
+.autoLine {
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.autoLineAccent {
+  color: var(--accent-secondary);
+}

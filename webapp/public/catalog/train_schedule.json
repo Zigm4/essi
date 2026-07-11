@@ -1,0 +1,302 @@
+[
+  {
+    "minute": 0,
+    "zone": 259,
+    "name": "New Haven"
+  },
+  {
+    "minute": 1,
+    "zone": 259,
+    "name": "New Haven"
+  },
+  {
+    "minute": 2,
+    "zone": 283,
+    "name": "Stellar Nexus"
+  },
+  {
+    "minute": 3,
+    "zone": 283,
+    "name": "Stellar Nexus"
+  },
+  {
+    "minute": 4,
+    "zone": 307,
+    "name": null
+  },
+  {
+    "minute": 5,
+    "zone": 306,
+    "name": null
+  },
+  {
+    "minute": 6,
+    "zone": 305,
+    "name": null
+  },
+  {
+    "minute": 7,
+    "zone": 304,
+    "name": null
+  },
+  {
+    "minute": 8,
+    "zone": 303,
+    "name": null
+  },
+  {
+    "minute": 9,
+    "zone": 302,
+    "name": null
+  },
+  {
+    "minute": 10,
+    "zone": 301,
+    "name": "Redwater Junction"
+  },
+  {
+    "minute": 11,
+    "zone": 300,
+    "name": null
+  },
+  {
+    "minute": 12,
+    "zone": 299,
+    "name": null
+  },
+  {
+    "minute": 13,
+    "zone": 323,
+    "name": null
+  },
+  {
+    "minute": 14,
+    "zone": 322,
+    "name": "Redwater Junction"
+  },
+  {
+    "minute": 15,
+    "zone": 322,
+    "name": "Redwater Junction"
+  },
+  {
+    "minute": 16,
+    "zone": 346,
+    "name": null
+  },
+  {
+    "minute": 17,
+    "zone": 345,
+    "name": null
+  },
+  {
+    "minute": 18,
+    "zone": 344,
+    "name": null
+  },
+  {
+    "minute": 19,
+    "zone": 320,
+    "name": null
+  },
+  {
+    "minute": 20,
+    "zone": 319,
+    "name": null
+  },
+  {
+    "minute": 21,
+    "zone": 318,
+    "name": null
+  },
+  {
+    "minute": 22,
+    "zone": 294,
+    "name": "Solara Vein"
+  },
+  {
+    "minute": 23,
+    "zone": 294,
+    "name": "Solara Vein"
+  },
+  {
+    "minute": 24,
+    "zone": 294,
+    "name": "Solara Vein"
+  },
+  {
+    "minute": 25,
+    "zone": 318,
+    "name": null
+  },
+  {
+    "minute": 26,
+    "zone": 319,
+    "name": null
+  },
+  {
+    "minute": 27,
+    "zone": 320,
+    "name": null
+  },
+  {
+    "minute": 28,
+    "zone": 344,
+    "name": null
+  },
+  {
+    "minute": 29,
+    "zone": 345,
+    "name": null
+  },
+  {
+    "minute": 30,
+    "zone": 346,
+    "name": null
+  },
+  {
+    "minute": 31,
+    "zone": 322,
+    "name": "Redwater Junction"
+  },
+  {
+    "minute": 32,
+    "zone": 322,
+    "name": "Redwater Junction"
+  },
+  {
+    "minute": 33,
+    "zone": 301,
+    "name": null
+  },
+  {
+    "minute": 34,
+    "zone": 302,
+    "name": null
+  },
+  {
+    "minute": 35,
+    "zone": 303,
+    "name": null
+  },
+  {
+    "minute": 36,
+    "zone": 304,
+    "name": null
+  },
+  {
+    "minute": 37,
+    "zone": 305,
+    "name": null
+  },
+  {
+    "minute": 38,
+    "zone": 306,
+    "name": null
+  },
+  {
+    "minute": 39,
+    "zone": 282,
+    "name": "Aurelia Mines"
+  },
+  {
+    "minute": 40,
+    "zone": 282,
+    "name": "Aurelia Mines"
+  },
+  {
+    "minute": 41,
+    "zone": 282,
+    "name": "Aurelia Mines"
+  },
+  {
+    "minute": 42,
+    "zone": 282,
+    "name": "Aurelia Mines"
+  },
+  {
+    "minute": 43,
+    "zone": 282,
+    "name": "Aurelia Mines"
+  },
+  {
+    "minute": 44,
+    "zone": 258,
+    "name": "Blackshore District"
+  },
+  {
+    "minute": 45,
+    "zone": 258,
+    "name": "Blackshore District"
+  },
+  {
+    "minute": 46,
+    "zone": 258,
+    "name": "Blackshore District"
+  },
+  {
+    "minute": 47,
+    "zone": 258,
+    "name": "Blackshore District"
+  },
+  {
+    "minute": 48,
+    "zone": 258,
+    "name": "Blackshore District"
+  },
+  {
+    "minute": 49,
+    "zone": 234,
+    "name": "Olympia Docks"
+  },
+  {
+    "minute": 50,
+    "zone": 234,
+    "name": "Olympia Docks"
+  },
+  {
+    "minute": 51,
+    "zone": 234,
+    "name": "Olympia Docks"
+  },
+  {
+    "minute": 52,
+    "zone": 234,
+    "name": "Olympia Docks"
+  },
+  {
+    "minute": 53,
+    "zone": 234,
+    "name": "Olympia Docks"
+  },
+  {
+    "minute": 54,
+    "zone": 234,
+    "name": "Olympia Docks"
+  },
+  {
+    "minute": 55,
+    "zone": 234,
+    "name": "Olympia Docks"
+  },
+  {
+    "minute": 56,
+    "zone": 234,
+    "name": "Olympia Docks"
+  },
+  {
+    "minute": 57,
+    "zone": 235,
+    "name": "Martropolis"
+  },
+  {
+    "minute": 58,
+    "zone": 235,
+    "name": "Martropolis"
+  },
+  {
+    "minute": 59,
+    "zone": 235,
+    "name": "Martropolis"
+  }
+]

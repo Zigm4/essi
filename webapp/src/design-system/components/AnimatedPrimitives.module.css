@@ -1,0 +1,92 @@
+.dot {
+  display: inline-block;
+  border-radius: 50%;
+  flex: none;
+}
+
+.dotPulse {
+  animation: pulse-dot 800ms ease-in-out infinite alternate;
+}
+
+@keyframes pulse-dot {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.35;
+  }
+}
+
+.cursor {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent-primary);
+}
+
+.cursorBlink {
+  animation: blink-cursor 600ms ease-in-out infinite alternate;
+}
+
+@keyframes blink-cursor {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.glow {
+  animation: pulse-glow 1100ms ease-in-out infinite alternate;
+}
+
+@keyframes pulse-glow {
+  from {
+    box-shadow: var(--glow-min);
+  }
+  to {
+    box-shadow: var(--glow-max);
+  }
+}
+
+.glowStatic {
+  box-shadow: var(--glow-static);
+}
+
+.scale {
+  border-radius: 50%;
+  animation: pulse-scale 1000ms ease-in-out infinite alternate;
+}
+
+@keyframes pulse-scale {
+  from {
+    transform: scale(1);
+    box-shadow: var(--scale-glow-min);
+  }
+  to {
+    transform: scale(1.15);
+    box-shadow: var(--scale-glow-max);
+  }
+}
+
+.scaleStatic {
+  border-radius: 50%;
+  box-shadow: var(--scale-glow-static);
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(5%);
+  transition-property: opacity, transform;
+  transition-timing-function: var(--motion-flash-ease);
+}
+
+.revealShown {
+  opacity: 1;
+  transform: none;
+}
+
+.revealInstant {
+  transition: none;
+}

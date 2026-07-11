@@ -1,0 +1,90 @@
+.wrapper {
+  flex: none;
+  background: var(--bg-deepest); /* opaque backdrop — nothing bleeds through */
+  padding: 0 14px calc(12px + env(safe-area-inset-bottom));
+}
+
+/* Desktop uses the sidebar rail instead. */
+@media (min-width: 900px) {
+  .wrapper {
+    display: none;
+  }
+}
+
+.capsule {
+  position: relative;
+  height: 68px;
+  max-width: 680px;
+  margin: 0 auto;
+  border-radius: 34px;
+  overflow: hidden;
+  background: linear-gradient(to bottom right, #0b1422, #050a14);
+  border: 1px solid rgba(79, 195, 255, 0.18);
+  box-shadow:
+    0 12px 28px rgba(0, 0, 0, 0.55),
+    0 8px 24px -6px rgba(79, 195, 255, 0.14);
+  display: flex;
+  padding: 6px;
+}
+
+/* Glass-on-glass selection pill sliding behind the active tab. */
+.pill {
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  width: calc((100% - 12px) / 5);
+  border-radius: 28px;
+  pointer-events: none;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  background: linear-gradient(to bottom right, rgba(255, 255, 255, 0.18), rgba(79, 195, 255, 0.16));
+  border: 1px solid rgba(79, 195, 255, 0.55);
+  box-shadow:
+    0 0 18px -2px rgba(79, 195, 255, 0.45),
+    inset 0 1px 6px rgba(255, 255, 255, 0.1);
+  transition: left 380ms var(--ease-out-cubic);
+}
+
+.pillInstant {
+  transition: none;
+}
+
+.cell {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: #8aa4c2;
+  transition: color 280ms var(--motion-flash-ease);
+  z-index: 1;
+}
+
+.cellActive {
+  color: var(--accent-primary);
+}
+
+.icon {
+  display: inline-flex;
+}
+
+.cellActive .icon {
+  filter: drop-shadow(0 0 8px rgba(79, 195, 255, 0.6));
+}
+
+.label {
+  font-family: var(--font-sans);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}

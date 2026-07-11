@@ -1,0 +1,38 @@
+.button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 50px;
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid var(--border-glow);
+  background: linear-gradient(to right, var(--accent-primary), var(--accent-secondary));
+  box-shadow: 0 0 14px rgba(79, 195, 255, 0.45);
+  color: var(--bg-deepest);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 200ms var(--motion-flash-ease);
+}
+
+.button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.button:disabled {
+  opacity: 0.4;
+  cursor: default;
+  pointer-events: none;
+}
+
+.danger {
+  background: linear-gradient(to right, var(--accent-danger), var(--accent-warn));
+  box-shadow: 0 0 14px rgba(255, 85, 119, 0.45);
+}
+
+.icon {
+  display: inline-flex;
+  color: var(--bg-deepest);
+}

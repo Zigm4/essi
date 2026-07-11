@@ -1,0 +1,40 @@
+.row {
+  display: flex;
+  align-items: center;
+}
+
+.iconBox {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.text {
+  flex: 1;
+  min-width: 0;
+  margin-left: 12px;
+}
+
+.title {
+  font-family: var(--font-sans);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.subtitle {
+  margin-top: 4px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.chevron {
+  flex: none;
+  color: var(--text-dim);
+  display: inline-flex;
+}

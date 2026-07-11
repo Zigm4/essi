@@ -1,0 +1,187 @@
+.screen {
+  height: 100dvh;
+  transition-property: opacity;
+  transition-timing-function: var(--motion-flash-ease);
+  opacity: 1;
+  cursor: pointer;
+}
+
+.exiting {
+  opacity: 0;
+}
+
+.column {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: calc(32px + env(safe-area-inset-top));
+}
+
+.wordmark {
+  margin-top: 24px;
+  font-family: var(--font-rounded);
+  font-size: 38px;
+  font-weight: 900;
+  letter-spacing: 6px;
+  color: var(--text-primary);
+  text-shadow: 0 0 8px rgba(79, 195, 255, 0.55);
+}
+
+.subline {
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 4px;
+  color: var(--accent-secondary);
+}
+
+.spacer {
+  flex: 1;
+  min-height: 16px;
+}
+
+.terminalCard {
+  width: calc(100% - 48px);
+  max-width: 520px;
+  margin: 0 24px 32px;
+  padding: 12px;
+  background: var(--bg-glass);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  box-shadow: 0 0 14px rgba(79, 195, 255, 0.18);
+}
+
+.trafficRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.trafficDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.bootLabel {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.hint {
+  padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 3px;
+  color: var(--accent-secondary);
+  opacity: 0;
+  transition: opacity 220ms var(--motion-flash-ease);
+}
+
+.hintVisible {
+  opacity: 0.7;
+}
+
+/* --- Scan beam (spec §5.5) --- */
+.scanBeam {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -90px;
+  height: 90px;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(79, 195, 255, 0.18),
+    rgba(79, 195, 255, 0.32),
+    rgba(79, 195, 255, 0.18),
+    transparent
+  );
+  animation: scan-beam 4.5s ease-in-out infinite;
+}
+
+@keyframes scan-beam {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(calc(100dvh + 90px));
+  }
+}
+
+/* --- Emblem (spec §5.4) --- */
+.emblem {
+  width: 220px;
+  height: 220px;
+  flex: none;
+}
+
+.rotateCcw14 {
+  animation: rotate-ccw 14s linear infinite;
+  transform-origin: 110px 110px;
+}
+
+.rotateCw45 {
+  animation: rotate-cw 4.5s linear infinite;
+  transform-origin: 110px 110px;
+}
+
+.rotateCw8 {
+  animation: rotate-cw 8s linear infinite;
+  transform-origin: 110px 110px;
+}
+
+@keyframes rotate-cw {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes rotate-ccw {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+.pulseCore {
+  animation: pulse-core 1.6s ease-in-out infinite alternate;
+  transform-origin: 110px 110px;
+}
+
+@keyframes pulse-core {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.06);
+  }
+}
+
+.pulseGlowDisc {
+  animation: pulse-glow-disc 1.6s ease-in-out infinite alternate;
+}
+
+@keyframes pulse-glow-disc {
+  from {
+    opacity: 0.6;
+  }
+  to {
+    opacity: 0.85;
+  }
+}
