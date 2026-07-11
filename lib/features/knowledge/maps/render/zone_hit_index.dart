@@ -62,6 +62,7 @@ class ZoneHitIndex {
     final shapes = <_HitShape>[];
     for (final z in zones) {
       final g = z.geometry;
+      if (g == null) continue; // grid zones are never hit on a flat map
       switch (g) {
         case PolygonGeometry():
           final path = polygonPath(g);

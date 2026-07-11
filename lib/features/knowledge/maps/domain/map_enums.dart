@@ -14,7 +14,11 @@ library;
 /// as an unknown [MapType], but keyed on the schema integer so a *future* additive
 /// bump that this build can't interpret is caught even when the type is known
 /// (AUDIT-V2 §4.7). Bump this when the app gains support for a new schema.
-const int kSupportedMapSchemaVersion = 1;
+///
+/// 2 = grid-sphere documents (`grid` + per-zone `gridPos`/`cellNum`, implicit
+/// cell geometry). Older builds cannot parse a zone without geometry, so a grid
+/// doc authored as schema 2 correctly renders "update required" there.
+const int kSupportedMapSchemaVersion = 2;
 
 /// How a map is rendered. `flat` = 2D image-space, `sphere` = orthographic globe.
 enum MapType {

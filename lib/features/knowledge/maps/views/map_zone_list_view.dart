@@ -315,7 +315,7 @@ class _ZoneRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final kind = _kindLabel(zone.geometry);
+    final kind = _kindLabel(zone);
     return Semantics(
       button: true,
       label: '${zone.name}, $kind',
@@ -346,10 +346,12 @@ class _ZoneRow extends StatelessWidget {
   }
 }
 
-String _kindLabel(ZoneGeometry g) => switch (g) {
+String _kindLabel(MapZone z) => switch (z.geometry) {
       PolygonGeometry() => 'Region',
       SphericalPolygonGeometry() => 'Region',
       MarkerGeometry() => 'Marker',
       SphericalCapGeometry() => 'Area',
       UnknownGeometry() => 'Unavailable',
+      // A grid zone's geometry is its implicit cell quad — a region.
+      null => z.gridPos != null ? 'Region' : 'Unavailable',
     };

@@ -328,9 +328,9 @@ class _MapsSettingsCard extends ConsumerWidget {
     try {
       final repo = await ref.read(mapContentRepositoryProvider.future);
       await repo.clearAllContent();
-      // Forget the seed-imported flag so the bundled baseline re-imports at the
+      // Forget the seed-import guard so the bundled baseline re-imports at the
       // next Knowledge entry, and refresh the dependent providers.
-      await ref.read(sharedPreferencesProvider).remove(kMapSeedImportedPref);
+      await resetMapSeedImportGuard(ref.read(sharedPreferencesProvider));
       ref.invalidate(mapsStoreSizeProvider);
       ref.invalidate(mapsInstalledVersionProvider);
       ref.invalidate(mapsManifestProvider);

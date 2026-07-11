@@ -155,6 +155,7 @@ ZoneRenderItem _buildItem(
     case SphericalPolygonGeometry():
     case SphericalCapGeometry():
     case UnknownGeometry():
+    case null: // grid zone (implicit spherical quad) — nothing on a flat canvas
       bounds = Rect.zero;
   }
 

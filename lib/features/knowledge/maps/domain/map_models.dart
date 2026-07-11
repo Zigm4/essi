@@ -281,12 +281,115 @@ class ZoneFieldSpec {
   }
 }
 
+/// The uniform lon/lat grid of a grid-sphere document (`"grid"`). Cells are
+/// addressed by [GridPos] (0-based `[col, row]`, col 0 at lon −180, row 0 at the
+/// north edge) and carry an *implicit* quad geometry derived here — grid zones
+/// ship no per-zone geometry.
+@immutable
+class MapGrid {
+  final int cols;
+  final int rows;
+
+  const MapGrid({required this.cols, required this.rows});
+
+  /// Must-ignore parse: anything not shaped like `{"cols": int, "rows": int}`
+  /// yields `null` (the doc simply has no grid; zones must then carry geometry).
+  /// Range bounds (cols 2..72, rows 2..36) are the validator's job.
+  static MapGrid? tryParse(Object? raw) {
+    if (raw is! Map) return null;
+    final c = raw['cols'];
+    final r = raw['rows'];
+    if (c is! num || r is! num) return null;
+    final cols = c.toInt();
+    final rows = r.toInt();
+    if (cols != c || rows != r) return null; // non-integer dimensions
+    return MapGrid(cols: cols, rows: rows);
+  }
+
+  double get lonStep => 360.0 / cols;
+  double get latStep => 180.0 / rows;
+
+  /// Implicit bounds of cell ([col], [row]):
+  /// `lonWest = -180 + col·(360/cols)`, `latNorth = 90 − row·(180/rows)`,
+  /// with latitudes clamped to ±[kGridPoleClampLat] for pole robustness.
+  ({double lonWest, double lonEast, double latNorth, double latSouth})
+      cellBounds(int col, int row) {
+    final lonWest = -180.0 + col * lonStep;
+    return (
+      lonWest: lonWest,
+      lonEast: lonWest + lonStep,
+      latNorth: (90.0 - row * latStep)
+          .clamp(-kGridPoleClampLat, kGridPoleClampLat)
+          .toDouble(),
+      latSouth: (90.0 - (row + 1) * latStep)
+          .clamp(-kGridPoleClampLat, kGridPoleClampLat)
+          .toDouble(),
+    );
+  }
+
+  /// Centre of cell ([col], [row]) — the representative point used for label
+  /// placement and front-hemisphere culling.
+  GeoPoint cellCenter(int col, int row) {
+    final b = cellBounds(col, row);
+    return GeoPoint(
+      (b.lonWest + b.lonEast) / 2,
+      (b.latNorth + b.latSouth) / 2,
+    );
+  }
+}
+
+/// A zone's 0-based cell address in a [MapGrid] (`"gridPos": [col, row]`).
+@immutable
+class GridPos {
+  final int col;
+  final int row;
+
+  const GridPos(this.col, this.row);
+
+  /// Must-ignore parse: anything not shaped like a `[col, row]` pair of
+  /// non-negative integers yields `null`. Upper-range checks (col < cols,
+  /// row < rows) are the validator's job.
+  static GridPos? tryParse(Object? raw) {
+    if (raw is! List || raw.length < 2) return null;
+    final c = raw[0];
+    final r = raw[1];
+    if (c is! num || r is! num) return null;
+    final col = c.toInt();
+    final row = r.toInt();
+    if (col != c || row != r) return null; // non-integer indices
+    if (col < 0 || row < 0) return null;
+    return GridPos(col, row);
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is GridPos && other.col == col && other.row == row;
+
+  @override
+  int get hashCode => Object.hash(col, row);
+
+  @override
+  String toString() => 'GridPos($col, $row)';
+}
+
 /// A single interactive region of a map.
 @immutable
 class MapZone {
   final String id;
   final String name;
-  final ZoneGeometry geometry;
+
+  /// Explicit geometry, or `null` for a grid-doc zone addressed by [gridPos]
+  /// (its geometry is the implicit [MapGrid.cellBounds] quad). Never `null`
+  /// outside a grid document — that is a structural parse error.
+  final ZoneGeometry? geometry;
+
+  /// Cell address in the document's [MapGrid], when this zone is a grid cell.
+  final GridPos? gridPos;
+
+  /// Optional display number for a grid cell (the community-spreadsheet cell
+  /// number). Purely presentational.
+  final int? cellNum;
+
   final Offset? labelAnchor;
   final MapThemeOverride? themeOverride;
 
@@ -301,9 +404,16 @@ class MapZone {
     required this.labelAnchor,
     required this.themeOverride,
     required this.fields,
+    this.gridPos,
+    this.cellNum,
   });
 
-  factory MapZone.fromJson(Map<String, dynamic> j) {
+  /// Parses a zone. [grid] is the owning document's grid (or `null`): a zone
+  /// may omit `geometry` IFF the doc has a grid AND the zone carries a usable
+  /// `gridPos` — a zone with neither is a structural error (caught by the
+  /// validator as `malformedStructure`). `gridPos`/`cellNum` themselves parse
+  /// must-ignore (malformed → `null`).
+  factory MapZone.fromJson(Map<String, dynamic> j, {MapGrid? grid}) {
     final anchor = j['labelAnchor'];
     // Per-zone overrides are restricted to {zoneFill, zoneStroke, glow}: a zone
     // may not repaint map-level tokens (background/surface/label/font), which
@@ -312,10 +422,25 @@ class MapZone {
         ? null
         : MapThemeOverride.fromJson(j['themeOverride'] as Map<String, dynamic>)
             .zoneRestricted();
+    final gridPos = GridPos.tryParse(j['gridPos']);
+    final geomJson = j['geometry'];
+    final ZoneGeometry? geometry;
+    if (geomJson == null) {
+      if (grid == null || gridPos == null) {
+        throw const FormatException(
+            'zone has neither geometry nor a usable gridPos in a grid document');
+      }
+      geometry = null; // implicit grid-cell quad
+    } else {
+      geometry = ZoneGeometry.fromJson(geomJson as Map<String, dynamic>);
+    }
+    final cellNumRaw = j['cellNum'];
     return MapZone(
       id: j['id'] as String,
       name: j['name'] as String,
-      geometry: ZoneGeometry.fromJson(j['geometry'] as Map<String, dynamic>),
+      geometry: geometry,
+      gridPos: gridPos,
+      cellNum: cellNumRaw is num ? cellNumRaw.toInt() : null,
       labelAnchor: anchor == null
           ? null
           : Offset(
@@ -336,6 +461,12 @@ class MapDocument {
   final MapType type;
   final MapCanvas? canvas;
   final SphereSpec? sphere;
+
+  /// Uniform lon/lat grid for a grid-sphere document, or `null` for every
+  /// other map. When present, zones may be addressed by [MapZone.gridPos]
+  /// instead of explicit geometry.
+  final MapGrid? grid;
+
   final MapTheme theme;
   final List<ZoneFieldSpec> fieldsSchema;
   final List<MapZone> zones;
@@ -349,24 +480,29 @@ class MapDocument {
     required this.theme,
     required this.fieldsSchema,
     required this.zones,
+    this.grid,
   });
 
-  factory MapDocument.fromJson(Map<String, dynamic> j) => MapDocument(
-    schemaVersion: (j['schemaVersion'] as num).toInt(),
-    id: j['id'] as String,
-    type: MapType.fromWire(j['type']),
-    canvas: j['canvas'] == null
-        ? null
-        : MapCanvas.fromJson(j['canvas'] as Map<String, dynamic>),
-    sphere: j['sphere'] == null
-        ? null
-        : SphereSpec.fromJson(j['sphere'] as Map<String, dynamic>),
-    theme: MapTheme.fromJson(j['theme'] as Map<String, dynamic>?),
-    fieldsSchema: ((j['fieldsSchema'] as List<dynamic>?) ?? const [])
-        .map((f) => ZoneFieldSpec.fromJson(f as Map<String, dynamic>))
-        .toList(growable: false),
-    zones: ((j['zones'] as List<dynamic>?) ?? const [])
-        .map((z) => MapZone.fromJson(z as Map<String, dynamic>))
-        .toList(growable: false),
-  );
+  factory MapDocument.fromJson(Map<String, dynamic> j) {
+    final grid = MapGrid.tryParse(j['grid']);
+    return MapDocument(
+      schemaVersion: (j['schemaVersion'] as num).toInt(),
+      id: j['id'] as String,
+      type: MapType.fromWire(j['type']),
+      canvas: j['canvas'] == null
+          ? null
+          : MapCanvas.fromJson(j['canvas'] as Map<String, dynamic>),
+      sphere: j['sphere'] == null
+          ? null
+          : SphereSpec.fromJson(j['sphere'] as Map<String, dynamic>),
+      grid: grid,
+      theme: MapTheme.fromJson(j['theme'] as Map<String, dynamic>?),
+      fieldsSchema: ((j['fieldsSchema'] as List<dynamic>?) ?? const [])
+          .map((f) => ZoneFieldSpec.fromJson(f as Map<String, dynamic>))
+          .toList(growable: false),
+      zones: ((j['zones'] as List<dynamic>?) ?? const [])
+          .map((z) => MapZone.fromJson(z as Map<String, dynamic>, grid: grid))
+          .toList(growable: false),
+    );
+  }
 }

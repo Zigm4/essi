@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/error_text.dart';
+import '../../../../core/logging.dart';
 import '../../../../design_system/colors.dart';
 import '../../../../design_system/components/app_background.dart';
 import '../../../../design_system/components/glass_card.dart';
@@ -57,6 +59,78 @@ class _TrackerViewState extends ConsumerState<TrackerView> {
     super.dispose();
   }
 
+  /// Resolves pinned tracked-object ids against the catalog for a nicer
+  /// display label + kind; uncatalogued pins fall back to the raw MPC id.
+  List<_PinnedTarget> _resolvePinned(Set<String> ids, TrackerCatalog catalog) {
+    final out = <_PinnedTarget>[];
+    for (final id in ids) {
+      final q = id.trim().toLowerCase();
+      TrackedObjectEntry? match;
+      for (final e in catalog.all) {
+        if (e.identifier.toLowerCase() == q || e.name.toLowerCase() == q) {
+          match = e;
+          break;
+        }
+      }
+      out.add(_PinnedTarget(
+        id: id,
+        label: match?.name ?? id,
+        kind: match?.kind ?? _guessKind(id),
+      ));
+    }
+    out.sort(
+      (a, b) => a.label.toLowerCase().compareTo(b.label.toLowerCase()),
+    );
+    return out;
+  }
+
+  /// Comet designations look like `C/2025 N1`, `P/2016 BA14` or `103P`;
+  /// anything else is treated as an asteroid. Only used for pins the catalog
+  /// can't resolve (kind drives the Horizons COMMAND formatting).
+  CelestialKind _guessKind(String id) {
+    final s = id.trim().toUpperCase();
+    if (RegExp(r'^[CPDXAI]/').hasMatch(s) ||
+        RegExp(r'^[0-9]+[PDI]$').hasMatch(s)) {
+      return CelestialKind.comet;
+    }
+    return CelestialKind.asteroid;
+  }
+
+  /// Same flow as picking from history: prefill with the locked MPC id and
+  /// fire a track immediately.
+  void _trackPinned(_PinnedTarget p) {
+    Haptics.of(ref).tap();
+    final notifier = ref.read(trackerControllerProvider.notifier);
+    final target = TrackTarget(name: p.label, kind: p.kind, mpcID: p.id);
+    _query.text = target.name;
+    notifier.prefill(target);
+    notifier.track();
+  }
+
+  Future<void> _unpin(_PinnedTarget p) async {
+    Haptics.of(ref).selection();
+    try {
+      await ref
+          .read(favoritesRepositoryProvider)
+          .toggle(FavoriteKind.trackedObject, p.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Unpinned.'),
+          duration: Duration(milliseconds: 1500),
+        ),
+      );
+    } catch (e, st) {
+      logError('Failed to unpin tracked object (${p.id}): $e', st);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(friendlyError(e, fallback: "Couldn't unpin.")),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(trackerControllerProvider);
@@ -67,6 +141,11 @@ class _TrackerViewState extends ConsumerState<TrackerView> {
         .suggestions(state.query, limit: 8, kind: state.kind)
         .where((e) => e.name != state.query)
         .toList();
+    final pinnedIds = ref
+            .watch(favoriteIdsProvider(FavoriteKind.trackedObject))
+            .valueOrNull ??
+        const <String>{};
+    final pinned = _resolvePinned(pinnedIds, catalog);
     final isLoading = state.phase is TrackerLoading;
     final canTrack = state.query.trim().isNotEmpty && !isLoading;
 
@@ -188,6 +267,38 @@ class _TrackerViewState extends ConsumerState<TrackerView> {
                       style: AppTypography.body,
                       onChanged: (v) => notifier.setQuery(v),
                     ),
+                    if (pinned.isNotEmpty) ...[
+                      const SizedBox(height: AppSpacing.md),
+                      Row(
+                        children: [
+                          const Icon(Icons.push_pin,
+                              size: 12, color: AppColors.accentPrimary),
+                          const SizedBox(width: AppSpacing.xs),
+                          Text(
+                            'PINNED',
+                            style: AppTypography.mono.copyWith(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 2,
+                              color: AppColors.accentPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: [
+                          for (final p in pinned)
+                            _PinnedChip(
+                              label: p.label,
+                              onTap: () => _trackPinned(p),
+                              onLongPress: () => _unpin(p),
+                            ),
+                        ],
+                      ),
+                    ],
                     if (suggestions.isNotEmpty &&
                         state.lockedMpcID == null) ...[
                       const SizedBox(height: AppSpacing.sm),
@@ -298,6 +409,68 @@ class _TrackerViewState extends ConsumerState<TrackerView> {
               ],
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A pinned tracked-object favorite resolved for display: [id] is the raw
+/// pinned MPC id, [label]/[kind] come from the catalog when it knows the id.
+class _PinnedTarget {
+  const _PinnedTarget({
+    required this.id,
+    required this.label,
+    required this.kind,
+  });
+
+  final String id;
+  final String label;
+  final CelestialKind kind;
+}
+
+/// Chip styled to match the suggestion chips above; tap tracks the pinned
+/// object, long-press unpins it.
+class _PinnedChip extends StatelessWidget {
+  const _PinnedChip({
+    required this.label,
+    required this.onTap,
+    required this.onLongPress,
+  });
+
+  final String label;
+  final VoidCallback onTap;
+  final VoidCallback onLongPress;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      onLongPress: onLongPress,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(
+            color: AppColors.accentPrimary.withValues(alpha: 0.5),
+            width: 0.7,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.push_pin,
+                size: 11, color: AppColors.accentPrimary),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: AppTypography.mono.copyWith(
+                fontSize: 11,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ],
         ),
       ),
     );

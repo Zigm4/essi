@@ -32,6 +32,37 @@ class _FakeBundle extends CachingAssetBundle {
 
 Uint8List _enc(Object json) => Uint8List.fromList(utf8.encode(jsonEncode(json)));
 
+const _docKey = 'assets/maps_seed/dungeon.map.json';
+const _imgKey = 'assets/knowledge/images/hideous-dungeon-map.jpg';
+
+/// A seed manifest carrying the single dungeon map at [contentVersion].
+/// sha/bytes are placeholders — the importer recomputes them.
+Map<String, dynamic> _manifestJson({required String contentVersion}) => {
+      'schemaVersion': 1,
+      'contentVersion': contentVersion,
+      'minAppVersion': '0.1.0',
+      'cdnBase': 'asset:///seed',
+      'maps': [
+        {
+          'id': 'dungeon',
+          'type': 'flat',
+          'title': 'Hideous Dungeon',
+          'icon': 'dungeon',
+          'draft': false,
+          'document': {'path': _docKey, 'sha256': '0' * 64, 'bytes': 0},
+          'assets': [
+            {
+              'path': _imgKey,
+              'sha256': '0' * 64,
+              'bytes': 0,
+              'kind': 'background',
+              'pixelSize': [2448, 3264],
+            },
+          ],
+        },
+      ],
+    };
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -92,31 +123,7 @@ void main() {
     imageBytes = Uint8List.fromList(List<int>.generate(2048, (i) => i % 256));
 
     // Seed manifest: sha/bytes are placeholders — the importer recomputes them.
-    final manifest = {
-      'schemaVersion': 1,
-      'contentVersion': '0-seed',
-      'minAppVersion': '0.1.0',
-      'cdnBase': 'asset:///seed',
-      'maps': [
-        {
-          'id': 'dungeon',
-          'type': 'flat',
-          'title': 'Hideous Dungeon',
-          'icon': 'dungeon',
-          'draft': false,
-          'document': {'path': docKey, 'sha256': '0' * 64, 'bytes': 0},
-          'assets': [
-            {
-              'path': imgKey,
-              'sha256': '0' * 64,
-              'bytes': 0,
-              'kind': 'background',
-              'pixelSize': [2448, 3264],
-            },
-          ],
-        },
-      ],
-    };
+    final manifest = _manifestJson(contentVersion: '0-seed');
 
     bundle = _FakeBundle({
       kMapSeedManifestAsset: _enc(manifest),
@@ -150,8 +157,8 @@ void main() {
     expect(outcome, isA<MapSeedImported>());
     expect((outcome as MapSeedImported).mapCount, 1);
 
-    // Prefs flag set.
-    expect(prefs.getBool(kMapSeedImportedPref), isTrue);
+    // The imported seed version is recorded.
+    expect(prefs.getString(kMapSeedVersionPref), '0-seed');
 
     // Pack row.
     final packs = await db.select(db.mapPacks).get();
@@ -188,7 +195,7 @@ void main() {
     expect(doc.canvas!.width, 2448);
   });
 
-  test('is idempotent: a second call is skipped via the prefs flag', () async {
+  test('is idempotent: a second call at the same version is skipped', () async {
     final importer = buildImporter();
     await importer.ensureImported(now: DateTime(2026, 1, 1));
 
@@ -217,8 +224,8 @@ void main() {
     expect(outcome, isA<MapSeedSkipped>());
     expect((outcome as MapSeedSkipped).reason,
         MapSeedSkipReason.contentAlreadyInstalled);
-    // Flag set so we don't re-check every launch.
-    expect(prefs.getBool(kMapSeedImportedPref), isTrue);
+    // Version recorded so we don't re-check every launch.
+    expect(prefs.getString(kMapSeedVersionPref), '0-seed');
     // No seed pack row was added.
     final packs = await db.select(db.mapPacks).get();
     expect(packs.single.contentVersion, '1.0.0');
@@ -235,11 +242,62 @@ void main() {
     final failed = await broken.ensureImported();
     expect(failed, isA<MapSeedFailed>());
     expect((failed as MapSeedFailed).diskFull, isFalse);
-    expect(prefs.getBool(kMapSeedImportedPref), isNull);
+    expect(prefs.getString(kMapSeedVersionPref), isNull);
 
     // Retry with a working bundle now succeeds.
     final ok = await buildImporter().ensureImported();
     expect(ok, isA<MapSeedImported>());
+  });
+
+  test('re-imports when the bundled seed contentVersion changes', () async {
+    // First launch at 0-seed.
+    final first = await buildImporter().ensureImported(now: DateTime(2026, 1, 1));
+    expect(first, isA<MapSeedImported>());
+
+    // "App update": the bundle now ships 0-seed-2.
+    bundle = _FakeBundle({
+      kMapSeedManifestAsset: _enc(_manifestJson(contentVersion: '0-seed-2')),
+      docKey: docBytes,
+      imgKey: imageBytes,
+    });
+    final second =
+        await buildImporter().ensureImported(now: DateTime(2026, 2, 1));
+    expect(second, isA<MapSeedImported>(),
+        reason: 'a changed bundled version must re-import: $second');
+    expect(prefs.getString(kMapSeedVersionPref), '0-seed-2');
+
+    // The old seed pack is replaced, not stacked next to the new one.
+    final packs = await db.select(db.mapPacks).get();
+    expect(packs.single.contentVersion, '0-seed-2');
+    expect(packs.single.tag, kMapSeedTag);
+
+    // Reads resolve against the new pack.
+    final manifest = await buildRepo().loadInstalledManifest();
+    expect(manifest!.contentVersion, '0-seed-2');
+  });
+
+  test('a legacy bool-flag install re-imports on a new seed version', () async {
+    // Existing install: imported under the old boolean guard, version pref
+    // absent — must be treated as 0-seed.
+    SharedPreferences.setMockInitialValues(
+        <String, Object>{kMapSeedImportedPref: true});
+    prefs = await SharedPreferences.getInstance();
+
+    // Same version bundled → still skipped (no churn for legacy installs)…
+    final same = await buildImporter().ensureImported();
+    expect(same, isA<MapSeedSkipped>());
+    expect(
+        (same as MapSeedSkipped).reason, MapSeedSkipReason.alreadyImported);
+
+    // …but a newer bundled seed re-imports.
+    bundle = _FakeBundle({
+      kMapSeedManifestAsset: _enc(_manifestJson(contentVersion: '0-seed-2')),
+      docKey: docBytes,
+      imgKey: imageBytes,
+    });
+    final bumped = await buildImporter().ensureImported();
+    expect(bumped, isA<MapSeedImported>());
+    expect(prefs.getString(kMapSeedVersionPref), '0-seed-2');
   });
 
   // Guards the REAL committed seed pack (assets/maps_seed/** + the reused KB

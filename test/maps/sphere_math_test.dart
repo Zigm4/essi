@@ -98,13 +98,35 @@ void main() {
   group('orientation helpers', () {
     test('dragBy moves the look-at longitude and round-trips', () {
       final o = GlobeOrientation.fromLatLon(lat: 0, lon: 0);
-      // Drag a quarter-turn worth of pixels horizontally.
+      // Drag a quarter-turn worth of pixels rightward: the surface is pulled
+      // right, so what was one quarter-turn to the WEST (lon −90) now faces
+      // the camera (grab-the-surface, like Google Earth).
       final dragged = o.dragBy(radius * math.pi / 2, 0, radius);
       final centreGeo = unproject(center, dragged, radius, center);
       expect(centreGeo, isNotNull);
-      // Still on the equator, longitude has shifted by ~90°.
+      // Still on the equator, longitude has shifted by 90° westward.
       expect(centreGeo!.lat, closeTo(0, 1e-6));
-      expect(centreGeo.lon.abs(), closeTo(90, 1e-6));
+      expect(centreGeo.lon, closeTo(-90, 1e-6));
+    });
+
+    test('dragBy with positive dx pulls the surface toward +x (right)', () {
+      final o = GlobeOrientation.fromLatLon(lat: 0, lon: 0);
+      // The point at screen centre before the drag…
+      final dragged = o.dragBy(25, 0, radius);
+      // …must move rightward (toward +x) after a rightward drag.
+      final p = project(const GeoPoint(0, 0), dragged, radius, center);
+      expect(p.front, isTrue);
+      expect(p.screen.dx, greaterThan(center.dx + 1));
+      expect(p.screen.dy, closeTo(center.dy, 1e-6));
+    });
+
+    test('dragBy with positive dy pulls the surface toward +y (down)', () {
+      final o = GlobeOrientation.fromLatLon(lat: 0, lon: 0);
+      final dragged = o.dragBy(0, 25, radius);
+      final p = project(const GeoPoint(0, 0), dragged, radius, center);
+      expect(p.front, isTrue);
+      expect(p.screen.dy, greaterThan(center.dy + 1));
+      expect(p.screen.dx, closeTo(center.dx, 1e-6));
     });
 
     test('autoRotate is a pure world spin about the pole', () {

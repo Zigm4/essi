@@ -31,6 +31,17 @@ const int _kCapSegments = 48;
 
 // --- render model ------------------------------------------------------------
 
+/// A zone name that is only the authoring placeholder for an unexplored grid
+/// cell (`Zone 907`). Placeholder-named cells are not labelled on the globe —
+/// 1800 identical "Zone n" labels would be pure noise.
+final RegExp _kPlaceholderName = RegExp(r'^Zone\s+\d+$');
+
+/// Whether a grid zone earns a label: it carries a theme override (an explored,
+/// colored cell) OR a real (non-placeholder, non-empty) name.
+bool isLabelWorthyGridZone(MapZone z) =>
+    z.themeOverride != null ||
+    (z.name.isNotEmpty && !_kPlaceholderName.hasMatch(z.name.trim()));
+
 /// Precomputed, immutable render data for one globe zone. World-space rings are
 /// densified **once** here; the painter only projects them per frame.
 @immutable
@@ -41,8 +52,8 @@ class SphereRenderItem {
   final MapTheme theme;
 
   /// Densified rings in geographic space: `[outline, hole, …]` for a spherical
-  /// polygon, or a single boundary ring for a cap. Never empty for a drawable
-  /// zone.
+  /// polygon, or a single boundary ring for a cap. Empty for a label-only grid
+  /// item ([paintBody] false).
   final List<List<GeoPoint>> rings;
 
   /// Representative interior point, used for front-hemisphere culling and label
@@ -53,12 +64,18 @@ class SphereRenderItem {
   /// zone.
   final TextPainter? label;
 
+  /// Whether the fill/stroke body is painted. `false` for a grid zone that only
+  /// carries a label (unexplored cells never build rings — see
+  /// [buildSphereRender]).
+  final bool paintBody;
+
   const SphereRenderItem({
     required this.zoneId,
     required this.theme,
     required this.rings,
     required this.centroid,
     required this.label,
+    this.paintBody = true,
   });
 }
 
@@ -71,22 +88,97 @@ class SphereRender {
   final List<SphereRenderItem> items;
   final double labelFontSize;
 
+  /// The document's uniform lon/lat grid, or `null` for a free-form sphere.
+  final MapGrid? grid;
+
+  /// Cell address per grid zone id (every `gridPos` zone, including the ~1750
+  /// unexplored ones that build no [SphereRenderItem]) — lets the painter draw
+  /// the selection highlight for any tapped cell on demand.
+  final Map<String, GridPos> gridPosById;
+
+  /// Precomputed graticule polylines (cell-boundary meridians + parallels) in
+  /// geographic space. Empty for non-grid docs.
+  final List<List<GeoPoint>> graticule;
+
   const SphereRender({
     required this.theme,
     required this.items,
     required this.labelFontSize,
+    this.grid,
+    this.gridPosById = const {},
+    this.graticule = const [],
   });
 }
 
 /// Builds a [SphereRender] from a parsed sphere [MapDocument]. Flat / unknown
 /// geometries contribute nothing (they carry empty rings and are skipped).
 ///
+/// For a **grid** document, fill/stroke bodies are built ONLY for zones with a
+/// theme override (Venus ships 1800 cells but only ~46 colored ones — densifying
+/// 1800 rings would be wasted work); labels only for [isLabelWorthyGridZone]
+/// zones. Every `gridPos` is still recorded so picking/selection covers all
+/// cells.
+///
 /// Must run with a live Flutter binding (it lays out label text).
 SphereRender buildSphereRender(MapDocument doc) {
   final base = doc.theme.sanitize();
   const fontSize = 26.0;
 
+  final grid = doc.grid;
   final items = <SphereRenderItem>[];
+
+  if (grid != null && grid.cols > 0 && grid.rows > 0) {
+    final gridPosById = <String, GridPos>{};
+    for (final z in doc.zones) {
+      final pos = z.gridPos;
+      if (pos != null) gridPosById[z.id] = pos;
+      final explicitRings = _ringsFor(z.geometry);
+      final theme = zoneTheme(base, z.themeOverride);
+      if (explicitRings.isNotEmpty) {
+        // A grid doc may still carry hand-authored spherical shapes.
+        items.add(SphereRenderItem(
+          zoneId: z.id,
+          theme: theme,
+          rings: explicitRings,
+          centroid: _centroid(explicitRings.first),
+          label: z.name.isEmpty ? null : _buildLabel(z.name, fontSize, theme),
+        ));
+        continue;
+      }
+      if (pos == null) continue; // not drawable (unknown/flat geometry)
+      final hasBody = z.themeOverride != null;
+      final labelled = isLabelWorthyGridZone(z);
+      if (!hasBody && !labelled) continue; // unexplored cell: graticule only
+      items.add(SphereRenderItem(
+        zoneId: z.id,
+        theme: theme,
+        rings: hasBody
+            ? [
+                gridCellRing(
+                  col: pos.col,
+                  row: pos.row,
+                  cols: grid.cols,
+                  rows: grid.rows,
+                ),
+              ]
+            : const [],
+        centroid: grid.cellCenter(pos.col, pos.row),
+        label: (labelled && z.name.isNotEmpty)
+            ? _buildLabel(z.name, fontSize, theme)
+            : null,
+        paintBody: hasBody,
+      ));
+    }
+    return SphereRender(
+      theme: base,
+      items: items,
+      labelFontSize: fontSize,
+      grid: grid,
+      gridPosById: gridPosById,
+      graticule: _buildGraticule(grid),
+    );
+  }
+
   for (final z in doc.zones) {
     final rings = _ringsFor(z.geometry);
     if (rings.isEmpty) continue; // not a spherical geometry
@@ -104,8 +196,8 @@ SphereRender buildSphereRender(MapDocument doc) {
 }
 
 /// Densified geographic rings for a zone's geometry, or `const []` for a
-/// non-spherical geometry (which the globe cannot draw).
-List<List<GeoPoint>> _ringsFor(ZoneGeometry g) {
+/// non-spherical (or absent) geometry, which the globe cannot draw directly.
+List<List<GeoPoint>> _ringsFor(ZoneGeometry? g) {
   switch (g) {
     case SphericalPolygonGeometry():
       return [for (final r in g.rings) tessellateRing(r)];
@@ -114,8 +206,44 @@ List<List<GeoPoint>> _ringsFor(ZoneGeometry g) {
     case PolygonGeometry():
     case MarkerGeometry():
     case UnknownGeometry():
+    case null:
       return const [];
   }
+}
+
+/// Sample step (degrees) along graticule polylines. Coarser than the 3° used
+/// for cell rings — the graticule is a whole-globe decoration redrawn every
+/// frame, and 4° is visually indistinguishable at these radii.
+const double _kGraticuleStepDeg = 4.0;
+
+/// Precomputes the grid's cell-boundary graticule: one meridian per column
+/// boundary (the ±180 seam is a single line) and the `rows − 1` interior
+/// parallels, each sampled every [_kGraticuleStepDeg].
+List<List<GeoPoint>> _buildGraticule(MapGrid grid) {
+  final lines = <List<GeoPoint>>[];
+  final lonStep = 360.0 / grid.cols;
+  final latStep = 180.0 / grid.rows;
+  for (var c = 0; c < grid.cols; c++) {
+    final lon = -180.0 + c * lonStep;
+    final pts = <GeoPoint>[];
+    for (var lat = -kGridPoleClampLat;
+        lat < kGridPoleClampLat;
+        lat += _kGraticuleStepDeg) {
+      pts.add(GeoPoint(lon, lat));
+    }
+    pts.add(GeoPoint(lon, kGridPoleClampLat));
+    lines.add(pts);
+  }
+  for (var r = 1; r < grid.rows; r++) {
+    final lat = 90.0 - r * latStep;
+    final pts = <GeoPoint>[];
+    for (var lon = -180.0; lon < 180.0; lon += _kGraticuleStepDeg) {
+      pts.add(GeoPoint(lon, lat));
+    }
+    pts.add(GeoPoint(180.0, lat)); // close the circle at the seam
+    lines.add(pts);
+  }
+  return lines;
 }
 
 TextPainter _buildLabel(String name, double fontSize, MapTheme theme) {
@@ -184,6 +312,7 @@ class GlobePainter extends CustomPainter {
     final selectedId = selected.value;
     final dimmedIds = dimmed.value;
 
+    _paintAtmosphere(canvas, center, radius, theme);
     _paintDisc(canvas, center, radius, theme);
 
     // TEXTURE SEAM: to render an equirectangular surface texture later, sample
@@ -197,20 +326,33 @@ class GlobePainter extends CustomPainter {
     canvas.save();
     canvas.clipPath(Path()..addOval(Rect.fromCircle(center: center, radius: radius)));
 
+    _paintGraticule(canvas, orient, radius, center, theme);
+
     SphereRenderItem? selectedItem;
     for (final item in render.items) {
       if (item.zoneId == selectedId) {
         selectedItem = item; // drawn last, on top
         continue;
       }
+      if (!item.paintBody || item.rings.isEmpty) continue; // label-only
       _paintZone(canvas, item, orient, radius, center, strokeWidth,
           selected: false, dimmed: dimmedIds.contains(item.zoneId));
     }
-    if (selectedItem != null) {
+    if (selectedItem != null && selectedItem.paintBody) {
       // A selected zone is never dimmed — selection wins over the filter.
       _paintZone(canvas, selectedItem, orient, radius, center, strokeWidth,
           selected: true, dimmed: false);
+    } else if (selectedId != null) {
+      // A selected grid cell with no prebuilt body (an unexplored or
+      // label-only cell): densify its implicit quad on demand — one small
+      // ring, only while a selection is active.
+      _paintSelectedGridCell(
+          canvas, selectedId, orient, radius, center, strokeWidth);
     }
+
+    // Limb darkening over the zones so their colors wrap around the sphere
+    // instead of ending flat at the silhouette.
+    _paintLimbDarkening(canvas, center, radius, theme);
     canvas.restore();
 
     _paintRim(canvas, center, radius, theme);
@@ -223,27 +365,78 @@ class GlobePainter extends CustomPainter {
     }
   }
 
-  /// Radial-shaded sphere body: a lit highlight toward the upper-left fading to
-  /// a dark terminator at the lower-right.
+  /// Radial-shaded sphere body, lit from the upper-left: the base tint derives
+  /// from `theme.zoneFill` (the planet's body color), brightened toward the
+  /// light source and falling off to near-black past the terminator so the
+  /// disc reads as a lit sphere rather than a flat circle.
   void _paintDisc(Canvas canvas, Offset center, double radius, MapTheme theme) {
     final rect = Rect.fromCircle(center: center, radius: radius);
-    final lit = Color.lerp(theme.surface, theme.glow, 0.22)!;
-    final mid = theme.surface;
-    final dark = Color.lerp(theme.background, const Color(0xFF000000), 0.35)!;
+    final body = Color.lerp(theme.zoneFill, theme.surface, 0.35)!;
+    final lit = Color.lerp(body, theme.glow, 0.30)!;
+    final dark = Color.lerp(body, const Color(0xFF000000), 0.72)!;
     canvas.drawCircle(
       center,
       radius,
       Paint()
         ..shader = RadialGradient(
-          center: const Alignment(-0.45, -0.5),
-          radius: 1.15,
-          colors: [lit, mid, dark],
-          stops: const [0.0, 0.55, 1.0],
+          center: _kLightAlignment,
+          radius: 1.30,
+          colors: [lit, body, dark],
+          stops: const [0.0, 0.48, 1.0],
         ).createShader(rect),
     );
   }
 
-  /// Neon rim: a blurred glow ring hugging the silhouette.
+  /// Screen-space direction of the (fake) light source: upper-left.
+  static const Alignment _kLightAlignment = Alignment(-0.42, -0.46);
+
+  /// Darkens the limb after zones are painted: transparent at the centre,
+  /// `theme.background` at ~55 % alpha at the rim, so zone fills appear to
+  /// curve away with the sphere.
+  void _paintLimbDarkening(
+      Canvas canvas, Offset center, double radius, MapTheme theme) {
+    final rect = Rect.fromCircle(center: center, radius: radius);
+    canvas.drawCircle(
+      center,
+      radius,
+      Paint()
+        ..shader = RadialGradient(
+          colors: [
+            theme.background.withValues(alpha: 0.0),
+            theme.background.withValues(alpha: 0.0),
+            theme.background.withValues(alpha: 0.55),
+          ],
+          stops: const [0.0, 0.62, 1.0],
+        ).createShader(rect),
+    );
+  }
+
+  /// Soft outer halo just outside the disc plus a subtle rim light on the lit
+  /// (upper-left) side — the atmosphere. Drawn *under* the disc so the halo
+  /// only ever bleeds outward.
+  void _paintAtmosphere(
+      Canvas canvas, Offset center, double radius, MapTheme theme) {
+    canvas.drawCircle(
+      center,
+      radius * 1.035,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = radius * 0.075
+        ..color = theme.glow.withValues(alpha: 0.16)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, radius * 0.08),
+    );
+    canvas.drawCircle(
+      center,
+      radius * 1.012,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = radius * 0.028
+        ..color = theme.glow.withValues(alpha: 0.22)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, radius * 0.035),
+    );
+  }
+
+  /// Neon rim hugging the silhouette, plus the inner rim light on the lit side.
   void _paintRim(Canvas canvas, Offset center, double radius, MapTheme theme) {
     canvas.drawCircle(
       center,
@@ -262,6 +455,81 @@ class GlobePainter extends CustomPainter {
         ..strokeWidth = radius * 0.006
         ..color = theme.glow.withValues(alpha: 0.35),
     );
+    // Inner rim light: a blurred arc just inside the limb, centred on the
+    // light direction (upper-left), selling the illuminated edge.
+    final litColor = Color.lerp(theme.glow, const Color(0xFFFFFFFF), 0.55)!;
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius * 0.965),
+      -math.pi * 3 / 4 - math.pi * 0.42, // centred on the upper-left
+      math.pi * 0.84,
+      false,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = radius * 0.035
+        ..color = litColor.withValues(alpha: 0.18)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, radius * 0.05),
+    );
+  }
+
+  /// Thin cell-boundary graticule for grid documents, projected per frame.
+  /// Segments dipping behind the limb simply lift the pen — no clamping needed
+  /// (the disc clip trims strays).
+  void _paintGraticule(Canvas canvas, GlobeOrientation orient, double radius,
+      Offset center, MapTheme theme) {
+    if (render.graticule.isEmpty) return;
+    final path = Path();
+    for (final line in render.graticule) {
+      var pen = false;
+      for (final g in line) {
+        final p = project(g, orient, radius, center);
+        if (!p.front) {
+          pen = false;
+          continue;
+        }
+        if (pen) {
+          path.lineTo(p.screen.dx, p.screen.dy);
+        } else {
+          path.moveTo(p.screen.dx, p.screen.dy);
+          pen = true;
+        }
+      }
+    }
+    canvas.drawPath(
+      path,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = (radius * 0.0035).clamp(0.6, 1.4)
+        ..color = theme.zoneStroke.withValues(alpha: 0.14),
+    );
+  }
+
+  /// Highlights the selected grid cell when it has no prebuilt render body:
+  /// builds the implicit quad ring on demand and paints it with the base theme
+  /// (selection fill + glow), matching [_paintZone]'s look.
+  void _paintSelectedGridCell(Canvas canvas, String zoneId,
+      GlobeOrientation orient, double radius, Offset center, double strokeWidth) {
+    final grid = render.grid;
+    final pos = render.gridPosById[zoneId];
+    if (grid == null || pos == null) return;
+    final c = project(
+        grid.cellCenter(pos.col, pos.row), orient, radius, center);
+    if (!c.front) return;
+    final ring = gridCellRing(
+        col: pos.col, row: pos.row, cols: grid.cols, rows: grid.rows);
+    final path = Path();
+    var moved = false;
+    for (final g in ring) {
+      final o = _projectClamped(g, orient, radius, center);
+      if (moved) {
+        path.lineTo(o.dx, o.dy);
+      } else {
+        path.moveTo(o.dx, o.dy);
+        moved = true;
+      }
+    }
+    path.close();
+    paintPolygonZone(canvas, path, render.theme,
+        strokeWidth: strokeWidth, selected: true);
   }
 
   /// Projects and fills one zone, only when it faces the camera. Back-hemisphere

@@ -70,6 +70,10 @@ class _GlobeViewportState extends ConsumerState<GlobeViewport>
   late Map<String, MapTheme> _themeById;
   late Map<String, GeoPoint> _centroidById;
 
+  /// Grid documents only: zone id per cell, keyed `row * cols + col`. Drives
+  /// the O(1) analytic pick (unproject → cell → id) — no polygon tests.
+  Map<int, String> _gridZoneIdByCell = const {};
+
   Size _viewSize = Size.zero;
   double _zoomStart = 1.0;
   bool _interacting = false;
@@ -124,6 +128,25 @@ class _GlobeViewportState extends ConsumerState<GlobeViewport>
     _zonesById = {for (final z in widget.document.zones) z.id: z};
     _themeById = {for (final i in _render.items) i.zoneId: i.theme};
     _centroidById = {for (final i in _render.items) i.zoneId: i.centroid};
+    final grid = widget.document.grid;
+    _gridZoneIdByCell = grid == null
+        ? const {}
+        : {
+            for (final z in widget.document.zones)
+              if (z.gridPos != null)
+                z.gridPos!.row * grid.cols + z.gridPos!.col: z.id,
+          };
+    // Grid zones have no explicit centroid-bearing render item when they are
+    // unexplored; deep links still need an orientation target.
+    if (grid != null) {
+      for (final z in widget.document.zones) {
+        final pos = z.gridPos;
+        if (pos != null) {
+          _centroidById.putIfAbsent(
+              z.id, () => grid.cellCenter(pos.col, pos.row));
+        }
+      }
+    }
     _degPerSec = widget.document.sphere?.autoRotateDegPerSec ?? 0.0;
   }
 
@@ -188,7 +211,20 @@ class _GlobeViewportState extends ConsumerState<GlobeViewport>
 
   void _onTapUp(TapUpDetails d) {
     final geo = unproject(d.localPosition, _orientation.value, _radius, _center);
-    final id = _hitIndex.hitTest(geo); // null geo (off-disc / limb) → no hit
+    final grid = widget.document.grid;
+    final String? id;
+    if (grid != null) {
+      // Grid docs pick analytically: unproject → cell → O(1) lookup. A null
+      // geo (off-disc / limb tap) clears the selection like everywhere else.
+      if (geo == null) {
+        id = null;
+      } else {
+        final cell = gridCellAt(geo, cols: grid.cols, rows: grid.rows);
+        id = _gridZoneIdByCell[cell.row * grid.cols + cell.col];
+      }
+    } else {
+      id = _hitIndex.hitTest(geo); // null geo (off-disc / limb) → no hit
+    }
     if (id != null) Haptics.of(ref).selection();
     ref.read(selectedZoneProvider(_mapId).notifier).state = id;
   }

@@ -51,6 +51,9 @@ class SphereHitIndex {
     final shapes = <_SphereHit>[];
     for (final z in zones) {
       final g = z.geometry;
+      // Grid zones (implicit cell quads) are picked analytically by the
+      // viewport — never through this index.
+      if (g == null) continue;
       switch (g) {
         case SphericalPolygonGeometry():
           if (g.rings.isEmpty || g.rings.first.length < 3) continue;

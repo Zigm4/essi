@@ -17,10 +17,11 @@ import 'map_blob_store.dart';
 import 'map_content_repository.dart';
 import 'map_fts_index.dart';
 
-/// Content version of the bundled seed pack. Sorts *below* every real content
-/// version (see [compareContentVersions]: `'0-seed'` → `[0, 0]`), so an
-/// installed network pack always supersedes it and anti-rollback never lets the
-/// seed clobber real content.
+/// Content version of the FIRST bundled seed pack. Every seed version sorts
+/// *below* every real content version (see [compareContentVersions]:
+/// `'0-seed…'` → leading `0`), so an installed network pack always supersedes
+/// it and anti-rollback never lets the seed clobber real content. The version
+/// actually imported is read from the bundled manifest (`'0-seed-2'`, …).
 const String kMapSeedContentVersion = '0-seed';
 
 /// Tag recorded for the seed pack (it has no upstream git tag).
@@ -29,9 +30,25 @@ const String kMapSeedTag = 'seed';
 /// Asset key of the bundled seed manifest (see `pubspec.yaml` assets, §4.7).
 const String kMapSeedManifestAsset = 'assets/maps_seed/manifest.json';
 
-/// Prefs flag: the seed has been imported (or deliberately skipped) once, so we
-/// never re-run the import on subsequent launches.
+/// LEGACY prefs flag (boolean): the seed was imported (or deliberately
+/// skipped) once. Superseded by [kMapSeedVersionPref]; still read so existing
+/// installs are treated as having imported the original `'0-seed'` pack (and
+/// therefore re-import when the bundled version moves on).
 const String kMapSeedImportedPref = 'maps.seedImported';
+
+/// Prefs key holding the seed `contentVersion` last imported (or last covered
+/// by real installed content). The import re-runs whenever the bundled
+/// manifest's `contentVersion` differs, so existing installs pick up new seed
+/// maps with an app update.
+const String kMapSeedVersionPref = 'maps.seedImportedVersion';
+
+/// Forgets the seed-import guard (both the legacy flag and the versioned key)
+/// so the bundled baseline re-imports at the next Knowledge entry. Used by
+/// Settings › clear downloaded maps.
+Future<void> resetMapSeedImportGuard(SharedPreferences prefs) async {
+  await prefs.remove(kMapSeedImportedPref);
+  await prefs.remove(kMapSeedVersionPref);
+}
 
 /// Blobs at or above this size are hashed on a background isolate (via
 /// `compute`) to keep a large seed image off the UI isolate; smaller blobs hash
@@ -95,7 +112,9 @@ class MapSeedException implements Exception {
 
 /// Imports the bundled seed pack into the offline blob store + Drift index so
 /// the dynamic-maps feature is fully functional on first launch with no network
-/// (airplane mode). Runs lazily, once, guarded by [kMapSeedImportedPref].
+/// (airplane mode). Runs lazily, guarded by [kMapSeedVersionPref]: once per
+/// bundled seed `contentVersion`, so an app update that ships a newer seed
+/// (new maps) re-imports over the old one on existing installs.
 ///
 /// Unlike the network path ([MapContentRepository.install]) the seed is NOT
 /// re-hashed over the wire — it is authenticated by the app-store signature that
@@ -121,26 +140,52 @@ class MapSeedImporter {
         _bundle = bundle ?? rootBundle,
         _validator = validator;
 
-  /// Imports the seed if it has not been imported and no real content pack is
-  /// installed. Never throws — failures come back as [MapSeedFailed].
-  Future<MapSeedOutcome> ensureImported({DateTime? now}) async {
-    if (_prefs.getBool(kMapSeedImportedPref) ?? false) {
-      return const MapSeedSkipped(MapSeedSkipReason.alreadyImported);
-    }
+  /// The seed contentVersion this install has already imported (or covered by
+  /// real content), or `null` when the seed never ran. A legacy install that
+  /// only carries the boolean flag is mapped to the original `'0-seed'` — the
+  /// only version that ever shipped under that flag.
+  String? _importedSeedVersion() =>
+      _prefs.getString(kMapSeedVersionPref) ??
+      ((_prefs.getBool(kMapSeedImportedPref) ?? false)
+          ? kMapSeedContentVersion
+          : null);
 
+  Future<void> _markImported(String contentVersion) =>
+      _prefs.setString(kMapSeedVersionPref, contentVersion);
+
+  /// Imports the seed if the bundled pack's `contentVersion` has not been
+  /// imported yet and no real content pack is installed. A changed bundled
+  /// version (an app update shipping new seed maps) re-imports over the old
+  /// seed. Never throws — failures come back as [MapSeedFailed].
+  Future<MapSeedOutcome> ensureImported({DateTime? now}) async {
     try {
-      // If real content is already installed (e.g. the user was online before
-      // Knowledge was first opened), the seed is redundant — flag & skip.
+      // Load + decode the bundled seed manifest first: its contentVersion IS
+      // the import guard (a boolean flag would strand existing installs on the
+      // first seed forever).
+      final manifestStr = await _bundle.loadString(kMapSeedManifestAsset);
+      final manifestJson = jsonDecode(manifestStr) as Map<String, dynamic>;
+      final bundledVersion =
+          manifestJson['contentVersion'] as String? ?? kMapSeedContentVersion;
+
+      if (_importedSeedVersion() == bundledVersion) {
+        return const MapSeedSkipped(MapSeedSkipReason.alreadyImported);
+      }
+
+      // If REAL content is already installed (e.g. the user was online before
+      // Knowledge was first opened), the seed is redundant — record & skip.
+      // An installed *seed* pack does NOT count: that is exactly the pack a
+      // version bump must replace.
       final existing = await (_db.select(_db.mapPacks)
             ..where((t) => t.state.equals('installed')))
           .get();
-      if (existing.isNotEmpty) {
-        await _prefs.setBool(kMapSeedImportedPref, true);
+      if (existing.any((p) => p.tag != kMapSeedTag)) {
+        await _markImported(bundledVersion);
         return const MapSeedSkipped(MapSeedSkipReason.contentAlreadyInstalled);
       }
 
-      final imported = await _import(now: now ?? DateTime.now());
-      await _prefs.setBool(kMapSeedImportedPref, true);
+      final imported =
+          await _import(manifestJson, now: now ?? DateTime.now());
+      await _markImported(bundledVersion);
       return imported;
     } on FileSystemException catch (e, s) {
       logError(e, s);
@@ -151,18 +196,19 @@ class MapSeedImporter {
     }
   }
 
-  Future<MapSeedImported> _import({required DateTime now}) async {
-    // 1. Load + decode the seed manifest from the bundle.
-    final manifestStr = await _bundle.loadString(kMapSeedManifestAsset);
-    final manifestJson = jsonDecode(manifestStr) as Map<String, dynamic>;
-
+  Future<MapSeedImported> _import(
+    Map<String, dynamic> manifestJson, {
+    required DateTime now,
+  }) async {
     final blobs = <_SeedBlob>[];
     final fileRows = <MapPackFilesCompanion>[];
     final ftsRows = <ZoneFtsRow>[];
 
-    // 2. For each map, load its document + assets from the bundle, hash them,
+    // 1. For each map, load its document + assets from the bundle, hash them,
     //    and PATCH the manifest's sha256/bytes to the real local values (the
     //    file ships with placeholders — the seed is trusted, not wire-verified).
+    //    (The manifest itself was already loaded/decoded by ensureImported —
+    //    its contentVersion is the import guard.)
     final maps = (manifestJson['maps'] as List<dynamic>);
     for (final rawMap in maps) {
       final mapJson = rawMap as Map<String, dynamic>;
@@ -190,7 +236,7 @@ class MapSeedImporter {
       }
     }
 
-    // 3. Re-encode + validate the patched manifest.
+    // 2. Re-encode + validate the patched manifest.
     final manifestBytes =
         Uint8List.fromList(utf8.encode(jsonEncode(manifestJson)));
     final manifestSha = await _sha(manifestBytes);
@@ -204,7 +250,7 @@ class MapSeedImporter {
     final manifest = manifestRes.value;
     final cv = manifest.contentVersion;
 
-    // 4. Validate every non-draft document and project its FTS rows.
+    // 3. Validate every non-draft document and project its FTS rows.
     final files = <MapPackFilesCompanion>[
       MapPackFilesCompanion.insert(
         contentVersion: cv,
@@ -246,15 +292,29 @@ class MapSeedImporter {
     }
     fileRows.addAll(files);
 
-    // 5. Persist blobs (trusted — already hashed above). A disk-full write
+    // 4. Persist blobs (trusted — already hashed above). A disk-full write
     //    throws FileSystemException, caught by ensureImported → MapSeedFailed.
     await _store.writeTrusted(manifestBytes, manifestSha);
     for (final b in blobs) {
       await _store.writeTrusted(b.bytes, b.sha256);
     }
 
-    // 6. Commit the pack index + FTS transactionally.
+    // 5. Commit the pack index + FTS transactionally. Any PREVIOUS seed pack
+    //    (an older bundled contentVersion) is dropped in the same transaction —
+    //    a superseded seed must not linger as a second installed pack.
     await _db.transaction(() async {
+      final oldSeeds = await (_db.select(_db.mapPacks)
+            ..where((t) =>
+                t.tag.equals(kMapSeedTag) & t.contentVersion.equals(cv).not()))
+          .get();
+      for (final old in oldSeeds) {
+        await (_db.delete(_db.mapPackFiles)
+              ..where((t) => t.contentVersion.equals(old.contentVersion)))
+            .go();
+        await (_db.delete(_db.mapPacks)
+              ..where((t) => t.contentVersion.equals(old.contentVersion)))
+            .go();
+      }
       await _db.into(_db.mapPacks).insertOnConflictUpdate(
             MapPacksCompanion.insert(
               contentVersion: cv,

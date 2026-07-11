@@ -434,9 +434,9 @@ class MapContentRepository {
   /// and the last-check timestamp so the next check re-fetches cleanly. Only
   /// touches local state — never server state.
   ///
-  /// The bundled seed is NOT re-imported here (the seed-imported flag lives in
+  /// The bundled seed is NOT re-imported here (the seed-import guard lives in
   /// the importer's namespace); callers that want the seed baseline back should
-  /// reset [kMapSeedImportedPref] and re-run the import provider afterwards.
+  /// call `resetMapSeedImportGuard` and re-run the import provider afterwards.
   Future<void> clearAllContent() async {
     await _db.transaction(() async {
       await _db.delete(_db.mapPackFiles).go();

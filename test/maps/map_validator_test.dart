@@ -85,7 +85,7 @@ void main() {
         byteLength: 500,
       );
       expect(r.isOk, isTrue);
-      expect(r.valueOrNull!.zones.single.geometry.vertexCount, 5);
+      expect(r.valueOrNull!.zones.single.geometry!.vertexCount, 5);
     });
 
     test('valid pointer parses', () {
@@ -147,13 +147,28 @@ void main() {
       expect((r as MapParseError).code, MapValidationCode.tooManyFields);
     });
 
-    test('over 12 enum options rejected', () {
+    test('20 enum options accepted (a real map needs a 17-option region enum)',
+        () {
       final fields = [
         {
           'key': 'k',
           'label': 'L',
           'type': 'enum',
-          'options': [for (var i = 0; i < 13; i++) 'o$i'],
+          'options': [for (var i = 0; i < 20; i++) 'o$i'],
+        },
+      ];
+      final r = _validator.validateDocument(_document(fields: fields),
+          byteLength: 1000);
+      expect(r.isOk, isTrue);
+    });
+
+    test('over 20 enum options rejected', () {
+      final fields = [
+        {
+          'key': 'k',
+          'label': 'L',
+          'type': 'enum',
+          'options': [for (var i = 0; i < 21; i++) 'o$i'],
         },
       ];
       final r = _validator.validateDocument(_document(fields: fields),

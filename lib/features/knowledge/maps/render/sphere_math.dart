@@ -4,7 +4,7 @@ import 'dart:ui' show Offset;
 import 'package:flutter/foundation.dart';
 import 'package:vector_math/vector_math_64.dart' show Matrix3, Quaternion, Vector3;
 
-import '../domain/map_geometry.dart' show GeoPoint;
+import '../domain/map_geometry.dart' show GeoPoint, kGridPoleClampLat;
 
 /// Pure-Dart math kit for the orthographic globe (AUDIT-V2 §4.5 Plan A).
 ///
@@ -76,10 +76,17 @@ class GlobeOrientation {
 
   /// Rotate in response to a screen drag of ([dxPixels], [dyPixels]) over a globe
   /// of the given [radius]. Horizontal drag spins about the view-up axis,
-  /// vertical drag about the view-right axis; content follows the finger.
+  /// vertical drag about the view-right axis; content follows the finger
+  /// (dragging right pulls the surface right, like Google Earth).
+  ///
+  /// NOTE on signs: vector_math's `Quaternion.rotated` applies the *conjugate*
+  /// rotation (`q̄·v·q`), i.e. axisAngle(axis, θ).rotated(v) turns `v` by −θ
+  /// about `axis`. Both angles below are negated so the on-screen motion
+  /// matches the finger on both axes (the horizontal sign was inverted before —
+  /// content moved against the finger left/right; vertical was already correct).
   GlobeOrientation dragBy(double dxPixels, double dyPixels, double radius) {
     if (radius <= 0) return this;
-    final yaw = Quaternion.axisAngle(Vector3(0, 1, 0), dxPixels / radius);
+    final yaw = Quaternion.axisAngle(Vector3(0, 1, 0), -dxPixels / radius);
     final pitch = Quaternion.axisAngle(Vector3(1, 0, 0), -dyPixels / radius);
     // View-space increment applied after the current orientation. Per
     // vector_math's composition rule the current orientation goes first (left).
@@ -199,6 +206,61 @@ bool pointInSphericalPolygon(GeoPoint point, List<List<GeoPoint>> rings) {
 bool pointInSphericalCap(GeoPoint point, GeoPoint center, double radiusDeg) {
   final d = _angleBetween(_worldVec(point), _worldVec(center));
   return d <= _deg2rad * radiusDeg + 1e-9; // inclusive boundary (fp-tolerant)
+}
+
+// --- uniform lon/lat grid (grid-sphere documents) ------------------------------
+
+/// Densified boundary ring for one cell of a uniform [cols]×[rows] lon/lat grid
+/// (the implicit geometry of a `gridPos` zone).
+///
+/// The two parallel (constant-latitude) edges are subdivided every
+/// ~[maxLonStepDeg] of longitude — a parallel is a small circle, so it must be
+/// sampled, not slerped; the meridian edges are great circles and need only
+/// their two endpoints. Latitudes are clamped to ±[kGridPoleClampLat] so
+/// pole-touching rows stay numerically robust. The ring is open (no repeated
+/// closing vertex), matching [tessellateRing]'s convention.
+List<GeoPoint> gridCellRing({
+  required int col,
+  required int row,
+  required int cols,
+  required int rows,
+  double maxLonStepDeg = 3.0,
+}) {
+  final lonStep = 360.0 / cols;
+  final latStep = 180.0 / rows;
+  final lonWest = -180.0 + col * lonStep;
+  final latNorth = (90.0 - row * latStep)
+      .clamp(-kGridPoleClampLat, kGridPoleClampLat)
+      .toDouble();
+  final latSouth = (90.0 - (row + 1) * latStep)
+      .clamp(-kGridPoleClampLat, kGridPoleClampLat)
+      .toDouble();
+  final n = math.max(1, (lonStep / maxLonStepDeg).ceil());
+  final out = <GeoPoint>[];
+  // South edge west→east, then the east meridian (implicit 2-point edge), the
+  // north edge east→west, and the west meridian closes the ring implicitly.
+  for (var i = 0; i <= n; i++) {
+    out.add(GeoPoint(lonWest + lonStep * i / n, latSouth));
+  }
+  for (var i = n; i >= 0; i--) {
+    out.add(GeoPoint(lonWest + lonStep * i / n, latNorth));
+  }
+  return out;
+}
+
+/// Analytic cell lookup for a uniform [cols]×[rows] lon/lat grid: the cell
+/// containing [point], clamped into range. O(1) — grid picking never runs
+/// polygon tests. `col = ⌊(lon+180)/(360/cols)⌋`, `row = ⌊(90−lat)/(180/rows)⌋`.
+({int col, int row}) gridCellAt(
+  GeoPoint point, {
+  required int cols,
+  required int rows,
+}) {
+  final col =
+      ((point.lon + 180.0) / (360.0 / cols)).floor().clamp(0, cols - 1);
+  final row =
+      ((90.0 - point.lat) / (180.0 / rows)).floor().clamp(0, rows - 1);
+  return (col: col, row: row);
 }
 
 // --- internals ---------------------------------------------------------------

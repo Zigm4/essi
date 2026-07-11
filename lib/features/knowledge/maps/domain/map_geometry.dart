@@ -2,6 +2,11 @@ import 'dart:ui' show Offset;
 
 import 'package:flutter/foundation.dart';
 
+/// Latitude clamp (degrees) applied to the implicit geometry of grid cells so
+/// pole-touching rows stay numerically robust (a vertex exactly at ±90° has an
+/// undefined longitude and degenerate winding).
+const double kGridPoleClampLat = 89.5;
+
 /// A longitude/latitude pair in **degrees** (GeoJSON order: lon, lat) used by
 /// the spherical geometries. Kept distinct from [Offset] (which is canvas px)
 /// so the two coordinate spaces never get silently mixed.

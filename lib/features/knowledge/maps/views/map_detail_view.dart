@@ -18,6 +18,7 @@ import '../domain/map_enums.dart';
 import '../domain/map_models.dart';
 import '../widgets/flat_map_viewport.dart';
 import '../widgets/globe_viewport.dart';
+import '../widgets/map_grid_view.dart';
 import 'map_notes_list_view.dart';
 import 'map_zone_list_view.dart';
 
@@ -48,6 +49,11 @@ class _MapDetailViewState extends ConsumerState<MapDetailView> {
   /// without rebuilding the viewport / resetting its transform.
   final ValueNotifier<Set<String>> _dimmed =
       ValueNotifier<Set<String>>(const {});
+
+  /// Grid-sphere docs only: whether the textual Grid representation is shown
+  /// instead of the Globe. Local view state — selection is shared between the
+  /// two via [selectedZoneProvider], so toggling keeps the open zone.
+  bool _gridMode = false;
 
   @override
   void dispose() {
@@ -95,6 +101,12 @@ class _MapDetailViewState extends ConsumerState<MapDetailView> {
             ),
           if (doc != null)
             _MyNotesButton(document: doc, title: title),
+          if (doc != null && doc.grid != null)
+            IconButton(
+              tooltip: _gridMode ? 'Globe view' : 'Grid view',
+              icon: Icon(_gridMode ? Icons.public : Icons.grid_view),
+              onPressed: () => setState(() => _gridMode = !_gridMode),
+            ),
           if (canListZones)
             IconButton(
               tooltip: 'List of zones',
@@ -184,6 +196,19 @@ class _MapDetailViewState extends ConsumerState<MapDetailView> {
             icon: Icons.warning_amber,
             title: 'Update required',
             message: 'This globe needs a newer app version to display.',
+          );
+        }
+        // Grid-sphere docs can flip to their textual Grid representation via
+        // the app-bar toggle; the Globe stays the default.
+        if (doc.grid != null && _gridMode) {
+          return _withFilters(
+            doc,
+            _GridPane(
+              document: doc,
+              mapTitle: descriptor?.title ?? doc.id,
+              dimmed: _dimmed,
+              initialZoneId: widget.initialZoneId,
+            ),
           );
         }
         return _withFilters(
@@ -378,6 +403,39 @@ class _SpherePane extends StatelessWidget {
       label: 'Interactive globe. Drag to rotate, pinch to zoom, tap a region '
           'for details, or use the List of zones button in the top bar.',
       child: GlobeViewport(
+        document: document,
+        mapTitle: mapTitle,
+        dimmed: dimmed,
+        initialZoneId: initialZoneId,
+      ),
+    );
+  }
+}
+
+/// The textual Grid representation of a grid-sphere map — the pan/zoomable
+/// cols × rows table. Semantically labelled like its siblings; rows/cells are
+/// still canvas-painted, so the "List of zones" alternative remains the
+/// screen-reader path.
+class _GridPane extends StatelessWidget {
+  const _GridPane({
+    required this.document,
+    required this.mapTitle,
+    required this.dimmed,
+    this.initialZoneId,
+  });
+
+  final MapDocument document;
+  final String mapTitle;
+  final ValueListenable<Set<String>> dimmed;
+  final String? initialZoneId;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      container: true,
+      label: 'Map grid. Pan and zoom the table, tap a cell for details, or '
+          'use the List of zones button in the top bar.',
+      child: MapGridView(
         document: document,
         mapTitle: mapTitle,
         dimmed: dimmed,

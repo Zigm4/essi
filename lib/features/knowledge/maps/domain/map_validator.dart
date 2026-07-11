@@ -15,9 +15,20 @@ class MapLimits {
   // Structural counts.
   static const int maxMaps = 60;
   static const int maxZonesPerMap = 500;
+
+  /// Absolute zone ceiling for a *grid* document: a grid doc may carry up to
+  /// `cols × rows` zones (one per cell), never more than this.
+  static const int maxZonesPerGridMap = 2600;
+
   static const int maxVerticesPerZone = 5000;
   static const int maxFieldsSchema = 25;
-  static const int maxOptionsPerField = 12;
+  static const int maxOptionsPerField = 20;
+
+  // Grid bounds (grid-sphere documents).
+  static const int minGridCols = 2;
+  static const int maxGridCols = 72;
+  static const int minGridRows = 2;
+  static const int maxGridRows = 36;
 
   // Image bounds (validated from manifest-declared metadata).
   static const int maxImageBytes = 8 * 1024 * 1024; // 8 MB
@@ -205,10 +216,32 @@ class MapContentValidator {
         '${doc.fieldsSchema.length} fields > ${MapLimits.maxFieldsSchema} cap',
       );
     }
-    if (doc.zones.length > MapLimits.maxZonesPerMap) {
+    // Grid bounds first: the zone cap for a grid doc is derived from them.
+    final grid = doc.grid;
+    if (grid != null) {
+      if (grid.cols < MapLimits.minGridCols ||
+          grid.cols > MapLimits.maxGridCols ||
+          grid.rows < MapLimits.minGridRows ||
+          grid.rows > MapLimits.maxGridRows) {
+        return MapParseError(
+          MapValidationCode.invalidBounds,
+          'grid ${grid.cols}x${grid.rows} outside '
+          '${MapLimits.minGridCols}..${MapLimits.maxGridCols} x '
+          '${MapLimits.minGridRows}..${MapLimits.maxGridRows}',
+        );
+      }
+    }
+    // A grid doc may carry one zone per cell (ceiling maxZonesPerGridMap);
+    // every other doc keeps the 500 cap.
+    final zoneCap = grid == null
+        ? MapLimits.maxZonesPerMap
+        : (grid.cols * grid.rows < MapLimits.maxZonesPerGridMap
+            ? grid.cols * grid.rows
+            : MapLimits.maxZonesPerGridMap);
+    if (doc.zones.length > zoneCap) {
       return MapParseError(
         MapValidationCode.tooManyZones,
-        '${doc.zones.length} zones > ${MapLimits.maxZonesPerMap} cap',
+        '${doc.zones.length} zones > $zoneCap cap',
       );
     }
     _Fail? fail = _cap(doc.id, MapLimits.maxIdLength, 'id');
@@ -233,12 +266,36 @@ class MapContentValidator {
       }
     }
     if (fail == null) {
+      final seenCells = grid == null ? null : <int>{};
       for (final z in doc.zones) {
         fail = _checkZone(z);
+        if (fail == null && grid != null && z.gridPos != null) {
+          fail = _checkGridPos(z, grid, seenCells!);
+        }
         if (fail != null) break;
       }
     }
     return _wrap(fail, doc);
+  }
+
+  /// Grid-cell address checks for one zone of a grid doc: in range and not a
+  /// duplicate of another zone's cell. [seen] accumulates visited cell keys.
+  _Fail? _checkGridPos(MapZone z, MapGrid grid, Set<int> seen) {
+    final pos = z.gridPos!;
+    if (pos.col >= grid.cols || pos.row >= grid.rows) {
+      return _Fail(
+        MapValidationCode.invalidBounds,
+        'zone ${z.id}: gridPos [${pos.col}, ${pos.row}] outside '
+        '${grid.cols}x${grid.rows} grid',
+      );
+    }
+    if (!seen.add(pos.row * grid.cols + pos.col)) {
+      return _Fail(
+        MapValidationCode.invalidBounds,
+        'zone ${z.id}: duplicate gridPos [${pos.col}, ${pos.row}]',
+      );
+    }
+    return null;
   }
 
   // --- descriptor / zone / field checks --------------------------------------
@@ -319,7 +376,8 @@ class MapContentValidator {
     final fail = _cap(z.id, MapLimits.maxIdLength, 'zone.id') ??
         _cap(z.name, MapLimits.maxZoneNameLength, 'zone.name');
     if (fail != null) return fail;
-    final vc = z.geometry.vertexCount;
+    // A grid zone without explicit geometry has an implicit 4-vertex quad.
+    final vc = z.geometry?.vertexCount ?? 4;
     if (vc > MapLimits.maxVerticesPerZone) {
       return _Fail(MapValidationCode.tooManyVertices,
           'zone ${z.id}: $vc vertices > ${MapLimits.maxVerticesPerZone} cap');
