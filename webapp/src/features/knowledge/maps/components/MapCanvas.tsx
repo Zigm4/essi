@@ -155,8 +155,14 @@ export function MapCanvas({
   const interactingRef = useRef(false);
 
   const markDirty = (): void => {
-    dirtyRef.current = true;
-    scheduleFrame();
+    // Paint the current state immediately so the map never depends on
+    // requestAnimationFrame for a frame it needs *now* — browsers pause rAF in
+    // hidden/backgrounded tabs and throttle it on restore, which would
+    // otherwise leave the canvas blank. The rAF loop (scheduleFrame) is used
+    // only to drive the optional decorative globe auto-rotation.
+    dirtyRef.current = false;
+    draw();
+    if (wantsAnimation()) scheduleFrame();
   };
 
   const canvasSize = (): { w: number; h: number } => {
@@ -354,6 +360,19 @@ export function MapCanvas({
   };
 
   // --- rAF loop (continuous only while the globe is auto-rotating) -----------
+  /** True only when the decorative globe spin should drive a continuous loop. */
+  const wantsAnimation = (): boolean => {
+    const s = stateRef.current;
+    const autoDeg = s.doc.sphere?.autoRotateDegPerSec ?? 0;
+    return (
+      s.mode === 'globe' &&
+      rendersRef.current.sphere !== null &&
+      autoDeg > 0 &&
+      !s.reducedMotion &&
+      !interactingRef.current
+    );
+  };
+
   const scheduleFrame = (): void => {
     if (rafRef.current !== null) return;
     rafRef.current = requestAnimationFrame(tick);
@@ -362,14 +381,8 @@ export function MapCanvas({
   const tick = (ts: number): void => {
     rafRef.current = null;
     const s = stateRef.current;
-    const sphereRender = rendersRef.current.sphere;
     const autoDeg = s.doc.sphere?.autoRotateDegPerSec ?? 0;
-    const animating =
-      s.mode === 'globe' &&
-      sphereRender !== null &&
-      autoDeg > 0 &&
-      !s.reducedMotion &&
-      !interactingRef.current;
+    const animating = wantsAnimation();
 
     if (animating) {
       if (lastTsRef.current === null) lastTsRef.current = ts;
