@@ -139,31 +139,49 @@ export function drawGridTable(
 ): void {
   ctx.clearRect(0, 0, render.canvasWidth, render.canvasHeight);
 
-  // Cell fills.
-  for (const cell of render.cells) {
-    const dim = opts.dimmed.has(cell.zoneId);
-    const baseAlpha = cell.explored ? 0.42 : 0.08;
-    const alpha = dim ? baseAlpha * DIM_ALPHA : baseAlpha;
-    const fill = cell.explored ? cell.theme.zoneFill : render.theme.zoneFill;
-    ctx.fillStyle = colorAlpha(fill, alpha);
-    ctx.fillRect(cell.rect.x, cell.rect.y, cell.rect.w, cell.rect.h);
-  }
-
-  // Grid lines.
-  const lines = new Path2D();
+  // Faint base grid so empty (uncharted) cells still read as a lattice.
+  const baseGrid = new Path2D();
   for (let c = 0; c <= render.cols; c++) {
     const x = c * GRID_CELL_WIDTH;
-    lines.moveTo(x, 0);
-    lines.lineTo(x, render.canvasHeight);
+    baseGrid.moveTo(x, 0);
+    baseGrid.lineTo(x, render.canvasHeight);
   }
   for (let r = 0; r <= render.rows; r++) {
     const y = r * GRID_CELL_HEIGHT;
-    lines.moveTo(0, y);
-    lines.lineTo(render.canvasWidth, y);
+    baseGrid.moveTo(0, y);
+    baseGrid.lineTo(render.canvasWidth, y);
   }
   ctx.lineWidth = 1;
-  ctx.strokeStyle = colorAlpha(render.theme.zoneStroke, 0.18);
-  ctx.stroke(lines);
+  ctx.strokeStyle = colorAlpha(render.theme.zoneStroke, 0.1);
+  ctx.stroke(baseGrid);
+
+  // Cell fills as inset, rounded "tiles" so charted zones read as distinct
+  // chips instead of one continuous wash — richer alpha, a top-light sheen and
+  // a colored hairline border give the grid depth.
+  const INSET = 2;
+  const RADIUS = 4;
+  for (const cell of render.cells) {
+    if (!cell.explored) continue; // uncharted cells stay as bare lattice
+    const dim = opts.dimmed.has(cell.zoneId);
+    const alpha = dim ? 0.62 * DIM_ALPHA : 0.62;
+    const x = cell.rect.x + INSET;
+    const y = cell.rect.y + INSET;
+    const w = cell.rect.w - INSET * 2;
+    const h = cell.rect.h - INSET * 2;
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, h, RADIUS);
+    ctx.fillStyle = colorAlpha(cell.theme.zoneFill, alpha);
+    ctx.fill();
+    // Top-light sheen for a subtle 3D chip feel.
+    const sheen = ctx.createLinearGradient(x, y, x, y + h);
+    sheen.addColorStop(0, colorAlpha({ r: 255, g: 255, b: 255, a: 1 }, dim ? 0.04 : 0.1));
+    sheen.addColorStop(0.5, colorAlpha({ r: 255, g: 255, b: 255, a: 1 }, 0));
+    ctx.fillStyle = sheen;
+    ctx.fill();
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = colorAlpha(cell.theme.zoneStroke, dim ? 0.25 : 0.6);
+    ctx.stroke();
+  }
 
   // Texts. Dimmed cells drawn through one shared 30% layer.
   const showNames = opts.scale >= render.nameLodScale;

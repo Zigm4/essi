@@ -90,7 +90,7 @@ export function BootEmblem() {
         </>
       )}
 
-      {/* Core hexagon 56×56 with "UD". */}
+      {/* Core hexagon 56×56 with "ES". */}
       <g className={reduced ? undefined : styles.pulseCore}>
         <path
           d={hexagonPath(c, c, 28)}
@@ -109,7 +109,7 @@ export function BootEmblem() {
           letterSpacing={2}
           fill="#03060B"
         >
-          UD
+          ES
         </text>
       </g>
     </svg>

@@ -23,7 +23,7 @@ export function DisclaimerView() {
           <span className={styles.headline}>Unofficial fan project</span>
         </div>
         <div className={styles.body}>
-          Underdeck is an independent companion app made by a player for the UP55 community.
+          ESSI is an independent companion app made by a player for the UP55 community.
         </div>
         <div className={styles.body}>
           It is not affiliated with, endorsed by, or sponsored by the creator of Underpunks55.
@@ -35,7 +35,7 @@ export function DisclaimerView() {
         <div className={styles.body}>{`${gameTitle} is created by ${gameCreator}.`}</div>
         <div className={styles.body}>
           All in-game terminology, lore, zone names and bot commands referenced in this app belong
-          to the original creators. Underdeck only mirrors information that is freely visible in
+          to the original creators. ESSI only mirrors information that is freely visible in
           the public Discord bot.
         </div>
       </GlassCard>
@@ -69,7 +69,7 @@ export function DisclaimerView() {
         <SectionHeader title="Trademarks & assets" />
         <div className={styles.body}>
           The names "Underpunks55", "UP55", "East-Shire" and any related visual assets are the
-          property of their respective owners. Underdeck uses no in-game art assets, only original
+          property of their respective owners. ESSI uses no in-game art assets, only original
           UI elements built from scratch.
         </div>
       </GlassCard>

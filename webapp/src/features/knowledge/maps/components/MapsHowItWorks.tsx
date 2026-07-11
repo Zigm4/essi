@@ -106,7 +106,7 @@ export function MapsHowItWorks() {
           value="Your IP address — the same thing any web request exposes — to the CDNs serving the files (GitHub / Fastly / jsDelivr)."
           labelWidth={96}
         />
-        <KvRow label="Stored remotely" value="Nothing. There is no Underdeck server." labelWidth={96} />
+        <KvRow label="Stored remotely" value="Nothing. There is no ESSI server." labelWidth={96} />
         <KvRow
           label="Stored locally"
           value="The downloaded map files, in the app support directory. Clear them any time from Settings."

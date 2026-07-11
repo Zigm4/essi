@@ -15,10 +15,10 @@ export default defineConfig({
       // OFL license texts and the favicon live in public.
       includeAssets: ['fonts/*.txt', 'favicon.svg'],
       manifest: {
-        name: 'Underdeck',
-        short_name: 'Underdeck',
+        name: 'ESSI',
+        short_name: 'ESSI',
         description:
-          'Unofficial fan companion for Underpunks55 — a pocket ESSI terminal for pilots.',
+          'ESSI — a pocket terminal for pilots. Unofficial fan companion for Underpunks55.',
         theme_color: '#03060B',
         background_color: '#03060B',
         display: 'standalone',

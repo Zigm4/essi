@@ -72,7 +72,7 @@ function ZoneDetailContent({
         break;
       case 'permissionDenied':
         showSnackbar(
-          'Notifications are turned off. Enable them for Underdeck in system settings to arm alerts.',
+          'Notifications are turned off. Enable them for ESSI in system settings to arm alerts.',
           { danger: true },
         );
         break;

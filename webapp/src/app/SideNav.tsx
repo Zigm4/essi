@@ -13,12 +13,12 @@ export function SideNav() {
   return (
     <nav className={styles.rail} aria-label="Main">
       <div className={styles.brand}>
-        <span className={styles.emblem}>UD</span>
+        <span className={styles.emblem}>ES</span>
         <span>
-          <span className={styles.wordmark}>UNDERDECK</span>
+          <span className={styles.wordmark}>ESSI</span>
           <span className={styles.brandSub} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <PulsingDot color="#5FE8A0" size={5} />
-            ESSI TERMINAL
+            OPERATOR TERMINAL
           </span>
         </span>
       </div>

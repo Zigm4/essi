@@ -29,8 +29,8 @@ const PAGES: OnboardingPage[] = [
   {
     channel: 'ESSI//WELCOME',
     icon: <IconSatelliteAlt size={22} />,
-    title: 'What Underdeck is',
-    body: 'Underdeck is an unofficial fan companion for UP55 — a pocket ESSI terminal for pilots.\n\nIt bundles the field tools, references and trackers you reach for mid-run into one offline-first console. No account, no sign-in — open it and it works.',
+    title: 'What ESSI is',
+    body: 'ESSI is an unofficial fan companion for UP55 — a pocket terminal for pilots.\n\nIt bundles the field tools, references and trackers you reach for mid-run into one offline-first console. No account, no sign-in — open it and it works.',
     bullets: [
       'Made by a player, for the UP55 community.',
       'Everything lives on-device and works offline.',
@@ -50,7 +50,7 @@ const PAGES: OnboardingPage[] = [
     channel: 'ESSI//PRIVACY',
     icon: <IconShieldMoon size={22} />,
     title: 'Privacy promise',
-    body: 'Underdeck has no backend operated by us and ships no telemetry or analytics SDK. Your data stays on your device.\n\nMost outbound network is opt-in (a Discord invite, System Scan, Discoveries, Tracker). Interactive maps are the exception: they download content from GitHub (Pages/Fastly + jsDelivr) at most once a day, on by default — you can switch that off in Settings. You own your data: back it up or move devices with a plain JSON export.',
+    body: 'ESSI has no backend operated by us and ships no telemetry or analytics SDK. Your data stays on your device.\n\nMost outbound network is opt-in (a Discord invite, System Scan, Discoveries, Tracker). Interactive maps are the exception: they download content from GitHub (Pages/Fastly + jsDelivr) at most once a day, on by default — you can switch that off in Settings. You own your data: back it up or move devices with a plain JSON export.',
     bullets: [
       'No backend. No telemetry. No ads.',
       'Maps fetch from GitHub by default — toggle in Settings › Maps.',
@@ -155,7 +155,7 @@ export function Onboarding() {
               <NeonButton title="Next" icon={<IconArrowForward size={18} />} onPressed={next} />
             ) : (
               <NeonButton
-                title="Enter Underdeck"
+                title="Enter ESSI"
                 icon={<IconRocketLaunch size={18} />}
                 onPressed={next}
               />

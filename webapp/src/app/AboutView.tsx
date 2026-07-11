@@ -24,7 +24,7 @@ export function AboutView() {
   return (
     <SubPage title="About">
       <GlassCard>
-        <div className={styles.wordmark}>UNDERDECK</div>
+        <div className={styles.wordmark}>ESSI</div>
         <div className={styles.version}>{`v${appVersion} (Alpha · cross-platform)`}</div>
         <div className={styles.divider} />
         <div className={styles.body}>Made by a player, for the UP55 community.</div>
@@ -48,7 +48,7 @@ export function AboutView() {
         <SectionHeader title="Licenses" />
         <div className={styles.bullets}>
           <div className={styles.body}>
-            Underdeck bundles the Inter, JetBrains Mono and Quicksand typefaces, each licensed
+            ESSI bundles the Inter, JetBrains Mono and Quicksand typefaces, each licensed
             under the SIL Open Font License.
           </div>
           <div className={styles.licenseRow}>

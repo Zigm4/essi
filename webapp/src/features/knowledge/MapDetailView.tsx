@@ -132,6 +132,10 @@ export function MapDetailView() {
           return;
         }
         setState({ status: 'ready', doc, descriptor });
+        // Grid-backed planet maps (170+ named zones) are far more legible as
+        // the flat grid table; open there by default. Pure spheres with no
+        // grid (decorative globes) stay in globe mode.
+        setGridMode(doc.type === 'sphere' && doc.grid !== null);
       } catch (error) {
         if (!cancelled) setState({ status: 'error', error });
       }
@@ -379,7 +383,7 @@ function computeView(state: DetailState, gridMode: boolean): ViewKind {
       const doc = state.doc;
       if (doc.schemaVersion > SUPPORTED_MAP_SCHEMA_VERSION) {
         return updatePane(
-          'This map needs a newer version of Underdeck to open. Update the app from your app store to view it.',
+          'This map needs a newer version of ESSI to open. Reload the app to get the latest version.',
         );
       }
       if (doc.type === 'flat') {

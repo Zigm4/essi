@@ -69,7 +69,7 @@ export function DiscoveriesHowItWorks() {
         <KvRow label="Auth" value="None. Public, no API key, no token." labelWidth={120} />
         <KvRow
           label="Rate limit"
-          value="No documented hard limit. Underdeck issues one request per Search tap."
+          value="No documented hard limit. ESSI issues one request per Search tap."
           labelWidth={120}
         />
         <KvRow label="Docs" value="ssd-api.jpl.nasa.gov/doc/sbdb_query.html" labelWidth={120} />
@@ -90,7 +90,7 @@ export function DiscoveriesHowItWorks() {
         <ParamRow
           name="fields"
           value="comma-separated"
-          note="Which columns you want back. Underdeck asks for full_name, name, kind, pdes, first_obs, last_obs, pha, plus diameter and albedo for asteroids. Smaller field lists return faster."
+          note="Which columns you want back. ESSI asks for full_name, name, kind, pdes, first_obs, last_obs, pha, plus diameter and albedo for asteroids. Smaller field lists return faster."
         />
         <ParamRow
           name="sb-cdata"
@@ -113,7 +113,7 @@ export function DiscoveriesHowItWorks() {
         <P>Shape:</P>
         <CodeBlock text={CDATA_SHAPE} />
         <P>{'Tokens, in order: field name, operator, then 1 to 2 values depending on the operator.'}</P>
-        <P>Operators Underdeck might use:</P>
+        <P>Operators ESSI might use:</P>
         <OpRow op="RG" desc="Range, inclusive on both ends. Two values: lower, upper." />
         <OpRow op="EQ / NE" desc="Equals / not equals. One value." />
         <OpRow op="LT / LE / GT / GE" desc="Less / less-equal / greater / greater-equal. One value." />
@@ -209,7 +209,7 @@ export function DiscoveriesHowItWorks() {
         />
         <P>
           {
-            'This computation is 100 percent local. SBDB does not return a status field; the 4 buckets are an Underdeck/bot convention to give a quick visual read.'
+            'This computation is 100 percent local. SBDB does not return a status field; the 4 buckets are an ESSI/bot convention to give a quick visual read.'
           }
         </P>
       </HiwCard>
@@ -220,7 +220,7 @@ export function DiscoveriesHowItWorks() {
             'SBDB’s first_obs filter behaves erratically when the lower bound is before 1900. Some legitimate rows (Halley, the first numbered minor planets, etc.) get skipped server-side for reasons that are not documented.'
           }
         </P>
-        <P>{'When the start date you pick is in 1899 or earlier, Underdeck switches strategy:'}</P>
+        <P>{'When the start date you pick is in 1899 or earlier, ESSI switches strategy:'}</P>
         <KvRow label="Server" value="Drop the sb-cdata constraint entirely. Set limit=50000." labelWidth={120} />
         <KvRow
           label="Client"
@@ -256,7 +256,7 @@ export function DiscoveriesHowItWorks() {
         <KvRow label="Visible to NASA" value="Your IP address, like for any web request." labelWidth={120} />
         <KvRow
           label="Stored remotely"
-          value="Nothing on Underdeck servers (there are none). NASA's standard request logs apply on their side."
+          value="Nothing on ESSI servers (there are none). NASA's standard request logs apply on their side."
           labelWidth={120}
         />
         <KvRow

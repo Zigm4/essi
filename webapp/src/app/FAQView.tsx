@@ -16,12 +16,12 @@ const SECTIONS: { key: string; entries: FaqEntry[] }[] = [
     key: 'operations',
     entries: [
       {
-        q: 'Is Underdeck free?',
-        a: 'Yes. Underdeck is free and will stay free, forever. No ads, no in-app purchases, no premium tier.',
+        q: 'Is ESSI free?',
+        a: 'Yes. ESSI is free and will stay free, forever. No ads, no in-app purchases, no premium tier.',
       },
       {
         q: 'Is this an official UP55 app?',
-        a: 'No. Underdeck is a fan project. It is not affiliated with or endorsed by Jaydz Dev (alias Lama), the creator of Underpunks55.',
+        a: 'No. ESSI is a fan project. It is not affiliated with or endorsed by Jaydz Dev (alias Lama), the creator of Underpunks55.',
       },
     ],
   },
@@ -29,7 +29,7 @@ const SECTIONS: { key: string; entries: FaqEntry[] }[] = [
     key: 'privacy',
     entries: [
       {
-        q: 'Does Underdeck collect my data?',
+        q: 'Does ESSI collect my data?',
         a: 'No. Zero telemetry, zero analytics. The app does not communicate with any server we operate.',
       },
       {
@@ -51,11 +51,11 @@ const SECTIONS: { key: string; entries: FaqEntry[] }[] = [
       },
       {
         q: 'What does System Scan send to NASA?',
-        a: 'When you tap "Scan now" in Tools / System Scan, Underdeck makes 9 GET requests to ssd.jpl.nasa.gov/api/horizons.api, one per planet. Sent: NAIF code (199-999) and current UTC timestamp. Received: public ephemeris text. Visible to NASA: your IP address. Stored: nothing on first run; entries you keep are saved locally.',
+        a: 'When you tap "Scan now" in Tools / System Scan, ESSI makes 9 GET requests to ssd.jpl.nasa.gov/api/horizons.api, one per planet. Sent: NAIF code (199-999) and current UTC timestamp. Received: public ephemeris text. Visible to NASA: your IP address. Stored: nothing on first run; entries you keep are saved locally.',
       },
       {
         q: 'What does Tracker send to NASA?',
-        a: 'When you tap "Track" in Tools / Tracker, Underdeck makes 1 to 4 GET requests to JPL Horizons / SBDB. Sent: object name or designation, plus a fixed instruction. No identifier of yours is added. Stored: each successful track is saved to local history. You can delete entries any time.',
+        a: 'When you tap "Track" in Tools / Tracker, ESSI makes 1 to 4 GET requests to JPL Horizons / SBDB. Sent: object name or designation, plus a fixed instruction. No identifier of yours is added. Stored: each successful track is saved to local history. You can delete entries any time.',
       },
     ],
   },

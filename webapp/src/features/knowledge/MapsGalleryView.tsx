@@ -241,12 +241,12 @@ export function MapsGalleryView() {
                     className={styles.bannerTitle}
                     style={{ color: updateBanner === 'ready' ? 'var(--accent-primary)' : 'var(--accent-warn)' }}
                   >
-                    {updateBanner === 'ready' ? 'New maps ready' : 'Update Underdeck'}
+                    {updateBanner === 'ready' ? 'New maps ready' : 'Update ESSI'}
                   </span>
                   <span className={styles.bannerMessage}>
                     {updateBanner === 'ready'
                       ? 'Updated map content was downloaded and will appear the next time you open Interactive maps.'
-                      : 'Newer map content is available but needs a newer version of Underdeck. Update the app to get it.'}
+                      : 'Newer map content is available but needs a newer version of ESSI. Reload the app to get it.'}
                   </span>
                 </div>
                 <button

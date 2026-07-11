@@ -311,7 +311,7 @@ export function SystemScanView() {
             <span className={styles.headline}>Network access required</span>
           </div>
           <div className={styles.caption} style={{ marginTop: 8 }}>
-            This is one of a few Underdeck features that reach the network (System Scan, Tracker and
+            This is one of a few ESSI features that reach the network (System Scan, Tracker and
             Discoveries). Calls are made one at a time with a small gap, to stay under JPL Horizons&apos;
             rate limit.
           </div>

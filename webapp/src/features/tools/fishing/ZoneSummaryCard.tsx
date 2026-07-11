@@ -30,7 +30,7 @@ export function ZoneSummaryCard({
       `Pole: ${zone.pole ?? 'n/a'}`,
       `Access: ${zone.accessible ? 'Accessible' : 'No (Reef)'}`,
     ];
-    void shareOrCopy('Underdeck fishing zone', lines.join('\n'));
+    void shareOrCopy('ESSI fishing zone', lines.join('\n'));
   };
 
   return (

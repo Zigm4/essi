@@ -4,7 +4,7 @@ import { launchExternal } from '../../../core/externalLink';
 import styles from './MarkdownView.module.css';
 
 /**
- * UnderdeckMarkdownView (spec §16). CommonMark + GFM, rendered read-only for
+ * EssiMarkdownView (spec §16). CommonMark + GFM, rendered read-only for
  * note bodies and link notes on the DETAIL pages only. No raw HTML is rendered
  * (react-markdown ignores it by default), and every link tap is routed through
  * `launchExternal`'s http/https/mailto allow-list (spec §18.7) — never a raw

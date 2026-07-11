@@ -282,7 +282,7 @@ export function SettingsView() {
         <SectionHeader title="Intro" icon={<IconSatelliteAlt size={18} />} />
         <div className={styles.cardStack}>
           <div className={styles.caption}>
-            Replay the incoming-transmission intro that explains Underdeck, the tools and the
+            Replay the incoming-transmission intro that explains ESSI, the tools and the
             privacy promise.
           </div>
           <ActionRow

@@ -19,7 +19,7 @@ export function ContactView({ initialMessage = '' }: { initialMessage?: string }
   const [category, setCategory] = useState<(typeof CATEGORIES)[number]>('Feedback');
   const [message, setMessage] = useState(initialMessage);
 
-  const appLine = `App: Underdeck v${appVersion} (${appBuildNumber}) (Alpha)`;
+  const appLine = `App: ESSI v${appVersion} (${appBuildNumber}) (Alpha)`;
   const canSend = message.trim().length > 0;
 
   const send = () => {
@@ -32,7 +32,7 @@ export function ContactView({ initialMessage = '' }: { initialMessage?: string }
       `Category: ${category}`,
       `Sent to: ${contactEmail}`,
     ].join('\n');
-    const subject = `[Underdeck] ${category}`;
+    const subject = `[ESSI] ${category}`;
     window.location.href = `mailto:${contactEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   };
 

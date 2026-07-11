@@ -73,7 +73,7 @@ export function BootScreen() {
         <div className={styles.column}>
           {!reduced && <div className={styles.scanBeam} />}
           <BootEmblem />
-          <div className={styles.wordmark}>UNDERDECK</div>
+          <div className={styles.wordmark}>ESSI</div>
           <div className={styles.subline}>UP55 FAN COMPANION</div>
           <div className={styles.spacer} />
           <div className={styles.terminalCard}>

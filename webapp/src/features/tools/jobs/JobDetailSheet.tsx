@@ -91,7 +91,7 @@ function JobDetailContent({
 
   const onShare = () => {
     const lines = [
-      `Underdeck job #${job.id} — ${job.typeRaw}`,
+      `ESSI job #${job.id} — ${job.typeRaw}`,
       ally !== null ? `Allied: ${ally.label}` : null,
       rival !== null ? `Rival: ${rival.label}` : null,
       `Reward: ${reward.label} · ${bonusFactText(job.bonus)}`,
@@ -99,7 +99,7 @@ function JobDetailContent({
       `Pickup: ${coordsLabel(job.pickupLocation)}`,
       `Dropoff: ${coordsLabel(job.dropoffLocation)}`,
     ].filter((l): l is string => l !== null);
-    void shareOrCopy(`Underdeck job #${job.id}`, lines.join('\n'));
+    void shareOrCopy(`ESSI job #${job.id}`, lines.join('\n'));
   };
 
   const onStatus = (next: JobStatusValue) => {

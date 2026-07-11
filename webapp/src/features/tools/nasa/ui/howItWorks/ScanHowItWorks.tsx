@@ -135,14 +135,14 @@ export function ScanHowItWorks() {
         </P>
         <P>
           {
-            "Each ephemeris row is two lines: a date line containing 'A.D.' and 'TDB', then a vector line starting with 'X ='. Underdeck only reads those two line types and ignores everything else."
+            "Each ephemeris row is two lines: a date line containing 'A.D.' and 'TDB', then a vector line starting with 'X ='. ESSI only reads those two line types and ignores everything else."
           }
         </P>
         <P>Excerpt:</P>
         <CodeBlock text={HORIZONS_EXCERPT} />
         <P>
           {
-            "X, Y, Z are kilometres relative to the Sun's centre. VX/VY/VZ are velocities (km/s). LT is light-time. RG is range. RR is range rate. Underdeck ignores everything except X and Y."
+            "X, Y, Z are kilometres relative to the Sun's centre. VX/VY/VZ are velocities (km/s). LT is light-time. RG is range. RR is range rate. ESSI ignores everything except X and Y."
           }
         </P>
       </HiwCard>
@@ -183,7 +183,7 @@ export function ScanHowItWorks() {
       <HiwCard icon={<IconTimer size={18} />} title="Per-planet windows (Full mode)">
         <P>
           {
-            'To find the next sector change, Underdeck does a coarse sweep then refines around the first transition. The window has to be wide enough to contain at least one transition: Pluto sits in one sector for years.'
+            'To find the next sector change, ESSI does a coarse sweep then refines around the first transition. The window has to be wide enough to contain at least one transition: Pluto sits in one sector for years.'
           }
         </P>
         <P>
@@ -221,7 +221,7 @@ export function ScanHowItWorks() {
         <KvRow label="Visible to NASA" value="Your IP address, like for any web request." />
         <KvRow
           label="Stored remotely"
-          value="Nothing on Underdeck servers (there are none). NASA's standard request logs apply on their side."
+          value="Nothing on ESSI servers (there are none). NASA's standard request logs apply on their side."
         />
         <KvRow
           label="Stored locally"

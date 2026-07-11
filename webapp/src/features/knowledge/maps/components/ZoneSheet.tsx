@@ -354,7 +354,7 @@ function openLink(url: string, navigate: (to: string) => void): void {
 
 async function shareZone(zoneName: string): Promise<void> {
   Haptics.tap();
-  const text = `Underdeck map · ${zoneName}`;
+  const text = `ESSI map · ${zoneName}`;
   try {
     if (typeof navigator.share === 'function') {
       await navigator.share({ title: zoneName, text });

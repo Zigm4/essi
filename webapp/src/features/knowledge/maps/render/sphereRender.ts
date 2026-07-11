@@ -230,6 +230,14 @@ export class SphereHitIndex {
   }
 }
 
+/** Centroid of a selected grid cell not present in `items` (plain cells). */
+function gridSelectionCentroid(render: SphereRender, zoneId: string): GeoPoint | null {
+  if (render.grid === null) return null;
+  const pos = render.gridPosById.get(zoneId);
+  if (pos === undefined) return null;
+  return cellCenter(render.grid, pos.col, pos.row);
+}
+
 /** Analytic grid pick (§14.4). Off-disc/limb taps arrive as `geo == null`. */
 export function gridPick(render: SphereRender, geo: GeoPoint | null): string | null {
   if (geo === null || render.grid === null || render.gridZoneIdByCell === null) return null;
@@ -435,17 +443,19 @@ export function drawGlobe(
     ctx.filter = prev;
   }
 
-  // 9. Labels (LOD-gated).
-  if (R >= LABEL_MIN_RADIUS) {
-    for (const item of render.items) {
-      if (item.label === null) continue;
-      const p = frontProject(item.centroid, q, R, C);
-      if (!p.front) continue;
-      if (Math.hypot(p.x - C.x, p.y - C.y) > 0.82 * R) continue;
-      const isDim = dimmed.has(item.zoneId) && item.zoneId !== selectedId;
-      if (isDim) ctx.globalAlpha = 0.3;
-      drawCenteredLabel(ctx, item.label, p.x, p.y, item.theme, render.labelFontSize);
-      if (isDim) ctx.globalAlpha = 1;
+  // 9. Label only the selected zone. Dumping every front-facing label turns a
+  //    170-zone globe into an unreadable smear; the flat grid view is the
+  //    dense, fully-labelled twin. Here the globe stays clean — tap a zone and
+  //    its name floats over it (the detail sheet carries the rest).
+  if (selectedId !== null && R >= LABEL_MIN_RADIUS) {
+    const sel = render.items.find((it) => it.zoneId === selectedId);
+    const label = sel?.label ?? null;
+    const centroid = sel?.centroid ?? gridSelectionCentroid(render, selectedId);
+    if (label !== null && centroid !== null) {
+      const p = frontProject(centroid, q, R, C);
+      if (p.front && Math.hypot(p.x - C.x, p.y - C.y) <= 0.98 * R) {
+        drawCenteredLabel(ctx, label, p.x, p.y, sel?.theme ?? theme, render.labelFontSize);
+      }
     }
   }
 }

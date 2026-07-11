@@ -29,8 +29,15 @@ import {
  * - jobStatus rows are guarded per-row instead of failing the whole file.
  */
 
-const INVALID_FILE_MESSAGE = "This file isn't a valid Underdeck export";
-export const EXPORT_FILE_NAME = 'underdeck-export.json';
+const INVALID_FILE_MESSAGE = "This file isn't a valid ESSI export";
+export const EXPORT_FILE_NAME = 'essi-export.json';
+
+// Accepted `app` tokens on import. The product is now ESSI, but the export
+// keeps writing the legacy 'Underdeck' wire token (see buildExportObject) for
+// round-trip + mobile-import compatibility; files tagged 'ESSI' by future
+// producers must import too. A missing `app` stays tolerated so older exports
+// keep loading. These are wire-format tokens, not branding.
+const ACCEPTED_APP_TOKENS = new Set(['Underdeck', 'ESSI']);
 
 // ---------------------------------------------------------------------------
 // Summary
@@ -129,6 +136,9 @@ function historyToJson(h: HistoryRow): Record<string, unknown> {
 export function buildExportObject(data: ExportData, exportedAt: Date = new Date()): Record<string, unknown> {
   return {
     version: 1,
+    // Compatibility wire token, NOT branding: kept as 'Underdeck' so exports
+    // round-trip with the mobile app and older ESSI files. Import accepts both
+    // this and 'ESSI' (see ACCEPTED_APP_TOKENS).
     app: 'Underdeck',
     exportedAt: exportedAt.toISOString(),
     data: {
@@ -430,6 +440,10 @@ export function parseExportEnvelope(text: string): Record<string, unknown> {
   const version = root['version'];
   if (!isInt(version) || version > 1) {
     throw new FormatException(`Unsupported export version: ${String(version)} (expected ≤ 1)`);
+  }
+  const app = root['app'];
+  if (app !== undefined && app !== null && !(typeof app === 'string' && ACCEPTED_APP_TOKENS.has(app))) {
+    throw new FormatException(INVALID_FILE_MESSAGE);
   }
   const data = root['data'];
   if (!isRecord(data)) throw new FormatException(INVALID_FILE_MESSAGE);

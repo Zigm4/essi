@@ -19,7 +19,7 @@ export function RouteNotFound() {
         <div className={styles.path}>{location.pathname}</div>
         <NeonButton
           className={styles.button}
-          title="Back to Underdeck"
+          title="Back to ESSI"
           onPressed={() => navigate('/tools')}
         />
       </div>

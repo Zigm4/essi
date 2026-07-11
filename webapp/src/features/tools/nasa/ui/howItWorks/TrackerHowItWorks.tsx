@@ -222,7 +222,7 @@ export function TrackerHowItWorks() {
         />
         <QuirkRow
           title="; must be percent-encoded as %3B"
-          detail="Horizons (and many web frameworks) treat an unescaped ; as equivalent to & in the query string, which truncates COMMAND. CharacterSet.urlQueryAllowed includes ; by default, so Underdeck adds an explicit removal."
+          detail="Horizons (and many web frameworks) treat an unescaped ; as equivalent to & in the query string, which truncates COMMAND. CharacterSet.urlQueryAllowed includes ; by default, so ESSI adds an explicit removal."
         />
         <QuirkRow
           title="Comet names need stripping"
@@ -298,7 +298,7 @@ export function TrackerHowItWorks() {
         />
         <KvRow
           label="Stored remotely"
-          value="Nothing on Underdeck servers (there are none)."
+          value="Nothing on ESSI servers (there are none)."
           labelWidth={120}
         />
         <KvRow

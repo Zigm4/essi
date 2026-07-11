@@ -112,7 +112,7 @@ export function WalletLookupView() {
 
 function Results({ query, display }: { query: string; display: WalletDisplay }) {
   const onShare = () => {
-    void shareOrCopy('Underdeck wallet lookup', buildShareText(query, display));
+    void shareOrCopy('ESSI wallet lookup', buildShareText(query, display));
   };
   const total = display.total;
   return (
