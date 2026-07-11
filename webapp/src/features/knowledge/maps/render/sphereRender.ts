@@ -295,13 +295,17 @@ export function drawGlobe(
     zoom: number;
     selectedId: string | null;
     dimmed: ReadonlySet<string>;
+    /** When a filter is active, hide the non-matching (dimmed) zones entirely. */
+    hideDimmed?: boolean;
   },
 ): void {
   const { render, width, height, orientation: q, zoom, selectedId, dimmed } = opts;
+  const hideDimmed = opts.hideDimmed ?? false;
   const theme = render.theme;
   const R = globeRadius(width, height, zoom);
   const C = globeCenter(width, height);
-  const strokeW = Math.max(1.5, Math.min(6.0, R * 0.012));
+  // Thin zone outlines — the old width made small tiles look heavily bordered.
+  const strokeW = Math.max(0.6, Math.min(2.2, R * 0.005));
 
   ctx.clearRect(0, 0, width, height);
   ctx.fillStyle = css(theme.background);
@@ -373,10 +377,11 @@ export function drawGlobe(
   // 5. Zones (selected deferred).
   for (const item of render.items) {
     if (!item.hasBody || item.zoneId === selectedId) continue;
+    const isDim = dimmed.has(item.zoneId);
+    if (isDim && hideDimmed) continue; // filter active → only matching zones show
     const cen = rotate(q, worldVec(item.centroid));
     if (cen.z < 0) continue; // back-hemisphere cull
     const path = projectRingsPath(item.rings, q, R, C);
-    const isDim = dimmed.has(item.zoneId);
     if (isDim) ctx.globalAlpha = 0.3;
     paintPolygonZone(ctx, path, item.theme, strokeW, false);
     if (isDim) ctx.globalAlpha = 1;

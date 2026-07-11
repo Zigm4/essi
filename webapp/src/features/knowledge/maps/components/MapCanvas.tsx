@@ -59,6 +59,8 @@ interface MapCanvasProps {
   readonly selectedId: string | null;
   readonly onSelect: (id: string | null) => void;
   readonly dimmed: ReadonlySet<string>;
+  /** When a filter is active, the dimmed zones are hidden rather than faded. */
+  readonly hideDimmed: boolean;
   /** Zone to frame/select on mount and whenever `focusNonce` changes. */
   readonly focusZoneId: string | null;
   readonly focusNonce: number;
@@ -75,6 +77,7 @@ interface ViewTransform {
 const TAP_MOVE_THRESHOLD = 6; // css px — below this a pointer-up is a tap
 const GLOBE_MIN_ZOOM = 0.6;
 const GLOBE_MAX_ZOOM = 4.0;
+const GLOBE_FOCUS_ZOOM = 1.9; // zoom level when framing a single zone on the globe
 
 function ringsPath(rings: readonly (readonly CanvasPoint[])[]): Path2D {
   const p = new Path2D();
@@ -101,6 +104,7 @@ export function MapCanvas({
   selectedId,
   onSelect,
   dimmed,
+  hideDimmed,
   focusZoneId,
   focusNonce,
   backgroundBlob,
@@ -132,8 +136,8 @@ export function MapCanvas({
   const initializedRef = useRef(false);
 
   // Latest props for the imperative loop (avoids stale closures in listeners).
-  const stateRef = useRef({ mode, selectedId, dimmed, reducedMotion, doc });
-  stateRef.current = { mode, selectedId, dimmed, reducedMotion, doc };
+  const stateRef = useRef({ mode, selectedId, dimmed, hideDimmed, reducedMotion, doc });
+  stateRef.current = { mode, selectedId, dimmed, hideDimmed, reducedMotion, doc };
   const rendersRef = useRef({ flat, sphere, grid });
   rendersRef.current = { flat, sphere, grid };
   const onSelectRef = useRef(onSelect);
@@ -273,6 +277,7 @@ export function MapCanvas({
         zoom: globeRef.current.zoom,
         selectedId: sel,
         dimmed: dim,
+        hideDimmed: stateRef.current.hideDimmed,
       });
       return;
     }
@@ -643,12 +648,21 @@ export function MapCanvas({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [backgroundBlob]);
 
-  // Frame + (re-)focus a zone on demand (deep link, in-map search pick).
+  // Frame + (re-)focus a zone on demand (deep link, in-map search pick, filter
+  // selection). A null focusZoneId means "reset the view" (e.g. filter cleared).
   useEffect(() => {
-    if (focusZoneId === null || sizeRef.current.w === 0) return;
+    if (sizeRef.current.w === 0) return;
+    if (focusZoneId === null) {
+      setInitialTransform(); // globe → initial orientation + zoom 1; flat/grid → fit
+      markDirty();
+      return;
+    }
     if (stateRef.current.mode === 'globe') {
       const anchor = zoneGeoAnchor(stateRef.current.doc, focusZoneId);
-      if (anchor !== null) globeRef.current = { ...globeRef.current, q: orientationFromLatLon(anchor) };
+      if (anchor !== null) {
+        // Rotate the zone to front-centre AND zoom in on it.
+        globeRef.current = { q: orientationFromLatLon(anchor), zoom: GLOBE_FOCUS_ZOOM };
+      }
     } else {
       frameZone(focusZoneId);
     }

@@ -34,10 +34,13 @@ interface ZoneSheetProps {
 export function ZoneSheet({ mapId, doc, zone, theme, onClose }: ZoneSheetProps) {
   const navigate = useNavigate();
   const accent = colorCss(theme.accent);
+  // Neutral, always-readable surface: the zone's own (often muddy) palette is
+  // used only for accents (badge, region chip, pin, top hairline) — never the
+  // body text or background — so the data stays legible on every planet.
   const surfaceStyle: CSSProperties = {
-    background: colorCss(theme.surface),
-    borderTop: `1px solid ${colorAlpha(theme.zoneStroke, 0.35)}`,
-    boxShadow: `0 -6px 24px ${colorAlpha(theme.glow, 0.18)}`,
+    background: 'var(--bg-card)',
+    borderTop: `2px solid ${colorAlpha(theme.accent, 0.55)}`,
+    boxShadow: `0 -6px 28px rgba(0, 0, 0, 0.55)`,
   };
 
   return (
@@ -62,7 +65,7 @@ export function ZoneSheet({ mapId, doc, zone, theme, onClose }: ZoneSheetProps) 
           )}
           <h2
             className={styles.name}
-            style={{ color: colorCss(theme.label), fontFamily: `"${theme.fontFamily}", sans-serif` }}
+            style={{ color: 'var(--text-primary)', fontFamily: `"${theme.fontFamily}", sans-serif` }}
           >
             {zone.name.length > 0 ? zone.name : 'Zone'}
           </h2>
@@ -152,7 +155,7 @@ function PinSection({
           maxLength={MAX_PIN_NOTE_LENGTH}
           autoFocus
           placeholder="Your note for this zone…"
-          style={{ color: colorCss(theme.label) }}
+          style={{ color: 'var(--text-primary)' }}
           onChange={(e) => setDraft(e.target.value)}
         />
         <div className={styles.pinActions}>
@@ -181,7 +184,7 @@ function PinSection({
       aria-label={hasNote ? 'Edit your note for this zone' : 'Add a note to this zone'}
       onClick={startEdit}
     >
-      <span className={styles.pinIcon} style={{ color: hasNote ? accent : colorAlpha(theme.label, 0.5) }}>
+      <span className={styles.pinIcon} style={{ color: hasNote ? accent : 'var(--text-dim)' }}>
         <IconPushPin size={18} />
       </span>
       {hasNote ? (
@@ -189,12 +192,12 @@ function PinSection({
           <span className={styles.pinLabel} style={{ color: accent }}>
             MY NOTE
           </span>
-          <span className={styles.pinNote} style={{ color: colorCss(theme.label) }}>
+          <span className={styles.pinNote} style={{ color: 'var(--text-primary)' }}>
             {note}
           </span>
         </span>
       ) : (
-        <span className={styles.pinAdd} style={{ color: colorAlpha(theme.label, 0.75) }}>
+        <span className={styles.pinAdd} style={{ color: 'var(--text-secondary)' }}>
           Add note / pin
         </span>
       )}
@@ -231,8 +234,8 @@ function ZoneFields({
   theme: MapTheme;
   onOpenLink: (url: string) => void;
 }) {
-  const labelColor = colorAlpha(theme.label, 0.55);
-  const valueColor = colorCss(theme.label);
+  const labelColor = 'var(--text-dim)';
+  const valueColor = 'var(--text-primary)';
   // Render strictly in schema order; drop fields with no renderable value (§16.2).
   const blocks: { key: string; label: string; node: ReactElement }[] = [];
   for (const spec of schema) {

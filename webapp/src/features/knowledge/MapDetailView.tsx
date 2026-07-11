@@ -8,7 +8,7 @@
  * and a live "my notes" panel. Stale/removed/draft ids land on a real pane.
  */
 
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { friendlyError } from '../../core/errorText';
 import { Haptics } from '../../core/haptics';
@@ -184,6 +184,27 @@ export function MapDetailView() {
     () => (readyDoc !== null ? computeDimmed(readyDoc, filters) : new Set<string>()),
     [readyDoc, filters],
   );
+  const hasActiveFilters = useMemo(
+    () => [...filters.values()].some((s) => s.size > 0),
+    [filters],
+  );
+
+  // Selecting a filter frames the first matching zone (and hides the rest);
+  // clearing all filters resets the view. Skips the initial mount so a deep
+  // link's own focus is not clobbered.
+  const hadFiltersRef = useRef(false);
+  useEffect(() => {
+    if (readyDoc === null) return;
+    if (hasActiveFilters) {
+      const first = readyDoc.zones.find((z) => !dimmed.has(z.id));
+      if (first !== undefined) setFocus((f) => ({ id: first.id, nonce: f.nonce + 1 }));
+      hadFiltersRef.current = true;
+    } else if (hadFiltersRef.current) {
+      setFocus((f) => ({ id: null, nonce: f.nonce + 1 }));
+      hadFiltersRef.current = false;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasActiveFilters, dimmed, readyDoc]);
   const filterFields = useMemo(
     () =>
       readyDoc !== null
@@ -307,6 +328,7 @@ export function MapDetailView() {
                 selectedId={selectedId}
                 onSelect={setSelectedId}
                 dimmed={dimmed}
+                hideDimmed={hasActiveFilters}
                 focusZoneId={focus.id}
                 focusNonce={focus.nonce}
                 backgroundBlob={bgBlob}
