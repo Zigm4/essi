@@ -258,7 +258,13 @@ class AppDatabase extends _$AppDatabase {
   }
 
   static QueryExecutor _openConnection() {
-    return driftDatabase(name: 'underdeck');
+    return driftDatabase(
+      name: 'underdeck',
+      web: DriftWebOptions(
+        sqlite3Wasm: Uri.parse('sqlite3.wasm'),
+        driftWorker: Uri.parse('drift_worker.js'),
+      ),
+    );
   }
 }
 

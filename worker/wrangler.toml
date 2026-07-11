@@ -1,0 +1,9 @@
+name = "underdeck-jpl-proxy"
+main = "src/index.js"
+compatibility_date = "2026-07-01"
+
+[vars]
+# Comma-separated list of origins allowed to call this worker.
+# "*" = open to everyone. After the site is live, lock it down, e.g.:
+# ALLOWED_ORIGINS = "https://<your-account>.github.io"
+ALLOWED_ORIGINS = "*"
