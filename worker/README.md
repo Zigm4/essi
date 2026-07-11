@@ -53,3 +53,8 @@ npx wrangler deploy
 curl "https://underdeck-jpl-proxy.<sous-domaine>.workers.dev/sbdb?sstr=433"
 # → JSON SBDB de (433) Eros, avec l'en-tête Access-Control-Allow-Origin
 ```
+
+> **Note** : `npx wrangler dev` (simulateur local) échoue à joindre les
+> serveurs JPL (« internal error » — incompatibilité connue workerd ↔ ALB
+> AWS). C'est un artefact du simulateur uniquement : vérifiez avec la
+> commande curl ci-dessus **après** le vrai déploiement.

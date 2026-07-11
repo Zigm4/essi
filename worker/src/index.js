@@ -71,13 +71,22 @@ export default {
     }
 
     const target = upstream + url.search;
-    const response = await fetch(target, {
-      headers: { Accept: 'application/json, text/plain, */*' },
-      cf: {
-        cacheTtl: CACHE_TTL[url.pathname],
-        cacheEverything: true,
-      },
-    });
+    let response;
+    try {
+      response = await fetch(target, {
+        headers: { Accept: 'application/json, text/plain, */*' },
+        cf: {
+          cacheTtl: CACHE_TTL[url.pathname],
+          cacheEverything: true,
+        },
+      });
+    } catch {
+      // workerd's local simulator (and some edge cases in production) can
+      // reject the cf-cache options — retry once without them.
+      response = await fetch(target, {
+        headers: { Accept: 'application/json, text/plain, */*' },
+      });
+    }
 
     const headers = new Headers(cors);
     const contentType = response.headers.get('Content-Type');
