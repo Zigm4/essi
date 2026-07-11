@@ -56,6 +56,22 @@
   flex: none;
 }
 
+.zoneNum {
+  flex: none;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid;
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
 .name {
   flex: 1;
   min-width: 0;

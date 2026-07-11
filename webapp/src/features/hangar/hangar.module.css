@@ -389,10 +389,18 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   display: flex;
   flex-direction: column;
   gap: 16px;
   padding: 12px 12px 32px;
+}
+
+/* Each section keeps its natural height so the body scrolls — without this the
+   flex column shrinks every card (which clip their own rounded corners) and
+   half the fields, incl. the Model picker, get hidden. */
+.editorBody > * {
+  flex: none;
 }
 
 .editorCentered {

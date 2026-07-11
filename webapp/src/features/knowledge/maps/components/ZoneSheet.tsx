@@ -51,6 +51,15 @@ export function ZoneSheet({ mapId, doc, zone, theme, onClose }: ZoneSheetProps) 
       <section className={styles.sheet} style={surfaceStyle} role="dialog" aria-label={zone.name}>
         <span className={styles.handle} style={{ background: colorAlpha(theme.label, 0.25) }} />
         <div className={styles.header}>
+          {zone.cellNum !== null && (
+            <span
+              className={styles.zoneNum}
+              style={{ color: accent, borderColor: colorAlpha(theme.accent, 0.4), background: colorAlpha(theme.accent, 0.12) }}
+              aria-label={`Zone number ${zone.cellNum}`}
+            >
+              {zone.cellNum}
+            </span>
+          )}
           <h2
             className={styles.name}
             style={{ color: colorCss(theme.label), fontFamily: `"${theme.fontFamily}", sans-serif` }}
