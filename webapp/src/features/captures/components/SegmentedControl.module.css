@@ -1,0 +1,31 @@
+/* Outer container: bgGlass, radius 8, 1px borderSubtle, 2px inner padding.
+   Home padding: 12 horizontal, 8 vertical (spec §5.4). */
+.outer {
+  margin: 8px 12px;
+  display: flex;
+  gap: 0;
+  padding: 2px;
+  border-radius: 8px;
+  background: var(--bg-glass);
+  border: 1px solid var(--border-subtle);
+}
+
+.cell {
+  flex: 1;
+  padding: 8px 0;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: none;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  transition: background-color var(--motion-subtle-duration) var(--motion-subtle-ease);
+}
+
+.selected {
+  color: var(--accent-primary);
+  background: rgba(79, 195, 255, 0.16);
+  border-color: var(--accent-primary);
+}

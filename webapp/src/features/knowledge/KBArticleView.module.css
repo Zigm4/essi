@@ -1,0 +1,84 @@
+.kicker {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: var(--accent-primary);
+}
+
+.title {
+  margin: 4px 0 0;
+}
+
+.markdown {
+  margin-top: 16px;
+}
+
+/* Contribute intel card (draft articles only) */
+.contributeWrap {
+  margin-top: 16px;
+}
+
+.contributeCaption {
+  margin: 8px 0 0;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.contributeButton {
+  margin-top: 12px;
+}
+
+.discord {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 8px;
+  padding: 6px 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--accent-secondary);
+}
+
+/* Tags footer */
+.divider {
+  margin: 16px 0 0;
+  border: none;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.tagsHeader {
+  margin-top: 12px;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.notFound {
+  margin: 0;
+  padding: 24px 0;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.errorText {
+  margin: 0;
+  padding: 24px 0;
+  text-align: center;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--accent-danger);
+}

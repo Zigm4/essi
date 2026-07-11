@@ -1,0 +1,336 @@
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: stretch;
+}
+
+/* --- LIVE card --- */
+
+.liveRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.liveLeft {
+  min-width: 0;
+}
+
+.overline {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--accent-success);
+}
+
+.liveTitle {
+  margin-top: 4px;
+  font-family: var(--font-sans);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.liveCaption {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.liveRight {
+  text-align: right;
+  flex: none;
+}
+
+.liveMinute {
+  font-family: var(--font-mono);
+  font-size: 30px;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--accent-secondary);
+}
+
+.liveClock {
+  margin-top: 4px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+/* --- Schedule card --- */
+
+.schedCaption {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin: 6px 0 4px;
+}
+
+.schedRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 0;
+  background: none;
+  border: none;
+  border-top: 1px solid rgba(122, 227, 255, 0.036);
+  cursor: pointer;
+  opacity: 0.85;
+  text-align: left;
+}
+
+.schedRowCurrent {
+  opacity: 1;
+}
+
+.schedRange {
+  width: 70px;
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.schedRangeCurrent {
+  color: var(--accent-secondary);
+}
+
+.schedIcon {
+  flex: none;
+  display: inline-flex;
+}
+
+.schedIconNamed {
+  color: var(--accent-primary);
+}
+
+.schedIconTransit {
+  color: var(--text-dim);
+}
+
+.schedMid {
+  flex: 1;
+  min-width: 0;
+}
+
+.schedZone {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--text-primary);
+}
+
+.schedSub {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.schedArmed {
+  flex: none;
+  color: var(--accent-warn);
+  display: inline-flex;
+}
+
+.schedChevron {
+  flex: none;
+  color: var(--text-dim);
+  display: inline-flex;
+}
+
+/* --- Armed alerts card --- */
+
+.armedHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cancelAll {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent-danger);
+}
+
+.armedRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.armedIcon {
+  flex: none;
+  color: var(--accent-warn);
+  display: inline-flex;
+}
+
+.armedMain {
+  flex: 1;
+  min-width: 0;
+}
+
+.armedZone {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--text-primary);
+}
+
+.armedRepeat {
+  color: var(--accent-primary);
+  display: inline-flex;
+}
+
+.armedCaption {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.cancelBtn {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--accent-danger);
+}
+
+/* --- Zone detail sheet --- */
+
+.sheetStack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 4px 16px 24px;
+}
+
+.zoneOverline {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.6px;
+  color: var(--accent-primary);
+}
+
+.zoneHeadline {
+  margin-top: 4px;
+  font-family: var(--font-sans);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.nextRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  color: var(--accent-primary);
+}
+
+.nextCaption {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.nextMin {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--accent-secondary);
+}
+
+.alertsHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--accent-primary);
+}
+
+.alertsHeadline {
+  font-family: var(--font-sans);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.alertsCaption {
+  margin-top: 8px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
+.webHint {
+  margin-top: 6px;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--accent-warn);
+}
+
+.repeatRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.repeatMain {
+  min-width: 0;
+}
+
+.repeatTitle {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--text-primary);
+}
+
+.repeatCaption {
+  margin-top: 2px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
+.sheetButtons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 6px;
+}

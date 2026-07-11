@@ -1,0 +1,225 @@
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: stretch;
+}
+
+/* --- Rooms list --- */
+
+.roomCard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.roomCircle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-primary);
+}
+
+.roomMid {
+  flex: 1;
+  min-width: 0;
+}
+
+.roomName {
+  font-family: var(--font-sans);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.roomSub {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.chevron {
+  color: var(--text-dim);
+  flex: none;
+}
+
+/* --- Room view controls --- */
+
+.segment {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  background: var(--bg-glass);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+}
+
+.segmentBtn {
+  flex: 1;
+  padding: 7px 4px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: background-color 160ms var(--motion-subtle-ease);
+}
+
+.segmentBtnActive {
+  background: rgba(79, 195, 255, 0.16);
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+  font-weight: 600;
+}
+
+.depthRow {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 2px 0;
+  scrollbar-width: none;
+}
+
+.depthRow::-webkit-scrollbar {
+  display: none;
+}
+
+.depthChip {
+  flex: none;
+  padding: 5px 10px;
+  border-radius: 20px;
+  border: 1px solid;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  background: none;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+}
+
+.cell {
+  aspect-ratio: 1 / 1;
+  border-radius: 4px;
+  border: 1px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 0;
+}
+
+.cellReef {
+  background: var(--bg-glass);
+  border-color: var(--border-subtle);
+  color: var(--text-dim);
+}
+
+.notFound {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-align: center;
+  padding: 48px 24px;
+}
+
+/* --- Zone summary card --- */
+
+.zoneHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.zoneNameCol {
+  flex: 1;
+  min-width: 0;
+}
+
+.zoneNumber {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.zoneName {
+  font-family: var(--font-sans);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.zoneShare {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--accent-primary);
+}
+
+.zoneCircle {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.zoneDivider {
+  height: 1px;
+  background: var(--border-subtle);
+  margin: 12px 0;
+}
+
+.zoneDetailRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 0;
+}
+
+.zoneDetailLabel {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.zoneDetailValue {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--text-primary);
+  text-align: right;
+}
+
+.viewMap {
+  margin-top: 12px;
+}
+
+.sheetPad {
+  padding: 12px;
+}

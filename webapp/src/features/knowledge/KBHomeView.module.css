@@ -1,0 +1,170 @@
+.searchField {
+  margin-bottom: 8px;
+}
+
+.errorText {
+  margin: 0;
+  padding: 24px 0;
+  text-align: center;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--accent-danger);
+}
+
+/* Interactive maps touch point */
+.mapsSection {
+  margin-bottom: 12px;
+}
+
+.mapsHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.mapsIcon {
+  flex: none;
+  display: inline-flex;
+  color: var(--accent-primary);
+}
+
+.kicker {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--accent-primary);
+}
+
+.viewAll {
+  flex: none;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.mapsChevron {
+  flex: none;
+  display: inline-flex;
+  color: var(--text-dim);
+}
+
+/* Drafts banner */
+.drafts {
+  margin-bottom: 12px;
+}
+
+.draftsRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.draftsIcon {
+  flex: none;
+  display: inline-flex;
+  margin-top: 2px;
+  color: var(--accent-warn);
+}
+
+.draftsBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.draftsCaption {
+  margin: 2px 0 0;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+/* Sections & lists */
+.sectionHeader {
+  margin-bottom: 12px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.card {
+  padding: 12px;
+}
+
+.categoryRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.categoryIcon {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-primary);
+}
+
+.categoryText {
+  flex: 1;
+  min-width: 0;
+}
+
+.countCaption {
+  margin-top: 2px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.chevron {
+  flex: none;
+  display: inline-flex;
+  color: var(--text-dim);
+}
+
+/* Search results */
+.resultKicker {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: var(--accent-primary);
+}
+
+.resultTitle {
+  margin-top: 4px;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.noMatches {
+  margin: 0;
+  padding: 12px 0;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}

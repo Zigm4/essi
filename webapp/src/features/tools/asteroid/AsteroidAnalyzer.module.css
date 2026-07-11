@@ -1,0 +1,257 @@
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: stretch;
+}
+
+.inputCaption {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+}
+
+.input {
+  width: 100%;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--border-glow);
+  padding: 4px 0 8px;
+  font-family: var(--font-mono);
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: var(--text-primary);
+  outline: none;
+}
+
+.input::placeholder {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+
+.analyze {
+  margin-top: 16px;
+}
+
+.checklistRows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.checklistRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.checkOk {
+  color: var(--accent-success);
+  display: inline-flex;
+}
+
+.checkBad {
+  color: var(--accent-danger);
+  display: inline-flex;
+}
+
+.checkLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.checkLabelOk {
+  color: var(--text-primary);
+}
+
+.errorRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--accent-danger);
+}
+
+.errorMsg {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--text-primary);
+}
+
+.terminalBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.terminalLine {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent-primary);
+}
+
+.alertBox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid;
+}
+
+.alertEmoji {
+  font-size: 20px;
+  line-height: 1;
+  flex: none;
+}
+
+.alertMsg {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--text-primary);
+}
+
+.wealthRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.wealthCol {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.wealthColRight {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.miniCaption {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.wealthIcons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+
+.coinOn {
+  color: var(--accent-warn);
+  display: inline-flex;
+}
+
+.coinOff {
+  color: var(--text-dim);
+  display: inline-flex;
+}
+
+.valueNumber {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--accent-secondary);
+}
+
+.charRows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.charRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.charLabel {
+  width: 80px;
+  flex: none;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.charEmoji {
+  font-size: 18px;
+  line-height: 1;
+  flex: none;
+}
+
+.charName {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--text-primary);
+}
+
+.charSuffix {
+  flex: none;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.resourceRows {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.resourceRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.resourceEmoji {
+  font-size: 22px;
+  line-height: 1;
+  flex: none;
+}
+
+.resourceMain {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.resourceName {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--text-primary);
+}
+
+.resourceSymbol {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.resourcePts {
+  flex: none;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}

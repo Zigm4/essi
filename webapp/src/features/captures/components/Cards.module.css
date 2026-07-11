@@ -1,0 +1,90 @@
+.gap8 {
+  margin-top: 8px;
+}
+
+.title {
+  font-family: var(--font-sans);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+/* Body/note preview — raw source text, clamped. */
+.preview {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+}
+
+.previewNote {
+  color: var(--text-primary);
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+}
+
+.previewLink {
+  color: var(--text-secondary);
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.bottomRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.date {
+  flex: none;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+/* Right-aligned scrollable chips take the remaining width. */
+.chipsRight {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* --- LinkCard header --- */
+.linkHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.linkIcon {
+  flex: none;
+  display: inline-flex;
+  color: var(--accent-primary);
+  margin-top: 1px;
+}
+
+.linkHeaderText {
+  flex: 1;
+  min-width: 0;
+}
+
+.linkUrl {
+  margin-top: 2px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

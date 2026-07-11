@@ -1,0 +1,136 @@
+.detailTitle {
+  font-family: var(--font-sans);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+/* Divider between title and body/note (12px vertical margins, spec §10/§11). */
+.divider {
+  height: 1px;
+  background: var(--border-subtle);
+  margin: 12px 0;
+}
+
+.linkTitleGap {
+  margin-bottom: 8px;
+}
+
+/* --- URL row (spec §11.2) --- */
+.urlRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.urlIcon {
+  flex: none;
+  display: inline-flex;
+}
+
+.urlIconOpenable {
+  color: var(--accent-primary);
+}
+
+.urlIconPlain {
+  color: var(--text-secondary);
+}
+
+.urlText {
+  min-width: 0;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  word-break: break-all;
+}
+
+.urlTextOpenable {
+  color: var(--accent-secondary);
+  text-decoration: underline;
+  text-decoration-color: var(--accent-secondary);
+}
+
+.urlTextPlain {
+  color: var(--text-secondary);
+}
+
+/* --- Meta row (relative date + read-only chips) --- */
+.metaRow {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.metaDate {
+  flex: none;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.metaChips {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* --- Loading / not-found fallbacks --- */
+.fallback {
+  min-height: 100dvh;
+  background: var(--bg-deepest);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px;
+}
+
+.fallbackText {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--text-secondary);
+}
+
+.backLink {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-glass);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--accent-primary);
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 3px solid rgba(79, 195, 255, 0.25);
+  border-top-color: var(--accent-primary);
+  animation: detailspin 800ms linear infinite;
+}
+
+@keyframes detailspin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 2400ms;
+  }
+}

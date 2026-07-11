@@ -1,0 +1,215 @@
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: stretch;
+}
+
+.caption {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin: 6px 0 10px;
+}
+
+.searchField {
+  width: 100%;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--border-glow);
+  padding: 4px 0 8px;
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-primary);
+  outline: none;
+}
+
+.searchField:focus {
+  border-bottom-width: 2px;
+  border-bottom-color: var(--accent-primary);
+}
+
+.searchField::placeholder {
+  font-family: var(--font-mono);
+  color: var(--text-dim);
+}
+
+.statRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+}
+
+.statLabel {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.statValue {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent-secondary);
+}
+
+.noMatchRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--accent-warn);
+}
+
+.noMatchText {
+  display: flex;
+  flex-direction: column;
+}
+
+.noMatchHead {
+  font-family: var(--font-sans);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.resultsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.shareBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--accent-primary);
+}
+
+.hiddenCaption {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  padding: 0 4px;
+}
+
+.subHeader {
+  margin-top: 4px;
+}
+
+.ownerTop {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.ownerIcon {
+  color: var(--accent-primary);
+  flex: none;
+  margin-top: 2px;
+}
+
+.ownerNameCol {
+  flex: 1;
+  min-width: 0;
+}
+
+.ownerName {
+  font-family: var(--font-sans);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.ownerHandle {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--accent-secondary);
+  overflow-wrap: anywhere;
+}
+
+.ownerCount {
+  flex: none;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.divider {
+  height: 1px;
+  background: var(--border-subtle);
+  margin: 10px 0;
+}
+
+.walletRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.walletRow + .walletRow {
+  margin-top: 6px;
+}
+
+.walletIcon {
+  color: var(--accent-secondary);
+  flex: none;
+}
+
+.walletText {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-primary);
+  user-select: text;
+  overflow-wrap: anywhere;
+}
+
+.hitWallet {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hitWalletText {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  user-select: text;
+  overflow-wrap: anywhere;
+}
+
+.hitRegistered {
+  margin-top: 6px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.hitOwner {
+  font-weight: 600;
+  color: var(--accent-primary);
+}
+
+.hitOwnerHandle {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--accent-secondary);
+}

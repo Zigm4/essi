@@ -1,0 +1,17 @@
+.container {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  touch-action: none; /* we own pan/zoom/pinch via pointer events */
+}
+
+.canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+}
+
+.canvas:active {
+  cursor: grabbing;
+}

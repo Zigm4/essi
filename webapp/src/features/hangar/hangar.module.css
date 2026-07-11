@@ -1,0 +1,1240 @@
+/* Hangar feature styles. Tokens from design-system/tokens.css; dimensions and
+   colours are the exact values in docs/web-rewrite/hangar.md. */
+
+/* --- Shared spinner / centered states -------------------------------------- */
+
+.spinner {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid rgba(79, 195, 255, 0.25);
+  border-top-color: var(--accent-primary);
+  animation: hangar-spin 800ms linear infinite;
+}
+
+@keyframes hangar-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.listCentered {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 0;
+}
+
+.listError {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--accent-danger);
+}
+
+/* --- Empty state (spec §5.1) ----------------------------------------------- */
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 32px 0;
+}
+
+.emptyIcon {
+  color: rgba(79, 195, 255, 0.4);
+  margin-bottom: 8px;
+}
+
+.emptyTitle {
+  font-family: var(--font-sans);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.emptyHint {
+  margin-top: 4px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+/* --- Category groups (spec §5.2) ------------------------------------------- */
+
+.categoryBlock {
+  margin-bottom: 12px;
+}
+
+.categoryHeader {
+  display: flex;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.categoryIcon {
+  display: inline-flex;
+  color: var(--accent-primary);
+}
+
+.categoryLabel {
+  margin-left: 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: var(--accent-primary);
+}
+
+.categoryCount {
+  margin-left: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+
+.cardSlot {
+  margin-bottom: 8px;
+}
+
+.notesSpacer {
+  height: 16px;
+}
+
+/* --- Ship card (spec §5.3) ------------------------------------------------- */
+
+.cardWrap {
+  display: block;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cardWrap:focus-visible {
+  outline: 2px solid var(--border-glow);
+  outline-offset: 2px;
+  border-radius: 14px;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.cardHeaderMain {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.shipName {
+  font-family: var(--font-sans);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.modelLabel {
+  margin-top: 2px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.badge {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.badgeOk {
+  color: var(--accent-success);
+}
+
+.badgeWarn {
+  color: var(--accent-warn);
+}
+
+.rowIcon {
+  display: inline-flex;
+  flex: none;
+  color: var(--accent-primary);
+}
+
+.locationRow {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.locationText {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.hullRow {
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.hullLabel {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.hullValue {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.hullSpacer {
+  flex: 1;
+}
+
+.stepper {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 8px;
+  background: var(--bg-glass);
+  border: 1px solid rgba(79, 195, 255, 0.4);
+  color: var(--accent-primary);
+  cursor: pointer;
+}
+
+.stepper + .stepper {
+  margin-left: 6px;
+}
+
+.stepper:disabled {
+  border-color: var(--border-subtle);
+  color: var(--text-dim);
+  cursor: default;
+}
+
+.rolesBlock {
+  margin-top: 8px;
+}
+
+.roleRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 1px 0;
+  padding-left: 4px;
+}
+
+.roleIcon {
+  display: inline-flex;
+  flex: none;
+  color: var(--accent-secondary);
+}
+
+.roleName {
+  flex: none;
+  width: 80px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.roleCrew {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.cardTags {
+  margin-top: 8px;
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.cardTags::-webkit-scrollbar {
+  display: none;
+}
+
+/* --- Editor sheet (spec §6) ------------------------------------------------ */
+
+.editorRoot {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+}
+
+.editorScrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  border: none;
+  padding: 0;
+  cursor: default;
+}
+
+.editorPanel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: 0 auto;
+  max-width: 680px;
+  height: 95dvh;
+  max-height: 97dvh;
+  background: var(--bg-deepest);
+  border-radius: 22px 22px 0 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.6);
+}
+
+.editorAppBar {
+  position: relative;
+  flex: none;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.editorLeading {
+  width: 80px;
+  flex: none;
+  display: flex;
+  align-items: center;
+}
+
+.editorTitle {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-sans);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.editorTrailing {
+  margin-left: auto;
+  padding-right: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.editorCancel {
+  background: none;
+  border: none;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+
+.editorSave {
+  background: none;
+  border: none;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--accent-primary);
+}
+
+.editorSaveDisabled {
+  background: none;
+  border: none;
+  padding: 8px 12px;
+  cursor: default;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+.editorBody {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 12px 12px 32px;
+}
+
+.editorCentered {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.catalogError {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--accent-danger);
+}
+
+/* Card inner rhythm: 12px between fields, ~8px after the header. */
+.editorCard {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.editorCard > .sectionHeader {
+  margin-bottom: -4px;
+}
+
+.editorCardCrew {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sectionHeader {
+  /* wrapper for SectionHeader; spacing handled by the card stack */
+}
+
+/* --- Labeled fields / inputs (spec §6.4) ----------------------------------- */
+
+.labeledField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.fieldLabel {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.input,
+.inputMono {
+  width: 100%;
+  background: var(--bg-glass);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--text-primary);
+  outline: none;
+}
+
+.input {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 400;
+}
+
+.inputMono {
+  font-family: var(--font-mono);
+  font-size: 14px;
+}
+
+.input:focus,
+.inputMono:focus {
+  border-color: var(--border-glow);
+}
+
+.input::placeholder,
+.inputMono::placeholder {
+  color: var(--text-dim);
+}
+
+.textarea {
+  width: 100%;
+  min-height: 76px;
+  resize: vertical;
+  background: var(--bg-glass);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--text-primary);
+  outline: none;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.textarea:focus {
+  border-color: var(--border-glow);
+}
+
+.textarea::placeholder {
+  color: var(--text-dim);
+}
+
+.fieldRow {
+  display: flex;
+  gap: 12px;
+}
+
+.fieldRow > .labeledField {
+  flex: 1;
+}
+
+/* Prefix + number field (spec §7.3) */
+.prefixField {
+  display: flex;
+  align-items: center;
+  background: var(--bg-glass);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 0 12px;
+}
+
+.prefixChip {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent-secondary);
+}
+
+.prefixInput {
+  flex: 1;
+  min-width: 0;
+  margin-left: 2px;
+  background: none;
+  border: none;
+  outline: none;
+  padding: 14px 0;
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.prefixInput::placeholder {
+  color: var(--text-dim);
+  font-weight: 400;
+}
+
+.disabledField {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+/* Picker trigger button (spec §7.1) */
+.pickerButton {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  background: var(--bg-glass);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 12px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.pickerValue {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pickerPlaceholder {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--text-dim);
+}
+
+.pickerChevron {
+  flex: none;
+  display: inline-flex;
+  color: var(--text-secondary);
+}
+
+/* Registered switch (spec §6.3) */
+.switchRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.switch {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  flex: none;
+  border-radius: 11px;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  background: rgba(122, 227, 255, 0.2);
+  transition: background-color 160ms ease;
+}
+
+.switchOn {
+  background: rgba(95, 232, 160, 0.45);
+}
+
+.switchThumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--text-secondary);
+  transition:
+    transform 160ms ease,
+    background-color 160ms ease;
+}
+
+.switchOn .switchThumb {
+  transform: translateX(18px);
+  background: var(--accent-success);
+}
+
+.switchLabel {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--text-primary);
+}
+
+/* Owner card (spec §6.3) */
+.ownerRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ownerIcon {
+  display: inline-flex;
+  color: var(--accent-secondary);
+}
+
+.ownerName {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--text-primary);
+}
+
+.ownerSpacer {
+  flex: 1;
+}
+
+.ownerId {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-secondary);
+}
+
+.ownerCaption {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.tagsBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.deleteButton {
+  align-self: stretch;
+  background: none;
+  border: 1px solid rgba(255, 85, 119, 0.4);
+  border-radius: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--accent-danger);
+}
+
+/* --- Tag input field (spec §4.7) ------------------------------------------- */
+
+.tagField {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: var(--bg-glass);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  cursor: text;
+}
+
+.tagFieldFocused {
+  border-color: var(--border-glow);
+}
+
+.selectedChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 20px;
+  background: var(--accent-primary);
+  color: var(--bg-deepest);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.chipRemove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--bg-deepest);
+}
+
+.tagInput {
+  flex: 1;
+  min-width: 80px;
+  background: none;
+  border: none;
+  outline: none;
+  padding: 2px 0;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--text-primary);
+}
+
+.tagInput::placeholder {
+  color: var(--text-dim);
+}
+
+.suggestions {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.suggestions::-webkit-scrollbar {
+  display: none;
+}
+
+/* --- Picker sheet (spec §7.1 / §7.2) --------------------------------------- */
+
+.pickerScrim {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  background: rgba(0, 0, 0, 0.55);
+  border: none;
+  padding: 0;
+  cursor: default;
+}
+
+.pickerSheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 56;
+  margin: 0 auto;
+  max-width: 680px;
+  max-height: 80dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-elevated);
+  border-radius: 20px 20px 0 0;
+  padding: 12px;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom));
+}
+
+.pickerTitle {
+  flex: none;
+  font-family: var(--font-sans);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
+
+.pickerList {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.pickerTile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 8px;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.pickerTile:hover {
+  background: rgba(79, 195, 255, 0.06);
+}
+
+.pickerTileSelected {
+  background: rgba(79, 195, 255, 0.1);
+}
+
+.pickerTileLeading {
+  display: inline-flex;
+  flex: none;
+  color: var(--text-secondary);
+}
+
+.pickerTileText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.pickerTileName {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--text-primary);
+}
+
+.pickerTileSubtitle {
+  margin-top: 2px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.pickerTileCheck {
+  flex: none;
+  display: inline-flex;
+  color: var(--accent-primary);
+}
+
+.pickerGroupLabel {
+  padding: 12px 12px 4px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  color: var(--accent-primary);
+}
+
+/* --- Confirm dialog (spec §5.3 / §6.2) ------------------------------------- */
+
+.dialogScrim {
+  position: fixed;
+  inset: 0;
+  z-index: 58;
+  background: rgba(0, 0, 0, 0.6);
+  border: none;
+  padding: 0;
+  cursor: default;
+}
+
+.dialog {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 59;
+  width: min(420px, calc(100vw - 48px));
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 20px;
+}
+
+.dialogTitle {
+  font-family: var(--font-sans);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.dialogBody {
+  margin-top: 8px;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--text-primary);
+}
+
+.dialogActions {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.dialogCancel {
+  background: none;
+  border: none;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--text-secondary);
+}
+
+.dialogDanger {
+  background: none;
+  border: none;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--accent-danger);
+}
+
+/* --- EVIL intro (spec §8) -------------------------------------------------- */
+
+.evilRoot {
+  position: fixed;
+  inset: 0;
+  z-index: 57;
+  background: var(--bg-deepest);
+  overflow: hidden;
+}
+
+.starfield {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 1;
+  transition: opacity 1600ms ease;
+  pointer-events: none;
+}
+
+.starfieldDim {
+  opacity: 0.25;
+}
+
+.star {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--accent-secondary);
+}
+
+.starDrift {
+  animation: star-drift 60s linear infinite;
+}
+
+@keyframes star-drift {
+  to {
+    transform: translateY(30px);
+  }
+}
+
+.evilColumn {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 16px 16px;
+}
+
+.evilText {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  opacity: 1;
+  transition: opacity 1600ms ease;
+}
+
+.evilTextHidden {
+  opacity: 0;
+}
+
+.evilHeader {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.evilHeaderRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--accent-secondary);
+}
+
+.evilTitle {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 8px;
+  color: var(--text-primary);
+  text-shadow: 0 0 6px rgba(79, 195, 255, 0.5);
+}
+
+.evilSubtitle {
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  color: var(--accent-secondary);
+}
+
+.crawlViewport {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+  margin-top: 16px;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    #000 18%,
+    #000 50%,
+    #000 82%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    #000 18%,
+    #000 50%,
+    #000 82%,
+    transparent 100%
+  );
+}
+
+.crawlContent {
+  position: absolute;
+  left: 0;
+  right: 0;
+  will-change: transform;
+}
+
+.crawlSpacer {
+  height: 4px;
+}
+
+.crawlComment {
+  padding: 8px 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  color: rgba(122, 227, 255, 0.75);
+}
+
+.crawlParagraph {
+  margin: 0;
+  padding: 8px;
+  font-family: 'AmericanTypewriter', Georgia, 'Times New Roman', serif;
+  font-size: 17px;
+  line-height: 1.4;
+  color: var(--text-primary);
+}
+
+.evilFooter {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.evilHint {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  animation: evil-hint-in 500ms ease;
+}
+
+@keyframes evil-hint-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.evilClose {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: 40px;
+  border: none;
+  cursor: pointer;
+  background: var(--accent-primary);
+  color: var(--bg-deepest);
+  box-shadow: 0 0 10px rgba(79, 195, 255, 0.55);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 2px;
+}
+
+/* Void portal (decorative CSS re-interpretation, spec §8.3) */
+.portal {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: 150vmax;
+  height: 150vmax;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: scale(0);
+  animation: portal-grow 4000ms cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+  pointer-events: none;
+}
+
+.portalReduced {
+  animation-duration: 600ms;
+}
+
+.portal > div {
+  position: absolute;
+  border-radius: 50%;
+}
+
+.portalHalo {
+  width: 90vmax;
+  height: 90vmax;
+  background: radial-gradient(circle, rgba(79, 195, 255, 0.35), transparent 70%);
+}
+
+.portalCorona {
+  width: 62vmax;
+  height: 62vmax;
+  background: radial-gradient(circle, rgba(79, 195, 255, 0.65), transparent 68%);
+}
+
+.portalAqua {
+  width: 50vmax;
+  height: 50vmax;
+  background: radial-gradient(circle, rgba(122, 227, 255, 0.45), transparent 72%);
+  filter: blur(24px);
+  animation: portal-spin-cw 40s linear infinite;
+}
+
+.portalMantle {
+  width: 38vmax;
+  height: 38vmax;
+  background: radial-gradient(circle, rgba(5, 8, 16, 0.9), rgba(5, 8, 16, 0.9) 65%, transparent);
+  filter: blur(18px);
+  animation: portal-spin-ccw 33s linear infinite;
+}
+
+.portalCore {
+  width: 29vmax;
+  height: 29vmax;
+  background: radial-gradient(circle, #000, #000 70%, transparent);
+  filter: blur(8px);
+  animation: portal-spin-cw 26s linear infinite;
+}
+
+.portalGlints {
+  width: 22vmax;
+  height: 22vmax;
+  border: 1.2px solid rgba(122, 227, 255, 0.6);
+  filter: blur(6px);
+  animation: portal-spin-ccw 21s linear infinite;
+}
+
+.portalSettled .portalAqua,
+.portalSettled .portalMantle,
+.portalSettled .portalCore,
+.portalSettled .portalGlints {
+  animation-play-state: paused;
+}
+
+.portalReduced .portalAqua,
+.portalReduced .portalMantle,
+.portalReduced .portalCore,
+.portalReduced .portalGlints {
+  animation: none;
+}
+
+@keyframes portal-grow {
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes portal-spin-cw {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes portal-spin-ccw {
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner,
+  .starDrift,
+  .portal,
+  .portalAqua,
+  .portalMantle,
+  .portalCore,
+  .portalGlints,
+  .evilHint {
+    animation: none;
+  }
+  .portal {
+    transform: scale(1);
+  }
+}

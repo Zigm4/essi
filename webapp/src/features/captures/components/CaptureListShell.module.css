@@ -1,0 +1,141 @@
+.content {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+/* --- Search field (spec §6.1) --- */
+.searchWrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 12px 8px;
+  padding: 0 12px;
+  height: 40px;
+  border-radius: 8px;
+  background: var(--bg-glass);
+  border: 1px solid var(--border-subtle);
+}
+
+.searchWrap:focus-within {
+  border-color: var(--border-glow);
+}
+
+.searchIcon {
+  flex: none;
+  display: inline-flex;
+  color: var(--text-secondary);
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: none;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--text-primary);
+}
+
+.searchInput::placeholder {
+  color: var(--text-dim);
+}
+
+/* --- Tag filter row (spec §6.2) --- */
+.tagRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 12px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tagRow::-webkit-scrollbar {
+  display: none;
+}
+
+.spacer8 {
+  height: 8px;
+  flex: none;
+}
+
+/* --- Card list --- */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 12px 32px;
+}
+
+/* --- Empty state (spec §6.4) --- */
+.empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 32px;
+}
+
+.emptyIcon {
+  display: inline-flex;
+  color: rgba(79, 195, 255, 0.4);
+}
+
+.emptyTitle {
+  margin-top: 8px;
+  font-family: var(--font-sans);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.emptyCaption {
+  margin-top: 4px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+/* --- Async states --- */
+.centered {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.errorText {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--accent-danger);
+  text-align: center;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 3px solid rgba(79, 195, 255, 0.25);
+  border-top-color: var(--accent-primary);
+  animation: spin 800ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 2400ms;
+  }
+}

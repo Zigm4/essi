@@ -1,0 +1,139 @@
+.field {
+  margin-bottom: 12px;
+}
+
+.groups {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.row {
+  padding: 12px;
+}
+
+.rowInner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.rowIcon {
+  flex: none;
+  display: inline-flex;
+  color: var(--accent-primary);
+}
+
+.rowText {
+  flex: 1;
+  min-width: 0;
+}
+
+.rowTitle {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.rowSubtitle {
+  margin-top: 2px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.rowChevron {
+  flex: none;
+  display: inline-flex;
+  color: var(--text-dim);
+}
+
+.more {
+  margin: 2px 0 0;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+/* Hint (empty query) */
+.hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 24px;
+}
+
+.hintIcon {
+  display: inline-flex;
+  color: var(--text-dim);
+  opacity: 0.6;
+}
+
+.centered {
+  text-align: center;
+}
+
+.hintCaption {
+  margin: 4px 0 0;
+  text-align: center;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.hintIcon + .centered {
+  margin-top: 12px;
+}
+
+/* No matches */
+.noMatches {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 24px;
+}
+
+.noMatchesIcon {
+  display: inline-flex;
+  color: var(--accent-warn);
+}
+
+.noMatchesIcon + .centered {
+  margin-top: 8px;
+}
+
+.noMatchesCaption {
+  margin: 4px 0 0;
+  text-align: center;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.errorText {
+  margin: 0;
+  padding-top: 24px;
+  text-align: center;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--accent-danger);
+}

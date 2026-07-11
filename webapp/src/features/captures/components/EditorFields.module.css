@@ -1,0 +1,74 @@
+.titleInput {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: none;
+  padding: 0;
+  font-family: var(--font-sans);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Link editor title is the smaller headline style (spec §9). */
+.linkTitleInput {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: none;
+  padding: 0;
+  font-family: var(--font-sans);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.titleInput::placeholder,
+.linkTitleInput::placeholder {
+  color: var(--text-dim);
+}
+
+.urlInput {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: none;
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.urlInput::placeholder {
+  color: var(--text-dim);
+}
+
+.textArea {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: none;
+  padding: 0;
+  resize: none;
+  display: block;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 21px;
+  color: var(--text-primary);
+}
+
+.textArea::placeholder {
+  color: var(--text-dim);
+}
+
+.divider {
+  height: 1px;
+  background: var(--border-subtle);
+  margin: 8px 0;
+}
+
+.tagsHeader {
+  margin-top: 16px;
+  margin-bottom: 8px;
+}

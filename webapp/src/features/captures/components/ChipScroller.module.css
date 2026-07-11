@@ -1,0 +1,17 @@
+.row {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  min-width: 0;
+}
+
+.row::-webkit-scrollbar {
+  display: none;
+}
+
+/* Right-aligned, start-of-list at the right edge (Flutter reverse ListView). */
+.reverse {
+  flex-direction: row-reverse;
+  justify-content: flex-end;
+}
