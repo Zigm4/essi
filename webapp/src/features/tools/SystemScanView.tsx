@@ -13,12 +13,12 @@ import {
   IconWarningAmber,
   IconWifiTethering,
 } from '../../design-system/icons';
-import { useSettingsStore } from '../../data/settings';
+import { resolveProxyBase } from './nasa/jplClient';
 import type { HistoryRow } from '../../data/db';
 import { ToolScaffold } from './nasa/ui/ToolScaffold';
 import { Divider, PillBadge, Spinner, SquareSegmented } from './nasa/ui/kit';
 import { PlanetGlyph } from './nasa/ui/PlanetGlyph';
-import { BulletRow, HistorySheet, ProxyNotice } from './nasa/ui/viewKit';
+import { BulletRow, HistorySheet } from './nasa/ui/viewKit';
 import {
   IconCenterFocus,
   IconError,
@@ -171,7 +171,7 @@ const SCAN_HISTORY_STRINGS = {
 } as const;
 
 export function SystemScanView() {
-  const proxyBase = useSettingsStore((s) => s.jplProxyUrl).trim().replace(/\/+$/, '') || null;
+  const proxyBase = resolveProxyBase();
 
   const [mode, setMode] = useState<ScanMode>('light');
   const [isScanning, setIsScanning] = useState(false);
@@ -356,9 +356,7 @@ export function SystemScanView() {
           </div>
         </GlassCard>
 
-        {proxyBase === null ? (
-          <ProxyNotice />
-        ) : (
+        {proxyBase === null ? null : (
           <GlassCard>
             {isScanning ? (
               <div className={styles.rowCenter} style={{ gap: 8 }}>

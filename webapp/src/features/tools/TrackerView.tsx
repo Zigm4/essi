@@ -5,13 +5,13 @@ import { NeonButton } from '../../design-system/components/NeonButton';
 import { SectionHeader } from '../../design-system/components/SectionHeader';
 import { TransmissionHeader } from '../../design-system/components/TransmissionHeader';
 import { IconPublic, IconTrack, IconWarningAmber, IconWifiTethering } from '../../design-system/icons';
-import { useSettingsStore } from '../../data/settings';
+import { resolveProxyBase } from './nasa/jplClient';
 import type { HistoryRow } from '../../data/db';
 import { Haptics } from '../../core/haptics';
 import { showSnackbar } from '../../core/snackbar';
 import { ToolScaffold } from './nasa/ui/ToolScaffold';
 import { Divider, Spinner, SquareSegmented } from './nasa/ui/kit';
-import { BulletRow, HistorySheet, ProxyNotice } from './nasa/ui/viewKit';
+import { BulletRow, HistorySheet } from './nasa/ui/viewKit';
 import {
   IconCenterFocus,
   IconPushPin,
@@ -79,7 +79,7 @@ function InfoRow({ label, children }: { label: string; children: ReactNode }) {
 
 export function TrackerView() {
   const location = useLocation();
-  const proxyBase = useSettingsStore((s) => s.jplProxyUrl).trim().replace(/\/+$/, '') || null;
+  const proxyBase = resolveProxyBase();
 
   const [query, setQuery] = useState('');
   const [kind, setKind] = useState<ObjectKind>('asteroid');
@@ -370,9 +370,7 @@ export function TrackerView() {
         </div>
       </GlassCard>
 
-      {proxyBase === null ? (
-        <ProxyNotice />
-      ) : (
+      {proxyBase === null ? null : (
         <GlassCard>
           {loading ? (
             <div className={styles.rowCenter} style={{ gap: 8 }}>

@@ -1,8 +1,6 @@
 import { useState, type ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { GlassCard } from '../../../../design-system/components/GlassCard';
-import { NeonButton } from '../../../../design-system/components/NeonButton';
-import { IconWarningAmber, IconWifiTethering } from '../../../../design-system/icons';
+import { IconWarningAmber } from '../../../../design-system/icons';
 import { Haptics } from '../../../../core/haptics';
 import type { HistoryRow } from '../../../../data/db';
 import { clearHistory, deleteHistoryRow, useHistory, type HistoryKind } from '../history';
@@ -11,39 +9,9 @@ import { IconDelete, IconHistory } from './toolIcons';
 import styles from './nasa.module.css';
 
 /**
- * Cross-view building blocks for the three NASA tool screens: the
- * empty-proxy notice, a confirm dialog, transparency bullet rows, and the
- * generic history bottom sheet (spec §3.3).
+ * Cross-view building blocks for the three NASA tool screens: a confirm dialog,
+ * transparency bullet rows, and the generic history bottom sheet (spec §3.3).
  */
-
-// --- Empty-proxy state (web-only; spec §11 open question #1) ------------------
-
-/**
- * Shown in place of the action button when `settings.jplProxyUrl` is blank, so
- * no network call is ever attempted. Links to Settings where the proxy is set.
- */
-export function ProxyNotice() {
-  const navigate = useNavigate();
-  return (
-    <GlassCard>
-      <div className={styles.rowCenter} style={{ gap: 8 }}>
-        <span style={{ color: 'var(--accent-warn)', display: 'inline-flex' }}>
-          <IconWifiTethering size={18} />
-        </span>
-        <span className={styles.headline}>Network access not configured</span>
-      </div>
-      <div className={styles.caption} style={{ marginTop: 8 }}>
-        This tool reaches NASA&apos;s JPL servers, which browsers can&apos;t call directly. Configure
-        the JPL proxy URL in Settings to enable it.
-      </div>
-      <NeonButton
-        className={styles.proxyButton}
-        title="Open Settings"
-        onPressed={() => navigate('/menu/settings')}
-      />
-    </GlassCard>
-  );
-}
 
 // --- Confirm dialog (clear-all / single-delete) ------------------------------
 

@@ -12,12 +12,12 @@ import {
   IconWarningAmber,
   IconWifiTethering,
 } from '../../design-system/icons';
-import { useSettingsStore } from '../../data/settings';
+import { resolveProxyBase } from './nasa/jplClient';
 import type { HistoryRow } from '../../data/db';
 import { Haptics } from '../../core/haptics';
 import { ToolScaffold } from './nasa/ui/ToolScaffold';
 import { Divider, PillSegmented, Spinner } from './nasa/ui/kit';
-import { BulletRow, HistorySheet, ProxyNotice } from './nasa/ui/viewKit';
+import { BulletRow, HistorySheet } from './nasa/ui/viewKit';
 import {
   IconEventNote,
   IconList,
@@ -166,7 +166,7 @@ interface ResultMeta {
 }
 
 export function CelestialView() {
-  const proxyBase = useSettingsStore((s) => s.jplProxyUrl).trim().replace(/\/+$/, '') || null;
+  const proxyBase = resolveProxyBase();
 
   const [kind, setKind] = useState<ObjectKind>('comet');
   const [startDate, setStartDate] = useState<Date>(() => defaultStart());
@@ -411,9 +411,7 @@ export function CelestialView() {
           )}
         </GlassCard>
 
-        {proxyBase === null ? (
-          <ProxyNotice />
-        ) : (
+        {proxyBase === null ? null : (
           <GlassCard>
             {isSearching ? (
               <div className={styles.rowCenter} style={{ gap: 8 }}>
