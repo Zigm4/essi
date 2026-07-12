@@ -9,6 +9,7 @@ import { showSnackbar } from '../core/snackbar';
 import { db } from '../data/db';
 import { describeImportSummary, exportAndDownload, importFromUserPick } from '../data/exportImport';
 import { useSettingsStore } from '../data/settings';
+import { normalizeProxyUrl } from '../features/tools/nasa/jplClient';
 import { GlassCard } from '../design-system/components/GlassCard';
 import { SectionHeader } from '../design-system/components/SectionHeader';
 import { SubPage } from '../design-system/components/SubPage';
@@ -104,6 +105,25 @@ export function SettingsView() {
   const [mapsBytes, setMapsBytes] = useState<number | null>(null);
   const [confirmClear, setConfirmClear] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [proxyTest, setProxyTest] = useState<'idle' | 'testing' | 'ok' | 'fail'>('idle');
+
+  const testProxy = useCallback(() => {
+    const base = normalizeProxyUrl(settings.jplProxyUrl);
+    if (base.length === 0) return;
+    setProxyTest('testing');
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 12_000);
+    void fetch(`${base}/sbdb?sstr=1`, { method: 'GET', signal: controller.signal })
+      .then((r) => {
+        clearTimeout(timer);
+        // Any HTTP reply (even 4xx) proves the proxy is reachable + CORS-OK.
+        setProxyTest(r.ok || r.status < 500 ? 'ok' : 'fail');
+      })
+      .catch(() => {
+        clearTimeout(timer);
+        setProxyTest('fail');
+      });
+  }, [settings.jplProxyUrl]);
 
   const refreshMapsInfo = useCallback(() => {
     void (async () => {
@@ -273,8 +293,29 @@ export function SettingsView() {
             placeholder="https://your-worker.example.workers.dev"
             aria-label="JPL proxy URL"
             value={settings.jplProxyUrl}
-            onChange={(e) => settings.setJplProxyUrl(e.target.value)}
+            onChange={(e) => {
+              settings.setJplProxyUrl(e.target.value);
+              setProxyTest('idle');
+            }}
+            onBlur={() => {
+              const clean = normalizeProxyUrl(settings.jplProxyUrl);
+              if (clean !== settings.jplProxyUrl) settings.setJplProxyUrl(clean);
+            }}
           />
+          <div className={styles.proxyTestRow}>
+            <button
+              type="button"
+              className={styles.proxyTestBtn}
+              disabled={normalizeProxyUrl(settings.jplProxyUrl).length === 0 || proxyTest === 'testing'}
+              onClick={testProxy}
+            >
+              {proxyTest === 'testing' ? 'Testing…' : 'Test connection'}
+            </button>
+            {proxyTest === 'ok' && <span className={styles.proxyOk}>✓ Proxy reachable</span>}
+            {proxyTest === 'fail' && (
+              <span className={styles.proxyFail}>✗ Couldn&apos;t reach it — check the URL (needs https://)</span>
+            )}
+          </div>
         </div>
       </GlassCard>
 

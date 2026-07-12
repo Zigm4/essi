@@ -10,7 +10,7 @@ export class ScanError extends Error {}
 
 export class ScanOfflineError extends ScanError {
   constructor() {
-    super('No internet connection.');
+    super("Couldn't reach the JPL proxy. Check the proxy URL in Settings (it must start with https://), or your connection.");
     this.name = 'ScanOfflineError';
   }
 }
@@ -83,7 +83,7 @@ export class CelestialUnparseableError extends CelestialError {
 
 export class CelestialOfflineError extends CelestialError {
   constructor() {
-    super('No network connection. Check your signal.');
+    super("Couldn't reach the JPL proxy. Check the proxy URL in Settings (it must start with https://), or your connection.");
     this.name = 'CelestialOfflineError';
   }
 }
@@ -101,7 +101,7 @@ export class TrackerError extends Error {}
 
 export class TrackerOfflineError extends TrackerError {
   constructor() {
-    super('No network connection. Check your signal.');
+    super("Couldn't reach the JPL proxy. Check the proxy URL in Settings (it must start with https://), or your connection.");
     this.name = 'TrackerOfflineError';
   }
 }

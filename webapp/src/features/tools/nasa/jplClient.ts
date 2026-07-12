@@ -39,11 +39,27 @@ const READ_TIMEOUT_MS = 30_000;
 const MAX_RETRIES = 2;
 const RETRY_DELAYS_MS = [500, 1500] as const;
 
-/** Trimmed proxy base, or null when unconfigured (drives the empty-proxy UI). */
+/**
+ * Normalise a user-entered proxy URL so common mistakes still work:
+ * trims whitespace, adds a scheme when missing, upgrades http→https (a
+ * workers.dev proxy is https-only, and an https page blocks http as mixed
+ * content — the #1 "no internet" trap), and strips trailing slashes.
+ * localhost keeps http for local development.
+ */
+export function normalizeProxyUrl(raw: string): string {
+  let t = raw.trim();
+  if (t.length === 0) return '';
+  if (!/^https?:\/\//i.test(t)) t = `https://${t}`;
+  if (/^http:\/\//i.test(t) && !/^http:\/\/(localhost|127\.0\.0\.1|\[::1\])/i.test(t)) {
+    t = `https://${t.slice('http://'.length)}`;
+  }
+  return t.replace(/\/+$/, '');
+}
+
+/** Normalised proxy base, or null when unconfigured (drives the empty-proxy UI). */
 export function resolveProxyBase(): string | null {
-  const raw = useSettingsStore.getState().jplProxyUrl.trim();
-  if (raw.length === 0) return null;
-  return raw.replace(/\/+$/, '');
+  const normalized = normalizeProxyUrl(useSettingsStore.getState().jplProxyUrl);
+  return normalized.length === 0 ? null : normalized;
 }
 
 /** Build the proxied URL, forwarding the exact JPL query params (single-quoted

@@ -171,6 +171,43 @@
   color: var(--text-dim);
 }
 
+.proxyTestRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.proxyTestBtn {
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border-glow);
+  background: rgba(79, 195, 255, 0.1);
+  color: var(--accent-primary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+}
+
+.proxyTestBtn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.proxyOk {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--accent-success);
+}
+
+.proxyFail {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--accent-danger);
+}
+
 /* Confirmation dialog */
 .dialogScrim {
   position: fixed;
