@@ -140,11 +140,15 @@ export interface ReminderInputs {
 }
 
 /**
- * `BackupReminder.shouldShowReminder` (spec §17):
+ * Whether to surface the "back up your data" reminder. Proactive: it shows as
+ * soon as the user has ANY data that has never been exported (or has changed
+ * since the last export), unless the reminder is currently snoozed. There is no
+ * 30-day grace period - the whole point is to warn before an uninstall wipes
+ * data the user never saved to a file.
+ *
  *   show = hasData
  *     AND NOT (snoozedUntil != null AND now < snoozedUntil)
  *     AND (lastBackupAt == null OR lastChangedAt == null OR lastChangedAt > lastBackupAt)
- *     AND (lastBackupAt == null OR now - lastBackupAt >= 30 days)
  */
 export function shouldShowReminder({
   status,
@@ -158,9 +162,7 @@ export function shouldShowReminder({
     lastBackupAt === null ||
     status.lastChangedAt === null ||
     status.lastChangedAt > lastBackupAt;
-  if (!changedSinceBackup) return false;
-  const staleEnough = lastBackupAt === null || now - lastBackupAt >= REMINDER_THRESHOLD_MS;
-  return staleEnough;
+  return changedSinceBackup;
 }
 
 /**

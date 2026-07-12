@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 
 /**
- * Inline SVG icon set — Material Symbols outlined style on a 24px grid,
+ * Inline SVG icon set - Material Symbols outlined style on a 24px grid,
  * stroke-based (no icon font dependency). Tab icons accept `filled` for
  * their active variants (heavier stroke + translucent fill).
  */
@@ -45,7 +45,7 @@ function tabFill(filled: boolean) {
 
 // --- Tab bar -----------------------------------------------------------------
 
-/** handyman — crossed tools. */
+/** handyman - crossed tools. */
 export function IconTools({ filled = false, ...props }: TabIconProps) {
   const f = tabFill(filled);
   return (
@@ -58,7 +58,7 @@ export function IconTools({ filled = false, ...props }: TabIconProps) {
   );
 }
 
-/** note_alt — pad with pencil. */
+/** note_alt - pad with pencil. */
 export function IconNotes({ filled = false, ...props }: TabIconProps) {
   const f = tabFill(filled);
   return (
@@ -70,7 +70,7 @@ export function IconNotes({ filled = false, ...props }: TabIconProps) {
   );
 }
 
-/** inventory_2 — storage box. */
+/** inventory_2 - storage box. */
 export function IconHangar({ filled = false, ...props }: TabIconProps) {
   const f = tabFill(filled);
   return (
@@ -82,7 +82,7 @@ export function IconHangar({ filled = false, ...props }: TabIconProps) {
   );
 }
 
-/** menu_book — open book. */
+/** menu_book - open book. */
 export function IconKnowledge({ filled = false, ...props }: TabIconProps) {
   const f = tabFill(filled);
   return (
@@ -97,7 +97,7 @@ export function IconKnowledge({ filled = false, ...props }: TabIconProps) {
   );
 }
 
-/** more_horiz — three dots (same in both states). */
+/** more_horiz - three dots (same in both states). */
 export function IconMoreHoriz(props: IconProps) {
   return (
     <Svg {...props}>
@@ -452,7 +452,7 @@ export function IconPublic(props: IconProps) {
 
 // --- Tool icons ----------------------------------------------------------------
 
-/** radar — System Scan. */
+/** radar - System Scan. */
 export function IconRadar(props: IconProps) {
   return (
     <Svg {...props}>
@@ -464,7 +464,7 @@ export function IconRadar(props: IconProps) {
   );
 }
 
-/** hexagon target — Asteroid Analyzer. */
+/** hexagon target - Asteroid Analyzer. */
 export function IconAsteroid(props: IconProps) {
   return (
     <Svg {...props}>
@@ -474,7 +474,7 @@ export function IconAsteroid(props: IconProps) {
   );
 }
 
-/** fish — Fishing Map. */
+/** fish - Fishing Map. */
 export function IconFish(props: IconProps) {
   return (
     <Svg {...props}>
@@ -485,7 +485,7 @@ export function IconFish(props: IconProps) {
   );
 }
 
-/** train front — Mars Express. */
+/** train front - Mars Express. */
 export function IconTrain(props: IconProps) {
   return (
     <Svg {...props}>
@@ -498,7 +498,7 @@ export function IconTrain(props: IconProps) {
   );
 }
 
-/** wallet — Wallet Lookup. */
+/** wallet - Wallet Lookup. */
 export function IconWallet(props: IconProps) {
   return (
     <Svg {...props}>
@@ -509,7 +509,7 @@ export function IconWallet(props: IconProps) {
   );
 }
 
-/** comet — Discoveries. */
+/** comet - Discoveries. */
 export function IconComet(props: IconProps) {
   return (
     <Svg {...props}>
@@ -519,7 +519,7 @@ export function IconComet(props: IconProps) {
   );
 }
 
-/** my_location crosshair — Tracker. */
+/** my_location crosshair - Tracker. */
 export function IconTrack(props: IconProps) {
   return (
     <Svg {...props}>
@@ -530,7 +530,7 @@ export function IconTrack(props: IconProps) {
   );
 }
 
-/** briefcase — Jobs. */
+/** briefcase - Jobs. */
 export function IconWork(props: IconProps) {
   return (
     <Svg {...props}>

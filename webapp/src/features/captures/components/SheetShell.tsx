@@ -7,7 +7,7 @@ import styles from './SheetShell.module.css';
  * Modal bottom-sheet shell shared by the Note and Link editors (spec §8/§9).
  * Transparent app bar (Cancel / title / Save) over an AppBackground with no
  * scanlines; body scrolls. Cancel, backdrop click and Esc all route through the
- * unsaved-changes guard (`enableDrag:false` semantics — the sheet can't be
+ * unsaved-changes guard (`enableDrag:false` semantics - the sheet can't be
  * dismissed around the dirty check).
  */
 export function SheetShell({

@@ -1,9 +1,9 @@
 /**
- * Content repository — update lifecycle, install, offline reads and clear
+ * Content repository - update lifecycle, install, offline reads and clear
  * (maps spec §10). All render-time reads come from the local blob store;
  * never the network. `checkForUpdate` never throws (failures → CheckFailed).
  *
- * Web note: there is no separate SQLite FTS5 table — the zone search index is
+ * Web note: there is no separate SQLite FTS5 table - the zone search index is
  * rebuilt in-memory from the installed docs at load (see data/search.ts), so
  * install/clear only manage `mapPacks` + `mapPackFiles` + the blob store.
  */
@@ -177,7 +177,7 @@ async function ensureBlobBytes(
 ): Promise<Uint8Array> {
   if (await blobExists(ref.sha256)) {
     const existing = await readBlobBytes(ref.sha256);
-    if (existing !== null) return existing; // differential reuse — no network hit
+    if (existing !== null) return existing; // differential reuse - no network hit
   }
   const verified = await fetchVerified({
     primaryUrl: `${cdnBase}/${ref.path}`,
@@ -262,7 +262,7 @@ export async function clearAllContent(): Promise<void> {
     await db.mapPackFiles.clear();
     await db.mapPacks.clear();
   });
-  await gcBlobs([]); // empty keep — collect everything
+  await gcBlobs([]); // empty keep - collect everything
   removePointerEtag();
   removeLastCheckAt();
 }

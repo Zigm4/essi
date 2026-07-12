@@ -38,7 +38,7 @@ function ArticleRow({ article, category }: { article: KBArticle; category: KBCat
   );
 }
 
-/** /knowledge/category/:id — a knowledge base category. */
+/** /knowledge/category/:id - a knowledge base category. */
 export function KBCategoryView() {
   const { id } = useParams();
   const kb = useKBData();

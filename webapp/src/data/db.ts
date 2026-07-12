@@ -1,7 +1,7 @@
 import Dexie, { type Table } from 'dexie';
 
 /**
- * IndexedDB database `underdeck` — faithful mirror of the Drift/SQLite schema
+ * IndexedDB database `underdeck` - faithful mirror of the Drift/SQLite schema
  * (data-layer spec §2.3 / §10). All ids of user content are client-generated
  * UUID v4 strings; all timestamps are stored as epoch milliseconds (the export
  * format converts to ISO-8601 UTC strings).
@@ -31,7 +31,7 @@ export interface TagRow {
   id: string;
   /** As typed by the user. */
   displayName: string;
-  /** Lowercase dedupe key — unique. */
+  /** Lowercase dedupe key - unique. */
   name: string;
   colorHex: string | null;
 }
@@ -86,7 +86,7 @@ export interface HistoryRow {
   id: string;
   date: number;
   mode: string;
-  /** Raw JSON blob (double-encoded inside exports) — schemas in data-layer §3. */
+  /** Raw JSON blob (double-encoded inside exports) - schemas in data-layer §3. */
   payloadJson: string;
   errored: boolean;
 }
@@ -136,7 +136,7 @@ export interface MapPackFileRow {
 
 export interface MapPinRow {
   id: string;
-  /** Deliberately NOT an FK — a pin must outlive a temporarily-uninstalled pack. */
+  /** Deliberately NOT an FK - a pin must outlive a temporarily-uninstalled pack. */
   mapId: string;
   zoneId: string;
   note: string;

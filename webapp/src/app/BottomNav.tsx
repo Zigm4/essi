@@ -3,7 +3,7 @@ import { TAB_LABELS, tabIcon, useTabNavigation } from './tabs';
 import styles from './BottomNav.module.css';
 
 /**
- * Floating glass-capsule bottom nav (app-shell spec §4.2) — mobile only;
+ * Floating glass-capsule bottom nav (app-shell spec §4.2) - mobile only;
  * hidden at >= 900px where the sidebar takes over (CSS media query).
  */
 export function BottomNav() {

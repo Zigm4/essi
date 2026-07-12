@@ -26,7 +26,7 @@ function Svg({ size = 24, className, children }: IconProps & { children: ReactNo
   );
 }
 
-/** link — chain (Material `link`). Used for non-Discord link rows. */
+/** link - chain (Material `link`). Used for non-Discord link rows. */
 export function IconLink(props: IconProps) {
   return (
     <Svg {...props}>
@@ -37,7 +37,7 @@ export function IconLink(props: IconProps) {
   );
 }
 
-/** backup — cloud with up arrow (Material `backup_outlined`). Backup banner. */
+/** backup - cloud with up arrow (Material `backup_outlined`). Backup banner. */
 export function IconBackup(props: IconProps) {
   return (
     <Svg {...props}>

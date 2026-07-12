@@ -33,7 +33,7 @@ const NOTES = [
   "Decomposing an asteroid's ID reveals its quality: resource composition, hazard level, size and other key characteristics.",
 ];
 
-/** /tools/asteroid — decode 9-digit asteroid IDs. */
+/** /tools/asteroid - decode 9-digit asteroid IDs. */
 export function AsteroidAnalyzerView() {
   const [tables, setTables] = useState<AsteroidTables | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);

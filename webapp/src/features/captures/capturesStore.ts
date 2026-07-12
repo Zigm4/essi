@@ -3,7 +3,7 @@ import { create } from 'zustand';
 /**
  * App-session state for Captures (spec §20). Held in memory (not persisted):
  * the segmented mode and the tag-filter selections survive navigation but reset
- * on a full reload. Search text is deliberately NOT here — it lives as local
+ * on a full reload. Search text is deliberately NOT here - it lives as local
  * component state so it clears whenever a list unmounts (autoDispose, spec §6).
  */
 

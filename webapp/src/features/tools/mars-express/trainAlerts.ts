@@ -3,11 +3,11 @@ import { showSnackbar } from '../../../core/snackbar';
 import { nextOccurrences, type TrainStop } from './marsExpressService';
 
 /**
- * Train-alert controller — WEB ADAPTATION of spec §5.5–5.9.
+ * Train-alert controller - WEB ADAPTATION of spec §5.5-5.9.
  *
  * A GitHub-Pages site has no server, so OS-scheduled push is impossible. We
  * keep the exact arm / cancel / repeat UX but schedule in-page with setTimeout
- * + the Notification API — alerts only fire while the tab is open. The
+ * + the Notification API - alerts only fire while the tab is open. The
  * slot/band/budget id machinery (§5.5) existed purely to manage OS notification
  * limits and is dropped; `repeatOccurrences = 6` is kept. Armed zones persist
  * to localStorage so they survive a reload (timers are re-established on load).
@@ -64,10 +64,10 @@ function fireNotification(zone: number, minutesBefore: 0 | 1 | 2): void {
       new Notification(title, { body });
       return;
     } catch {
-      // Construction can throw on some platforms — fall through to the toast.
+      // Construction can throw on some platforms - fall through to the toast.
     }
   }
-  showSnackbar(`${title} — ${body}`);
+  showSnackbar(`${title} - ${body}`);
 }
 
 function buildInstants(occurrences: Date[], now: number): AlertInstant[] {
@@ -145,7 +145,7 @@ function loadEntries(): TrainAlertEntry[] {
       }
     }
   } catch {
-    // Corrupt storage — start empty.
+    // Corrupt storage - start empty.
   }
   return entries;
 }
@@ -247,7 +247,7 @@ export const useTrainAlertStore = create<TrainAlertState>((set, get) => {
           if (instants.length === 0) {
             clearZoneTimers(entry.zone);
             changed = true;
-            continue; // nothing schedulable — drop
+            continue; // nothing schedulable - drop
           }
           if (newLast !== entry.lastArrival || !hasTimers(entry.zone)) {
             clearZoneTimers(entry.zone);

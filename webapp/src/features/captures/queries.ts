@@ -5,7 +5,7 @@ import type { BackupStatus } from './logic';
 
 /**
  * Read-side queries for Captures. Each function reads only from Dexie tables so
- * it can be wrapped in `liveQuery` — Dexie tracks every table touched and
+ * it can be wrapped in `liveQuery` - Dexie tracks every table touched and
  * re-emits whenever any of them changes (spec §20 stream mechanics).
  */
 

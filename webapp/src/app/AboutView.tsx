@@ -10,7 +10,7 @@ const PRIVACY_BULLETS = [
   'No telemetry. No analytics SDK.',
   'No backend operated by us. Data stays on your device.',
   'Most outbound network is opt-in (Discord invite, System Scan, Discoveries, Tracker).',
-  'Interactive maps download from GitHub (Pages/Fastly + jsDelivr), at most once a day. On by default — turn it off in Settings › Interactive maps.',
+  'Interactive maps download from GitHub (Pages/Fastly + jsDelivr), at most once a day. On by default - turn it off in Settings › Interactive maps.',
 ];
 
 const OFL_FONTS = [
@@ -19,7 +19,7 @@ const OFL_FONTS = [
   { name: 'Quicksand', file: 'Quicksand-OFL.txt' },
 ];
 
-/** About (/menu/about) — app-shell spec §9 + web licenses note. */
+/** About (/menu/about) - app-shell spec §9 + web licenses note. */
 export function AboutView() {
   return (
     <SubPage title="About">

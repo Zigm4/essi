@@ -53,7 +53,7 @@ import type { TrackTarget } from './nasa/trackerClient';
 import styles from './nasa/ui/nasa.module.css';
 
 /**
- * /tools/discoveries — Celestial Discoveries (tools-live spec §5). One SBDB
+ * /tools/discoveries - Celestial Discoveries (tools-live spec §5). One SBDB
  * bulk query per Search tap, filtered by object kind and a first-observation
  * date window; results are classified locally (status icons) and each opens a
  * detail sheet that can hand off to the Tracker.
@@ -489,7 +489,7 @@ export function CelestialView() {
                       <IconWarningAmber size={16} />
                     </span>
                     <span className={styles.caption} style={{ color: 'var(--accent-warn)' }}>
-                      Results truncated — SBDB capped this reply at its row limit, so more matches
+                      Results truncated - SBDB capped this reply at its row limit, so more matches
                       almost certainly exist. Narrow the date range for a complete list.
                     </span>
                   </div>

@@ -58,7 +58,7 @@ export function LinkEditorSheet({
         onClose();
       } catch (e) {
         logError(e);
-        showSnackbar(friendlyError(e, "Couldn't save — please try again."), { danger: true });
+        showSnackbar(friendlyError(e, "Couldn't save - please try again."), { danger: true });
       }
     })();
   };

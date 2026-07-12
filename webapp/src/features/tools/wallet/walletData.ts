@@ -1,7 +1,7 @@
 /**
  * Wallet lookup data + search (spec §6). `wallets.json` is an array of owner
  * entries linking a display name / Discord handle to one or more WAX wallet
- * strings. GDPR-sensitive — see the return notes; shipped as-is per an explicit
+ * strings. GDPR-sensitive - see the return notes; shipped as-is per an explicit
  * product decision.
  */
 
@@ -100,7 +100,7 @@ export interface WalletDisplay {
   hiddenCaption: string | null;
 }
 
-/** Caps the result list at 50 visible items — owner cards first (§6.3). */
+/** Caps the result list at 50 visible items - owner cards first (§6.3). */
 export function capResults(result: WalletSearchResult): WalletDisplay {
   const total = result.ownerHits.length + result.walletHits.length;
   const owners = result.ownerHits.slice(0, WALLET_RESULT_CAP);
@@ -114,7 +114,7 @@ export function capResults(result: WalletSearchResult): WalletDisplay {
     shown,
     hiddenCaption:
       shown < total
-        ? `Showing ${shown} of ${total} matches — refine your search to narrow down.`
+        ? `Showing ${shown} of ${total} matches - refine your search to narrow down.`
         : null,
   };
 }

@@ -2,7 +2,7 @@
   display: none;
 }
 
-/* Desktop nav rail — "mission control" left column. */
+/* Desktop nav rail - "mission control" left column. */
 @media (min-width: 900px) {
   .rail {
     display: flex;

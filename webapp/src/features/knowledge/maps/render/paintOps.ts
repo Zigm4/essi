@@ -23,7 +23,7 @@ function withFilter(ctx: CanvasRenderingContext2D, blurPx: number, draw: () => v
   try {
     ctx.filter = `blur(${blurPx}px)`;
   } catch {
-    // ctx.filter unsupported — render un-blurred.
+    // ctx.filter unsupported - render un-blurred.
   }
   draw();
   ctx.filter = prev;

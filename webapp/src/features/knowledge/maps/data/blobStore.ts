@@ -20,7 +20,7 @@ export class BlobIntegrityException extends Error {
  * (potentially `SharedArrayBuffer`-backed) is no longer accepted where a plain
  * `ArrayBuffer` view is required. Every blob we handle is genuinely
  * `ArrayBuffer`-backed, so re-assert the buffer type. This is a compile-time
- * no-op — the runtime object (and its byteOffset/byteLength) is untouched, so
+ * no-op - the runtime object (and its byteOffset/byteLength) is untouched, so
  * `crypto.subtle.digest` and `new Blob(...)` see exactly the same bytes.
  */
 function asArrayBufferView(bytes: Uint8Array): Uint8Array<ArrayBuffer> {
@@ -37,7 +37,7 @@ export async function writeBlob(bytes: Uint8Array, expectedSha256: string): Prom
   await db.mapBlobs.put({ sha256: key, data: new Blob([view]) });
 }
 
-/** Store without re-verify — only for the bundled seed hashed in-process. */
+/** Store without re-verify - only for the bundled seed hashed in-process. */
 export async function writeTrustedBlob(bytes: Uint8Array, sha256: string): Promise<void> {
   const key = sha256.trim().toLowerCase();
   await db.mapBlobs.put({ sha256: key, data: new Blob([asArrayBufferView(bytes)]) });

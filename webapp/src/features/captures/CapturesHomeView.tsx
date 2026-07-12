@@ -4,7 +4,6 @@ import { BannerPage } from '../../design-system/components/BannerPage';
 import { BannerAction } from '../../design-system/components/TransmissionHeader';
 import { IconAdd } from '../../design-system/icons';
 import { useCapturesStore } from './capturesStore';
-import { BackupReminderBanner } from './components/BackupReminderBanner';
 import { LinkEditorSheet } from './components/LinkEditorSheet';
 import { LinksList } from './components/LinksList';
 import { NoteEditorSheet } from './components/NoteEditorSheet';
@@ -16,7 +15,7 @@ import styles from './CapturesHome.module.css';
  * Captures home (/captures, spec §5): mode-dependent ESSI banner with a `+`
  * action, backup reminder, Notes|Links segmented control and the active list.
  * The `+` opens the create editor for the current mode (editors are modal
- * sheets, not routes — spec §2).
+ * sheets, not routes - spec §2).
  */
 export function CapturesHomeView() {
   const mode = useCapturesStore((s) => s.mode);
@@ -41,7 +40,6 @@ export function CapturesHomeView() {
           </BannerAction>
         }
       >
-        <BackupReminderBanner />
         <SegmentedControl mode={mode} onChange={setMode} />
         <div className={styles.listArea}>{mode === 'notes' ? <NotesList /> : <LinksList />}</div>
       </BannerPage>

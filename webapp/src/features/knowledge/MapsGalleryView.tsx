@@ -1,8 +1,8 @@
 /**
- * /knowledge/maps — the interactive maps gallery (maps spec §12.2).
+ * /knowledge/maps - the interactive maps gallery (maps spec §12.2).
  *
  * On entry it imports the bundled seed (idempotent), loads the installed
- * manifest offline, and — when the settings flags allow — fires one guarded
+ * manifest offline, and - when the settings flags allow - fires one guarded
  * background update check (installing silently, surfacing a "New maps ready"
  * banner for the next entry). It offers cross-map zone search (searchZones,
  * debounced 280 ms), a changelog banner, and the map card grid with

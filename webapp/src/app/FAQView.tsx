@@ -47,7 +47,7 @@ const SECTIONS: { key: string; entries: FaqEntry[] }[] = [
       },
       {
         q: 'Where do interactive maps come from?',
-        a: 'Map content (the map list, each map, and its images) is hosted on GitHub and delivered over a multi-CDN path: GitHub Pages (fronted by Fastly) for the small "which version is current" pointer, and jsDelivr — with raw.githubusercontent.com as a fallback — for the actual files. Downloads are on by default and happen at most once every 24 hours; every file is checked against a SHA-256 hash before it is stored. Nothing about you is sent — these are plain GET requests, so your IP address is visible to those CDNs, and that is all. A built-in sample map ships inside the app so maps work offline on first launch. You can turn downloads off entirely in Settings › Interactive maps, and clear anything already downloaded there too.',
+        a: 'Map content (the map list, each map, and its images) is hosted on GitHub and delivered over a multi-CDN path: GitHub Pages (fronted by Fastly) for the small "which version is current" pointer, and jsDelivr - with raw.githubusercontent.com as a fallback - for the actual files. Downloads are on by default and happen at most once every 24 hours; every file is checked against a SHA-256 hash before it is stored. Nothing about you is sent - these are plain GET requests, so your IP address is visible to those CDNs, and that is all. A built-in sample map ships inside the app so maps work offline on first launch. You can turn downloads off entirely in Settings › Interactive maps, and clear anything already downloaded there too.',
       },
       {
         q: 'What does System Scan send to NASA?',
@@ -76,7 +76,7 @@ function FaqItem({ entry }: { entry: FaqEntry }) {
   );
 }
 
-/** FAQ (/menu/faq) — items toggle independently, all start closed. */
+/** FAQ (/menu/faq) - items toggle independently, all start closed. */
 export function FAQView() {
   return (
     <SubPage title="FAQ">

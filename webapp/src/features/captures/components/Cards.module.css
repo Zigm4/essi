@@ -15,7 +15,7 @@
   word-break: break-word;
 }
 
-/* Body/note preview — raw source text, clamped. */
+/* Body/note preview - raw source text, clamped. */
 .preview {
   font-family: var(--font-sans);
   font-size: 15px;

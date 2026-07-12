@@ -61,7 +61,7 @@ describe('consolidated', () => {
     const first = entries[0]!;
     expect(first).toMatchObject({ startMinute: 0, endMinute: 1, zone: 259, nextHour: false });
     expect(first.name).toBe('New Haven');
-    expect(rangeText(first)).toBe(':00–01');
+    expect(rangeText(first)).toBe(':00-01');
     expect(isCurrentEntry(first, 0)).toBe(true);
   });
 

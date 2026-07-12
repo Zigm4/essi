@@ -35,8 +35,8 @@ export function ZoneSheet({ mapId, doc, zone, theme, onClose }: ZoneSheetProps) 
   const navigate = useNavigate();
   const accent = colorCss(theme.accent);
   // Neutral, always-readable surface: the zone's own (often muddy) palette is
-  // used only for accents (badge, region chip, pin, top hairline) — never the
-  // body text or background — so the data stays legible on every planet.
+  // used only for accents (badge, region chip, pin, top hairline) - never the
+  // body text or background - so the data stays legible on every planet.
   const surfaceStyle: CSSProperties = {
     background: 'var(--bg-card)',
     borderTop: `2px solid ${colorAlpha(theme.accent, 0.55)}`,
@@ -141,7 +141,7 @@ function PinSection({
       .catch((error: unknown) => {
         setSaving(false);
         logError(error);
-        showSnackbar(friendlyError(error, "Couldn't save — please try again."), { danger: true });
+        showSnackbar(friendlyError(error, "Couldn't save - please try again."), { danger: true });
       });
   };
 

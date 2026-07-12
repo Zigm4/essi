@@ -38,7 +38,7 @@ export function dMonthYearHms(d: Date): string {
   return `${dMonthYear(d)}, ${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
 }
 
-/** `d MMM, HH:mm` (local) — scan detail title. */
+/** `d MMM, HH:mm` (local) - scan detail title. */
 export function dMonthHm(d: Date): string {
   return `${d.getDate()} ${MONTHS[d.getMonth()]}, ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
 }
@@ -48,7 +48,7 @@ export function hms(d: Date): string {
   return `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
 }
 
-/** `d MMM yyyy, HH:mm:ss` with English months — scan share card header. */
+/** `d MMM yyyy, HH:mm:ss` with English months - scan share card header. */
 export function scanShareDateTime(d: Date): string {
   return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}, ${pad2(d.getHours())}:${pad2(
     d.getMinutes(),

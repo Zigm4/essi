@@ -59,7 +59,7 @@ export function useShips(): LiveState<ShipModel[]> {
   return useLiveQuery(queryAllShips, []);
 }
 
-/** All tag display names app-wide — the suggestion pool (spec §6.3). */
+/** All tag display names app-wide - the suggestion pool (spec §6.3). */
 export function useAllTags(): LiveState<TagRow[]> {
   return useLiveQuery(() => db.tags.orderBy('name').toArray(), []);
 }
@@ -139,7 +139,7 @@ export async function saveShip(draft: ShipDraft, tagDisplayNames: string[]): Pro
   return id;
 }
 
-/** Quick hull update from the list card — writes only hull + updatedAt (spec §12.3). */
+/** Quick hull update from the list card - writes only hull + updatedAt (spec §12.3). */
 export async function updateHull(id: string, hull: number): Promise<void> {
   await db.ships.update(id, { hull, updatedAt: Date.now() });
 }

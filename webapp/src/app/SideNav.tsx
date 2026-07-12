@@ -4,7 +4,7 @@ import { TAB_LABELS, tabIcon, useTabNavigation } from './tabs';
 import styles from './SideNav.module.css';
 
 /**
- * Desktop (>= 900px) persistent left nav rail — same navigation model as the
+ * Desktop (>= 900px) persistent left nav rail - same navigation model as the
  * mobile bottom capsule, styled as a terminal command-deck column.
  */
 export function SideNav() {

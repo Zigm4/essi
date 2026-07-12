@@ -1,5 +1,5 @@
 /**
- * "How interactive maps work" sheet content (maps spec §12.4) — exact copy.
+ * "How interactive maps work" sheet content (maps spec §12.4) - exact copy.
  * Rendered inside the design-system <HowItWorksSheet>.
  */
 
@@ -25,7 +25,7 @@ export function MapsHowItWorks() {
       <InfoCard className={styles.card}>
         <SectionHeader title="Overview" icon={<IconMap size={18} />} />
         <p className={styles.body}>
-          Interactive maps are content — JSON geometry, field data, and images — not code. They are
+          Interactive maps are content - JSON geometry, field data, and images - not code. They are
           authored in a public GitHub repository and delivered to the app as plain data. The app ships
           with a small bundled set so maps work on first launch with no network at all; anything newer
           is fetched on top of that baseline.
@@ -50,7 +50,7 @@ export function MapsHowItWorks() {
         />
         <KvRow
           label="Content"
-          value="jsDelivr — a multi-CDN (Cloudflare / Fastly / Bunny) mirror of the repo, pinned to an exact tag so bytes never change under a version."
+          value="jsDelivr - a multi-CDN (Cloudflare / Fastly / Bunny) mirror of the repo, pinned to an exact tag so bytes never change under a version."
           labelWidth={96}
         />
         <KvRow
@@ -64,13 +64,13 @@ export function MapsHowItWorks() {
         <SectionHeader title="Integrity" icon={<IconShield size={18} />} />
         <p className={styles.body}>
           Every document and image is pinned to a sha256 hash in the manifest. A downloaded file is
-          verified against that hash before it is written to disk — a mismatch is rejected and the
+          verified against that hash before it is written to disk - a mismatch is rejected and the
           previously installed maps are kept untouched.
         </p>
         <p className={styles.caption}>
           Downloads are size-capped and streamed, so an oversized file is aborted mid-transfer rather
           than buffered whole. Because files are stored by their hash, an unchanged image across
-          versions is reused for free — never re-downloaded.
+          versions is reused for free - never re-downloaded.
         </p>
       </InfoCard>
 
@@ -84,7 +84,7 @@ export function MapsHowItWorks() {
         />
         <KvRow
           label="Apply"
-          value="A newer pack installs quietly and appears the next time you open maps — never swapped out mid-view."
+          value="A newer pack installs quietly and appears the next time you open maps - never swapped out mid-view."
           labelWidth={96}
         />
       </InfoCard>
@@ -92,7 +92,7 @@ export function MapsHowItWorks() {
       <InfoCard className={styles.card}>
         <SectionHeader title="Works offline" icon={<IconWifiTethering size={18} />} />
         <p className={styles.body}>
-          A seed set of maps is bundled inside the app binary and imported locally on first use — no
+          A seed set of maps is bundled inside the app binary and imported locally on first use - no
           network required. Rendering always reads from the on-device store, never the network, so maps
           stay fully usable on a plane, underground, or with downloads turned off.
         </p>
@@ -103,7 +103,7 @@ export function MapsHowItWorks() {
         <KvRow label="Sent" value="Plain HTTP GET requests for public map files. No account, no device id, no analytics, no game data." labelWidth={96} />
         <KvRow
           label="Visible"
-          value="Your IP address — the same thing any web request exposes — to the CDNs serving the files (GitHub / Fastly / jsDelivr)."
+          value="Your IP address - the same thing any web request exposes - to the CDNs serving the files (GitHub / Fastly / jsDelivr)."
           labelWidth={96}
         />
         <KvRow label="Stored remotely" value="Nothing. There is no ESSI server." labelWidth={96} />

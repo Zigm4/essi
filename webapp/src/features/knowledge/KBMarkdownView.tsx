@@ -65,7 +65,7 @@ function MarkdownImage({ src, alt }: { src?: string; alt?: string }) {
  * Themed markdown renderer for KB articles (knowledge spec §6). Element styling
  * lives in the CSS module; only links (internal/external resolution), images,
  * and tables (horizontal scroll wrapper) need custom components. Raw HTML is
- * NOT enabled (no rehype-raw) — content is trusted markdown only.
+ * NOT enabled (no rehype-raw) - content is trusted markdown only.
  *
  * `urlTransform` is neutralized so the custom `underdeck://` scheme and relative
  * image paths survive react-markdown's default sanitizer; link clicks are still

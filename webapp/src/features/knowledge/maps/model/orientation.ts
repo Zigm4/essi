@@ -35,7 +35,7 @@ export function orientationFromLatLon(g: GeoPoint, rollDeg = 0): Quat {
   const z = worldVec(g); // toward camera (screen centre)
   let up = sub(WORLD_Z, scale(z, z.z)); // world-north projected ⟂ z
   if (up.x * up.x + up.y * up.y + up.z * up.z < 1e-12) {
-    // Centred on a pole — stable fallback.
+    // Centred on a pole - stable fallback.
     const lonRad = g.lon * DEG;
     up = vec3(-Math.cos(lonRad), -Math.sin(lonRad), 0);
   }

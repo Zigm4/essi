@@ -11,7 +11,7 @@ import { loadNotes } from './queries';
 import { useLiveQuery } from './useLiveQuery';
 import styles from './components/CaptureDetail.module.css';
 
-/** /captures/note/:id — a single note (spec §10). */
+/** /captures/note/:id - a single note (spec §10). */
 export function NoteDetailView() {
   const { id } = useParams<{ id: string }>();
   const [editing, setEditing] = useState(false);

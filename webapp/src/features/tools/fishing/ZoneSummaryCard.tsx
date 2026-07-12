@@ -24,7 +24,7 @@ export function ZoneSummaryCard({
 
   const onShare = () => {
     const lines = [
-      `Fishing zone ${zone.id}${zone.name !== 'Unknown' ? ` — ${zone.name}` : ''}`,
+      `Fishing zone ${zone.id}${zone.name !== 'Unknown' ? ` - ${zone.name}` : ''}`,
       `Room: ${roomDisplayName(zone.room)}`,
       `Depth: ${zone.depth ?? 'n/a'}`,
       `Pole: ${zone.pole ?? 'n/a'}`,

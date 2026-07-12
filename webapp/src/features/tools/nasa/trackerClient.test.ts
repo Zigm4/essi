@@ -19,13 +19,13 @@ const neverCalled: SbdbLookupFn = () => {
 };
 
 describe('resolveMPC tiers', () => {
-  it('tier 0 — prefilled mpcID wins outright', async () => {
+  it('tier 0 - prefilled mpcID wins outright', async () => {
     expect(
       await resolveMPC({ name: 'anything', kind: 'asteroid', mpcID: '99942' }, CATALOG, neverCalled),
     ).toBe('99942');
   });
 
-  it('tier 1 — exact catalog match (case-insensitive) → identifier', async () => {
+  it('tier 1 - exact catalog match (case-insensitive) → identifier', async () => {
     expect(await resolveMPC({ name: 'ceres', kind: 'asteroid' }, CATALOG, neverCalled)).toBe('1');
   });
 
@@ -35,17 +35,17 @@ describe('resolveMPC tiers', () => {
     );
   });
 
-  it('tier 2 — digits-only asteroid is used as-is, no network', async () => {
+  it('tier 2 - digits-only asteroid is used as-is, no network', async () => {
     expect(await resolveMPC({ name: '433', kind: 'asteroid' }, CATALOG, neverCalled)).toBe('433');
   });
 
-  it('tier 3 — SBDB lookup returns a pdes', async () => {
+  it('tier 3 - SBDB lookup returns a pdes', async () => {
     const lookup = vi.fn<SbdbLookupFn>().mockResolvedValue('1P');
     expect(await resolveMPC({ name: 'Halley', kind: 'comet' }, CATALOG, lookup)).toBe('1P');
     expect(lookup).toHaveBeenCalledWith('Halley');
   });
 
-  it('tier 3 — retries with the trailing parenthetical stripped', async () => {
+  it('tier 3 - retries with the trailing parenthetical stripped', async () => {
     const lookup = vi
       .fn<SbdbLookupFn>()
       .mockResolvedValueOnce(null)
@@ -57,7 +57,7 @@ describe('resolveMPC tiers', () => {
     expect(lookup).toHaveBeenNthCalledWith(2, 'C/2099 Z9');
   });
 
-  it('tier 4 — passthrough when the cleaned name has a digit and a letter', async () => {
+  it('tier 4 - passthrough when the cleaned name has a digit and a letter', async () => {
     const lookup = vi.fn<SbdbLookupFn>().mockResolvedValue(null);
     expect(await resolveMPC({ name: '2024 G3', kind: 'comet' }, CATALOG, lookup)).toBe('2024 G3');
   });

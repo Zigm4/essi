@@ -1,5 +1,5 @@
 /**
- * Mars Express schedule math (spec §5.1–5.2), ported exactly. The in-game train
+ * Mars Express schedule math (spec §5.1-5.2), ported exactly. The in-game train
  * loops the same route every hour, keyed on the wall-clock minute.
  */
 
@@ -148,12 +148,12 @@ function pad2(n: number): string {
   return n.toString().padStart(2, '0');
 }
 
-/** `:SS`, `:SS–EE`, plus a trailing `+` when the range is in the next hour. */
+/** `:SS`, `:SS-EE`, plus a trailing `+` when the range is in the next hour. */
 export function rangeText(entry: ScheduleEntry): string {
   const base =
     entry.startMinute === entry.endMinute
       ? `:${pad2(entry.startMinute)}`
-      : `:${pad2(entry.startMinute)}–${pad2(entry.endMinute)}`;
+      : `:${pad2(entry.startMinute)}-${pad2(entry.endMinute)}`;
   return entry.nextHour ? `${base}+` : base;
 }
 

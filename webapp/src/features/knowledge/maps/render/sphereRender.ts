@@ -304,7 +304,7 @@ export function drawGlobe(
   const theme = render.theme;
   const R = globeRadius(width, height, zoom);
   const C = globeCenter(width, height);
-  // Thin zone outlines — the old width made small tiles look heavily bordered.
+  // Thin zone outlines - the old width made small tiles look heavily bordered.
   const strokeW = Math.max(0.6, Math.min(2.2, R * 0.005));
 
   ctx.clearRect(0, 0, width, height);
@@ -450,7 +450,7 @@ export function drawGlobe(
 
   // 9. Label only the selected zone. Dumping every front-facing label turns a
   //    170-zone globe into an unreadable smear; the flat grid view is the
-  //    dense, fully-labelled twin. Here the globe stays clean — tap a zone and
+  //    dense, fully-labelled twin. Here the globe stays clean - tap a zone and
   //    its name floats over it (the detail sheet carries the rest).
   if (selectedId !== null && R >= LABEL_MIN_RADIUS) {
     const sel = render.items.find((it) => it.zoneId === selectedId);

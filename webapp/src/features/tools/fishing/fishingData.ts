@@ -52,7 +52,7 @@ export function depthFromName(name: string | null): FishingDepth | null {
 }
 
 export interface FishingRoom {
-  /** Slug, e.g. `rankle-river` — used in the route. */
+  /** Slug, e.g. `rankle-river` - used in the route. */
   id: string;
   name: string;
   zones: FishingZone[];

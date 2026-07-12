@@ -1,7 +1,7 @@
 import { useSettingsStore } from '../data/settings';
 
 /**
- * Best-effort web haptics — navigator.vibrate short pulses where supported,
+ * Best-effort web haptics - navigator.vibrate short pulses where supported,
  * silently dropped elsewhere. Gated by settings.hapticsEnabled like the app.
  */
 function vibrate(ms: number): void {

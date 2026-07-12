@@ -80,10 +80,10 @@ export async function resolveMPC(
   catalog: readonly TrackedObject[],
   lookup: SbdbLookupFn,
 ): Promise<string> {
-  // Tier 0 — prefilled MPC id.
+  // Tier 0 - prefilled MPC id.
   if (target.mpcID !== undefined && target.mpcID.trim().length > 0) return target.mpcID.trim();
 
-  // Tier 1 — exact catalog match on the raw name.
+  // Tier 1 - exact catalog match on the raw name.
   const catalogHit = findCatalogMatch(catalog, target.name);
   if (catalogHit !== null) return catalogHit.identifier;
 
@@ -91,17 +91,17 @@ export async function resolveMPC(
   const cleaned = stripWrappingParens(target.name);
   if (cleaned.length === 0) throw new TrackerMpcLookupError();
 
-  // Tier 2 — numbered-asteroid shortcut.
+  // Tier 2 - numbered-asteroid shortcut.
   if (target.kind === 'asteroid' && isAllDigits(cleaned)) return cleaned;
 
-  // Tier 3 — SBDB sstr lookup, with a parenthetical-stripped retry.
+  // Tier 3 - SBDB sstr lookup, with a parenthetical-stripped retry.
   let hit = await lookup(cleaned);
   if (hit === null && hasTrailingParenthetical(cleaned)) {
     hit = await lookup(stripTrailingParenthetical(cleaned));
   }
   if (hit !== null && hit.length > 0) return hit;
 
-  // Tier 4 — designation passthrough (needs both a digit and a letter).
+  // Tier 4 - designation passthrough (needs both a digit and a letter).
   if (hasDigitAndLetter(cleaned)) return cleaned;
 
   throw new TrackerMpcLookupError();

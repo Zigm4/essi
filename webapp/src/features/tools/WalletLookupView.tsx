@@ -22,7 +22,7 @@ import {
 } from './wallet/walletData';
 import styles from './wallet/WalletLookup.module.css';
 
-/** /tools/wallet — find a wallet from an owner handle, or an owner from a wallet. */
+/** /tools/wallet - find a wallet from an owner handle, or an owner from a wallet. */
 export function WalletLookupView() {
   const [searchParams] = useSearchParams();
   const [owners, setOwners] = useState<WalletOwner[] | null>(null);
@@ -220,7 +220,7 @@ function StatRow({ label, value }: { label: string; value: string }) {
 }
 
 function buildShareText(query: string, display: WalletDisplay): string {
-  const lines: string[] = [`Wallet lookup "${query}" — ${display.total} match${display.total === 1 ? '' : 'es'}`];
+  const lines: string[] = [`Wallet lookup "${query}" - ${display.total} match${display.total === 1 ? '' : 'es'}`];
   for (const owner of display.owners) {
     lines.push(`${owner.display_name}: ${owner.wallets.join(', ')}`);
   }

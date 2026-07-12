@@ -9,7 +9,7 @@ import styles from './markdown.module.css';
  * on bgDeepest, code blocks on bgDeepest radius 8.
  */
 
-/** Strips ** and backticks and collapses newlines — used for list teasers. */
+/** Strips ** and backticks and collapses newlines - used for list teasers. */
 export function stripMarkdown(text: string): string {
   return text
     .replace(/\*\*/g, '')

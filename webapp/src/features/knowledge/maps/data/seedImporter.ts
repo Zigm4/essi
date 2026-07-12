@@ -3,7 +3,7 @@
  * PLACEHOLDERS; the importer loads each file from the web `public/` bundle,
  * recomputes sha256 locally (the seed is authenticated as a same-origin static
  * asset, not wire-verified) and patches the manifest before validating. Never
- * throws — returns a result the UI turns into a real empty/failure state.
+ * throws - returns a result the UI turns into a real empty/failure state.
  */
 
 import { db, type MapPackFileRow } from '../../../../data/db';
@@ -146,7 +146,7 @@ export async function ensureSeedImported(): Promise<SeedImportResult> {
       }
     }
 
-    // Write all blobs (seed is trusted — no re-verify).
+    // Write all blobs (seed is trusted - no re-verify).
     await writeTrustedBlob(manifestBytes, manifestSha);
     for (const [sha, bytes] of bytesBySha) await writeTrustedBlob(bytes, sha);
 

@@ -34,7 +34,7 @@ function TSvg({
   );
 }
 
-/** history — clock face with a counter-clockwise arrow. */
+/** history - clock face with a counter-clockwise arrow. */
 export function IconHistory(props: IconProps) {
   return (
     <TSvg {...props}>
@@ -45,7 +45,7 @@ export function IconHistory(props: IconProps) {
   );
 }
 
-/** ios_share — box with an upward arrow out the top. */
+/** ios_share - box with an upward arrow out the top. */
 export function IconShare(props: IconProps) {
   return (
     <TSvg {...props}>
@@ -56,7 +56,7 @@ export function IconShare(props: IconProps) {
   );
 }
 
-/** stop_circle — circle with a filled square. */
+/** stop_circle - circle with a filled square. */
 export function IconStopCircle(props: IconProps) {
   return (
     <TSvg {...props}>
@@ -90,7 +90,7 @@ export function IconPushPinOutlined(props: IconProps) {
   );
 }
 
-/** center_focus_strong — corner brackets around a dot. */
+/** center_focus_strong - corner brackets around a dot. */
 export function IconCenterFocus(props: IconProps) {
   return (
     <TSvg {...props}>
@@ -115,7 +115,7 @@ export function IconList(props: IconProps) {
   );
 }
 
-/** event_note — calendar with lines. */
+/** event_note - calendar with lines. */
 export function IconEventNote(props: IconProps) {
   return (
     <TSvg {...props}>
@@ -135,7 +135,7 @@ export function IconTimer(props: IconProps) {
   );
 }
 
-/** schedule — clock. */
+/** schedule - clock. */
 export function IconSchedule(props: IconProps) {
   return (
     <TSvg {...props}>
@@ -156,7 +156,7 @@ export function IconLink(props: IconProps) {
   );
 }
 
-/** functions — sigma. */
+/** functions - sigma. */
 export function IconFunctions(props: IconProps) {
   return (
     <TSvg {...props}>
@@ -165,7 +165,7 @@ export function IconFunctions(props: IconProps) {
   );
 }
 
-/** list_alt — bordered list. */
+/** list_alt - bordered list. */
 export function IconListAlt(props: IconProps) {
   return (
     <TSvg {...props}>
@@ -175,7 +175,7 @@ export function IconListAlt(props: IconProps) {
   );
 }
 
-/** description — document. */
+/** description - document. */
 export function IconDescription(props: IconProps) {
   return (
     <TSvg {...props}>
@@ -213,7 +213,7 @@ export function IconStar(props: IconProps) {
   );
 }
 
-/** speed — gauge. */
+/** speed - gauge. */
 export function IconSpeed(props: IconProps) {
   return (
     <TSvg {...props}>
@@ -224,7 +224,7 @@ export function IconSpeed(props: IconProps) {
   );
 }
 
-/** alt_route — forking path. */
+/** alt_route - forking path. */
 export function IconAltRoute(props: IconProps) {
   return (
     <TSvg {...props}>
@@ -248,7 +248,7 @@ export function IconBubbleChart(props: IconProps) {
   );
 }
 
-/** event_busy — calendar with an X. */
+/** event_busy - calendar with an X. */
 export function IconEventBusy(props: IconProps) {
   return (
     <TSvg {...props}>
@@ -259,7 +259,7 @@ export function IconEventBusy(props: IconProps) {
   );
 }
 
-/** error — filled circle with exclamation. */
+/** error - filled circle with exclamation. */
 export function IconError(props: IconProps) {
   return (
     <TSvg {...props}>
@@ -289,7 +289,7 @@ export function IconRefresh(props: IconProps) {
   );
 }
 
-/** travel_explore — globe with a magnifier. */
+/** travel_explore - globe with a magnifier. */
 export function IconTravelExplore(props: IconProps) {
   return (
     <TSvg {...props}>
@@ -300,7 +300,7 @@ export function IconTravelExplore(props: IconProps) {
   );
 }
 
-/** delete_outline — trash can. */
+/** delete_outline - trash can. */
 export function IconDelete(props: IconProps) {
   return (
     <TSvg {...props}>

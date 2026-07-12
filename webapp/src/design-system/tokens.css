@@ -1,4 +1,4 @@
-/* Underdeck design tokens — exact values from spec/design-system.md */
+/* Underdeck design tokens - exact values from spec/design-system.md */
 
 :root {
   /* Colors (§2) */
@@ -46,7 +46,7 @@
   --motion-subtle-ease: cubic-bezier(0.42, 0, 0.58, 1);
   --motion-flash-duration: 350ms;
   --motion-flash-ease: cubic-bezier(0, 0, 0.58, 1);
-  /* easeOutCubic — nav pill slide, onboarding pager */
+  /* easeOutCubic - nav pill slide, onboarding pager */
   --ease-out-cubic: cubic-bezier(0.215, 0.61, 0.355, 1);
 }
 

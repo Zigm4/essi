@@ -122,7 +122,7 @@ function ZoneDetailContent({
           <div className={styles.repeatMain}>
             <div className={styles.repeatTitle}>Repeat every hour</div>
             <div className={styles.repeatCaption}>
-              Schedules the next 6 arrivals (up to ~6 h ahead). Reopen the app to extend further —
+              Schedules the next 6 arrivals (up to ~6 h ahead). Reopen the app to extend further -
               alerts can only be scheduled while the app is running.
             </div>
           </div>

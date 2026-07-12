@@ -7,7 +7,7 @@ import { useSettingsStore } from '../data/settings';
 import { BootEmblem } from './BootEmblem';
 import styles from './BootScreen.module.css';
 
-/** Boot lines — exact copy, typed in order (app-shell spec §5.2). */
+/** Boot lines - exact copy, typed in order (app-shell spec §5.2). */
 const BOOT_LINES = [
   '> initializing ESSI subsystems…',
   '> linking local datastore…',

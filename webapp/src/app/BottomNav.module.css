@@ -1,6 +1,6 @@
 .wrapper {
   flex: none;
-  background: var(--bg-deepest); /* opaque backdrop — nothing bleeds through */
+  background: var(--bg-deepest); /* opaque backdrop - nothing bleeds through */
   padding: 0 14px calc(12px + env(safe-area-inset-bottom));
 }
 

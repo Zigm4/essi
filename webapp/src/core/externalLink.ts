@@ -20,7 +20,7 @@ export function allowedExternalUrl(href: string): string | null {
 
 /**
  * Security-conscious single entry point for opening external URLs.
- * Mirrors lib/core/external_link.dart — disallowed/unopenable links surface
+ * Mirrors lib/core/external_link.dart - disallowed/unopenable links surface
  * the exact "Couldn't open that link." snackbar and nothing else happens.
  */
 export function launchExternal(href: string): boolean {

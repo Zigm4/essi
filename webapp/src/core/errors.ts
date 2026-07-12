@@ -1,7 +1,7 @@
 /** Typed error taxonomy mirrored from the mobile app's Dio/FormatException split. */
 
 export type NetworkErrorKind =
-  | 'offline' // transport failure — no connection
+  | 'offline' // transport failure - no connection
   | 'timeout' // connect/read timeout
   | 'cancelled' // caller aborted
   | 'http' // non-2xx response

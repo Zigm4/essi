@@ -8,7 +8,7 @@ import type { LinkRow, NoteRow, TagRow } from '../../data/db';
 
 export interface TagModel {
   id: string;
-  /** As typed by the user (first spelling wins — spec §18.1). */
+  /** As typed by the user (first spelling wins - spec §18.1). */
   displayName: string;
   /** Lowercase dedupe key (unique). */
   name: string;

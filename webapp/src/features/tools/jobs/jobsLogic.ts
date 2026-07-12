@@ -1,5 +1,5 @@
 /**
- * Jobs filtering & sorting logic (spec §3.7) — the exact `accepts` predicate,
+ * Jobs filtering & sorting logic (spec §3.7) - the exact `accepts` predicate,
  * companion filter, active-filter count, sort comparators, and the removable
  * active-filter chip descriptors. Kept pure so it can be unit-tested
  * (jobsLogic.test.ts) with no React or DB.
@@ -158,7 +158,7 @@ export function accepts(filter: JobFilter, job: Job): boolean {
   if (filter.tags.size > 0) {
     if (job.requiredTag === null || !filter.tags.has(job.requiredTag)) return false;
   }
-  // 8–11. Ranges.
+  // 8-11. Ranges.
   if (job.requiredSkillAmt < filter.skillAmt[0] || job.requiredSkillAmt > filter.skillAmt[1]) return false;
   if (job.requiredRep < filter.requiredRep[0] || job.requiredRep > filter.requiredRep[1]) return false;
   if (job.risk < filter.risk[0] || job.risk > filter.risk[1]) return false;
@@ -176,7 +176,7 @@ export function accepts(filter: JobFilter, job: Job): boolean {
   return true;
 }
 
-/** The companion predicate — starred/status, evaluated with external state (§3.7). */
+/** The companion predicate - starred/status, evaluated with external state (§3.7). */
 export function acceptsCompanion(
   filter: JobFilter,
   isStarred: boolean,

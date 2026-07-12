@@ -1,6 +1,6 @@
 .card {
   width: 100%;
-  background: var(--bg-glass); /* NO backdrop blur — cheap to stack */
+  background: var(--bg-glass); /* NO backdrop blur - cheap to stack */
   border: 1px solid var(--border-subtle);
   border-radius: 14px;
   padding: 16px;

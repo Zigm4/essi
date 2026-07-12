@@ -1,7 +1,7 @@
 import type { ShipRow } from '../../data/db';
 
 /**
- * The 12 crew seats (spec §9.1). Array order IS the seat order — every place
+ * The 12 crew seats (spec §9.1). Array order IS the seat order - every place
  * that iterates roles (list card, editor crew card, `availableRoles`) uses it.
  */
 export const SHIP_RIGHTS = [

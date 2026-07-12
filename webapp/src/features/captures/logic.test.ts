@@ -10,7 +10,6 @@ import {
   isDiscordUrl,
   lastBackupLabel,
   removeTag,
-  REMINDER_THRESHOLD_MS,
   shouldShowReminder,
 } from './logic';
 
@@ -185,12 +184,12 @@ describe('shouldShowReminder', () => {
     ).toBe(false);
   });
 
-  it('shows again once 30 days pass and data changed since', () => {
+  it('shows as soon as data changes after a backup (no 30-day wait)', () => {
     expect(
       shouldShowReminder({
         ...base,
-        lastBackupAt: now - REMINDER_THRESHOLD_MS - DAY,
-        status: { hasData: true, lastChangedAt: now - DAY },
+        lastBackupAt: now - 2 * DAY, // recent backup
+        status: { hasData: true, lastChangedAt: now - DAY }, // but changed since
       }),
     ).toBe(true);
   });

@@ -7,7 +7,7 @@ import styles from './DetailScaffold.module.css';
 
 /**
  * Detail-view chrome (knowledge spec §2): a transparent app bar drawn OVER the
- * page background — content scrolls behind it. Back arrow tinted accentPrimary,
+ * page background - content scrolls behind it. Back arrow tinted accentPrimary,
  * centered headline title, an optional trailing action (e.g. bookmark toggle).
  * `bodyPadding` sets the scroll padding (top = safe-area + toolbar(56) + 8).
  */

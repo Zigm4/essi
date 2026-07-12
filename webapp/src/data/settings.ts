@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
 /**
- * App settings — mirrors lib/services/app_settings.dart (app-shell spec §15).
+ * App settings - mirrors lib/services/app_settings.dart (app-shell spec §15).
  * Persisted per-key in localStorage with the SharedPreferences key names,
  * prefixed `underdeck.`. Booleans as 'true'/'false', dates as epoch-ms
  * numbers stringified, strings raw.

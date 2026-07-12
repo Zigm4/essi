@@ -105,7 +105,7 @@ async function attemptCapped(
   const etag = response.headers.get('etag') ?? '';
 
   if (response.body === null) {
-    // No stream available — fall back to a buffered read, still cap-checked.
+    // No stream available - fall back to a buffered read, still cap-checked.
     const buf = new Uint8Array(await response.arrayBuffer());
     if (buf.byteLength > maxBytes) {
       throw new MapTooLargeException(`stream exceeded ${maxBytes} cap on ${url}`);
@@ -192,7 +192,7 @@ export async function fetchPointer(options: { etag?: string } = {}): Promise<Poi
       ? { notModified: true }
       : { notModified: false, bytes: r.bytes, etag: r.etag, byteLength: r.byteLength };
   } catch (e) {
-    if (e instanceof MapTooLargeException) throw e; // oversized on both hosts — do not retry
+    if (e instanceof MapTooLargeException) throw e; // oversized on both hosts - do not retry
     primaryError = e;
   }
   try {

@@ -1,5 +1,5 @@
 /**
- * Jobs taxonomies (spec §3.2) — labels & tints for factions, tags, skills,
+ * Jobs taxonomies (spec §3.2) - labels & tints for factions, tags, skills,
  * rewards, and the type buckets used to group type chips in the filter sheet.
  * Every tint is a #RRGGBB hex so it works both as a CSS color and via
  * withAlpha().
@@ -124,7 +124,7 @@ export function rewardInfo(key: string): Tinted {
 }
 
 /**
- * Type buckets (§3.2) — grouping is on the lowercased type. Buckets are sorted
+ * Type buckets (§3.2) - grouping is on the lowercased type. Buckets are sorted
  * alphabetically in the filter sheet: Beginner, Event, Expansion, Other,
  * Regular, Skill gain, Unknown (only the present ones render).
  */

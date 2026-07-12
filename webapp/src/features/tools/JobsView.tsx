@@ -53,7 +53,7 @@ function chipStyle(tint: string, active: boolean): CSSProperties {
     : {};
 }
 
-/** /tools/jobs — search 371 jobs by faction, reward, skill, location (spec §3.3). */
+/** /tools/jobs - search 371 jobs by faction, reward, skill, location (spec §3.3). */
 export function JobsView() {
   const navigate = useNavigate();
   const storeRef = useRef(createScrollOffsetStore());

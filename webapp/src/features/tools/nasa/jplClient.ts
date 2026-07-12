@@ -1,5 +1,5 @@
 import { NetworkError } from '../../../core/errors';
-import { useSettingsStore } from '../../../data/settings';
+import { JPL_PROXY_URL } from '../../../config';
 
 /**
  * Proxy-aware JPL transport (tools-live spec §2 + CORS constraint).
@@ -14,7 +14,7 @@ import { useSettingsStore } from '../../../data/settings';
  *   `${base}/sbdb_query?<query>`  → ssd-api.jpl.nasa.gov/sbdb_query.api
  *
  * Unlike core/http's `appFetchText`, this primitive returns `{ status, body }`
- * for ANY completed HTTP response instead of throwing on non-2xx — SBDB
+ * for ANY completed HTTP response instead of throwing on non-2xx - SBDB
  * legitimately returns HTTP 300 (multi-match, body carries `list`) and 404
  * (genuine not-found), and callers must read those bodies / status codes. It
  * keeps the shared 10s-connect / configurable-read timeouts and the bounded
@@ -43,7 +43,7 @@ const RETRY_DELAYS_MS = [500, 1500] as const;
  * Normalise a user-entered proxy URL so common mistakes still work:
  * trims whitespace, adds a scheme when missing, upgrades http→https (a
  * workers.dev proxy is https-only, and an https page blocks http as mixed
- * content — the #1 "no internet" trap), and strips trailing slashes.
+ * content - the #1 "no internet" trap), and strips trailing slashes.
  * localhost keeps http for local development.
  */
 export function normalizeProxyUrl(raw: string): string {
@@ -56,9 +56,9 @@ export function normalizeProxyUrl(raw: string): string {
   return t.replace(/\/+$/, '');
 }
 
-/** Normalised proxy base, or null when unconfigured (drives the empty-proxy UI). */
+/** Normalised proxy base from the fixed app config, or null if somehow blank. */
 export function resolveProxyBase(): string | null {
-  const normalized = normalizeProxyUrl(useSettingsStore.getState().jplProxyUrl);
+  const normalized = normalizeProxyUrl(JPL_PROXY_URL);
   return normalized.length === 0 ? null : normalized;
 }
 

@@ -3,7 +3,7 @@ import { logError } from '../../../core/logging';
 import { KBSearchIndex } from './kbIndex';
 import type { KBArticle, KBArticleRef, KBCategory } from './kbModels';
 
-/** Loaded, indexed knowledge base — computed once, cached for the app lifetime. */
+/** Loaded, indexed knowledge base - computed once, cached for the app lifetime. */
 export interface KBData {
   /** Sorted by `order` ascending. */
   categories: KBCategory[];
@@ -59,7 +59,7 @@ async function loadArticleMarkdown(ref: KBArticleRef): Promise<string> {
     if (!response.ok) throw new Error(`article ${ref.file} -> HTTP ${response.status}`);
     return await response.text();
   } catch (error) {
-    // Per-file failure: log and substitute a placeholder — the article still
+    // Per-file failure: log and substitute a placeholder - the article still
     // appears in lists and the reader (knowledge spec §8.3 step 2).
     logError(error);
     return `# ${ref.title}\n\n(Article content missing.)`;
@@ -120,7 +120,7 @@ async function loadOnce(): Promise<KBData> {
 
 let cached: Promise<KBData> | null = null;
 
-/** Memoized loader — every KB view and global search awaits the same instance. */
+/** Memoized loader - every KB view and global search awaits the same instance. */
 export function loadKBData(): Promise<KBData> {
   if (cached === null) {
     cached = loadOnce().catch((error: unknown) => {

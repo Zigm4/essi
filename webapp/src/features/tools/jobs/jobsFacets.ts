@@ -1,5 +1,5 @@
 /**
- * Precomputed filter-sheet facets (spec §3.5) — distinct values + counts for
+ * Precomputed filter-sheet facets (spec §3.5) - distinct values + counts for
  * the TYPE / REWARD / REQUIRED SKILL chip lists, the type→bucket grouping, and
  * the bonus data extent. Computed once per loaded dataset.
  */

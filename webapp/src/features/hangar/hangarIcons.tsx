@@ -42,7 +42,7 @@ function Svg({ size = 24, className, strokeWidth = 1.8, children }: SvgProps) {
 
 // --- General hangar icons ----------------------------------------------------
 
-/** place — map pin. */
+/** place - map pin. */
 export function IconPlace(props: IconProps) {
   return (
     <Svg {...props}>
@@ -52,7 +52,7 @@ export function IconPlace(props: IconProps) {
   );
 }
 
-/** verified — badge with a tick. */
+/** verified - badge with a tick. */
 export function IconVerified(props: IconProps) {
   return (
     <Svg {...props}>
@@ -62,7 +62,7 @@ export function IconVerified(props: IconProps) {
   );
 }
 
-/** remove — minus. */
+/** remove - minus. */
 export function IconRemove(props: IconProps) {
   return (
     <Svg {...props}>
@@ -71,7 +71,7 @@ export function IconRemove(props: IconProps) {
   );
 }
 
-/** add — plus (local copy sized for steppers). */
+/** add - plus (local copy sized for steppers). */
 export function IconPlus(props: IconProps) {
   return (
     <Svg {...props}>
@@ -80,7 +80,7 @@ export function IconPlus(props: IconProps) {
   );
 }
 
-/** cancel — X in a circle. */
+/** cancel - X in a circle. */
 export function IconCancel(props: IconProps) {
   return (
     <Svg {...props}>
@@ -90,7 +90,7 @@ export function IconCancel(props: IconProps) {
   );
 }
 
-/** directions_car — LANDCRAFT header. */
+/** directions_car - LANDCRAFT header. */
 export function IconDirectionsCar(props: IconProps) {
   return (
     <Svg {...props}>
@@ -103,7 +103,7 @@ export function IconDirectionsCar(props: IconProps) {
   );
 }
 
-/** sailing — WATERCRAFT header. */
+/** sailing - WATERCRAFT header. */
 export function IconSailing(props: IconProps) {
   return (
     <Svg {...props}>
@@ -114,7 +114,7 @@ export function IconSailing(props: IconProps) {
   );
 }
 
-/** archive — empty-state icon. */
+/** archive - empty-state icon. */
 export function IconArchive(props: IconProps) {
   return (
     <Svg {...props}>
@@ -125,7 +125,7 @@ export function IconArchive(props: IconProps) {
   );
 }
 
-/** groups — Crew roles header. */
+/** groups - Crew roles header. */
 export function IconGroups(props: IconProps) {
   return (
     <Svg {...props}>
@@ -137,7 +137,7 @@ export function IconGroups(props: IconProps) {
   );
 }
 
-/** notes — Note header. */
+/** notes - Note header. */
 export function IconNotesLines(props: IconProps) {
   return (
     <Svg {...props}>
@@ -147,7 +147,7 @@ export function IconNotesLines(props: IconProps) {
   );
 }
 
-/** directions_boat_filled — Owner row + EVIL intro header. */
+/** directions_boat_filled - Owner row + EVIL intro header. */
 export function IconDirectionsBoat(props: IconProps) {
   return (
     <Svg {...props}>
@@ -160,7 +160,7 @@ export function IconDirectionsBoat(props: IconProps) {
 
 // --- Crew role icons ---------------------------------------------------------
 
-/** flight — Pilot. */
+/** flight - Pilot. */
 function IconFlight(props: IconProps) {
   return (
     <Svg {...props}>
@@ -169,7 +169,7 @@ function IconFlight(props: IconProps) {
   );
 }
 
-/** center_focus_strong — Gunner. */
+/** center_focus_strong - Gunner. */
 function IconCenterFocus(props: IconProps) {
   return (
     <Svg {...props}>
@@ -179,7 +179,7 @@ function IconCenterFocus(props: IconProps) {
   );
 }
 
-/** build — Technician (wrench). */
+/** build - Technician (wrench). */
 function IconBuild(props: IconProps) {
   return (
     <Svg {...props}>
@@ -188,7 +188,7 @@ function IconBuild(props: IconProps) {
   );
 }
 
-/** local_hospital — Medic (cross). */
+/** local_hospital - Medic (cross). */
 function IconMedical(props: IconProps) {
   return (
     <Svg {...props}>
@@ -198,7 +198,7 @@ function IconMedical(props: IconProps) {
   );
 }
 
-/** restaurant — Chef (fork + knife). */
+/** restaurant - Chef (fork + knife). */
 function IconRestaurant(props: IconProps) {
   return (
     <Svg {...props}>
@@ -208,7 +208,7 @@ function IconRestaurant(props: IconProps) {
   );
 }
 
-/** science — Alchemist (flask). */
+/** science - Alchemist (flask). */
 function IconScience(props: IconProps) {
   return (
     <Svg {...props}>

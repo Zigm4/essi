@@ -61,7 +61,7 @@ function drawGlyph({ ctx, glyph, hasRing, index, now, animate }: DrawArgs): void
     ctx.restore();
   }
 
-  // 2. Body — TL→BR linear gradient.
+  // 2. Body - TL→BR linear gradient.
   const bodyGrad = ctx.createLinearGradient(cx - d / 2, cy - d / 2, cx + d / 2, cy + d / 2);
   bodyGrad.addColorStop(0, glyph.light);
   bodyGrad.addColorStop(1, glyph.dark);

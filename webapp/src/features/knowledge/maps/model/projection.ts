@@ -21,7 +21,7 @@ export interface Projected {
 
 export const GLOBE_FILL_FACTOR = 0.92;
 
-/** kLimbPickLimit — fraction of R beyond which taps are rejected. */
+/** kLimbPickLimit - fraction of R beyond which taps are rejected. */
 export const LIMB_PICK_LIMIT = 0.95;
 
 export function globeRadius(width: number, height: number, zoom: number): number {

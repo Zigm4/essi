@@ -1,6 +1,6 @@
 /**
  * Jobs data model (spec §3.1). `jobs.json` is an array of 371 job objects
- * (370 unique ids — id 30107301 appears twice). Every row is parsed
+ * (370 unique ids - id 30107301 appears twice). Every row is parsed
  * independently; malformed rows are silently skipped so one bad entry can't
  * kill the tool. Fields the app doesn't model are ignored (but must not crash
  * the parse).
@@ -62,7 +62,7 @@ export function locationLabel(loc: JobLocation): string {
   return loc.name === null ? coordsLabel(loc) : `${loc.name} (${coordsLabel(loc)})`;
 }
 
-/** Location equality by (astnum, zone) only — the name is ignored. */
+/** Location equality by (astnum, zone) only - the name is ignored. */
 export function sameLocation(a: JobLocation, b: JobLocation): boolean {
   return a.astnum === b.astnum && a.zone === b.zone;
 }

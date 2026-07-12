@@ -19,7 +19,7 @@ import {
 } from './db';
 
 /**
- * JSON export/import — format-compatible with the mobile app
+ * JSON export/import - format-compatible with the mobile app
  * (data-layer spec §4, formatVersion 1). Audit fixes honored:
  * - E1: a download is a synthetic success; callers decide when to markBackedUp.
  * - E5: an unparseable date on the newer-wins path falls back to epoch 0
@@ -254,7 +254,7 @@ export function downloadJson(json: string, fileName: string = EXPORT_FILE_NAME):
 
 /**
  * Full export as a browser download. Returns after the download is handed to
- * the browser — a synthetic success; the caller then calls markBackedUp().
+ * the browser - a synthetic success; the caller then calls markBackedUp().
  */
 export async function exportAndDownload(database: UnderdeckDb = db): Promise<void> {
   const json = JSON.stringify(buildExportObject(await collectExportData(database)));
@@ -321,7 +321,7 @@ export function dexieImportStore(database: UnderdeckDb = db): ImportStore {
       try {
         await database.tags.add(tag);
       } catch {
-        // insertOrIgnore — an id collision leaves the local row untouched.
+        // insertOrIgnore - an id collision leaves the local row untouched.
       }
     },
     getNote: (id) => database.notes.get(id),
@@ -373,7 +373,7 @@ export function dexieImportStore(database: UnderdeckDb = db): ImportStore {
 }
 
 // ---------------------------------------------------------------------------
-// Import — envelope validation + merge rules
+// Import - envelope validation + merge rules
 
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -450,7 +450,7 @@ export function parseExportEnvelope(text: string): Record<string, unknown> {
   return data;
 }
 
-// History payload validators — round-trip through the same shape checks the
+// History payload validators - round-trip through the same shape checks the
 // mobile fromJson paths enforce (data-layer spec §3), so a poisoned payload
 // can never brick the history list later.
 
@@ -531,7 +531,7 @@ function validDiscoveryPayload(payloadJson: string): boolean {
 
 // Whitelists
 
-/** Includes 'map' and 'map_zone' — the mobile whitelist omission is fixed here. */
+/** Includes 'map' and 'map_zone' - the mobile whitelist omission is fixed here. */
 const VALID_FAVORITE_KINDS = new Set([
   'job',
   'kb_article',
@@ -793,7 +793,7 @@ async function runImport(data: Record<string, unknown>, store: ImportStore): Pro
     }
   }
 
-  // -- jobStatus (per-row guarded — deliberate fix over the mobile importer) --
+  // -- jobStatus (per-row guarded - deliberate fix over the mobile importer) --
   for (const raw of sectionArray(data, 'jobStatus')) {
     try {
       if (!isRecord(raw)) throw new TypeError('job status row is not an object');

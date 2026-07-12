@@ -16,7 +16,7 @@ export async function shareOrCopy(title: string, text: string): Promise<void> {
       await nav.share({ title, text });
       return;
     } catch (e) {
-      // User dismissed the sheet — nothing to do.
+      // User dismissed the sheet - nothing to do.
       if (e instanceof DOMException && e.name === 'AbortError') return;
       // Any other share failure falls through to clipboard.
     }
@@ -27,10 +27,10 @@ export async function shareOrCopy(title: string, text: string): Promise<void> {
       showSnackbar('Copied to clipboard');
       return;
     } catch {
-      // Clipboard blocked — final fallback below.
+      // Clipboard blocked - final fallback below.
     }
   }
-  showSnackbar("Couldn't share right now — try again", { danger: true });
+  showSnackbar("Couldn't share right now - try again", { danger: true });
 }
 
 /** Copies text to the clipboard, showing the given confirmation snackbar. */
@@ -39,6 +39,6 @@ export async function copyToClipboard(text: string, confirmation: string): Promi
     await navigator.clipboard.writeText(text);
     showSnackbar(confirmation);
   } catch {
-    showSnackbar("Couldn't copy — try again", { danger: true });
+    showSnackbar("Couldn't copy - try again", { danger: true });
   }
 }

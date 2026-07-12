@@ -392,7 +392,7 @@ function ShipEditorForm({
       onClose();
     } catch (err) {
       console.error('Failed to save ship:', err);
-      showSnackbar(friendlyError(err, "Couldn't save — please try again."), { danger: true });
+      showSnackbar(friendlyError(err, "Couldn't save - please try again."), { danger: true });
     }
   };
 
@@ -459,7 +459,7 @@ function ShipEditorForm({
         </button>
       }
     >
-      {/* Card 1 — IDENTITY */}
+      {/* Card 1 - IDENTITY */}
       <GlassCard className={styles.editorCard}>
         <SectionHeader title="Identity" className={styles.sectionHeader} />
         {prefixed ? (
@@ -530,7 +530,7 @@ function ShipEditorForm({
         </div>
       </GlassCard>
 
-      {/* Card 2 — LOCATION */}
+      {/* Card 2 - LOCATION */}
       <GlassCard className={styles.editorCard}>
         <SectionHeader
           title="Location"
@@ -596,7 +596,7 @@ function ShipEditorForm({
         )}
       </GlassCard>
 
-      {/* Card 3 — HULL */}
+      {/* Card 3 - HULL */}
       <GlassCard className={styles.editorCard}>
         <SectionHeader
           title="Hull"
@@ -614,7 +614,7 @@ function ShipEditorForm({
         </LabeledField>
       </GlassCard>
 
-      {/* Card 4 — CREW ROLES or OWNER */}
+      {/* Card 4 - CREW ROLES or OWNER */}
       {isEvil ? (
         <GlassCard className={styles.editorCard}>
           <SectionHeader
@@ -656,7 +656,7 @@ function ShipEditorForm({
         )
       )}
 
-      {/* Card 5 — NOTE */}
+      {/* Card 5 - NOTE */}
       <GlassCard className={styles.editorCard}>
         <SectionHeader
           title="Note"

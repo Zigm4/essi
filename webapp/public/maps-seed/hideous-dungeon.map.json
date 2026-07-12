@@ -1,5 +1,5 @@
 {
-  "_comment": "SAMPLE / SEED DATA — bundled so the dynamic-maps feature is demonstrably functional OFFLINE on first launch (airplane mode). The owner REPLACES all of this over the content repo (GitHub-as-CMS); nothing here is authoritative lore. Zones, threat ratings and loot are illustrative. Coordinates are in canvas pixel space matching the background image (2448x3264). See AUDIT-V2 §4.7.",
+  "_comment": "SAMPLE / SEED DATA - bundled so the dynamic-maps feature is demonstrably functional OFFLINE on first launch (airplane mode). The owner REPLACES all of this over the content repo (GitHub-as-CMS); nothing here is authoritative lore. Zones, threat ratings and loot are illustrative. Coordinates are in canvas pixel space matching the background image (2448x3264). See AUDIT-V2 §4.7.",
   "schemaVersion": 1,
   "id": "hideous-dungeon",
   "type": "flat",

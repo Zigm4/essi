@@ -20,7 +20,7 @@ export type AsteroidTableName = 'type' | 'size' | 'structure' | 'salvage' | 'law
 
 export type AsteroidTables = Record<AsteroidTableName, Record<string, AsteroidTableEntry>>;
 
-/** A table entry after defaulting name/emoji — never undefined fields for those. */
+/** A table entry after defaulting name/emoji - never undefined fields for those. */
 export interface ResolvedEntry {
   name: string;
   emoji: string;
@@ -63,14 +63,14 @@ export function validate(raw: string): ValidationRule[] {
   const isDigit = (c: string | undefined): boolean => c !== undefined && c >= '0' && c <= '9';
   const nonZeroDigit = (c: string | undefined): boolean => isDigit(c) && c !== '0';
   return [
-    { id: 'digits', label: 'Digits only (0–9)', ok: digitsOnly },
+    { id: 'digits', label: 'Digits only (0-9)', ok: digitsOnly },
     { id: 'length', label: 'Exactly 9 digits', ok: digitsOnly && raw.length === 9 },
     { id: 'type', label: 'Position 1 = 1 (Asteroid)', ok: raw[0] === '1' },
-    { id: 'size', label: 'Position 2 (size) is 1–9', ok: nonZeroDigit(raw[1]) },
-    { id: 'wealth', label: 'Position 5 (wealth) is 1–9', ok: nonZeroDigit(raw[4]) },
+    { id: 'size', label: 'Position 2 (size) is 1-9', ok: nonZeroDigit(raw[1]) },
+    { id: 'wealth', label: 'Position 5 (wealth) is 1-9', ok: nonZeroDigit(raw[4]) },
     {
       id: 'rss',
-      label: 'Positions 7–9 (resources) are 1–9',
+      label: 'Positions 7-9 (resources) are 1-9',
       ok: nonZeroDigit(raw[6]) && nonZeroDigit(raw[7]) && nonZeroDigit(raw[8]),
     },
   ];
@@ -98,7 +98,7 @@ export interface AsteroidReport {
   salvage: ResolvedEntry;
   law: ResolvedEntry;
   resources: ResolvedEntry[];
-  /** Raw wealth digit d5, 0–9. */
+  /** Raw wealth digit d5, 0-9. */
   wealth: number;
   resourceValue: number;
   resourceValueText: string;

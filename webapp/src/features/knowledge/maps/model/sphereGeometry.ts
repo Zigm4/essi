@@ -143,7 +143,7 @@ export function gridCellRing(
   return out;
 }
 
-/** Normalized mean of a ring's world vectors — the spherical centroid. */
+/** Normalized mean of a ring's world vectors - the spherical centroid. */
 export function ringCentroid(ring: readonly GeoPoint[]): GeoPoint {
   let acc = vec3(0, 0, 0);
   for (const g of ring) acc = add(acc, worldVec(g));

@@ -1,6 +1,6 @@
 /**
  * Maps preference keys (maps spec §8.3), stored in localStorage under the
- * `underdeck.` prefix — the same keys Settings › Clear removes.
+ * `underdeck.` prefix - the same keys Settings › Clear removes.
  */
 
 const PREFIX = 'underdeck.';

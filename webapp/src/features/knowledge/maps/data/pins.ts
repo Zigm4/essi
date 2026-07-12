@@ -1,7 +1,7 @@
 /**
  * Per-zone user notes ("pins") persisted to Dexie `mapPins` (maps spec §8.2,
  * §16.3). One pin per (mapId, zoneId); a trimmed-empty note deletes the pin.
- * Pins are deliberately NOT foreign-keyed — a pin outlives a temporarily
+ * Pins are deliberately NOT foreign-keyed - a pin outlives a temporarily
  * uninstalled pack.
  */
 

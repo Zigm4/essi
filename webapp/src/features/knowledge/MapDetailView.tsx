@@ -1,5 +1,5 @@
 /**
- * /knowledge/maps/:id — the interactive map viewer (maps spec §12.5-§16).
+ * /knowledge/maps/:id - the interactive map viewer (maps spec §12.5-§16).
  *
  * Loads the installed document offline, dispatches to the right renderer by map
  * type (flat 2D, 3D globe, grid table) via <MapCanvas>, and wires: zone
@@ -122,7 +122,7 @@ export function MapDetailView() {
     setGridMode(false);
     void (async () => {
       try {
-        await ensureSeedImported(); // idempotent — covers a direct deep link
+        await ensureSeedImported(); // idempotent - covers a direct deep link
         const manifest = await loadInstalledManifest();
         const descriptor = manifest?.maps.find((m) => m.id === id) ?? null;
         const doc = await loadDocument(id);

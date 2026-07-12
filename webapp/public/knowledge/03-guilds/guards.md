@@ -8,23 +8,23 @@ The Guards Guild is the muscle of public order: patrols, escorts, justice. Membe
 
 ## Skills this guild grinds
 
-_Placeholder — expected candidates: Combat, Strength, Endurance, Intimidation, Investigation._
+_Placeholder - expected candidates: Combat, Strength, Endurance, Intimidation, Investigation._
 
 ## Training locations
 
-_Placeholder — known guard posts, sparring grounds and patrol routes will be listed here._
+_Placeholder - known guard posts, sparring grounds and patrol routes will be listed here._
 
 ## Interactions with other guilds
 
-_Placeholder — adversarial with Spies and Thieves; cooperative with Monks for sanctioned enforcement._
+_Placeholder - adversarial with Spies and Thieves; cooperative with Monks for sanctioned enforcement._
 
 ## Recommended gameplay
 
-_Placeholder — checkpoint duty, escort missions, capturing fugitives, defending public events._
+_Placeholder - checkpoint duty, escort missions, capturing fugitives, defending public events._
 
 ## Weapons and tools
 
-_Placeholder — sword/shield kits, batons, restraints, light armour._
+_Placeholder - sword/shield kits, batons, restraints, light armour._
 
 ---
 

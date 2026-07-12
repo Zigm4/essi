@@ -92,7 +92,7 @@ describe('analyze', () => {
   });
 
   it('only fires the combat alert for law digit 0', () => {
-    // law digit 8 is named PvP but pvp:false — no combat alert
+    // law digit 8 is named PvP but pvp:false - no combat alert
     const r = analyze('195018321', tables);
     expect(r.law.name).toBe('PvP');
     expect(r.alerts.some((a) => a.level === 'warning')).toBe(false);

@@ -37,9 +37,9 @@ import { Haptics } from '../../core/haptics';
 import styles from './nasa/ui/nasa.module.css';
 
 /**
- * /tools/scan — System Scan (tools-live spec §4). Fetches live heliocentric
+ * /tools/scan - System Scan (tools-live spec §4). Fetches live heliocentric
  * planet positions from JPL Horizons (via the configured proxy) one at a time,
- * converts (X, Y) into the game's sector/SL grid, and — in Full mode — locates
+ * converts (X, Y) into the game's sector/SL grid, and - in Full mode - locates
  * each planet's next sector change. Errors surface verbatim per §4.9.
  */
 

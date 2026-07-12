@@ -32,7 +32,7 @@ export function AboutDatasetSheet({ open, onClose }: { open: boolean; onClose: (
           </div>
         </div>
         <div className={styles.aboutFooter}>
-          Some fields read "amount unknown" — that means the source extract had a zero bonus for that
+          Some fields read "amount unknown" - that means the source extract had a zero bonus for that
           job, so the actual reward count is either dynamic or simply not recorded yet.
         </div>
       </div>

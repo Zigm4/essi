@@ -24,7 +24,7 @@ const SEGMENTS: readonly { id: FishingSegment; label: string }[] = [
   { id: 'unknown', label: 'Unknown' },
 ];
 
-/** /tools/fishing/:roomId — a single fishing map room. */
+/** /tools/fishing/:roomId - a single fishing map room. */
 export function FishingRoomView() {
   const { roomId } = useParams();
   const { rooms, error } = useFishingRooms();

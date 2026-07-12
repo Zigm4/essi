@@ -32,7 +32,7 @@ export interface KBArticle {
 
 /**
  * A draft/scaffold article. Detected purely by the substring `Draft in
- * progress` in the body (knowledge spec §5.5) — there is no manifest flag.
+ * progress` in the body (knowledge spec §5.5) - there is no manifest flag.
  */
 export function isPlaceholderArticle(article: KBArticle): boolean {
   return article.markdown.includes('Draft in progress');

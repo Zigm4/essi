@@ -11,7 +11,7 @@ import {
 } from '../design-system/icons';
 import styles from './DisclaimerView.module.css';
 
-/** Disclaimer (/menu/disclaimer) — app-shell spec §11, exact copy. */
+/** Disclaimer (/menu/disclaimer) - app-shell spec §11, exact copy. */
 export function DisclaimerView() {
   return (
     <SubPage title="Disclaimer">
@@ -57,9 +57,9 @@ export function DisclaimerView() {
       <GlassCard>
         <SectionHeader title="Map content & updates" icon={<IconPublic size={18} />} />
         <div className={styles.body}>
-          Interactive maps are downloaded from GitHub — GitHub Pages (fronted by Fastly) for the
+          Interactive maps are downloaded from GitHub - GitHub Pages (fronted by Fastly) for the
           version pointer and jsDelivr (with raw.githubusercontent.com as a fallback) for the
-          files — at most once a day, and verified by SHA-256 before use. A built-in sample map
+          files - at most once a day, and verified by SHA-256 before use. A built-in sample map
           ships with the app so maps work offline. Downloads are on by default and can be turned
           off, or cleared, in Settings › Interactive maps.
         </div>

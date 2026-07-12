@@ -11,7 +11,7 @@ export type LiveResult<T> =
  * Subscribe to a Dexie `liveQuery`. The querier re-runs whenever any Dexie
  * table it reads changes, so downstream UI stays live (favorite toggles, note
  * and pin edits, ...). The subscription is torn down and recreated whenever
- * `deps` change — pass the query string / kind so a new input resubscribes.
+ * `deps` change - pass the query string / kind so a new input resubscribes.
  *
  * This is the project's generic reactive-Dexie hook: `dexie-react-hooks` is not
  * a dependency, so favorites, notes, links and pins all read through here.

@@ -36,7 +36,7 @@ function Svg({
   );
 }
 
-/** settings — gearshape. */
+/** settings - gearshape. */
 export function IconSettings(props: IconProps) {
   return (
     <Svg {...props}>
@@ -46,7 +46,7 @@ export function IconSettings(props: IconProps) {
   );
 }
 
-/** groups — person.3. */
+/** groups - person.3. */
 export function IconGroups(props: IconProps) {
   return (
     <Svg {...props}>
@@ -58,7 +58,7 @@ export function IconGroups(props: IconProps) {
   );
 }
 
-/** star — category icon for the `star.fill` manifest name. */
+/** star - category icon for the `star.fill` manifest name. */
 export function IconStar(props: IconProps) {
   return (
     <Svg {...props}>
@@ -67,7 +67,7 @@ export function IconStar(props: IconProps) {
   );
 }
 
-/** bookmark — default category / fallback icon. */
+/** bookmark - default category / fallback icon. */
 export function IconBookmark(props: IconProps) {
   return (
     <Svg {...props}>
@@ -76,7 +76,7 @@ export function IconBookmark(props: IconProps) {
   );
 }
 
-/** bookmark_border_rounded — inactive bookmark toggle. */
+/** bookmark_border_rounded - inactive bookmark toggle. */
 export function IconBookmarkBorder(props: IconProps) {
   return (
     <Svg {...props}>
@@ -85,7 +85,7 @@ export function IconBookmarkBorder(props: IconProps) {
   );
 }
 
-/** bookmark_rounded — active bookmark toggle. */
+/** bookmark_rounded - active bookmark toggle. */
 export function IconBookmarkFilled(props: IconProps) {
   return (
     <Svg {...props} fill="currentColor">
@@ -94,7 +94,7 @@ export function IconBookmarkFilled(props: IconProps) {
   );
 }
 
-/** edit_note — drafts banner. */
+/** edit_note - drafts banner. */
 export function IconEditNote(props: IconProps) {
   return (
     <Svg {...props}>
@@ -105,7 +105,7 @@ export function IconEditNote(props: IconProps) {
   );
 }
 
-/** volunteer_activism — heart in an open hand. */
+/** volunteer_activism - heart in an open hand. */
 export function IconVolunteerActivism(props: IconProps) {
   return (
     <Svg {...props}>
@@ -115,7 +115,7 @@ export function IconVolunteerActivism(props: IconProps) {
   );
 }
 
-/** broken_image_outlined — broken image tile. */
+/** broken_image_outlined - broken image tile. */
 export function IconBrokenImage(props: IconProps) {
   return (
     <Svg {...props}>
@@ -127,7 +127,7 @@ export function IconBrokenImage(props: IconProps) {
   );
 }
 
-/** travel_explore — globe with a magnifier. */
+/** travel_explore - globe with a magnifier. */
 export function IconTravelExplore(props: IconProps) {
   return (
     <Svg {...props}>
@@ -139,7 +139,7 @@ export function IconTravelExplore(props: IconProps) {
   );
 }
 
-/** search_off — magnifier with a slash. */
+/** search_off - magnifier with a slash. */
 export function IconSearchOff(props: IconProps) {
   return (
     <Svg {...props}>
@@ -150,7 +150,7 @@ export function IconSearchOff(props: IconProps) {
   );
 }
 
-/** person_outline — wallet owner hit. */
+/** person_outline - wallet owner hit. */
 export function IconPersonOutline(props: IconProps) {
   return (
     <Svg {...props}>
@@ -160,7 +160,7 @@ export function IconPersonOutline(props: IconProps) {
   );
 }
 
-/** sticky_note_2_outlined — note hit. */
+/** sticky_note_2_outlined - note hit. */
 export function IconStickyNote(props: IconProps) {
   return (
     <Svg {...props}>
@@ -171,7 +171,7 @@ export function IconStickyNote(props: IconProps) {
   );
 }
 
-/** link — link hit. */
+/** link - link hit. */
 export function IconLink(props: IconProps) {
   return (
     <Svg {...props}>
@@ -182,7 +182,7 @@ export function IconLink(props: IconProps) {
   );
 }
 
-/** push_pin_outlined — map-pin note hit. */
+/** push_pin_outlined - map-pin note hit. */
 export function IconPushPin(props: IconProps) {
   return (
     <Svg {...props}>

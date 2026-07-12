@@ -2,12 +2,12 @@
  * The interactive map canvas (maps spec §13-15). One `<canvas>` driven by
  * `requestAnimationFrame`, dispatching to the pure render engine by map type:
  *
- *  - `flat`  — pan/zoom/drag + wheel + pinch over a constrained-decode background
+ *  - `flat`  - pan/zoom/drag + wheel + pinch over a constrained-decode background
  *              image, with `ZoneHitIndex` polygon/marker hit-testing (§13);
- *  - `globe` — quaternion drag-rotate + zoom + optional reduce-motion-gated
+ *  - `globe` - quaternion drag-rotate + zoom + optional reduce-motion-gated
  *              autorotation, `SphereHitIndex` (non-grid) or analytic `gridPick`
  *              picking via `drawGlobe` (§14);
- *  - `grid`  — pan/zoom table twin via `drawGridTable` + `gridHitTest` (§15).
+ *  - `grid`  - pan/zoom table twin via `drawGridTable` + `gridHitTest` (§15).
  *
  * The viewport transform lives in refs so gestures repaint without React
  * re-renders. Selection/dimming are props; a tap calls `onSelect`.
@@ -74,7 +74,7 @@ interface ViewTransform {
   scale: number;
 }
 
-const TAP_MOVE_THRESHOLD = 6; // css px — below this a pointer-up is a tap
+const TAP_MOVE_THRESHOLD = 6; // css px - below this a pointer-up is a tap
 const GLOBE_MIN_ZOOM = 0.6;
 const GLOBE_MAX_ZOOM = 4.0;
 const GLOBE_FOCUS_ZOOM = 1.9; // zoom level when framing a single zone on the globe
@@ -160,7 +160,7 @@ export function MapCanvas({
 
   const markDirty = (): void => {
     // Paint the current state immediately so the map never depends on
-    // requestAnimationFrame for a frame it needs *now* — browsers pause rAF in
+    // requestAnimationFrame for a frame it needs *now* - browsers pause rAF in
     // hidden/backgrounded tabs and throttle it on restore, which would
     // otherwise leave the canvas blank. The rAF loop (scheduleFrame) is used
     // only to drive the optional decorative globe auto-rotation.
@@ -617,7 +617,7 @@ export function MapCanvas({
       canvas.removeEventListener('pointercancel', endPointer);
       canvas.removeEventListener('wheel', onWheel);
     };
-    // Intentionally bound once — all live data flows through refs.
+    // Intentionally bound once - all live data flows through refs.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

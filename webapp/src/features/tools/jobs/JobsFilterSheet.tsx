@@ -96,7 +96,7 @@ function DualRange({
   const [lo, hi] = value;
   return (
     <>
-      <div className={styles.rangeReadout}>{`${Math.round(lo)} – ${Math.round(hi)}`}</div>
+      <div className={styles.rangeReadout}>{`${Math.round(lo)} - ${Math.round(hi)}`}</div>
       <div className={styles.rangeRow}>
         <input
           type="range"
@@ -195,7 +195,7 @@ function FilterSheetBody({
   const onReset = () => {
     setDraft((d) => ({
       ...d,
-      query: d.query, // query lives in the search field, not the sheet — leave it
+      query: d.query, // query lives in the search field, not the sheet - leave it
       types: new Set(),
       alliedFactions: new Set(),
       rivalFactions: new Set(),

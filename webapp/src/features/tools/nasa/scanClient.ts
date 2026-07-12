@@ -164,7 +164,7 @@ export async function fetchFull(
   const rough = findFirstTransition(broad);
   if (rough === null) return position;
 
-  // A transition exists — refine around it. Errors here are swallowed.
+  // A transition exists - refine around it. Errors here are swallowed.
   await sleep(INTER_REQUEST_DELAY_MS, signal);
   let precise = rough;
   try {

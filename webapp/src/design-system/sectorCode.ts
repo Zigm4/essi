@@ -5,7 +5,7 @@
  *   ticks = floor(abs(scrollOffset) / 4)   // changes every 4px scrolled
  *   value = 100 + ((seed + ticks) % 900)   // always 100..999
  *
- * Pure cosmetics — explicitly NOT location data.
+ * Pure cosmetics - explicitly NOT location data.
  */
 export function sectorCodeValue(seed: number, scrollOffset: number): number {
   const ticks = Math.floor(Math.abs(scrollOffset) / 4);

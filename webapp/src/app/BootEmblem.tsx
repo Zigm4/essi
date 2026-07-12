@@ -11,7 +11,7 @@ function hexagonPath(cx: number, cy: number, r: number): string {
   return `M${points.join('L')}Z`;
 }
 
-/** Boot emblem 220×220 — static rings under reduced motion, five loops otherwise. */
+/** Boot emblem 220×220 - static rings under reduced motion, five loops otherwise. */
 export function BootEmblem() {
   const reduced = useReducedMotion();
   const c = 110;

@@ -1,6 +1,6 @@
 /**
  * Domain types for parsed map content (maps spec §6). Closed enums parse
- * tolerantly — an unrecognized wire value maps to `'unknown'` instead of
+ * tolerantly - an unrecognized wire value maps to `'unknown'` instead of
  * throwing (§6.1), so content authored against a future schema still parses.
  */
 

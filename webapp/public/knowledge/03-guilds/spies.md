@@ -8,23 +8,23 @@ The Spies Guild trains operators of subtlety: information gathering, stealth, in
 
 ## Skills this guild grinds
 
-_Placeholder — the canonical skill list will be filled in once confirmed. Expected candidates: Stealth, Lockpicking, Perception, Deception, Lore._
+_Placeholder - the canonical skill list will be filled in once confirmed. Expected candidates: Stealth, Lockpicking, Perception, Deception, Lore._
 
 ## Training locations
 
-_Placeholder — known spots, NPCs and APMs. Add them here as you confirm them in-game._
+_Placeholder - known spots, NPCs and APMs. Add them here as you confirm them in-game._
 
 ## Interactions with other guilds
 
-_Placeholder — relations with Guards (adversarial), Thieves (overlap), Monks (neutral / contractual). Detail to come._
+_Placeholder - relations with Guards (adversarial), Thieves (overlap), Monks (neutral / contractual). Detail to come._
 
 ## Recommended gameplay
 
-_Placeholder — patrol routes, opportune contracts, when to act solo vs in a squad._
+_Placeholder - patrol routes, opportune contracts, when to act solo vs in a squad._
 
 ## Weapons and tools
 
-_Placeholder — daggers, throwing knives, smoke, lockpicks, listening devices._
+_Placeholder - daggers, throwing knives, smoke, lockpicks, listening devices._
 
 ---
 

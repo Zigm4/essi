@@ -16,7 +16,7 @@ export interface PickerGroup {
 /**
  * Modal bottom sheet used by the model & location pickers (spec §7.1 / §7.2).
  * An explicit tap (including the "none" row) calls `onPick`; tapping the
- * scrim calls `onDismiss` and leaves the selection unchanged — the two must
+ * scrim calls `onDismiss` and leaves the selection unchanged - the two must
  * stay distinguishable.
  */
 export function PickerSheet({

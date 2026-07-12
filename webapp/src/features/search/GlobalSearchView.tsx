@@ -96,7 +96,7 @@ function GroupBlock({ group }: { group: SearchGroup }) {
       </div>
       {group.hasMore && (
         <p className={styles.more}>
-          +{group.hiddenCount} more — refine your search to narrow down.
+          +{group.hiddenCount} more - refine your search to narrow down.
         </p>
       )}
     </div>
@@ -111,7 +111,7 @@ function Hint() {
       </span>
       <div className={`t-headline ${styles.centered}`}>Search everything</div>
       <p className={styles.hintCaption}>
-        Find map zones, knowledge base articles, jobs, wallets, and your own notes — all in one
+        Find map zones, knowledge base articles, jobs, wallets, and your own notes - all in one
         place.
       </p>
     </div>
@@ -132,7 +132,7 @@ function NoMatches({ query }: { query: string }) {
   );
 }
 
-/** /menu/search — global search across maps, KB, jobs, wallets, notes. */
+/** /menu/search - global search across maps, KB, jobs, wallets, notes. */
 export function GlobalSearchView() {
   const [text, setText] = useState('');
   const [committed, setCommitted] = useState('');

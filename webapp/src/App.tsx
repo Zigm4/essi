@@ -41,7 +41,7 @@ export default function App() {
         <Route path="/onboarding" element={<Onboarding />} />
 
         <Route element={<AppShell />}>
-          {/* Tab 0 — Tools */}
+          {/* Tab 0 - Tools */}
           <Route path="/tools" element={<ToolsHomeView />} />
           <Route path="/tools/scan" element={<SystemScanView />} />
           <Route path="/tools/asteroid" element={<AsteroidAnalyzerView />} />
@@ -53,22 +53,22 @@ export default function App() {
           <Route path="/tools/discoveries" element={<CelestialView />} />
           <Route path="/tools/jobs" element={<JobsView />} />
 
-          {/* Tab 1 — Notes/Captures */}
+          {/* Tab 1 - Notes/Captures */}
           <Route path="/captures" element={<CapturesHomeView />} />
           <Route path="/captures/note/:id" element={<NoteDetailView />} />
           <Route path="/captures/link/:id" element={<LinkDetailView />} />
 
-          {/* Tab 2 — Hangar */}
+          {/* Tab 2 - Hangar */}
           <Route path="/hangar" element={<HangarListView />} />
 
-          {/* Tab 3 — Knowledge */}
+          {/* Tab 3 - Knowledge */}
           <Route path="/knowledge" element={<KBHomeView />} />
           <Route path="/knowledge/category/:id" element={<KBCategoryView />} />
           <Route path="/knowledge/article/:slug" element={<KBArticleView />} />
           <Route path="/knowledge/maps" element={<MapsGalleryView />} />
           <Route path="/knowledge/maps/:id" element={<MapDetailView />} />
 
-          {/* Tab 4 — Menu */}
+          {/* Tab 4 - Menu */}
           <Route path="/menu" element={<MenuView />} />
           <Route path="/menu/search" element={<GlobalSearchView />} />
           <Route path="/menu/settings" element={<SettingsView />} />

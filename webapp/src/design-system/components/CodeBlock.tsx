@@ -23,7 +23,7 @@ export function CodeBlock({ text }: { text: string }) {
       if (timerRef.current !== null) clearTimeout(timerRef.current);
       timerRef.current = setTimeout(() => setCopied(false), 1500);
     } catch {
-      // Clipboard unavailable (permissions) — silently ignore.
+      // Clipboard unavailable (permissions) - silently ignore.
     }
   };
 

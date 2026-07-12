@@ -6,7 +6,7 @@ import { toLinkModel, toNoteModel, toTagModel } from './models';
 /**
  * Write-side repository for Captures. Every mutation runs inside a single Dexie
  * transaction (atomicity, spec §18.2 "F45") and prunes orphan tags afterwards
- * (spec §18.3 "R9a"). Title/body/url/note are persisted exactly as typed — no
+ * (spec §18.3 "R9a"). Title/body/url/note are persisted exactly as typed - no
  * trimming (spec §8/§9/§18.2).
  */
 

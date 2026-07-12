@@ -160,7 +160,7 @@ export class ZoneHitIndex {
   }
 }
 
-/** Constrained background decode width (§13.6) — never above the source. */
+/** Constrained background decode width (§13.6) - never above the source. */
 export function backgroundDecodeWidth(canvasWidth: number, scale: number): number {
   const desired = Math.ceil(canvasWidth * scale);
   const capped = clamp(desired, 1, BG_MAX_DECODE_CAP);

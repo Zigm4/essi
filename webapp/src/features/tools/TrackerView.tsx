@@ -36,7 +36,7 @@ import { toggleFavorite, useFavoriteSet } from './shared/favorites';
 import styles from './nasa/ui/nasa.module.css';
 
 /**
- * /tools/tracker — Object Tracker (tools-live spec §6). Resolves a canonical
+ * /tools/tracker - Object Tracker (tools-live spec §6). Resolves a canonical
  * MPC designation (curated catalog, then SBDB) and fetches the body's live
  * heliocentric vector from JPL Horizons, reporting sector, AU coordinates and
  * SL distance. Accepts a prefill TrackTarget via router location state and

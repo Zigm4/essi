@@ -82,7 +82,7 @@ export function cellCenter(grid: MapGrid, col: number, row: number): GeoPoint {
   return { lon: (b.lonWest + b.lonEast) / 2, lat: (b.latNorth + b.latSouth) / 2 };
 }
 
-/** O(1) analytic cell pick — never runs a polygon test (§14.7). */
+/** O(1) analytic cell pick - never runs a polygon test (§14.7). */
 export function gridCellAt(point: GeoPoint, grid: MapGrid): { col: number; row: number } {
   const col = clamp(Math.floor((point.lon + 180) / (360 / grid.cols)), 0, grid.cols - 1);
   const row = clamp(Math.floor((90 - point.lat) / (180 / grid.rows)), 0, grid.rows - 1);

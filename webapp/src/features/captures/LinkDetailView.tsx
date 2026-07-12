@@ -15,7 +15,7 @@ import { loadLinks } from './queries';
 import { useLiveQuery } from './useLiveQuery';
 import styles from './components/CaptureDetail.module.css';
 
-/** /captures/link/:id — a single saved link (spec §11). */
+/** /captures/link/:id - a single saved link (spec §11). */
 export function LinkDetailView() {
   const { id } = useParams<{ id: string }>();
   const [editing, setEditing] = useState(false);

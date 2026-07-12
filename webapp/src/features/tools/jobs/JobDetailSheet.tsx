@@ -31,7 +31,7 @@ function bonusFactText(bonus: number): string {
 }
 
 function skillText(job: Job): string {
-  if (job.requiredSkill === null) return '—';
+  if (job.requiredSkill === null) return '-';
   return job.requiredSkillAmt > 0 ? `${job.requiredSkill} ≥${job.requiredSkillAmt}` : job.requiredSkill;
 }
 
@@ -91,7 +91,7 @@ function JobDetailContent({
 
   const onShare = () => {
     const lines = [
-      `ESSI job #${job.id} — ${job.typeRaw}`,
+      `ESSI job #${job.id} - ${job.typeRaw}`,
       ally !== null ? `Allied: ${ally.label}` : null,
       rival !== null ? `Rival: ${rival.label}` : null,
       `Reward: ${reward.label} · ${bonusFactText(job.bonus)}`,
@@ -163,9 +163,9 @@ function JobDetailContent({
       )}
 
       <GlassCard>
-        <FactRow label="Allied faction" value={ally?.label ?? '—'} tint={ally?.tint} />
-        <FactRow label="Rival faction" value={rival?.label ?? '—'} tint={rival?.tint} />
-        <FactRow label="Required tag" value={job.requiredTag !== null ? tagLabel(job.requiredTag) : '—'} />
+        <FactRow label="Allied faction" value={ally?.label ?? '-'} tint={ally?.tint} />
+        <FactRow label="Rival faction" value={rival?.label ?? '-'} tint={rival?.tint} />
+        <FactRow label="Required tag" value={job.requiredTag !== null ? tagLabel(job.requiredTag) : '-'} />
         <FactRow label="Required skill" value={skillText(job)} />
         <FactRow label="Required reputation" value={String(job.requiredRep)} />
         <FactRow label="Risk" value={String(job.risk)} />

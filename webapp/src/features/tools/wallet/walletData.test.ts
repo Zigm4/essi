@@ -94,7 +94,7 @@ describe('capResults', () => {
     expect(display.total).toBe(65);
     expect(display.shown).toBe(50);
     expect(display.hiddenCaption).toBe(
-      'Showing 50 of 65 matches — refine your search to narrow down.',
+      'Showing 50 of 65 matches - refine your search to narrow down.',
     );
   });
 });

@@ -33,7 +33,7 @@ function pad2(n: number): string {
   return n.toString().padStart(2, '0');
 }
 
-/** /tools/mars-express — live schedule + zone alerts (spec §5.3, web-adapted). */
+/** /tools/mars-express - live schedule + zone alerts (spec §5.3, web-adapted). */
 export function MarsExpressView() {
   const [stops, setStops] = useState<TrainStop[] | null>(null);
   const [error, setError] = useState<string | null>(null);

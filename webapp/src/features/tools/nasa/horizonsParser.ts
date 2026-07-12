@@ -1,8 +1,8 @@
 /**
  * Shared JPL Horizons ephemeris text parser (tools-live spec §4.7).
  *
- * The Horizons response — in `format=text` (System Scan) or wrapped in the
- * JSON envelope's `result` string (Tracker) — is one plain-text document. The
+ * The Horizons response - in `format=text` (System Scan) or wrapped in the
+ * JSON envelope's `result` string (Tracker) - is one plain-text document. The
  * ephemeris rows live between the `$$SOE` and `$$EOE` markers. This parser is
  * deliberately naive: walk the lines, grab the date when a line contains
  * `A.D.`, grab the vector when a line starts with `X =`, repeat.
@@ -17,7 +17,7 @@ export interface RawPosition {
 }
 
 /**
- * Raised when a Horizons payload lacks the `$$SOE` marker — i.e. it is not an
+ * Raised when a Horizons payload lacks the `$$SOE` marker - i.e. it is not an
  * ephemeris at all (e.g. an "API SERVER BUSY" rate-limit notice). Carries a
  * collapsed 200-char preview for the user-facing message.
  */

@@ -50,7 +50,7 @@ function MenuRow({
   );
 }
 
-/** Menu tab (/menu) — app-shell spec §7. */
+/** Menu tab (/menu) - app-shell spec §7. */
 export function MenuView() {
   const navigate = useNavigate();
   return (

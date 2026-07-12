@@ -2,7 +2,7 @@ import { db } from '../../data/db';
 import { loadKBData, type KBData } from '../knowledge/data/kbLoader';
 
 /**
- * Federated global search (knowledge spec §11–12). A single query is fanned out
+ * Federated global search (knowledge spec §11-12). A single query is fanned out
  * to 6 sources in a fixed order; each group is capped at 5 visible rows.
  *
  * Backend availability today:
@@ -11,7 +11,7 @@ import { loadKBData, type KBData } from '../knowledge/data/kbLoader';
  *  - mapZone, job, wallet -> STUB (return []). They delegate to modules owned by
  *    other areas that do not exist yet: `mapZoneSearchProvider` (maps spec, needs
  *    the FTS index + map metadata to drop draft/unknown maps), the jobs list +
- *    job-detail modal (tools area — job hits open a modal, there is no route),
+ *    job-detail modal (tools area - job hits open a modal, there is no route),
  *    and `wallet.search` (wallet tool). The engine keeps all 6 registered in
  *    order so wiring each is a one-function change. See return notes.
  */
@@ -105,7 +105,7 @@ export function federateSearchResults(
   return groups;
 }
 
-/** Sum of pre-cap totals — drives the "No matches" empty state (§12.3). */
+/** Sum of pre-cap totals - drives the "No matches" empty state (§12.3). */
 export function totalHitCount(groups: readonly SearchGroup[]): number {
   return groups.reduce((sum, group) => sum + group.total, 0);
 }
@@ -118,7 +118,7 @@ export function snippet(text: string, max = 80): string {
 
 // --- Source adapters ---------------------------------------------------------
 
-/** 2. KB articles — the index's alphabetical order (§12.4). */
+/** 2. KB articles - the index's alphabetical order (§12.4). */
 function kbArticleHits(kb: KBData, query: string): GlobalSearchHit[] {
   const hits: GlobalSearchHit[] = [];
   for (const slug of kb.index.search(query)) {
@@ -135,7 +135,7 @@ function kbArticleHits(kb: KBData, query: string): GlobalSearchHit[] {
   return hits;
 }
 
-/** 5. Captures — notes then links, substring match (§12.4). */
+/** 5. Captures - notes then links, substring match (§12.4). */
 async function captureHits(q: string): Promise<GlobalSearchHit[]> {
   const [notes, links] = await Promise.all([db.notes.toArray(), db.links.toArray()]);
   const hits: GlobalSearchHit[] = [];
@@ -164,7 +164,7 @@ async function captureHits(q: string): Promise<GlobalSearchHit[]> {
   return hits;
 }
 
-/** 6. Map pins — personal zone notes, substring match (§12.4). */
+/** 6. Map pins - personal zone notes, substring match (§12.4). */
 async function mapPinHits(q: string): Promise<GlobalSearchHit[]> {
   const pins = await db.mapPins.toArray();
   const hits: GlobalSearchHit[] = [];
@@ -188,7 +188,7 @@ async function mapPinHits(q: string): Promise<GlobalSearchHit[]> {
 /**
  * Runs all sources concurrently and federates. Reads `db.notes`, `db.links`,
  * `db.mapPins` inside the (Dexie-tracked) call, so wrapping this in `liveQuery`
- * keeps notes/links/pins results live — edits re-emit and recompute (§12.4).
+ * keeps notes/links/pins results live - edits re-emit and recompute (§12.4).
  */
 export async function runGlobalSearch(rawQuery: string): Promise<SearchGroup[]> {
   const query = rawQuery.trim();
@@ -199,12 +199,12 @@ export async function runGlobalSearch(rawQuery: string): Promise<SearchGroup[]> 
   const [captures, pins] = await Promise.all([captureHits(q), mapPinHits(q)]);
 
   const bySource = new Map<SearchSourceValue, GlobalSearchHit[]>([
-    // STUB — maps spec `mapZoneSearchProvider` (FTS5 over zone fields).
+    // STUB - maps spec `mapZoneSearchProvider` (FTS5 over zone fields).
     [SearchSource.mapZone, []],
     [SearchSource.kbArticle, kbArticleHits(kb, query)],
-    // STUB — tools area jobs list + job-detail modal (JobTarget has no route).
+    // STUB - tools area jobs list + job-detail modal (JobTarget has no route).
     [SearchSource.job, []],
-    // STUB — wallet tool `wallet.search` (owner/wallet substring + dedup).
+    // STUB - wallet tool `wallet.search` (owner/wallet substring + dedup).
     [SearchSource.wallet, []],
     [SearchSource.capture, captures],
     [SearchSource.mapPin, pins],

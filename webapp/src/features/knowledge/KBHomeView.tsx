@@ -104,7 +104,7 @@ function ResultCard({ article }: { article: KBArticle }) {
   );
 }
 
-/** /knowledge — knowledge base home (Knowledge tab). */
+/** /knowledge - knowledge base home (Knowledge tab). */
 export function KBHomeView() {
   const [query, setQuery] = useState('');
   const kb = useKBData();

@@ -1,5 +1,5 @@
 /**
- * Grid table view — the "text map" twin of a grid-sphere globe (maps spec §15).
+ * Grid table view - the "text map" twin of a grid-sphere globe (maps spec §15).
  * A synthetic canvas of `cols×96 × rows×64` px with layered painters, sharing
  * the selection provider with the globe.
  */
@@ -156,7 +156,7 @@ export function drawGridTable(
   ctx.stroke(baseGrid);
 
   // Cell fills as inset, rounded "tiles" so charted zones read as distinct
-  // chips instead of one continuous wash — richer alpha, a top-light sheen and
+  // chips instead of one continuous wash - richer alpha, a top-light sheen and
   // a colored hairline border give the grid depth.
   const INSET = 2;
   const RADIUS = 4;

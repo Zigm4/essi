@@ -8,7 +8,7 @@ import styles from './AppBackground.module.css';
  * cyber particles + children + CRT scanlines overlay above content.
  */
 
-/** HexGridPainter — flat-top hexagon tiling, exact algorithm from §5.2. */
+/** HexGridPainter - flat-top hexagon tiling, exact algorithm from §5.2. */
 function paintHexGrid(canvas: HTMLCanvasElement): void {
   const parent = canvas.parentElement;
   if (parent === null) return;
@@ -60,7 +60,7 @@ function makeParticles(count: number): Particle[] {
   }));
 }
 
-/** CyberParticles painter — cyan dots drifting bottom → top (§5.4). */
+/** CyberParticles painter - cyan dots drifting bottom → top (§5.4). */
 function CyberParticles({ count = 28 }: { count?: number }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const particlesRef = useRef<Particle[]>(makeParticles(count));

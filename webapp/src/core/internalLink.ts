@@ -3,7 +3,7 @@ import { launchExternal } from './externalLink';
 /**
  * Resolves the custom in-app scheme `underdeck://` used by cross-links inside
  * content (KB markdown, zone links, imported notes). Never registered with the
- * OS — resolved purely in-app (app-shell spec §13.5).
+ * OS - resolved purely in-app (app-shell spec §13.5).
  *
  *   underdeck://kb/<slug>            -> /knowledge/article/<slug>
  *   underdeck://map/<id>[?zone=<z>]  -> /knowledge/maps/<id>[?zone=<z>]

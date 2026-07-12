@@ -8,7 +8,7 @@
  * CONJUGATE rotation; we reproduce the *observable behaviours* it lists
  * (§14.3) under the standard convention rather than mirroring its sign quirks.
  *
- * Composition: `rotate(mul(a, b), v) === rotate(a, rotate(b, v))` — the RIGHT
+ * Composition: `rotate(mul(a, b), v) === rotate(a, rotate(b, v))` - the RIGHT
  * operand runs first (standard Hamilton order).
  */
 

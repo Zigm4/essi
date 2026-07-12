@@ -30,7 +30,7 @@ const PAGES: OnboardingPage[] = [
     channel: 'ESSI//WELCOME',
     icon: <IconSatelliteAlt size={22} />,
     title: 'What ESSI is',
-    body: 'ESSI is an unofficial fan companion for UP55 — a pocket terminal for pilots.\n\nIt bundles the field tools, references and trackers you reach for mid-run into one offline-first console. No account, no sign-in — open it and it works.',
+    body: 'ESSI is an unofficial fan companion for UP55 - a pocket terminal for pilots.\n\nIt bundles the field tools, references and trackers you reach for mid-run into one offline-first console. No account, no sign-in - open it and it works.',
     bullets: [
       'Made by a player, for the UP55 community.',
       'Everything lives on-device and works offline.',
@@ -40,9 +40,9 @@ const PAGES: OnboardingPage[] = [
     channel: 'ESSI//TOOLKIT',
     icon: <IconGridView size={22} />,
     title: 'The tools & SL-sectors',
-    body: 'The Tools deck holds the working kit — System Scan, Asteroid Analyzer, Mars Express alerts, the Fishing map and more. Captures, Hangar and the Knowledge core keep your notes and references close.\n\nThe ESSI banner up top reads out an SL-sector code (SL = star-lane): a scroll-driven coordinate that anchors where you are in the console. It is flavour, not a live position — no location is ever read.',
+    body: 'The Tools deck holds the working kit - System Scan, Asteroid Analyzer, Mars Express alerts, the Fishing map and more. Captures, Hangar and the Knowledge core keep your notes and references close.\n\nThe ESSI banner up top reads out an SL-sector code (SL = star-lane): a scroll-driven coordinate that anchors where you are in the console. It is flavour, not a live position - no location is ever read.',
     bullets: [
-      'Sector codes are cosmetic — nothing is tracked from them.',
+      'Sector codes are cosmetic - nothing is tracked from them.',
       'Tabs along the bottom switch between decks.',
     ],
   },
@@ -50,16 +50,16 @@ const PAGES: OnboardingPage[] = [
     channel: 'ESSI//PRIVACY',
     icon: <IconShieldMoon size={22} />,
     title: 'Privacy promise',
-    body: 'ESSI has no backend operated by us and ships no telemetry or analytics SDK. Your data stays on your device.\n\nMost outbound network is opt-in (a Discord invite, System Scan, Discoveries, Tracker). Interactive maps are the exception: they download content from GitHub (Pages/Fastly + jsDelivr) at most once a day, on by default — you can switch that off in Settings. You own your data: back it up or move devices with a plain JSON export.',
+    body: 'ESSI has no backend operated by us and ships no telemetry or analytics SDK. Your data stays on your device.\n\nMost outbound network is opt-in (a Discord invite, System Scan, Discoveries, Tracker). Interactive maps are the exception: they download content from GitHub (Pages/Fastly + jsDelivr) at most once a day, on by default - you can switch that off in Settings. You own your data: back it up or move devices with a plain JSON export.',
     bullets: [
       'No backend. No telemetry. No ads.',
-      'Maps fetch from GitHub by default — toggle in Settings › Maps.',
+      'Maps fetch from GitHub by default - toggle in Settings › Maps.',
       'Full JSON export & import lives in Settings › Data.',
     ],
   },
 ];
 
-/** First-run intro — three "incoming transmission" cards (/onboarding). */
+/** First-run intro - three "incoming transmission" cards (/onboarding). */
 export function Onboarding() {
   const navigate = useNavigate();
   const location = useLocation();

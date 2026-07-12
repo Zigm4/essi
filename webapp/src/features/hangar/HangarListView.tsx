@@ -35,7 +35,7 @@ const CATEGORY_META: Record<
 
 type EditorState = { open: false } | { open: true; ship: ShipModel | null };
 
-/** /hangar — ship registry (Hangar tab). */
+/** /hangar - ship registry (Hangar tab). */
 export function HangarListView() {
   const catalogState = useCatalogs();
   const catalog = catalogState.status === 'ready' ? catalogState.data : null;

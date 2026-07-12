@@ -1,6 +1,6 @@
 /**
  * In-memory inverted index shared by KB Home search and the global-search KB
- * source (knowledge spec §9). Exact algorithm — do not "improve" the ranking:
+ * source (knowledge spec §9). Exact algorithm - do not "improve" the ranking:
  * AND-of-prefix matching with a final alphabetical-by-title sort, no scoring.
  */
 
@@ -8,8 +8,8 @@
  * Tokenizer used for BOTH indexing and queries (§9.1):
  * - lowercase the text;
  * - a token is a maximal run of ASCII alphanumerics (`0-9A-Za-z`); every other
- *   character — punctuation, whitespace, and any non-ASCII letter (accents
- *   split tokens!) — is a separator;
+ *   character - punctuation, whitespace, and any non-ASCII letter (accents
+ *   split tokens!) - is a separator;
  * - only tokens of length >= 2 are kept.
  */
 export function tokenize(text: string): string[] {

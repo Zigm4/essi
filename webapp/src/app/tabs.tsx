@@ -10,7 +10,7 @@ import {
 } from '../design-system/icons';
 
 /**
- * Shared tab model for the responsive shell — the mobile bottom capsule and
+ * Shared tab model for the responsive shell - the mobile bottom capsule and
  * the desktop sidebar drive the same router navigation and per-tab history.
  */
 

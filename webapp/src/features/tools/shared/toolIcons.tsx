@@ -36,7 +36,7 @@ function Svg({ size = 24, className, strokeWidth = 1.8, children }: SvgProps) {
   );
 }
 
-/** sort — descending bars. */
+/** sort - descending bars. */
 export function IconSort(props: ToolIconProps) {
   return (
     <Svg {...props}>
@@ -75,7 +75,7 @@ export function IconRadioUnchecked(props: ToolIconProps) {
   );
 }
 
-/** pending — circle with three dots. */
+/** pending - circle with three dots. */
 export function IconPending(props: ToolIconProps) {
   return (
     <Svg {...props}>
@@ -87,7 +87,7 @@ export function IconPending(props: ToolIconProps) {
   );
 }
 
-/** gpp_bad — shield with an X. */
+/** gpp_bad - shield with an X. */
 export function IconGppBad(props: ToolIconProps) {
   return (
     <Svg {...props}>
@@ -97,7 +97,7 @@ export function IconGppBad(props: ToolIconProps) {
   );
 }
 
-/** bolt — lightning. */
+/** bolt - lightning. */
 export function IconBolt(props: ToolIconProps) {
   return (
     <Svg {...props}>
@@ -106,7 +106,7 @@ export function IconBolt(props: ToolIconProps) {
   );
 }
 
-/** local_atm — coin with S. */
+/** local_atm - coin with S. */
 export function IconLocalAtm(props: ToolIconProps) {
   return (
     <Svg {...props}>
@@ -117,7 +117,7 @@ export function IconLocalAtm(props: ToolIconProps) {
   );
 }
 
-/** place — map pin. */
+/** place - map pin. */
 export function IconPlace(props: ToolIconProps) {
   return (
     <Svg {...props}>
@@ -127,7 +127,7 @@ export function IconPlace(props: ToolIconProps) {
   );
 }
 
-/** local_shipping — truck. */
+/** local_shipping - truck. */
 export function IconLocalShipping(props: ToolIconProps) {
   return (
     <Svg {...props}>
@@ -148,7 +148,7 @@ export function IconShieldOutlined(props: ToolIconProps) {
   );
 }
 
-/** ios_share — box with an up arrow. */
+/** ios_share - box with an up arrow. */
 export function IconIosShare(props: ToolIconProps) {
   return (
     <Svg {...props}>
@@ -178,7 +178,7 @@ export function IconChecklist(props: ToolIconProps) {
   );
 }
 
-/** schedule — clock. */
+/** schedule - clock. */
 export function IconSchedule(props: ToolIconProps) {
   return (
     <Svg {...props}>
@@ -188,7 +188,7 @@ export function IconSchedule(props: ToolIconProps) {
   );
 }
 
-/** tram — front-view rail car. */
+/** tram - front-view rail car. */
 export function IconTram(props: ToolIconProps) {
   return (
     <Svg {...props}>
@@ -211,7 +211,7 @@ export function IconSwapHoriz(props: ToolIconProps) {
   );
 }
 
-/** notifications_active — bell with waves. */
+/** notifications_active - bell with waves. */
 export function IconNotificationsActive(props: ToolIconProps) {
   return (
     <Svg {...props}>
@@ -222,7 +222,7 @@ export function IconNotificationsActive(props: ToolIconProps) {
   );
 }
 
-/** notifications_outlined — bell. */
+/** notifications_outlined - bell. */
 export function IconNotificationsOutlined(props: ToolIconProps) {
   return (
     <Svg {...props}>
@@ -232,7 +232,7 @@ export function IconNotificationsOutlined(props: ToolIconProps) {
   );
 }
 
-/** notifications_off — bell with slash. */
+/** notifications_off - bell with slash. */
 export function IconNotificationsOff(props: ToolIconProps) {
   return (
     <Svg {...props}>
@@ -252,7 +252,7 @@ export function IconRepeat(props: ToolIconProps) {
   );
 }
 
-/** cancel — circle with an X. */
+/** cancel - circle with an X. */
 export function IconCancel(props: ToolIconProps) {
   return (
     <Svg {...props}>
@@ -293,7 +293,7 @@ export function IconPerson(props: ToolIconProps) {
   );
 }
 
-/** attach_money — dollar sign. */
+/** attach_money - dollar sign. */
 export function IconAttachMoney(props: ToolIconProps) {
   return (
     <Svg {...props}>
@@ -303,7 +303,7 @@ export function IconAttachMoney(props: ToolIconProps) {
   );
 }
 
-/** money_off — dollar sign with a slash. */
+/** money_off - dollar sign with a slash. */
 export function IconMoneyOff(props: ToolIconProps) {
   return (
     <Svg {...props}>
@@ -314,7 +314,7 @@ export function IconMoneyOff(props: ToolIconProps) {
   );
 }
 
-/** set_meal — fish on a plate. */
+/** set_meal - fish on a plate. */
 export function IconSetMeal(props: ToolIconProps) {
   return (
     <Svg {...props}>

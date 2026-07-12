@@ -7,7 +7,7 @@ export type ObjectKind = 'comet' | 'asteroid';
 export type DiscoveryStatus = 'ok' | 'caution' | 'danger' | 'unknown';
 
 export interface DiscoveredObject {
-  /** pdes — required (rows without it are dropped). */
+  /** pdes - required (rows without it are dropped). */
   designation: string;
   /** full_name, kept raw; falls back to designation. */
   fullName: string;
@@ -55,7 +55,7 @@ function asQueryShape(json: unknown): SbdbQueryShape | null {
   return { fields: fields as string[], data: data as unknown[][] };
 }
 
-/** '' sorts first — missing first_obs bubbles to the top (matches the bot). */
+/** '' sorts first - missing first_obs bubbles to the top (matches the bot). */
 function obsSortKey(o: DiscoveredObject): string {
   return o.firstObs ?? '';
 }
@@ -161,7 +161,7 @@ export function trackingPeriodDays(o: DiscoveredObject): number | null {
 
 /**
  * Local status classification (top-down, first match wins). Mirrors the bot's
- * `calculate_status`. Note: the getter never returns `unknown` — missing obs
+ * `calculate_status`. Note: the getter never returns `unknown` - missing obs
  * dates yield days=0 → caution (spec §5.5 / open question #2, replicated).
  */
 export function computeStatus(o: DiscoveredObject): DiscoveryStatus {
@@ -197,11 +197,11 @@ export function statusEmoji(status: DiscoveryStatus): string {
   }
 }
 
-/** Detail-sheet explanation — evaluated in a different order than the status. */
+/** Detail-sheet explanation - evaluated in a different order than the status. */
 export function statusExplanation(o: DiscoveredObject): string {
   if (o.isHazardous) return 'Flagged as potentially hazardous (PHA=Y) by SBDB.';
   if ((trackingPeriodDays(o) ?? 0) < 3) {
-    return 'Short tracking window — orbit refinement may still be in progress.';
+    return 'Short tracking window - orbit refinement may still be in progress.';
   }
   if (o.kind === 'asteroid' && (o.diameterMeters ?? 0) > 140) {
     return 'Large diameter (>140 m). Worth watching.';

@@ -12,7 +12,7 @@ import styles from './fishing/Fishing.module.css';
 
 const ACCENT_PRIMARY = '#4FC3FF';
 
-/** /tools/fishing — the four map rooms + the Rankle River grid. */
+/** /tools/fishing - the four map rooms + the Rankle River grid. */
 export function FishingMapView() {
   const navigate = useNavigate();
   const { rooms, error } = useFishingRooms();

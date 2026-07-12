@@ -1,6 +1,6 @@
 import styles from './Status.module.css';
 
-/** Centered indeterminate spinner — the CircularProgressIndicator equivalent. */
+/** Centered indeterminate spinner - the CircularProgressIndicator equivalent. */
 export function CenteredSpinner() {
   return (
     <div className={styles.center}>

@@ -14,7 +14,7 @@ const CATEGORIES = ['Feedback', 'Bug report', 'Support', 'Other'] as const;
 
 const DEVICE_LABEL = 'Web';
 
-/** Contact (/menu/contact) — mailto composer. Photo attachments are mobile-only. */
+/** Contact (/menu/contact) - mailto composer. Photo attachments are mobile-only. */
 export function ContactView({ initialMessage = '' }: { initialMessage?: string }) {
   const [category, setCategory] = useState<(typeof CATEGORIES)[number]>('Feedback');
   const [message, setMessage] = useState(initialMessage);

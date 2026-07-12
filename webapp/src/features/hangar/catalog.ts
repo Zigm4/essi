@@ -4,7 +4,7 @@ import { SHIP_RIGHTS, type ShipRight } from './roles';
 /**
  * Ship catalog assets (spec §10). Two JSON files bundled under `public/catalog/`,
  * fetched once and cached. Each file loads independently; a fetch/parse failure
- * logs and falls back to an empty list (spec §10.3) — the UI then shows raw
+ * logs and falls back to an empty list (spec §10.3) - the UI then shows raw
  * fallbacks (everything groups under "Other", pickers show only the null rows).
  */
 

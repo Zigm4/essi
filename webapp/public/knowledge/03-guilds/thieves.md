@@ -8,20 +8,20 @@ The Thieves Guild is the underside of the economy: contraband, fast hands, faste
 
 ## Skills this guild grinds
 
-_Placeholder — expected candidates: Stealth, Lockpicking, Sleight of Hand, Appraisal, Acrobatics._
+_Placeholder - expected candidates: Stealth, Lockpicking, Sleight of Hand, Appraisal, Acrobatics._
 
 ## Training locations
 
-_Placeholder — back alleys, fence networks, hideouts. APMs to be filled in._
+_Placeholder - back alleys, fence networks, hideouts. APMs to be filled in._
 
 ## Interactions with other guilds
 
-_Placeholder — adversarial with Guards; soft overlap with Spies; cautious with Monks._
+_Placeholder - adversarial with Guards; soft overlap with Spies; cautious with Monks._
 
 ## Recommended gameplay
 
-_Placeholder — heists, contraband routes, market manipulation, lookout work for crews._
+_Placeholder - heists, contraband routes, market manipulation, lookout work for crews._
 
 ## Weapons and tools
 
-_Placeholder — daggers, lockpicks, smoke, climbing gear, disguise kits._
+_Placeholder - daggers, lockpicks, smoke, climbing gear, disguise kits._

@@ -35,7 +35,7 @@ function ContributeCard({ article }: { article: KBArticle }) {
     Haptics.tap();
     const opened = window.open(discordInviteUrl, '_blank', 'noopener,noreferrer');
     if (opened === null) {
-      showSnackbar("Couldn't open Discord — try again", { danger: true });
+      showSnackbar("Couldn't open Discord - try again", { danger: true });
     }
   };
 
@@ -60,7 +60,7 @@ function ContributeCard({ article }: { article: KBArticle }) {
   );
 }
 
-/** /knowledge/article/:slug — a knowledge base article (markdown). */
+/** /knowledge/article/:slug - a knowledge base article (markdown). */
 export function KBArticleView() {
   const { slug } = useParams();
   const kb = useKBData();
@@ -83,7 +83,7 @@ export function KBArticleView() {
 
   const article = slug !== undefined ? kb.data.articles.get(slug) : undefined;
 
-  // Real dead-end for stale deep links — no spinner (§5.4).
+  // Real dead-end for stale deep links - no spinner (§5.4).
   if (article === undefined) {
     return (
       <DetailScaffold title="" bodyPadding="64px 16px 32px">
