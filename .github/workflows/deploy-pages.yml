@@ -19,10 +19,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
           cache-dependency-path: webapp/package-lock.json
       - run: npm ci
@@ -37,7 +37,7 @@ jobs:
           # Set the JPL_PROXY_URL repository variable once the Cloudflare
           # worker is deployed (Settings → Secrets and variables → Variables).
           VITE_JPL_PROXY_URL: ${{ vars.JPL_PROXY_URL }}
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: webapp/dist
 
@@ -49,4 +49,4 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
