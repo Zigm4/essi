@@ -6,7 +6,7 @@
  *  - MINOR: a new tool or user-facing feature.
  *  - PATCH: bug fix, copy tweak, or data-only catalog update.
  */
-export const appVersion = '0.3.0';
+export const appVersion = '0.3.1';
 
 /** Release channel shown next to the version (Alpha until feature-complete). */
 export const appChannel = 'Alpha';

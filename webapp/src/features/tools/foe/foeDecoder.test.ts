@@ -80,6 +80,23 @@ describe('analyze - faction-dependent fields (2D)', () => {
     expect(weapon.note).toBe('Range 3');
   });
 
+  it('treats dodge and protection as raw values (equal to their digit)', () => {
+    const r = analyze('3005060000', tables); // dodge=5 (idx3), protection=6 (idx5)
+    const dodge = r.fields.find((f) => f.key === 'dodge')!;
+    const protection = r.fields.find((f) => f.key === 'protection')!;
+    expect(dodge.isValue).toBe(true);
+    expect(dodge.name).toBe('5');
+    expect(dodge.known).toBe(true);
+    expect(protection.isValue).toBe(true);
+    expect(protection.name).toBe('6');
+  });
+
+  it('resolves dodge and protection even when the faction is unknown', () => {
+    const r = analyze('0005060000', tables); // faction 0
+    expect(r.fields.find((f) => f.key === 'dodge')!.name).toBe('5');
+    expect(r.fields.find((f) => f.key === 'protection')!.name).toBe('6');
+  });
+
   it('cannot resolve dependent fields when the faction is unknown', () => {
     const rank = field('0040000000', 'rank'); // faction 0, rank 4
     expect(rank.name).toBe('Unknown');

@@ -162,8 +162,8 @@ export function FoeDecoderView() {
                 <span className={styles.noticeTitle}>Under development</span>
               </div>
               <p className={styles.noticeText}>
-                This decoder is a work in progress: subfactions, ranks, dodge, weapons, protections
-                and family names are still being mapped and will be completed over time.
+                This decoder is a work in progress: subfactions, ranks, weapons and family names are
+                still being mapped and will be completed over time.
               </p>
             </GlassCard>
           </>
@@ -220,9 +220,9 @@ function Report({ report }: { report: FoeReport }) {
         <SectionHeader title="Combat profile" icon={<IconGppBad size={18} />} />
         <div className={styles.fieldRows}>
           <FieldRow field={byKey('rank')} pendingLabel={dependentPending} />
-          <FieldRow field={byKey('dodge')} pendingLabel={dependentPending} />
+          <FieldRow field={byKey('dodge')} />
           <FieldRow field={byKey('weapon')} pendingLabel={dependentPending} />
-          <FieldRow field={byKey('protection')} pendingLabel={dependentPending} />
+          <FieldRow field={byKey('protection')} />
         </div>
       </GlassCard>
 
@@ -237,6 +237,15 @@ function Report({ report }: { report: FoeReport }) {
 }
 
 function FieldRow({ field, pendingLabel = 'pending decode' }: { field: FoeField; pendingLabel?: string }) {
+  // Raw-value fields (dodge, protection): the value is the digit itself.
+  if (field.isValue === true) {
+    return (
+      <div className={styles.fieldRow}>
+        <span className={styles.fieldLabel}>{field.label}</span>
+        <span className={styles.fieldValue}>{field.digit}</span>
+      </div>
+    );
+  }
   return (
     <div className={styles.fieldRow}>
       <span className={styles.fieldLabel}>{field.label}</span>

@@ -5,13 +5,14 @@ import { FormatException } from '../../../core/errors';
  * 1 faction, 2 subfaction, 3 rank, 4 dodge, 5 weapon, 6 protection, 7 loot,
  * 8-10 family-name code. Pure lookup, fully offline.
  *
- * Two shapes of table:
- *  - FLAT (faction-independent): `faction` and `loot`. Keyed by digit only.
- *  - FACTION-DEPENDENT (2 dimensions): `subfaction`, `rank`, `dodge`, `weapon`,
- *    `protection` and `familyName`. The same digit means different things per
+ * Three shapes of position:
+ *  - FLAT lookup (faction-independent): `faction` and `loot`. Keyed by digit only.
+ *  - FACTION-DEPENDENT lookup (2 dimensions): `subfaction`, `rank`, `weapon` and
+ *    the three `family` fragments. The same digit means different things per
  *    faction (rank 4 is a LYC "Sheriff" but an MRT "Captain"), so these are
  *    keyed by the faction CODE (LYC, MRT, ...) first, then by digit. When the
  *    faction is unknown these cannot be resolved and fall back to unknown.
+ *  - RAW VALUE (no table): `dodge` and `protection` are simply their digit value.
  *
  * Every table lives in `public/catalog/foe_tables.json`, so mappings we do not
  * know yet are filled in later by editing that file - never this module. Any
@@ -37,8 +38,10 @@ export type FoeFieldKey =
   | 'protection'
   | 'loot';
 
-/** Faction-dependent fields, keyed by faction code then digit. */
-export type FactionFieldKey = 'subfaction' | 'rank' | 'dodge' | 'weapon' | 'protection';
+/** Faction-dependent single fields, keyed by faction code then digit. */
+export type FactionFieldKey = 'subfaction' | 'rank' | 'weapon';
+/** Raw-value fields whose value is simply the digit (no table). */
+export type ValueFieldKey = 'dodge' | 'protection';
 
 /** digit -> entry. */
 export type FlatTable = Record<string, FoeTableEntry>;
@@ -50,9 +53,8 @@ export interface FoeTables {
   loot: FlatTable;
   subfaction: FactionTable;
   rank: FactionTable;
-  dodge: FactionTable;
   weapon: FactionTable;
-  protection: FactionTable;
+  // dodge and protection have no table: their value is the digit itself.
   /**
    * The family name is NOT a single code: positions 8/9/10 are three separate
    * fragments, each with its own faction-dependent table. The full name is the
@@ -72,8 +74,10 @@ export interface FoeField {
   emoji: string;
   code?: string;
   note?: string;
-  /** True when the catalog actually maps this digit. */
+  /** True when the catalog actually maps this digit (always true for value fields). */
   known: boolean;
+  /** True for raw-value fields (dodge, protection): the value is the digit itself. */
+  isValue?: boolean;
 }
 
 /** One of the three family-name fragments (positions 8, 9, 10). */
@@ -96,15 +100,7 @@ export interface FoeReport {
   familyName: string | null;
 }
 
-/** Faction-dependent single fields, in position order (positions 2-6). */
-const FACTION_SPECS: { key: FactionFieldKey; label: string; index: number }[] = [
-  { key: 'subfaction', label: 'Subfaction', index: 1 },
-  { key: 'rank', label: 'Rank', index: 2 },
-  { key: 'dodge', label: 'Dodge', index: 3 },
-  { key: 'weapon', label: 'Weapon', index: 4 },
-  { key: 'protection', label: 'Protection', index: 5 },
-];
-
+/** Resolve a lookup field (flat or a faction sub-table) against a digit. */
 function resolveField(
   spec: { key: FoeFieldKey; label: string },
   table: FlatTable,
@@ -122,6 +118,11 @@ function resolveField(
     ...(raw?.code !== undefined ? { code: raw.code } : {}),
     ...(raw?.note !== undefined ? { note: raw.note } : {}),
   };
+}
+
+/** A raw-value field (dodge, protection): the value is the digit itself. */
+function valueField(key: ValueFieldKey, label: string, digit: string): FoeField {
+  return { key, label, digit, name: digit, emoji: '', known: true, isValue: true };
 }
 
 // --- Validation --------------------------------------------------------------
@@ -172,16 +173,23 @@ export function analyze(raw: string, tables: FoeTables): FoeReport {
   const factionField = resolveField({ key: 'faction', label: 'Faction' }, tables.faction, d[0]!);
   const factionCode = factionField.code ?? null;
 
-  // Positions 2-6 (faction-dependent): resolve within the faction's sub-table.
-  const dependent = FACTION_SPECS.map((spec) => {
-    const sub = factionCode !== null ? (tables[spec.key][factionCode] ?? {}) : {};
-    return resolveField(spec, sub, d[spec.index]!);
-  });
+  // A faction-dependent lookup resolves within the faction's sub-table (or
+  // stays unknown when the faction itself is unknown).
+  const factionLookup = (key: FactionFieldKey, label: string, index: number): FoeField => {
+    const sub = factionCode !== null ? (tables[key][factionCode] ?? {}) : {};
+    return resolveField({ key, label }, sub, d[index]!);
+  };
 
-  // Position 7 (flat).
-  const lootField = resolveField({ key: 'loot', label: 'Loot' }, tables.loot, d[6]!);
-
-  const fields = [factionField, ...dependent, lootField];
+  // Fields in canonical position order (positions 1-7).
+  const fields: FoeField[] = [
+    factionField,
+    factionLookup('subfaction', 'Subfaction', 1),
+    factionLookup('rank', 'Rank', 2),
+    valueField('dodge', 'Dodge', d[3]!),
+    factionLookup('weapon', 'Weapon', 4),
+    valueField('protection', 'Protection', d[5]!),
+    resolveField({ key: 'loot', label: 'Loot' }, tables.loot, d[6]!),
+  ];
 
   // Positions 8-10 (faction-dependent): three separate fragments, concatenated.
   const familyDigits = [d[7]!, d[8]!, d[9]!];

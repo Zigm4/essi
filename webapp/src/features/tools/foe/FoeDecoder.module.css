@@ -213,6 +213,15 @@
   color: var(--text-secondary);
 }
 
+.fieldValue {
+  margin-left: auto;
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--accent-secondary);
+}
+
 .familyCompose {
   flex: 1;
   min-width: 0;

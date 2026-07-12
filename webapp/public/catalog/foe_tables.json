@@ -24,7 +24,6 @@
     "OUT": {},
     "AEA": { "7": { "name": "Commander" } }
   },
-  "dodge": { "QNX": {}, "LYC": {}, "MRT": {}, "REV": {}, "OUT": {}, "AEA": {} },
   "weapon": {
     "QNX": {},
     "LYC": { "3": { "name": "Old revolver", "note": "Range 3" } },
@@ -33,7 +32,6 @@
     "OUT": {},
     "AEA": {}
   },
-  "protection": { "QNX": {}, "LYC": {}, "MRT": {}, "REV": {}, "OUT": {}, "AEA": {} },
   "family1": {
     "QNX": { "2": { "name": "Algae" } },
     "LYC": { "0": { "name": "Zeb" } },
