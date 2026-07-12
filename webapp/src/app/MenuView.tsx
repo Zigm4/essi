@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { discordInviteUrl } from '../core/constants';
 import { launchExternal } from '../core/externalLink';
 import { Haptics } from '../core/haptics';
-import { versionShortLabel } from '../core/version';
+import { versionFullLabel } from '../core/version';
 import { BannerPage } from '../design-system/components/BannerPage';
 import { GlassCard } from '../design-system/components/GlassCard';
 import { PageScrollView } from '../design-system/components/PageScrollView';
@@ -109,7 +109,7 @@ export function MenuView() {
           />
           <MenuRow
             title="About"
-            subtitle={`${versionShortLabel} (Alpha)`}
+            subtitle={versionFullLabel}
             icon={<IconSparkle size={22} />}
             onTap={() => navigate('/menu/about')}
           />

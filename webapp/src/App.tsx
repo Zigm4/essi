@@ -24,6 +24,7 @@ import { AsteroidAnalyzerView } from './features/tools/AsteroidAnalyzerView';
 import { CelestialView } from './features/tools/CelestialView';
 import { FishingMapView } from './features/tools/FishingMapView';
 import { FishingRoomView } from './features/tools/FishingRoomView';
+import { FoeDecoderView } from './features/tools/FoeDecoderView';
 import { JobsView } from './features/tools/JobsView';
 import { MarsExpressView } from './features/tools/MarsExpressView';
 import { SystemScanView } from './features/tools/SystemScanView';
@@ -45,6 +46,7 @@ export default function App() {
           <Route path="/tools" element={<ToolsHomeView />} />
           <Route path="/tools/scan" element={<SystemScanView />} />
           <Route path="/tools/asteroid" element={<AsteroidAnalyzerView />} />
+          <Route path="/tools/foe" element={<FoeDecoderView />} />
           <Route path="/tools/wallet" element={<WalletLookupView />} />
           <Route path="/tools/mars-express" element={<MarsExpressView />} />
           <Route path="/tools/fishing" element={<FishingMapView />} />

@@ -474,6 +474,17 @@ export function IconAsteroid(props: IconProps) {
   );
 }
 
+/** crosshair scope - Bounty Decoder. */
+export function IconTarget(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <circle cx="12" cy="12" r="8" />
+      <circle cx="12" cy="12" r="3.2" />
+      <path d="M12 2v3.6M12 18.4V22M2 12h3.6M18.4 12H22" />
+    </Svg>
+  );
+}
+
 /** fish - Fishing Map. */
 export function IconFish(props: IconProps) {
   return (

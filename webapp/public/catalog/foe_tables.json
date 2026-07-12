@@ -1,0 +1,61 @@
+{
+  "faction": {
+    "1": { "name": "QNX Robot", "code": "QNX", "emoji": "🤖" },
+    "3": { "name": "Lycanox",   "code": "LYC", "emoji": "🐺" },
+    "4": { "name": "Martian",   "code": "MRT", "emoji": "👽" },
+    "5": { "name": "Revenant",  "code": "REV", "emoji": "💀" },
+    "6": { "name": "Outlaws",   "code": "OUT", "emoji": "🏴" },
+    "7": { "name": "AEA",       "code": "AEA", "emoji": "🛡️" }
+  },
+  "loot": {
+    "0": { "name": "Blood",       "emoji": "🩸" },
+    "1": { "name": "100c",        "emoji": "🪙" },
+    "2": { "name": "Clothing BP", "emoji": "🧥" },
+    "3": { "name": "Armour BP",   "emoji": "🛡️" },
+    "4": { "name": "Weapon",      "emoji": "🔫" },
+    "5": { "name": "Vessel BP",   "emoji": "🚀" }
+  },
+  "subfaction": { "QNX": {}, "LYC": {}, "MRT": {}, "REV": {}, "OUT": {}, "AEA": {} },
+  "rank": {
+    "QNX": {},
+    "LYC": { "4": { "name": "Sheriff" } },
+    "MRT": { "4": { "name": "Captain" } },
+    "REV": {},
+    "OUT": {},
+    "AEA": { "7": { "name": "Commander" } }
+  },
+  "dodge": { "QNX": {}, "LYC": {}, "MRT": {}, "REV": {}, "OUT": {}, "AEA": {} },
+  "weapon": {
+    "QNX": {},
+    "LYC": { "3": { "name": "Old revolver", "note": "Range 3" } },
+    "MRT": {},
+    "REV": {},
+    "OUT": {},
+    "AEA": {}
+  },
+  "protection": { "QNX": {}, "LYC": {}, "MRT": {}, "REV": {}, "OUT": {}, "AEA": {} },
+  "family1": {
+    "QNX": { "2": { "name": "Algae" } },
+    "LYC": { "0": { "name": "Zeb" } },
+    "MRT": { "8": { "name": "Yag" } },
+    "REV": {},
+    "OUT": { "2": { "name": "Sp" } },
+    "AEA": {}
+  },
+  "family2": {
+    "QNX": { "5": { "name": "BIT0101" } },
+    "LYC": { "1": { "name": "son" } },
+    "MRT": { "7": { "name": "ton" } },
+    "REV": {},
+    "OUT": { "2": { "name": "oi" } },
+    "AEA": {}
+  },
+  "family3": {
+    "QNX": { "4": { "name": "PB" } },
+    "LYC": { "6": { "name": "man" } },
+    "MRT": { "0": { "name": "schei" } },
+    "REV": {},
+    "OUT": { "3": { "name": "ck" } },
+    "AEA": {}
+  }
+}

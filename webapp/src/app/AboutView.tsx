@@ -1,4 +1,4 @@
-import { appVersion } from '../core/version';
+import { versionFullLabel } from '../core/version';
 import { GlassCard } from '../design-system/components/GlassCard';
 import { SectionHeader } from '../design-system/components/SectionHeader';
 import { SubPage } from '../design-system/components/SubPage';
@@ -25,7 +25,7 @@ export function AboutView() {
     <SubPage title="About">
       <GlassCard>
         <div className={styles.wordmark}>ESSI</div>
-        <div className={styles.version}>{`v${appVersion} (Alpha · cross-platform)`}</div>
+        <div className={styles.version}>{versionFullLabel}</div>
         <div className={styles.divider} />
         <div className={styles.body}>Made by a player, for the UP55 community.</div>
       </GlassCard>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { contactEmail } from '../core/constants';
-import { appBuildNumber, appVersion } from '../core/version';
+import { versionFullLabel } from '../core/version';
 import { GlassCard } from '../design-system/components/GlassCard';
 import { NeonButton } from '../design-system/components/NeonButton';
 import { SectionHeader } from '../design-system/components/SectionHeader';
@@ -19,7 +19,7 @@ export function ContactView({ initialMessage = '' }: { initialMessage?: string }
   const [category, setCategory] = useState<(typeof CATEGORIES)[number]>('Feedback');
   const [message, setMessage] = useState(initialMessage);
 
-  const appLine = `App: ESSI v${appVersion} (${appBuildNumber}) (Alpha)`;
+  const appLine = `App: ESSI ${versionFullLabel}`;
   const canSend = message.trim().length > 0;
 
   const send = () => {

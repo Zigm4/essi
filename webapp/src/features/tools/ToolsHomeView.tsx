@@ -8,13 +8,14 @@ import {
   IconComet,
   IconFish,
   IconRadar,
+  IconTarget,
   IconTrack,
   IconTrain,
   IconWallet,
   IconWork,
 } from '../../design-system/icons';
 
-/** The 8 tools exactly as the original hub. */
+/** The original 8 tools, plus the Bounty Decoder (web-only addition). */
 const TOOLS = [
   {
     title: 'Asteroid Analyzer',
@@ -22,6 +23,13 @@ const TOOLS = [
     icon: <IconAsteroid size={28} />,
     tint: '#7AE3FF',
     path: '/tools/asteroid',
+  },
+  {
+    title: 'Bounty Decoder',
+    subtitle: "Decode a Mars bounty's 10-digit FOE ID",
+    icon: <IconTarget size={28} />,
+    tint: '#FF7A93',
+    path: '/tools/foe',
   },
   {
     title: 'Fishing Map',

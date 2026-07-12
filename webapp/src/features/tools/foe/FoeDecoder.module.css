@@ -1,0 +1,270 @@
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: stretch;
+}
+
+.inputCaption {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+}
+
+.input {
+  width: 100%;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--border-glow);
+  padding: 4px 0 8px;
+  font-family: var(--font-mono);
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: var(--text-primary);
+  outline: none;
+}
+
+.input::placeholder {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+
+.decode {
+  margin-top: 16px;
+}
+
+.checklistRows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.checklistRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.checkOk {
+  color: var(--accent-success);
+  display: inline-flex;
+}
+
+.checkBad {
+  color: var(--accent-danger);
+  display: inline-flex;
+}
+
+.checkLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.checkLabelOk {
+  color: var(--text-primary);
+}
+
+.errorRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--accent-danger);
+}
+
+.errorMsg {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--text-primary);
+}
+
+.terminalBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.terminalLine {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent-primary);
+}
+
+/* --- Faction headline ------------------------------------------------------ */
+
+.headline {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.headlineEmoji {
+  font-size: 30px;
+  line-height: 1;
+  flex: none;
+}
+
+.headlineMain {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.headlineName {
+  font-family: var(--font-sans);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.headlineSub {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-secondary);
+  letter-spacing: 1px;
+}
+
+.factionChip {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: var(--accent-secondary);
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-glow);
+  background: var(--bg-glass);
+}
+
+/* --- Field rows ------------------------------------------------------------ */
+
+.fieldRows {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.fieldRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fieldLabel {
+  width: 92px;
+  flex: none;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.fieldEmoji {
+  font-size: 18px;
+  line-height: 1;
+  flex: none;
+}
+
+.fieldName {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--text-primary);
+}
+
+.fieldPending {
+  flex: 1;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-style: italic;
+  color: var(--text-dim);
+}
+
+.fieldCode {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: var(--accent-secondary);
+}
+
+.fieldNote {
+  flex: none;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.familyCompose {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--text-primary);
+}
+
+.familyPartMissing {
+  font-family: var(--font-mono);
+  font-style: italic;
+  color: var(--text-dim);
+}
+
+.noticeHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.noticeIcon {
+  display: inline-flex;
+  color: var(--accent-warn);
+}
+
+.noticeTitle {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--accent-warn);
+}
+
+.noticeText {
+  margin: 8px 0 0;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.digitBadge {
+  flex: none;
+  min-width: 26px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  padding: 3px 7px;
+  border-radius: 6px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
+}
