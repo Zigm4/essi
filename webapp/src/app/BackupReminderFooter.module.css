@@ -5,7 +5,8 @@
   bottom: calc(94px + env(safe-area-inset-bottom));
   margin: 0 auto;
   max-width: 560px;
-  z-index: 45;
+  /* Below modal scrims (z 40) so an open sheet/dialog covers it, not vice versa. */
+  z-index: 30;
   display: flex;
   align-items: center;
   gap: 12px;

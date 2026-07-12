@@ -29,14 +29,26 @@
   flex: none;
   display: flex;
   justify-content: center;
-  padding: 8px 0 4px;
+  align-items: center;
+  height: 28px;
+  cursor: grab;
+  touch-action: none; /* the handle owns the vertical gesture (drag to dismiss) */
+}
+
+.handleRow:active {
+  cursor: grabbing;
 }
 
 .handle {
-  width: 36px;
-  height: 4px;
-  border-radius: 2px;
-  background: var(--text-dim);
+  width: 44px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--text-secondary);
+  transition: background 150ms ease;
+}
+
+.handleRow:hover .handle {
+  background: var(--accent-primary);
 }
 
 .body {
@@ -45,6 +57,8 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
+  /* Keep the last control clear of the phone's bottom bar / home indicator. */
+  padding-bottom: calc(20px + env(safe-area-inset-bottom));
 }
 
 @keyframes scrimIn {
