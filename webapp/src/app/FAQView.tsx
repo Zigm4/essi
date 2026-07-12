@@ -43,7 +43,11 @@ const SECTIONS: { key: string; entries: FaqEntry[] }[] = [
     entries: [
       {
         q: 'Does the app need internet?',
-        a: 'Not for normal use. Notes, links, ships, the knowledge base, the Asteroid Analyzer, the Fishing Map, the Mars Express schedule and the Wallet Lookup all work fully offline. Three tools are opt-in and do talk to a network: System Scan, Discoveries, and Tracker. They call NASA APIs (JPL Horizons and SBDB). Nothing happens unless you tap their action button. Interactive maps are the one feature that reaches out on its own: they download map content from GitHub (see the next question). Tapping the Discord invite link in the Menu also opens the network, but only at the moment you tap it.',
+        a: 'Not for normal use. Notes, links, ships, the knowledge base, the Asteroid Analyzer, the Fishing Map, the Mars Express schedule and the Wallet Lookup all work fully offline. Three tools are opt-in and do talk to a network: System Scan, Discoveries, and Tracker. They call NASA APIs (JPL Horizons and SBDB) through a small proxy (see "How do the NASA tools reach JPL?"). Nothing happens unless you tap their action button. Interactive maps are the one feature that reaches out on its own: they download map content from GitHub (see the next question). Tapping the Discord invite link in the Menu also opens the network, but only at the moment you tap it.',
+      },
+      {
+        q: 'How do the NASA tools reach JPL?',
+        a: "NASA's JPL servers (Horizons and SBDB) don't send CORS headers, which browsers require before a web page may read a response from another domain - so ESSI, being a plain web page, cannot call them directly. Instead, the three network tools (System Scan, Discoveries, Tracker) send their requests to a small Cloudflare Worker proxy, which forwards them to JPL and relays the answer back with the missing header added. The proxy is a thin relay: it adds no tracking and stores no personal data. One side effect: NASA sees the proxy's IP address rather than yours - your IP is instead visible to the proxy (Cloudflare). The proxy URL is fixed in the app, so there is nothing to set up.",
       },
       {
         q: 'Where do interactive maps come from?',
@@ -51,11 +55,11 @@ const SECTIONS: { key: string; entries: FaqEntry[] }[] = [
       },
       {
         q: 'What does System Scan send to NASA?',
-        a: 'When you tap "Scan now" in Tools / System Scan, ESSI makes 9 GET requests to ssd.jpl.nasa.gov/api/horizons.api, one per planet. Sent: NAIF code (199-999) and current UTC timestamp. Received: public ephemeris text. Visible to NASA: your IP address. Stored: nothing on first run; entries you keep are saved locally.',
+        a: 'When you tap "Scan now" in Tools / System Scan, ESSI makes 9 GET requests, one per planet, to ssd.jpl.nasa.gov/api/horizons.api - relayed through the Cloudflare proxy. Sent: NAIF code (199-999) and current UTC timestamp. Received: public ephemeris text. Your IP is seen by the proxy, not by NASA. Stored: nothing on first run; entries you keep are saved locally.',
       },
       {
         q: 'What does Tracker send to NASA?',
-        a: 'When you tap "Track" in Tools / Tracker, ESSI makes 1 to 4 GET requests to JPL Horizons / SBDB. Sent: object name or designation, plus a fixed instruction. No identifier of yours is added. Stored: each successful track is saved to local history. You can delete entries any time.',
+        a: 'When you tap "Track" in Tools / Tracker, ESSI makes 1 to 4 GET requests to JPL Horizons / SBDB, relayed through the Cloudflare proxy. Sent: object name or designation, plus a fixed instruction. No identifier of yours is added, and NASA sees the proxy\'s IP rather than yours. Stored: each successful track is saved to local history. You can delete entries any time.',
       },
     ],
   },

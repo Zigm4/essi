@@ -218,7 +218,8 @@ export function ScanHowItWorks() {
           label="Sent"
           value="Planet code (199 to 999), UTC timestamp, fixed query string. No identifier of yours is added."
         />
-        <KvRow label="Visible to NASA" value="Your IP address, like for any web request." />
+        <KvRow label="Relayed via" value="A Cloudflare Worker proxy (browsers can't call JPL directly - no CORS)." />
+        <KvRow label="Your IP" value="Seen by the Cloudflare proxy, not by NASA." />
         <KvRow
           label="Stored remotely"
           value="Nothing on ESSI servers (there are none). NASA's standard request logs apply on their side."

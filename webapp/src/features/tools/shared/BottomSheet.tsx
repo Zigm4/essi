@@ -11,7 +11,7 @@ import styles from './BottomSheet.module.css';
 
 /**
  * Modal bottom sheet (spec §1.4). The grab handle is a live control: drag it
- * down to dismiss, or tap it to close (the native mobile gesture) — scrim tap
+ * down to dismiss, or tap it to close (the native mobile gesture) - scrim tap
  * and Escape also dismiss. The body scrolls internally with a safe-area bottom
  * inset so the last control never hides behind the phone's bottom bar.
  */

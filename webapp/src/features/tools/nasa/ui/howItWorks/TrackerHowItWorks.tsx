@@ -292,8 +292,8 @@ export function TrackerHowItWorks() {
           labelWidth={120}
         />
         <KvRow
-          label="Visible to NASA"
-          value="Your IP address, like for any web request. SBDB and Horizons sit behind ssd.jpl.nasa.gov; both log standard request metadata server-side."
+          label="Your IP"
+          value="Seen by the Cloudflare proxy that relays the request, not by NASA (browsers can't call JPL directly - no CORS). SBDB and Horizons sit behind ssd.jpl.nasa.gov and log standard request metadata server-side."
           labelWidth={120}
         />
         <KvRow

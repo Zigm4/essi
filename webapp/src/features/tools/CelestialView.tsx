@@ -325,10 +325,12 @@ export function CelestialView() {
             <span className={styles.headline}>Network access required</span>
           </div>
           <div className={styles.caption} style={{ marginTop: 8 }}>
-            This tool sends a single GET request to the NASA SBDB Query API. Nothing happens until you
-            tap Search.
+            This tool sends a single GET request to the NASA SBDB Query API. Browsers can&apos;t call it
+            directly (no CORS headers), so the request is relayed through a small Cloudflare Worker
+            proxy. Nothing happens until you tap Search.
           </div>
           <Divider alpha={0.4} margin="8px 0" />
+          <BulletRow label="Via:" value="A Cloudflare Worker proxy that forwards the request to NASA" />
           <BulletRow label="Endpoint:" value="ssd-api.jpl.nasa.gov/sbdb_query.api" />
           <BulletRow label="Sent:" value="Object kind (comet or asteroid) + a date range" />
           <BulletRow label="Received:" value="JSON list of bodies matching the filter" />
@@ -336,7 +338,7 @@ export function CelestialView() {
             label="Locally:"
             value="Status icon + optional client-side date filter for pre-1900 dates"
           />
-          <BulletRow label="To NASA:" value="Your IP address (like any web request)" />
+          <BulletRow label="Your IP:" value="Seen by the Cloudflare proxy, not by NASA" />
           <BulletRow
             label="Stored:"
             value="Nothing sent to a server (searches are saved locally on your device)"

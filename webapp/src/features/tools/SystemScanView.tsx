@@ -312,15 +312,17 @@ export function SystemScanView() {
           </div>
           <div className={styles.caption} style={{ marginTop: 8 }}>
             This is one of a few ESSI features that reach the network (System Scan, Tracker and
-            Discoveries). Calls are made one at a time with a small gap, to stay under JPL Horizons&apos;
-            rate limit.
+            Discoveries). Browsers can&apos;t call NASA&apos;s servers directly (they send no CORS headers),
+            so the request is relayed through a small Cloudflare Worker proxy. Calls are made one at a
+            time with a small gap, to stay under JPL Horizons&apos; rate limit.
           </div>
           <Divider alpha={0.4} margin="8px 0" />
+          <BulletRow label="Via:" value="A Cloudflare Worker proxy that forwards the request to NASA" />
           <BulletRow label="Endpoint:" value="ssd.jpl.nasa.gov/api/horizons.api" />
           <BulletRow label="Sent:" value="Planet codes (199-999) and the current UTC timestamp" />
           <BulletRow label="Received:" value="Public ephemeris text (X, Y, Z heliocentric vectors)" />
           <BulletRow label="Locally:" value="Sector (1-12) and distance in SL" />
-          <BulletRow label="To NASA:" value="Your IP address (like any web request)" />
+          <BulletRow label="Your IP:" value="Seen by the Cloudflare proxy, not by NASA" />
           <BulletRow
             label="Stored:"
             value="Nothing sent to a server (scans are saved locally on your device)"
