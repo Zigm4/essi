@@ -22,38 +22,38 @@
     "MRT": { "4": { "name": "Captain" } },
     "REV": {},
     "OUT": {},
-    "AEA": { "7": { "name": "Commander" } }
+    "AEA": { "0": { "name": "Scoot" }, "7": { "name": "Commander" } }
   },
   "weapon": {
-    "QNX": {},
-    "LYC": { "3": { "name": "Old revolver", "note": "Range 3" } },
-    "MRT": {},
-    "REV": {},
-    "OUT": {},
-    "AEA": {}
+    "QNX": { "0": { "name": "unarmed" } },
+    "LYC": { "0": { "name": "unarmed" }, "3": { "name": "Old revolver", "note": "Range 3" } },
+    "MRT": { "0": { "name": "unarmed" } },
+    "REV": { "0": { "name": "unarmed" } },
+    "OUT": { "0": { "name": "unarmed" } },
+    "AEA": { "0": { "name": "unarmed" } }
   },
   "family1": {
-    "QNX": { "2": { "name": "Algae" } },
+    "QNX": {},
     "LYC": { "0": { "name": "Zeb" } },
     "MRT": { "8": { "name": "Yag" } },
     "REV": {},
     "OUT": { "2": { "name": "Sp" } },
-    "AEA": {}
+    "AEA": { "2": { "name": "Algae" }, "6": { "name": "Phyto" } }
   },
   "family2": {
-    "QNX": { "5": { "name": "BIT0101" } },
+    "QNX": {},
     "LYC": { "1": { "name": "son" } },
     "MRT": { "7": { "name": "ton" } },
     "REV": {},
     "OUT": { "2": { "name": "oi" } },
-    "AEA": {}
+    "AEA": { "0": { "name": "BYTE0000" }, "5": { "name": "BIT0101" } }
   },
   "family3": {
-    "QNX": { "4": { "name": "PB" } },
+    "QNX": {},
     "LYC": { "6": { "name": "man" } },
     "MRT": { "0": { "name": "schei" } },
     "REV": {},
     "OUT": { "3": { "name": "ck" } },
-    "AEA": {}
+    "AEA": { "0": { "name": "KB" }, "4": { "name": "PB" } }
   }
 }
