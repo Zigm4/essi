@@ -73,12 +73,24 @@ describe('analyze - faction-dependent fields (2D)', () => {
     expect(field('4040000000', 'rank').name).toBe('Captain'); // MRT rank 4
     expect(field('7070000000', 'rank').name).toBe('Commander'); // AEA rank 7
     expect(field('7000000000', 'rank').name).toBe('Scoot'); // AEA rank 0
+    expect(field('6040000000', 'rank').name).toBe('Gang leader'); // OUT rank 4
+    expect(field('6080000000', 'rank').name).toBe('King'); // OUT rank 8
   });
 
   it('carries a weapon note (range) when present', () => {
     const weapon = field('3000300000', 'weapon'); // LYC weapon 3
     expect(weapon.name).toBe('Old revolver');
     expect(weapon.note).toBe('Range 3');
+
+    const acid = field('7000500000', 'weapon'); // AEA weapon 5
+    expect(acid.name).toBe('Acid bomb');
+    expect(acid.note).toBe('Range 5');
+  });
+
+  it('reads weapon differently per faction', () => {
+    expect(field('6000200000', 'weapon').name).toBe('IRON HALBERD'); // OUT weapon 2
+    expect(field('6000300000', 'weapon').name).toBe('SAND GUN'); // OUT weapon 3
+    expect(field('7000300000', 'weapon').name).toBe('Plasnet'); // AEA weapon 3
   });
 
   it('maps weapon 0 to unarmed for every faction', () => {
@@ -127,9 +139,9 @@ describe('analyze - family name (three concatenated fragments, positions 8-10)',
 
   it('concatenates the three fragments per faction', () => {
     expect(analyze('3000000016', tables).familyName).toBe('Zebsonman'); // LYC 0/1/6
-    expect(analyze('7000000254', tables).familyName).toBe('AlgaeBIT0101PB'); // AEA 2/5/4
+    expect(analyze('7000000254', tables).familyName).toBe('Algaebit0101PB'); // AEA 2/5/4
     expect(analyze('4000000870', tables).familyName).toBe('Yagtonschei'); // MRT 8/7/0
-    expect(analyze('6000000223', tables).familyName).toBe('Spoick'); // OUT 2/2/3
+    expect(analyze('6000000223', tables).familyName).toBe('Spiock'); // OUT 2/2/3
   });
 
   it('returns null full name when any fragment is unmapped, keeping known parts', () => {

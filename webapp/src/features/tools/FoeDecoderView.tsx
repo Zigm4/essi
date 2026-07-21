@@ -231,6 +231,10 @@ function Report({ report }: { report: FoeReport }) {
         <div className={styles.fieldRows}>
           <FieldRow field={byKey('loot')} />
         </div>
+        <p className={styles.rewardHint}>
+          Loot is RNG: this is the best drop this FOE can give, not a guarantee. You may get
+          something lesser instead, for example scrap in place of a Clothing BP.
+        </p>
       </GlassCard>
     </div>
   );

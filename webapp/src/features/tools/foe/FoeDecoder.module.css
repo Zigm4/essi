@@ -236,6 +236,14 @@
   color: var(--text-dim);
 }
 
+.rewardHint {
+  margin: 12px 0 0;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
 .noticeHeader {
   display: flex;
   align-items: center;
