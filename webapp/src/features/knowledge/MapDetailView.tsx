@@ -8,7 +8,7 @@
  * and a live "my notes" panel. Stale/removed/draft ids land on a real pane.
  */
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { friendlyError } from '../../core/errorText';
 import { Haptics } from '../../core/haptics';
@@ -16,7 +16,6 @@ import { logError } from '../../core/logging';
 import { FavoriteKind } from '../../data/db';
 import { AppBackground } from '../../design-system/components/AppBackground';
 import { GlassCard } from '../../design-system/components/GlassCard';
-import { TagChip } from '../../design-system/components/TagChip';
 import {
   IconArrowBack,
   IconChevronRight,
@@ -33,6 +32,7 @@ import { IconEditNote, IconPushPin } from './kbIcons';
 import { SearchField } from './components/SearchField';
 import { Spinner } from './components/Spinner';
 import { MapCanvas, type MapCanvasMode } from './maps/components/MapCanvas';
+import { FilterMenu } from './maps/components/FilterMenu';
 import { ZoneSheet } from './maps/components/ZoneSheet';
 import { readBlob } from './maps/data/blobStore';
 import { countPinsForMap, deletePin, listPinsForMap } from './maps/data/pins';
@@ -189,22 +189,9 @@ export function MapDetailView() {
     [filters],
   );
 
-  // Selecting a filter frames the first matching zone (and hides the rest);
-  // clearing all filters resets the view. Skips the initial mount so a deep
-  // link's own focus is not clobbered.
-  const hadFiltersRef = useRef(false);
-  useEffect(() => {
-    if (readyDoc === null) return;
-    if (hasActiveFilters) {
-      const first = readyDoc.zones.find((z) => !dimmed.has(z.id));
-      if (first !== undefined) setFocus((f) => ({ id: first.id, nonce: f.nonce + 1 }));
-      hadFiltersRef.current = true;
-    } else if (hadFiltersRef.current) {
-      setFocus((f) => ({ id: null, nonce: f.nonce + 1 }));
-      hadFiltersRef.current = false;
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasActiveFilters, dimmed, readyDoc]);
+  // Filtering highlights the matching zones in place (dimming the rest); it does
+  // NOT reframe/zoom. Owner filters hit zones scattered across the whole map, so
+  // framing the "first match" was meaningless - removed on purpose.
   const filterFields = useMemo(
     () =>
       readyDoc !== null
@@ -245,6 +232,15 @@ export function MapDetailView() {
       else set.add(option);
       if (set.size === 0) next.delete(key);
       else next.set(key, set);
+      return next;
+    });
+  };
+
+  const clearFilter = (key: string): void => {
+    setFilters((prev) => {
+      if (!prev.has(key)) return prev;
+      const next = new Map(prev);
+      next.delete(key);
       return next;
     });
   };
@@ -335,18 +331,16 @@ export function MapDetailView() {
               />
               {filterFields.length > 0 && (
                 <div className={styles.filterBar}>
-                  <div className={styles.filterRow}>
-                    {filterFields.flatMap((field) =>
-                      (field.options ?? []).map((option) => (
-                        <TagChip
-                          key={`${field.key}:${option}`}
-                          label={option}
-                          selected={filters.get(field.key)?.has(option) ?? false}
-                          onTap={() => toggleFilter(field.key, option)}
-                        />
-                      )),
-                    )}
-                  </div>
+                  <FilterMenu
+                    fields={filterFields.map((f) => ({
+                      key: f.key,
+                      label: f.label,
+                      options: f.options ?? [],
+                    }))}
+                    selected={filters}
+                    onToggle={toggleFilter}
+                    onClear={clearFilter}
+                  />
                 </div>
               )}
             </>

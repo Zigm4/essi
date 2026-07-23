@@ -25,7 +25,17 @@ export interface GridCell {
   readonly explored: boolean;
   readonly cellNum: string | null;
   readonly name: string | null;
+  /** Owned by a player (has an `owner` field) - drawn with a bolder border. */
+  readonly owned: boolean;
+  /** Cell numbers this railway cell links to (`railwayLinks`) - dashed segments. */
+  readonly railwayLinks: readonly number[];
+  /** POI overlay drawn on top of the cell (from the `role` field). */
+  readonly marker: 'medical' | 'rustwind' | null;
 }
+
+/** Light steel colour for the railway dashes (shared with the globe painter). */
+export const RAIL_COLOR = { r: 210, g: 228, b: 248, a: 1 };
+const MEDICAL_RED = '#FF4A4A';
 
 export interface GridRender {
   readonly theme: MapTheme;
@@ -48,6 +58,7 @@ export function buildGridRender(doc: MapDocument): GridRender | null {
     const pos = zone.gridPos;
     if (pos === null || pos.col >= grid.cols || pos.row >= grid.rows) continue;
     const name = zone.name.trim();
+    const role = typeof zone.fields.role === 'string' ? zone.fields.role : '';
     cells.push({
       zoneId: zone.id,
       col: pos.col,
@@ -62,6 +73,11 @@ export function buildGridRender(doc: MapDocument): GridRender | null {
       explored: zone.themeOverride !== null,
       cellNum: zone.cellNum !== null ? String(zone.cellNum) : null,
       name: name.length > 0 && !PLACEHOLDER.test(name) ? name : null,
+      owned: typeof zone.fields.owner === 'string' && zone.fields.owner.length > 0,
+      railwayLinks: Array.isArray(zone.fields.railwayLinks)
+        ? zone.fields.railwayLinks.filter((n): n is number => typeof n === 'number')
+        : [],
+      marker: role === 'Medical Facility' ? 'medical' : role === 'Rustwind Gen' ? 'rustwind' : null,
     });
     zoneIdByCell[pos.row * grid.cols + pos.col] = zone.id;
   }
@@ -178,10 +194,18 @@ export function drawGridTable(
     sheen.addColorStop(0.5, colorAlpha({ r: 255, g: 255, b: 255, a: 1 }, 0));
     ctx.fillStyle = sheen;
     ctx.fill();
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = colorAlpha(cell.theme.zoneStroke, dim ? 0.25 : 0.6);
+    if (cell.owned) {
+      // Owner outline: bolder + fuller alpha so ownership reads at a glance.
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = colorAlpha(cell.theme.zoneStroke, dim ? 0.4 : 1);
+    } else {
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = colorAlpha(cell.theme.zoneStroke, dim ? 0.25 : 0.6);
+    }
     ctx.stroke();
   }
+
+  drawRailway(ctx, render, opts.dimmed);
 
   // Texts. Dimmed cells drawn through one shared 30% layer.
   const showNames = opts.scale >= render.nameLodScale;
@@ -206,6 +230,105 @@ export function drawGridTable(
     }
     ctx.globalAlpha = 1;
   }
+
+  // POI markers on top of everything: medical cross / rustwind turbine.
+  for (const cell of render.cells) {
+    if (cell.marker === null) continue;
+    const cx = cell.rect.x + cell.rect.w / 2;
+    const cy = cell.rect.y + cell.rect.h / 2;
+    ctx.save();
+    ctx.globalAlpha = opts.dimmed.has(cell.zoneId) ? DIM_ALPHA : 1;
+    if (cell.marker === 'medical') drawMedicalMarker(ctx, cx, cy, 11);
+    else drawTurbineMarker(ctx, cx, cy, 24, cell.theme.fontFamily);
+    ctx.restore();
+  }
+}
+
+function cellCenter(col: number, row: number): { x: number; y: number } {
+  return {
+    x: col * GRID_CELL_WIDTH + GRID_CELL_WIDTH / 2,
+    y: row * GRID_CELL_HEIGHT + GRID_CELL_HEIGHT / 2,
+  };
+}
+
+/** Thread a dashed line through the cells the Martian Railway crosses. */
+function drawRailway(
+  ctx: CanvasRenderingContext2D,
+  render: GridRender,
+  dimmed: ReadonlySet<string>,
+): void {
+  const byNum = new Map<number, GridCell>();
+  for (const c of render.cells) {
+    const n = c.cellNum === null ? NaN : Number.parseInt(c.cellNum, 10);
+    if (Number.isInteger(n)) byNum.set(n, c);
+  }
+  ctx.save();
+  ctx.lineCap = 'round';
+  ctx.lineWidth = 3;
+  ctx.setLineDash([9, 7]);
+  for (const cell of render.cells) {
+    if (cell.railwayLinks.length === 0) continue;
+    const from = cell.cellNum === null ? NaN : Number.parseInt(cell.cellNum, 10);
+    const a = cellCenter(cell.col, cell.row);
+    ctx.strokeStyle = colorAlpha(RAIL_COLOR, dimmed.has(cell.zoneId) ? 0.3 : 0.95);
+    for (const to of cell.railwayLinks) {
+      if (from > to) continue; // draw each undirected edge once
+      const other = byNum.get(to);
+      if (other === undefined) continue;
+      const b = cellCenter(other.col, other.row);
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
+/**
+ * Red medical cross with a dark halo, sized by `arm` (arm length in px). Shared
+ * by the grid and globe painters.
+ */
+export function drawMedicalMarker(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  arm: number,
+): void {
+  const th = Math.max(2, arm * 0.46);
+  const r = Math.max(1, arm * 0.18);
+  const bar = (a: number, t: number): void => {
+    ctx.beginPath();
+    ctx.roundRect(cx - a, cy - t / 2, a * 2, t, r);
+    ctx.roundRect(cx - t / 2, cy - a, t, a * 2, r);
+    ctx.fill();
+  };
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+  bar(arm + 1.5, th + 3);
+  ctx.fillStyle = MEDICAL_RED;
+  bar(arm, th);
+}
+
+/**
+ * Wind-turbine emoji at `fontPx`, with a dark shadow so the (light) glyph stays
+ * legible on any background. Unicode has no dedicated turbine glyph. Shared by
+ * the grid and globe painters.
+ */
+export function drawTurbineMarker(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  fontPx: number,
+  fontFamily: string,
+): void {
+  ctx.save();
+  ctx.font = `${fontPx}px "${fontFamily}", "Apple Color Emoji", "Segoe UI Emoji", sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+  ctx.shadowBlur = Math.max(2, fontPx * 0.16);
+  ctx.fillText('🌬️', cx, cy);
+  ctx.restore();
 }
 
 /** Selection layer: the selected cell in the shared neon system. */

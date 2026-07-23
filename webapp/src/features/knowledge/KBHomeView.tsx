@@ -1,16 +1,31 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BannerPage } from '../../design-system/components/BannerPage';
 import { PageScrollView } from '../../design-system/components/PageScrollView';
 import { GlassCard } from '../../design-system/components/GlassCard';
+import { NeonButton } from '../../design-system/components/NeonButton';
 import { SectionHeader } from '../../design-system/components/SectionHeader';
 import { TagChip } from '../../design-system/components/TagChip';
-import { IconChevronRight, IconKnowledge, IconMap, IconSearch } from '../../design-system/icons';
+import {
+  IconChevronRight,
+  IconForum,
+  IconKnowledge,
+  IconMailOutline,
+  IconMap,
+  IconPublic,
+  IconSearch,
+} from '../../design-system/icons';
+import { Haptics } from '../../core/haptics';
+import { discordInviteUrl } from '../../core/constants';
+import { showSnackbar } from '../../core/snackbar';
 import { friendlyError } from '../../core/errorText';
-import type { KBArticle, KBCategory } from './data/kbModels';
+import type { KBArticle, KBArticleRef, KBCategory } from './data/kbModels';
 import { useKBData } from './data/kbLoader';
 import { homeCategoryIcon } from './kbCategoryIcon';
-import { IconEditNote } from './kbIcons';
+import { IconTravelExplore, IconVolunteerActivism } from './kbIcons';
+import { loadInstalledManifest } from './maps/data/repository';
+import { ensureSeedImported } from './maps/data/seedImporter';
+import type { MapDescriptor } from './maps/model/types';
 import { SearchField } from './components/SearchField';
 import { Spinner } from './components/Spinner';
 import styles from './KBHomeView.module.css';
@@ -19,44 +34,128 @@ function articleCountLabel(n: number): string {
   return `${n} article${n === 1 ? '' : 's'}`;
 }
 
-/** Header-only touch point into the interactive maps gallery. The full
- * MapsHomeSection (map cards, seed import, error state) belongs to the maps
- * spec and its owning agent; this row provides the documented navigation. */
-function InteractiveMapsSection() {
+/** The installed interactive maps, listed inline on the Knowledge home (no gallery). */
+function MapsList() {
   const navigate = useNavigate();
+  const [maps, setMaps] = useState<MapDescriptor[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        await ensureSeedImported(); // idempotent
+        const manifest = await loadInstalledManifest();
+        if (!cancelled && manifest !== null) {
+          setMaps([...manifest.maps].filter((m) => !m.draft).sort((a, b) => a.order - b.order));
+        }
+      } catch {
+        /* leave the list empty; the KB still loads */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (maps.length === 0) return null;
   return (
-    <button
-      type="button"
-      className={styles.mapsHeader}
-      onClick={() => navigate('/knowledge/maps')}
-    >
-      <span className={styles.mapsIcon}>
-        <IconMap size={18} />
-      </span>
-      <span className={styles.kicker}>Interactive maps</span>
-      <span className={styles.viewAll}>View all</span>
-      <span className={styles.mapsChevron}>
-        <IconChevronRight size={18} />
-      </span>
-    </button>
+    <div className={styles.mapsList}>
+      {maps.map((m) => (
+        <GlassCard
+          key={m.id}
+          className={styles.card}
+          onTap={() => navigate(`/knowledge/maps/${encodeURIComponent(m.id)}`)}
+          ariaLabel={m.title}
+        >
+          <div className={styles.categoryRow}>
+            <span className={styles.categoryIcon}>
+              {m.icon === 'sphere' ? <IconPublic size={26} /> : <IconMap size={26} />}
+            </span>
+            <div className={styles.categoryText}>
+              <div className="t-headline">{m.title}</div>
+              {m.subtitle !== null && m.subtitle.length > 0 && (
+                <div className={styles.countCaption}>{m.subtitle}</div>
+              )}
+            </div>
+            <span className={styles.chevron}>
+              <IconChevronRight size={20} />
+            </span>
+          </div>
+        </GlassCard>
+      ))}
+    </div>
   );
 }
 
-function DraftsBanner() {
+/** Map-related KB articles (e.g. APMs) surfaced under the Maps section. */
+function MapReferences({ articles }: { articles: readonly KBArticleRef[] }) {
+  const navigate = useNavigate();
+  if (articles.length === 0) return null;
   return (
-    <GlassCard className={styles.drafts}>
-      <div className={styles.draftsRow}>
-        <span className={styles.draftsIcon}>
-          <IconEditNote size={18} />
-        </span>
-        <div className={styles.draftsBody}>
-          <div className="t-headline">Drafts in progress</div>
-          <p className={styles.draftsCaption}>
-            Every article here is a working draft. Writing takes time, so expect missing sections,
-            light tables, and updates over the next builds.
-          </p>
-        </div>
+    <div className={styles.references}>
+      <span className={styles.refHeader}>Field notes</span>
+      <div className={styles.mapsList}>
+        {articles.map((article) => (
+          <GlassCard
+            key={article.slug}
+            className={styles.card}
+            onTap={() => navigate(`/knowledge/article/${encodeURIComponent(article.slug)}`)}
+            ariaLabel={article.title}
+          >
+            <div className={styles.categoryRow}>
+              <span className={styles.refIcon}>
+                <IconTravelExplore size={24} />
+              </span>
+              <div className={styles.categoryText}>
+                <div className="t-headline">{article.title}</div>
+                <div className={styles.countCaption}>Reference</div>
+              </div>
+              <span className={styles.chevron}>
+                <IconChevronRight size={20} />
+              </span>
+            </div>
+          </GlassCard>
+        ))}
       </div>
+    </div>
+  );
+}
+
+/** Root-level draft notice + contribution call (moved off individual articles). */
+function ContributeBanner() {
+  const navigate = useNavigate();
+  const openContact = (): void => {
+    navigate('/menu/contact', {
+      state: {
+        initialMessage:
+          'Contributing intel for the ESSI knowledge base.\n\nArticle / section: \nWhat I know: \n',
+      },
+    });
+  };
+  const openDiscord = (): void => {
+    Haptics.tap();
+    const opened = window.open(discordInviteUrl, '_blank', 'noopener,noreferrer');
+    if (opened === null) showSnackbar("Couldn't open Discord - try again", { danger: true });
+  };
+
+  return (
+    <GlassCard className={styles.contribute}>
+      <SectionHeader title="Contribute intel" icon={<IconVolunteerActivism size={18} />} />
+      <p className={styles.contributeCaption}>
+        Every article here is a working draft - expect missing sections and updates over the next
+        builds. If you have first-hand info, corrections or screenshots, send them in and help fill
+        it out.
+      </p>
+      <NeonButton
+        className={styles.contributeButton}
+        title="Contribute intel"
+        icon={<IconMailOutline size={18} />}
+        onPressed={openContact}
+      />
+      <button type="button" className={styles.discord} onClick={openDiscord}>
+        <IconForum size={16} />
+        <span>or discuss on Discord</span>
+      </button>
     </GlassCard>
   );
 }
@@ -110,6 +209,9 @@ export function KBHomeView() {
   const kb = useKBData();
   const trimmedIsEmpty = query.length === 0;
 
+  const mapArticles =
+    kb.status === 'ready' ? (kb.data.categories.find((c) => c.id === 'maps')?.articles ?? []) : [];
+
   return (
     <BannerPage bannerLabel="ESSI · Archive & Doctrine">
       <PageScrollView padding="12px 12px 32px">
@@ -125,20 +227,28 @@ export function KBHomeView() {
 
         {kb.status === 'ready' && trimmedIsEmpty && (
           <>
-            <div className={styles.mapsSection}>
-              <InteractiveMapsSection />
-            </div>
-            <DraftsBanner />
+            <SectionHeader
+              className={styles.sectionHeader}
+              title="Maps"
+              icon={<IconMap size={18} />}
+            />
+            <MapsList />
+            <MapReferences articles={mapArticles} />
+
             <SectionHeader
               className={styles.sectionHeader}
               title="Library"
               icon={<IconKnowledge size={18} />}
             />
             <div className={styles.list}>
-              {kb.data.categories.map((category) => (
-                <CategoryCard key={category.id} category={category} />
-              ))}
+              {kb.data.categories
+                .filter((category) => category.id !== 'maps')
+                .map((category) => (
+                  <CategoryCard key={category.id} category={category} />
+                ))}
             </div>
+
+            <ContributeBanner />
           </>
         )}
 

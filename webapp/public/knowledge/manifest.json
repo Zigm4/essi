@@ -7,25 +7,11 @@
       "order": 1,
       "articles": [
         {
-          "slug": "hideous-dungeon",
-          "title": "Hideous Dungeon",
-          "file": "01-maps/hideous-dungeon.md",
-          "tags": ["kb:map"],
-          "order": 1
-        },
-        {
-          "slug": "ratropia",
-          "title": "Ratropia",
-          "file": "01-maps/ratropia.md",
-          "tags": ["kb:map"],
-          "order": 2
-        },
-        {
           "slug": "apms",
           "title": "APMs",
           "file": "01-maps/apms.md",
           "tags": ["kb:map"],
-          "order": 3
+          "order": 1
         }
       ]
     },

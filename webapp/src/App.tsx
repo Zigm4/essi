@@ -18,7 +18,6 @@ import { KBArticleView } from './features/knowledge/KBArticleView';
 import { KBCategoryView } from './features/knowledge/KBCategoryView';
 import { KBHomeView } from './features/knowledge/KBHomeView';
 import { MapDetailView } from './features/knowledge/MapDetailView';
-import { MapsGalleryView } from './features/knowledge/MapsGalleryView';
 import { GlobalSearchView } from './features/search/GlobalSearchView';
 import { AsteroidAnalyzerView } from './features/tools/AsteroidAnalyzerView';
 import { CelestialView } from './features/tools/CelestialView';
@@ -67,7 +66,6 @@ export default function App() {
           <Route path="/knowledge" element={<KBHomeView />} />
           <Route path="/knowledge/category/:id" element={<KBCategoryView />} />
           <Route path="/knowledge/article/:slug" element={<KBArticleView />} />
-          <Route path="/knowledge/maps" element={<MapsGalleryView />} />
           <Route path="/knowledge/maps/:id" element={<MapDetailView />} />
 
           {/* Tab 4 - Menu */}

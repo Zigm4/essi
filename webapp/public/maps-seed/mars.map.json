@@ -1,0 +1,8420 @@
+{
+ "_comment": "SEED DATA Mars: 24x24=576 cases. GENERE depuis WAX (underpunks55 / template 848387) par scripts/build-mars-map.mjs. owner=wallet via wallets.json (neftyblocksp=pool non reclame). market=annonces AtomicMarket reelles. railway/medical/rustwind/npc = overlays rendus par gridRender. Ne pas editer a la main : relancer le script.",
+ "schemaVersion": 1,
+ "id": "mars",
+ "type": "sphere",
+ "sphere": {
+  "textureAsset": "texture",
+  "initialOrientation": {
+   "lat": 0,
+   "lon": 0
+  },
+  "autoRotateDegPerSec": 1.2
+ },
+ "grid": {
+  "cols": 24,
+  "rows": 24
+ },
+ "theme": {
+  "_comment": "Mars: rouille martienne sur ciel sombre.",
+  "background": "#0A0503",
+  "surface": "#1C0E07",
+  "zoneFill": "#6E3A24",
+  "zoneStroke": "#C46A3A",
+  "zoneSelectedFill": "#E89A62",
+  "glow": "#FF8C50",
+  "label": "#FFEAD8",
+  "accent": "#FF7A3A",
+  "fontFamily": "JetBrainsMono"
+ },
+ "fieldsSchema": [
+  {
+   "key": "owner",
+   "label": "Owner",
+   "type": "enum",
+   "options": [
+    "Lalothen",
+    "Zigm4",
+    "Gainz",
+    "anachron",
+    "lasergeek",
+    "Lama - [GM]",
+    "MakerJay",
+    "Qukatt",
+    "Rojostormer",
+    ".ulji.wam",
+    "bartleby",
+    "bin",
+    "Cigale",
+    "Greg",
+    "Horst",
+    "Pawan the Air",
+    "Roxy",
+    "sam",
+    "Siisii"
+   ],
+   "style": "badge",
+   "searchable": true,
+   "filterable": true
+  },
+  {
+   "key": "role",
+   "label": "Role",
+   "type": "enum",
+   "options": [
+    "Medical Facility",
+    "NPC Faction",
+    "Rustwind Gen"
+   ],
+   "style": "badge",
+   "searchable": true,
+   "filterable": true
+  },
+  {
+   "key": "railway",
+   "label": "Martian Railway",
+   "type": "enum",
+   "options": [
+    "On line"
+   ],
+   "style": "badge",
+   "searchable": true,
+   "filterable": true
+  },
+  {
+   "key": "market",
+   "label": "Market",
+   "type": "enum",
+   "options": [
+    "On market"
+   ],
+   "style": "badge",
+   "searchable": false,
+   "filterable": true
+  },
+  {
+   "key": "tier",
+   "label": "Tier",
+   "type": "enum",
+   "options": [
+    "2",
+    "3"
+   ],
+   "style": "badge",
+   "searchable": false,
+   "filterable": false
+  },
+  {
+   "key": "coordinates",
+   "label": "Coordinates",
+   "type": "text",
+   "searchable": false,
+   "filterable": false
+  },
+  {
+   "key": "description",
+   "label": "Deed log",
+   "type": "longText",
+   "searchable": true,
+   "filterable": false
+  }
+ ],
+ "zones": [
+  {
+   "id": "z1",
+   "name": "Zone 001",
+   "cellNum": 1,
+   "gridPos": [
+    0,
+    0
+   ],
+   "fields": {
+    "coordinates": "row 1 · col 1"
+   }
+  },
+  {
+   "id": "z2",
+   "name": "Zone 002",
+   "cellNum": 2,
+   "gridPos": [
+    1,
+    0
+   ],
+   "fields": {
+    "coordinates": "row 1 · col 2"
+   }
+  },
+  {
+   "id": "z3",
+   "name": "Zone 003",
+   "cellNum": 3,
+   "gridPos": [
+    2,
+    0
+   ],
+   "fields": {
+    "coordinates": "row 1 · col 3"
+   }
+  },
+  {
+   "id": "z4",
+   "name": "Zone 004",
+   "cellNum": 4,
+   "gridPos": [
+    3,
+    0
+   ],
+   "fields": {
+    "coordinates": "row 1 · col 4"
+   }
+  },
+  {
+   "id": "z5",
+   "name": "Zone 005",
+   "cellNum": 5,
+   "gridPos": [
+    4,
+    0
+   ],
+   "fields": {
+    "coordinates": "row 1 · col 5"
+   }
+  },
+  {
+   "id": "z6",
+   "name": "Zone 006",
+   "cellNum": 6,
+   "gridPos": [
+    5,
+    0
+   ],
+   "fields": {
+    "coordinates": "row 1 · col 6"
+   }
+  },
+  {
+   "id": "z7",
+   "name": "Zone 007",
+   "cellNum": 7,
+   "gridPos": [
+    6,
+    0
+   ],
+   "fields": {
+    "coordinates": "row 1 · col 7"
+   }
+  },
+  {
+   "id": "z8",
+   "name": "Zone 008",
+   "cellNum": 8,
+   "gridPos": [
+    7,
+    0
+   ],
+   "fields": {
+    "coordinates": "row 1 · col 8"
+   }
+  },
+  {
+   "id": "z9",
+   "name": "Zone 009",
+   "cellNum": 9,
+   "gridPos": [
+    8,
+    0
+   ],
+   "fields": {
+    "coordinates": "row 1 · col 9"
+   }
+  },
+  {
+   "id": "z10",
+   "name": "Zone 010",
+   "cellNum": 10,
+   "gridPos": [
+    9,
+    0
+   ],
+   "fields": {
+    "coordinates": "row 1 · col 10"
+   }
+  },
+  {
+   "id": "z11",
+   "name": "Zone 011",
+   "cellNum": 11,
+   "gridPos": [
+    10,
+    0
+   ],
+   "fields": {
+    "coordinates": "row 1 · col 11"
+   }
+  },
+  {
+   "id": "z12",
+   "name": "Zone 012",
+   "cellNum": 12,
+   "gridPos": [
+    11,
+    0
+   ],
+   "fields": {
+    "coordinates": "row 1 · col 12"
+   }
+  },
+  {
+   "id": "z13",
+   "name": "Zone 013",
+   "cellNum": 13,
+   "gridPos": [
+    12,
+    0
+   ],
+   "fields": {
+    "coordinates": "row 1 · col 13"
+   }
+  },
+  {
+   "id": "z14",
+   "name": "Zone 014",
+   "cellNum": 14,
+   "gridPos": [
+    13,
+    0
+   ],
+   "fields": {
+    "coordinates": "row 1 · col 14"
+   }
+  },
+  {
+   "id": "z15",
+   "name": "Zone 015",
+   "cellNum": 15,
+   "gridPos": [
+    14,
+    0
+   ],
+   "fields": {
+    "coordinates": "row 1 · col 15"
+   }
+  },
+  {
+   "id": "z16",
+   "name": "Zone 016",
+   "cellNum": 16,
+   "gridPos": [
+    15,
+    0
+   ],
+   "fields": {
+    "coordinates": "row 1 · col 16"
+   }
+  },
+  {
+   "id": "z17",
+   "name": "Zone 017",
+   "cellNum": 17,
+   "gridPos": [
+    16,
+    0
+   ],
+   "fields": {
+    "coordinates": "row 1 · col 17"
+   }
+  },
+  {
+   "id": "z18",
+   "name": "Zone 018",
+   "cellNum": 18,
+   "gridPos": [
+    17,
+    0
+   ],
+   "fields": {
+    "coordinates": "row 1 · col 18"
+   }
+  },
+  {
+   "id": "z19",
+   "name": "Zone 019",
+   "cellNum": 19,
+   "gridPos": [
+    18,
+    0
+   ],
+   "fields": {
+    "coordinates": "row 1 · col 19"
+   }
+  },
+  {
+   "id": "z20",
+   "name": "Zone 020",
+   "cellNum": 20,
+   "gridPos": [
+    19,
+    0
+   ],
+   "fields": {
+    "coordinates": "row 1 · col 20"
+   }
+  },
+  {
+   "id": "z21",
+   "name": "Zone 021",
+   "cellNum": 21,
+   "gridPos": [
+    20,
+    0
+   ],
+   "fields": {
+    "coordinates": "row 1 · col 21"
+   }
+  },
+  {
+   "id": "z22",
+   "name": "Zone 022",
+   "cellNum": 22,
+   "gridPos": [
+    21,
+    0
+   ],
+   "fields": {
+    "coordinates": "row 1 · col 22"
+   }
+  },
+  {
+   "id": "z23",
+   "name": "Zone 023",
+   "cellNum": 23,
+   "gridPos": [
+    22,
+    0
+   ],
+   "fields": {
+    "coordinates": "row 1 · col 23"
+   }
+  },
+  {
+   "id": "z24",
+   "name": "Zone 024",
+   "cellNum": 24,
+   "gridPos": [
+    23,
+    0
+   ],
+   "fields": {
+    "coordinates": "row 1 · col 24"
+   }
+  },
+  {
+   "id": "z25",
+   "name": "Zone 025",
+   "cellNum": 25,
+   "gridPos": [
+    0,
+    1
+   ],
+   "fields": {
+    "coordinates": "row 2 · col 1"
+   }
+  },
+  {
+   "id": "z26",
+   "name": "Zone 026",
+   "cellNum": 26,
+   "gridPos": [
+    1,
+    1
+   ],
+   "fields": {
+    "coordinates": "row 2 · col 2"
+   }
+  },
+  {
+   "id": "z27",
+   "name": "Zone 027",
+   "cellNum": 27,
+   "gridPos": [
+    2,
+    1
+   ],
+   "fields": {
+    "coordinates": "row 2 · col 3"
+   }
+  },
+  {
+   "id": "z28",
+   "name": "Zone 028",
+   "cellNum": 28,
+   "gridPos": [
+    3,
+    1
+   ],
+   "fields": {
+    "coordinates": "row 2 · col 4"
+   }
+  },
+  {
+   "id": "z29",
+   "name": "Zone 029",
+   "cellNum": 29,
+   "gridPos": [
+    4,
+    1
+   ],
+   "fields": {
+    "coordinates": "row 2 · col 5"
+   }
+  },
+  {
+   "id": "z30",
+   "name": "Zone 030",
+   "cellNum": 30,
+   "gridPos": [
+    5,
+    1
+   ],
+   "fields": {
+    "coordinates": "row 2 · col 6"
+   }
+  },
+  {
+   "id": "z31",
+   "name": "Zone 031",
+   "cellNum": 31,
+   "gridPos": [
+    6,
+    1
+   ],
+   "fields": {
+    "coordinates": "row 2 · col 7"
+   }
+  },
+  {
+   "id": "z32",
+   "name": "Zone 032",
+   "cellNum": 32,
+   "gridPos": [
+    7,
+    1
+   ],
+   "fields": {
+    "coordinates": "row 2 · col 8"
+   }
+  },
+  {
+   "id": "z33",
+   "name": "Zone 033",
+   "cellNum": 33,
+   "gridPos": [
+    8,
+    1
+   ],
+   "fields": {
+    "coordinates": "row 2 · col 9"
+   }
+  },
+  {
+   "id": "z34",
+   "name": "Zone 034",
+   "cellNum": 34,
+   "gridPos": [
+    9,
+    1
+   ],
+   "fields": {
+    "coordinates": "row 2 · col 10"
+   }
+  },
+  {
+   "id": "z35",
+   "name": "Zone 035",
+   "cellNum": 35,
+   "gridPos": [
+    10,
+    1
+   ],
+   "fields": {
+    "coordinates": "row 2 · col 11"
+   }
+  },
+  {
+   "id": "z36",
+   "name": "Zone 036",
+   "cellNum": 36,
+   "gridPos": [
+    11,
+    1
+   ],
+   "fields": {
+    "coordinates": "row 2 · col 12"
+   }
+  },
+  {
+   "id": "z37",
+   "name": "Zone 037",
+   "cellNum": 37,
+   "gridPos": [
+    12,
+    1
+   ],
+   "fields": {
+    "coordinates": "row 2 · col 13"
+   }
+  },
+  {
+   "id": "z38",
+   "name": "Zone 038",
+   "cellNum": 38,
+   "gridPos": [
+    13,
+    1
+   ],
+   "fields": {
+    "coordinates": "row 2 · col 14"
+   }
+  },
+  {
+   "id": "z39",
+   "name": "Zone 039",
+   "cellNum": 39,
+   "gridPos": [
+    14,
+    1
+   ],
+   "fields": {
+    "coordinates": "row 2 · col 15"
+   }
+  },
+  {
+   "id": "z40",
+   "name": "Zone 040",
+   "cellNum": 40,
+   "gridPos": [
+    15,
+    1
+   ],
+   "fields": {
+    "coordinates": "row 2 · col 16"
+   }
+  },
+  {
+   "id": "z41",
+   "name": "Zone 041",
+   "cellNum": 41,
+   "gridPos": [
+    16,
+    1
+   ],
+   "fields": {
+    "coordinates": "row 2 · col 17"
+   }
+  },
+  {
+   "id": "z42",
+   "name": "Zone 042",
+   "cellNum": 42,
+   "gridPos": [
+    17,
+    1
+   ],
+   "fields": {
+    "coordinates": "row 2 · col 18"
+   }
+  },
+  {
+   "id": "z43",
+   "name": "Zone 043",
+   "cellNum": 43,
+   "gridPos": [
+    18,
+    1
+   ],
+   "fields": {
+    "coordinates": "row 2 · col 19"
+   }
+  },
+  {
+   "id": "z44",
+   "name": "Zone 044",
+   "cellNum": 44,
+   "gridPos": [
+    19,
+    1
+   ],
+   "fields": {
+    "coordinates": "row 2 · col 20"
+   }
+  },
+  {
+   "id": "z45",
+   "name": "Zone 045",
+   "cellNum": 45,
+   "gridPos": [
+    20,
+    1
+   ],
+   "fields": {
+    "coordinates": "row 2 · col 21"
+   }
+  },
+  {
+   "id": "z46",
+   "name": "Zone 046",
+   "cellNum": 46,
+   "gridPos": [
+    21,
+    1
+   ],
+   "fields": {
+    "coordinates": "row 2 · col 22"
+   }
+  },
+  {
+   "id": "z47",
+   "name": "Zone 047",
+   "cellNum": 47,
+   "gridPos": [
+    22,
+    1
+   ],
+   "fields": {
+    "coordinates": "row 2 · col 23"
+   }
+  },
+  {
+   "id": "z48",
+   "name": "Zone 048",
+   "cellNum": 48,
+   "gridPos": [
+    23,
+    1
+   ],
+   "fields": {
+    "coordinates": "row 2 · col 24"
+   }
+  },
+  {
+   "id": "z49",
+   "name": "Zone 049",
+   "cellNum": 49,
+   "gridPos": [
+    0,
+    2
+   ],
+   "fields": {
+    "coordinates": "row 3 · col 1"
+   }
+  },
+  {
+   "id": "z50",
+   "name": "Zone 050",
+   "cellNum": 50,
+   "gridPos": [
+    1,
+    2
+   ],
+   "fields": {
+    "coordinates": "row 3 · col 2"
+   }
+  },
+  {
+   "id": "z51",
+   "name": "Zone 051",
+   "cellNum": 51,
+   "gridPos": [
+    2,
+    2
+   ],
+   "fields": {
+    "coordinates": "row 3 · col 3"
+   }
+  },
+  {
+   "id": "z52",
+   "name": "Zone 052",
+   "cellNum": 52,
+   "gridPos": [
+    3,
+    2
+   ],
+   "fields": {
+    "coordinates": "row 3 · col 4"
+   }
+  },
+  {
+   "id": "z53",
+   "name": "Zone 053",
+   "cellNum": 53,
+   "gridPos": [
+    4,
+    2
+   ],
+   "fields": {
+    "coordinates": "row 3 · col 5"
+   }
+  },
+  {
+   "id": "z54",
+   "name": "Zone 054",
+   "cellNum": 54,
+   "gridPos": [
+    5,
+    2
+   ],
+   "fields": {
+    "coordinates": "row 3 · col 6"
+   }
+  },
+  {
+   "id": "z55",
+   "name": "Zone 055",
+   "cellNum": 55,
+   "gridPos": [
+    6,
+    2
+   ],
+   "fields": {
+    "coordinates": "row 3 · col 7",
+    "role": "NPC Faction"
+   },
+   "themeOverride": {
+    "zoneFill": "#C0417F"
+   }
+  },
+  {
+   "id": "z56",
+   "name": "Zone 056",
+   "cellNum": 56,
+   "gridPos": [
+    7,
+    2
+   ],
+   "fields": {
+    "coordinates": "row 3 · col 8"
+   }
+  },
+  {
+   "id": "z57",
+   "name": "Zone 057",
+   "cellNum": 57,
+   "gridPos": [
+    8,
+    2
+   ],
+   "fields": {
+    "coordinates": "row 3 · col 9"
+   }
+  },
+  {
+   "id": "z58",
+   "name": "Zone 058",
+   "cellNum": 58,
+   "gridPos": [
+    9,
+    2
+   ],
+   "fields": {
+    "coordinates": "row 3 · col 10"
+   }
+  },
+  {
+   "id": "z59",
+   "name": "Zone 059",
+   "cellNum": 59,
+   "gridPos": [
+    10,
+    2
+   ],
+   "fields": {
+    "coordinates": "row 3 · col 11"
+   }
+  },
+  {
+   "id": "z60",
+   "name": "Zone 060",
+   "cellNum": 60,
+   "gridPos": [
+    11,
+    2
+   ],
+   "fields": {
+    "coordinates": "row 3 · col 12"
+   }
+  },
+  {
+   "id": "z61",
+   "name": "Zone 061",
+   "cellNum": 61,
+   "gridPos": [
+    12,
+    2
+   ],
+   "fields": {
+    "coordinates": "row 3 · col 13"
+   }
+  },
+  {
+   "id": "z62",
+   "name": "Zone 062",
+   "cellNum": 62,
+   "gridPos": [
+    13,
+    2
+   ],
+   "fields": {
+    "coordinates": "row 3 · col 14"
+   }
+  },
+  {
+   "id": "z63",
+   "name": "Zone 063",
+   "cellNum": 63,
+   "gridPos": [
+    14,
+    2
+   ],
+   "fields": {
+    "coordinates": "row 3 · col 15"
+   }
+  },
+  {
+   "id": "z64",
+   "name": "Zone 064",
+   "cellNum": 64,
+   "gridPos": [
+    15,
+    2
+   ],
+   "fields": {
+    "coordinates": "row 3 · col 16"
+   }
+  },
+  {
+   "id": "z65",
+   "name": "Zone 065",
+   "cellNum": 65,
+   "gridPos": [
+    16,
+    2
+   ],
+   "fields": {
+    "coordinates": "row 3 · col 17"
+   }
+  },
+  {
+   "id": "z66",
+   "name": "Zone 066",
+   "cellNum": 66,
+   "gridPos": [
+    17,
+    2
+   ],
+   "fields": {
+    "coordinates": "row 3 · col 18"
+   }
+  },
+  {
+   "id": "z67",
+   "name": "Zone 067",
+   "cellNum": 67,
+   "gridPos": [
+    18,
+    2
+   ],
+   "fields": {
+    "coordinates": "row 3 · col 19"
+   }
+  },
+  {
+   "id": "z68",
+   "name": "Zone 068",
+   "cellNum": 68,
+   "gridPos": [
+    19,
+    2
+   ],
+   "fields": {
+    "coordinates": "row 3 · col 20"
+   }
+  },
+  {
+   "id": "z69",
+   "name": "Zone 069",
+   "cellNum": 69,
+   "gridPos": [
+    20,
+    2
+   ],
+   "fields": {
+    "coordinates": "row 3 · col 21"
+   }
+  },
+  {
+   "id": "z70",
+   "name": "Zone 070",
+   "cellNum": 70,
+   "gridPos": [
+    21,
+    2
+   ],
+   "fields": {
+    "coordinates": "row 3 · col 22"
+   }
+  },
+  {
+   "id": "z71",
+   "name": "Zone 071",
+   "cellNum": 71,
+   "gridPos": [
+    22,
+    2
+   ],
+   "fields": {
+    "coordinates": "row 3 · col 23"
+   }
+  },
+  {
+   "id": "z72",
+   "name": "Zone 072",
+   "cellNum": 72,
+   "gridPos": [
+    23,
+    2
+   ],
+   "fields": {
+    "coordinates": "row 3 · col 24"
+   }
+  },
+  {
+   "id": "z73",
+   "name": "Zone 073",
+   "cellNum": 73,
+   "gridPos": [
+    0,
+    3
+   ],
+   "fields": {
+    "coordinates": "row 4 · col 1"
+   }
+  },
+  {
+   "id": "z74",
+   "name": "Zone 074",
+   "cellNum": 74,
+   "gridPos": [
+    1,
+    3
+   ],
+   "fields": {
+    "coordinates": "row 4 · col 2"
+   }
+  },
+  {
+   "id": "z75",
+   "name": "Zone 075",
+   "cellNum": 75,
+   "gridPos": [
+    2,
+    3
+   ],
+   "fields": {
+    "coordinates": "row 4 · col 3"
+   }
+  },
+  {
+   "id": "z76",
+   "name": "Zone 076",
+   "cellNum": 76,
+   "gridPos": [
+    3,
+    3
+   ],
+   "fields": {
+    "coordinates": "row 4 · col 4"
+   }
+  },
+  {
+   "id": "z77",
+   "name": "Zone 077",
+   "cellNum": 77,
+   "gridPos": [
+    4,
+    3
+   ],
+   "fields": {
+    "coordinates": "row 4 · col 5",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z78",
+   "name": "Zone 078",
+   "cellNum": 78,
+   "gridPos": [
+    5,
+    3
+   ],
+   "fields": {
+    "coordinates": "row 4 · col 6",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z79",
+   "name": "Zone 079",
+   "cellNum": 79,
+   "gridPos": [
+    6,
+    3
+   ],
+   "fields": {
+    "coordinates": "row 4 · col 7",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z80",
+   "name": "Zone 080",
+   "cellNum": 80,
+   "gridPos": [
+    7,
+    3
+   ],
+   "fields": {
+    "coordinates": "row 4 · col 8"
+   }
+  },
+  {
+   "id": "z81",
+   "name": "Zone 081",
+   "cellNum": 81,
+   "gridPos": [
+    8,
+    3
+   ],
+   "fields": {
+    "coordinates": "row 4 · col 9"
+   }
+  },
+  {
+   "id": "z82",
+   "name": "Zone 082",
+   "cellNum": 82,
+   "gridPos": [
+    9,
+    3
+   ],
+   "fields": {
+    "coordinates": "row 4 · col 10"
+   }
+  },
+  {
+   "id": "z83",
+   "name": "Zone 083",
+   "cellNum": 83,
+   "gridPos": [
+    10,
+    3
+   ],
+   "fields": {
+    "coordinates": "row 4 · col 11"
+   }
+  },
+  {
+   "id": "z84",
+   "name": "Zone 084",
+   "cellNum": 84,
+   "gridPos": [
+    11,
+    3
+   ],
+   "fields": {
+    "coordinates": "row 4 · col 12"
+   }
+  },
+  {
+   "id": "z85",
+   "name": "Zone 085",
+   "cellNum": 85,
+   "gridPos": [
+    12,
+    3
+   ],
+   "fields": {
+    "coordinates": "row 4 · col 13"
+   }
+  },
+  {
+   "id": "z86",
+   "name": "Zone 086",
+   "cellNum": 86,
+   "gridPos": [
+    13,
+    3
+   ],
+   "fields": {
+    "coordinates": "row 4 · col 14"
+   }
+  },
+  {
+   "id": "z87",
+   "name": "Zone 087",
+   "cellNum": 87,
+   "gridPos": [
+    14,
+    3
+   ],
+   "fields": {
+    "coordinates": "row 4 · col 15"
+   }
+  },
+  {
+   "id": "z88",
+   "name": "Zone 088",
+   "cellNum": 88,
+   "gridPos": [
+    15,
+    3
+   ],
+   "fields": {
+    "coordinates": "row 4 · col 16"
+   }
+  },
+  {
+   "id": "z89",
+   "name": "Zone 089",
+   "cellNum": 89,
+   "gridPos": [
+    16,
+    3
+   ],
+   "fields": {
+    "coordinates": "row 4 · col 17"
+   }
+  },
+  {
+   "id": "z90",
+   "name": "Zone 090",
+   "cellNum": 90,
+   "gridPos": [
+    17,
+    3
+   ],
+   "fields": {
+    "coordinates": "row 4 · col 18"
+   }
+  },
+  {
+   "id": "z91",
+   "name": "Zone 091",
+   "cellNum": 91,
+   "gridPos": [
+    18,
+    3
+   ],
+   "fields": {
+    "coordinates": "row 4 · col 19"
+   }
+  },
+  {
+   "id": "z92",
+   "name": "Zone 092",
+   "cellNum": 92,
+   "gridPos": [
+    19,
+    3
+   ],
+   "fields": {
+    "coordinates": "row 4 · col 20"
+   }
+  },
+  {
+   "id": "z93",
+   "name": "Zone 093",
+   "cellNum": 93,
+   "gridPos": [
+    20,
+    3
+   ],
+   "fields": {
+    "coordinates": "row 4 · col 21"
+   }
+  },
+  {
+   "id": "z94",
+   "name": "Zone 094",
+   "cellNum": 94,
+   "gridPos": [
+    21,
+    3
+   ],
+   "fields": {
+    "coordinates": "row 4 · col 22"
+   }
+  },
+  {
+   "id": "z95",
+   "name": "Zone 095",
+   "cellNum": 95,
+   "gridPos": [
+    22,
+    3
+   ],
+   "fields": {
+    "coordinates": "row 4 · col 23"
+   }
+  },
+  {
+   "id": "z96",
+   "name": "Zone 096",
+   "cellNum": 96,
+   "gridPos": [
+    23,
+    3
+   ],
+   "fields": {
+    "coordinates": "row 4 · col 24"
+   }
+  },
+  {
+   "id": "z97",
+   "name": "Zone 097",
+   "cellNum": 97,
+   "gridPos": [
+    0,
+    4
+   ],
+   "fields": {
+    "coordinates": "row 5 · col 1",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z98",
+   "name": "Zone 098",
+   "cellNum": 98,
+   "gridPos": [
+    1,
+    4
+   ],
+   "fields": {
+    "coordinates": "row 5 · col 2"
+   }
+  },
+  {
+   "id": "z99",
+   "name": "Zone 099",
+   "cellNum": 99,
+   "gridPos": [
+    2,
+    4
+   ],
+   "fields": {
+    "coordinates": "row 5 · col 3"
+   }
+  },
+  {
+   "id": "z100",
+   "name": "Zone 100",
+   "cellNum": 100,
+   "gridPos": [
+    3,
+    4
+   ],
+   "fields": {
+    "coordinates": "row 5 · col 4",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z101",
+   "name": "Zone 101",
+   "cellNum": 101,
+   "gridPos": [
+    4,
+    4
+   ],
+   "fields": {
+    "coordinates": "row 5 · col 5",
+    "tier": "2",
+    "owner": "Zigm4",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH.",
+    "role": "Medical Facility"
+   },
+   "themeOverride": {
+    "zoneStroke": "#4A7CF0"
+   }
+  },
+  {
+   "id": "z102",
+   "name": "Zone 102",
+   "cellNum": 102,
+   "gridPos": [
+    5,
+    4
+   ],
+   "fields": {
+    "coordinates": "row 5 · col 6",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z103",
+   "name": "Zone 103",
+   "cellNum": 103,
+   "gridPos": [
+    6,
+    4
+   ],
+   "fields": {
+    "coordinates": "row 5 · col 7",
+    "tier": "2",
+    "owner": "Lama - [GM]",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#E0489A"
+   }
+  },
+  {
+   "id": "z104",
+   "name": "Zone 104",
+   "cellNum": 104,
+   "gridPos": [
+    7,
+    4
+   ],
+   "fields": {
+    "coordinates": "row 5 · col 8"
+   }
+  },
+  {
+   "id": "z105",
+   "name": "Zone 105",
+   "cellNum": 105,
+   "gridPos": [
+    8,
+    4
+   ],
+   "fields": {
+    "coordinates": "row 5 · col 9"
+   }
+  },
+  {
+   "id": "z106",
+   "name": "Zone 106",
+   "cellNum": 106,
+   "gridPos": [
+    9,
+    4
+   ],
+   "fields": {
+    "coordinates": "row 5 · col 10"
+   }
+  },
+  {
+   "id": "z107",
+   "name": "Zone 107",
+   "cellNum": 107,
+   "gridPos": [
+    10,
+    4
+   ],
+   "fields": {
+    "coordinates": "row 5 · col 11"
+   }
+  },
+  {
+   "id": "z108",
+   "name": "Zone 108",
+   "cellNum": 108,
+   "gridPos": [
+    11,
+    4
+   ],
+   "fields": {
+    "coordinates": "row 5 · col 12"
+   }
+  },
+  {
+   "id": "z109",
+   "name": "Zone 109",
+   "cellNum": 109,
+   "gridPos": [
+    12,
+    4
+   ],
+   "fields": {
+    "coordinates": "row 5 · col 13"
+   }
+  },
+  {
+   "id": "z110",
+   "name": "Zone 110",
+   "cellNum": 110,
+   "gridPos": [
+    13,
+    4
+   ],
+   "fields": {
+    "coordinates": "row 5 · col 14"
+   }
+  },
+  {
+   "id": "z111",
+   "name": "Zone 111",
+   "cellNum": 111,
+   "gridPos": [
+    14,
+    4
+   ],
+   "fields": {
+    "coordinates": "row 5 · col 15"
+   }
+  },
+  {
+   "id": "z112",
+   "name": "Zone 112",
+   "cellNum": 112,
+   "gridPos": [
+    15,
+    4
+   ],
+   "fields": {
+    "coordinates": "row 5 · col 16"
+   }
+  },
+  {
+   "id": "z113",
+   "name": "Zone 113",
+   "cellNum": 113,
+   "gridPos": [
+    16,
+    4
+   ],
+   "fields": {
+    "coordinates": "row 5 · col 17"
+   }
+  },
+  {
+   "id": "z114",
+   "name": "Zone 114",
+   "cellNum": 114,
+   "gridPos": [
+    17,
+    4
+   ],
+   "fields": {
+    "coordinates": "row 5 · col 18"
+   }
+  },
+  {
+   "id": "z115",
+   "name": "Zone 115",
+   "cellNum": 115,
+   "gridPos": [
+    18,
+    4
+   ],
+   "fields": {
+    "coordinates": "row 5 · col 19"
+   }
+  },
+  {
+   "id": "z116",
+   "name": "Zone 116",
+   "cellNum": 116,
+   "gridPos": [
+    19,
+    4
+   ],
+   "fields": {
+    "coordinates": "row 5 · col 20"
+   }
+  },
+  {
+   "id": "z117",
+   "name": "Zone 117",
+   "cellNum": 117,
+   "gridPos": [
+    20,
+    4
+   ],
+   "fields": {
+    "coordinates": "row 5 · col 21"
+   }
+  },
+  {
+   "id": "z118",
+   "name": "Zone 118",
+   "cellNum": 118,
+   "gridPos": [
+    21,
+    4
+   ],
+   "fields": {
+    "coordinates": "row 5 · col 22"
+   }
+  },
+  {
+   "id": "z119",
+   "name": "Zone 119",
+   "cellNum": 119,
+   "gridPos": [
+    22,
+    4
+   ],
+   "fields": {
+    "coordinates": "row 5 · col 23"
+   }
+  },
+  {
+   "id": "z120",
+   "name": "Zone 120",
+   "cellNum": 120,
+   "gridPos": [
+    23,
+    4
+   ],
+   "fields": {
+    "coordinates": "row 5 · col 24",
+    "tier": "2",
+    "owner": "Lalothen",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#45D6E8"
+   }
+  },
+  {
+   "id": "z121",
+   "name": "Zone 121",
+   "cellNum": 121,
+   "gridPos": [
+    0,
+    5
+   ],
+   "fields": {
+    "coordinates": "row 6 · col 1",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z122",
+   "name": "Zone 122",
+   "cellNum": 122,
+   "gridPos": [
+    1,
+    5
+   ],
+   "fields": {
+    "coordinates": "row 6 · col 2",
+    "tier": "2",
+    "owner": "Zigm4",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#4A7CF0"
+   }
+  },
+  {
+   "id": "z123",
+   "name": "Zone 123",
+   "cellNum": 123,
+   "gridPos": [
+    2,
+    5
+   ],
+   "fields": {
+    "coordinates": "row 6 · col 3",
+    "tier": "2",
+    "owner": "Gainz",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#F04438"
+   }
+  },
+  {
+   "id": "z124",
+   "name": "Zone 124",
+   "cellNum": 124,
+   "gridPos": [
+    3,
+    5
+   ],
+   "fields": {
+    "coordinates": "row 6 · col 4",
+    "tier": "2",
+    "owner": "Lalothen",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#45D6E8"
+   }
+  },
+  {
+   "id": "z125",
+   "name": "Zone 125",
+   "cellNum": 125,
+   "gridPos": [
+    4,
+    5
+   ],
+   "fields": {
+    "coordinates": "row 6 · col 5",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z126",
+   "name": "Zone 126",
+   "cellNum": 126,
+   "gridPos": [
+    5,
+    5
+   ],
+   "fields": {
+    "coordinates": "row 6 · col 6",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z127",
+   "name": "Zone 127",
+   "cellNum": 127,
+   "gridPos": [
+    6,
+    5
+   ],
+   "fields": {
+    "coordinates": "row 6 · col 7",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z128",
+   "name": "Zone 128",
+   "cellNum": 128,
+   "gridPos": [
+    7,
+    5
+   ],
+   "fields": {
+    "coordinates": "row 6 · col 8",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z129",
+   "name": "Zone 129",
+   "cellNum": 129,
+   "gridPos": [
+    8,
+    5
+   ],
+   "fields": {
+    "coordinates": "row 6 · col 9",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z130",
+   "name": "Zone 130",
+   "cellNum": 130,
+   "gridPos": [
+    9,
+    5
+   ],
+   "fields": {
+    "coordinates": "row 6 · col 10",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z131",
+   "name": "Zone 131",
+   "cellNum": 131,
+   "gridPos": [
+    10,
+    5
+   ],
+   "fields": {
+    "coordinates": "row 6 · col 11",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z132",
+   "name": "Zone 132",
+   "cellNum": 132,
+   "gridPos": [
+    11,
+    5
+   ],
+   "fields": {
+    "coordinates": "row 6 · col 12"
+   }
+  },
+  {
+   "id": "z133",
+   "name": "Zone 133",
+   "cellNum": 133,
+   "gridPos": [
+    12,
+    5
+   ],
+   "fields": {
+    "coordinates": "row 6 · col 13",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z134",
+   "name": "Zone 134",
+   "cellNum": 134,
+   "gridPos": [
+    13,
+    5
+   ],
+   "fields": {
+    "coordinates": "row 6 · col 14",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z135",
+   "name": "Zone 135",
+   "cellNum": 135,
+   "gridPos": [
+    14,
+    5
+   ],
+   "fields": {
+    "coordinates": "row 6 · col 15",
+    "tier": "2",
+    "owner": "Lalothen",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#45D6E8"
+   }
+  },
+  {
+   "id": "z136",
+   "name": "Zone 136",
+   "cellNum": 136,
+   "gridPos": [
+    15,
+    5
+   ],
+   "fields": {
+    "coordinates": "row 6 · col 16",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z137",
+   "name": "Zone 137",
+   "cellNum": 137,
+   "gridPos": [
+    16,
+    5
+   ],
+   "fields": {
+    "coordinates": "row 6 · col 17",
+    "tier": "2",
+    "owner": "Lalothen",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#45D6E8"
+   }
+  },
+  {
+   "id": "z138",
+   "name": "Zone 138",
+   "cellNum": 138,
+   "gridPos": [
+    17,
+    5
+   ],
+   "fields": {
+    "coordinates": "row 6 · col 18"
+   }
+  },
+  {
+   "id": "z139",
+   "name": "Zone 139",
+   "cellNum": 139,
+   "gridPos": [
+    18,
+    5
+   ],
+   "fields": {
+    "coordinates": "row 6 · col 19"
+   }
+  },
+  {
+   "id": "z140",
+   "name": "Zone 140",
+   "cellNum": 140,
+   "gridPos": [
+    19,
+    5
+   ],
+   "fields": {
+    "coordinates": "row 6 · col 20"
+   }
+  },
+  {
+   "id": "z141",
+   "name": "Zone 141",
+   "cellNum": 141,
+   "gridPos": [
+    20,
+    5
+   ],
+   "fields": {
+    "coordinates": "row 6 · col 21",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z142",
+   "name": "Zone 142",
+   "cellNum": 142,
+   "gridPos": [
+    21,
+    5
+   ],
+   "fields": {
+    "coordinates": "row 6 · col 22",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z143",
+   "name": "Zone 143",
+   "cellNum": 143,
+   "gridPos": [
+    22,
+    5
+   ],
+   "fields": {
+    "coordinates": "row 6 · col 23"
+   }
+  },
+  {
+   "id": "z144",
+   "name": "Zone 144",
+   "cellNum": 144,
+   "gridPos": [
+    23,
+    5
+   ],
+   "fields": {
+    "coordinates": "row 6 · col 24",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z145",
+   "name": "Zone 145",
+   "cellNum": 145,
+   "gridPos": [
+    0,
+    6
+   ],
+   "fields": {
+    "coordinates": "row 7 · col 1",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z146",
+   "name": "Zone 146",
+   "cellNum": 146,
+   "gridPos": [
+    1,
+    6
+   ],
+   "fields": {
+    "coordinates": "row 7 · col 2"
+   }
+  },
+  {
+   "id": "z147",
+   "name": "Zone 147",
+   "cellNum": 147,
+   "gridPos": [
+    2,
+    6
+   ],
+   "fields": {
+    "coordinates": "row 7 · col 3",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z148",
+   "name": "Zone 148",
+   "cellNum": 148,
+   "gridPos": [
+    3,
+    6
+   ],
+   "fields": {
+    "coordinates": "row 7 · col 4",
+    "tier": "2",
+    "owner": "Gainz",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#F04438"
+   }
+  },
+  {
+   "id": "z149",
+   "name": "Zone 149",
+   "cellNum": 149,
+   "gridPos": [
+    4,
+    6
+   ],
+   "fields": {
+    "coordinates": "row 7 · col 5",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z150",
+   "name": "Zone 150",
+   "cellNum": 150,
+   "gridPos": [
+    5,
+    6
+   ],
+   "fields": {
+    "coordinates": "row 7 · col 6",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z151",
+   "name": "Zone 151",
+   "cellNum": 151,
+   "gridPos": [
+    6,
+    6
+   ],
+   "fields": {
+    "coordinates": "row 7 · col 7",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z152",
+   "name": "Zone 152",
+   "cellNum": 152,
+   "gridPos": [
+    7,
+    6
+   ],
+   "fields": {
+    "coordinates": "row 7 · col 8",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z153",
+   "name": "Zone 153",
+   "cellNum": 153,
+   "gridPos": [
+    8,
+    6
+   ],
+   "fields": {
+    "coordinates": "row 7 · col 9",
+    "tier": "2",
+    "owner": "Zigm4",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#4A7CF0"
+   }
+  },
+  {
+   "id": "z154",
+   "name": "Zone 154",
+   "cellNum": 154,
+   "gridPos": [
+    9,
+    6
+   ],
+   "fields": {
+    "coordinates": "row 7 · col 10",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z155",
+   "name": "Zone 155",
+   "cellNum": 155,
+   "gridPos": [
+    10,
+    6
+   ],
+   "fields": {
+    "coordinates": "row 7 · col 11"
+   }
+  },
+  {
+   "id": "z156",
+   "name": "Zone 156",
+   "cellNum": 156,
+   "gridPos": [
+    11,
+    6
+   ],
+   "fields": {
+    "coordinates": "row 7 · col 12",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z157",
+   "name": "Zone 157",
+   "cellNum": 157,
+   "gridPos": [
+    12,
+    6
+   ],
+   "fields": {
+    "coordinates": "row 7 · col 13",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z158",
+   "name": "Zone 158",
+   "cellNum": 158,
+   "gridPos": [
+    13,
+    6
+   ],
+   "fields": {
+    "coordinates": "row 7 · col 14",
+    "tier": "2",
+    "owner": "Lalothen",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#45D6E8"
+   }
+  },
+  {
+   "id": "z159",
+   "name": "Zone 159",
+   "cellNum": 159,
+   "gridPos": [
+    14,
+    6
+   ],
+   "fields": {
+    "coordinates": "row 7 · col 15",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z160",
+   "name": "Zone 160",
+   "cellNum": 160,
+   "gridPos": [
+    15,
+    6
+   ],
+   "fields": {
+    "coordinates": "row 7 · col 16",
+    "tier": "2",
+    "owner": "Zigm4",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#4A7CF0"
+   }
+  },
+  {
+   "id": "z161",
+   "name": "Zone 161",
+   "cellNum": 161,
+   "gridPos": [
+    16,
+    6
+   ],
+   "fields": {
+    "coordinates": "row 7 · col 17",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z162",
+   "name": "Zone 162",
+   "cellNum": 162,
+   "gridPos": [
+    17,
+    6
+   ],
+   "fields": {
+    "coordinates": "row 7 · col 18",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z163",
+   "name": "Zone 163",
+   "cellNum": 163,
+   "gridPos": [
+    18,
+    6
+   ],
+   "fields": {
+    "coordinates": "row 7 · col 19"
+   }
+  },
+  {
+   "id": "z164",
+   "name": "Zone 164",
+   "cellNum": 164,
+   "gridPos": [
+    19,
+    6
+   ],
+   "fields": {
+    "coordinates": "row 7 · col 20",
+    "tier": "2",
+    "owner": "Siisii",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#B8C0C8"
+   }
+  },
+  {
+   "id": "z165",
+   "name": "Zone 165",
+   "cellNum": 165,
+   "gridPos": [
+    20,
+    6
+   ],
+   "fields": {
+    "coordinates": "row 7 · col 21",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z166",
+   "name": "Zone 166",
+   "cellNum": 166,
+   "gridPos": [
+    21,
+    6
+   ],
+   "fields": {
+    "coordinates": "row 7 · col 22",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z167",
+   "name": "Zone 167",
+   "cellNum": 167,
+   "gridPos": [
+    22,
+    6
+   ],
+   "fields": {
+    "coordinates": "row 7 · col 23",
+    "tier": "2",
+    "owner": "Lalothen",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#45D6E8"
+   }
+  },
+  {
+   "id": "z168",
+   "name": "Zone 168",
+   "cellNum": 168,
+   "gridPos": [
+    23,
+    6
+   ],
+   "fields": {
+    "coordinates": "row 7 · col 24",
+    "tier": "2",
+    "owner": "Rojostormer",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#7A6AE0"
+   }
+  },
+  {
+   "id": "z169",
+   "name": "Zone 169",
+   "cellNum": 169,
+   "gridPos": [
+    0,
+    7
+   ],
+   "fields": {
+    "coordinates": "row 8 · col 1",
+    "tier": "2",
+    "owner": "Zigm4",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#4A7CF0"
+   }
+  },
+  {
+   "id": "z170",
+   "name": "Zone 170",
+   "cellNum": 170,
+   "gridPos": [
+    1,
+    7
+   ],
+   "fields": {
+    "coordinates": "row 8 · col 2"
+   }
+  },
+  {
+   "id": "z171",
+   "name": "Zone 171",
+   "cellNum": 171,
+   "gridPos": [
+    2,
+    7
+   ],
+   "fields": {
+    "coordinates": "row 8 · col 3",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z172",
+   "name": "Zone 172",
+   "cellNum": 172,
+   "gridPos": [
+    3,
+    7
+   ],
+   "fields": {
+    "coordinates": "row 8 · col 4",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z173",
+   "name": "Zone 173",
+   "cellNum": 173,
+   "gridPos": [
+    4,
+    7
+   ],
+   "fields": {
+    "coordinates": "row 8 · col 5",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z174",
+   "name": "Zone 174",
+   "cellNum": 174,
+   "gridPos": [
+    5,
+    7
+   ],
+   "fields": {
+    "coordinates": "row 8 · col 6",
+    "tier": "2",
+    "owner": "anachron",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#A6B84A"
+   }
+  },
+  {
+   "id": "z175",
+   "name": "Zone 175",
+   "cellNum": 175,
+   "gridPos": [
+    6,
+    7
+   ],
+   "fields": {
+    "coordinates": "row 8 · col 7",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z176",
+   "name": "Zone 176",
+   "cellNum": 176,
+   "gridPos": [
+    7,
+    7
+   ],
+   "fields": {
+    "coordinates": "row 8 · col 8",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z177",
+   "name": "Zone 177",
+   "cellNum": 177,
+   "gridPos": [
+    8,
+    7
+   ],
+   "fields": {
+    "coordinates": "row 8 · col 9",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z178",
+   "name": "Zone 178",
+   "cellNum": 178,
+   "gridPos": [
+    9,
+    7
+   ],
+   "fields": {
+    "coordinates": "row 8 · col 10",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z179",
+   "name": "Zone 179",
+   "cellNum": 179,
+   "gridPos": [
+    10,
+    7
+   ],
+   "fields": {
+    "coordinates": "row 8 · col 11",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z180",
+   "name": "Zone 180",
+   "cellNum": 180,
+   "gridPos": [
+    11,
+    7
+   ],
+   "fields": {
+    "coordinates": "row 8 · col 12",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z181",
+   "name": "Zone 181",
+   "cellNum": 181,
+   "gridPos": [
+    12,
+    7
+   ],
+   "fields": {
+    "coordinates": "row 8 · col 13",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z182",
+   "name": "Zone 182",
+   "cellNum": 182,
+   "gridPos": [
+    13,
+    7
+   ],
+   "fields": {
+    "coordinates": "row 8 · col 14",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z183",
+   "name": "Zone 183",
+   "cellNum": 183,
+   "gridPos": [
+    14,
+    7
+   ],
+   "fields": {
+    "coordinates": "row 8 · col 15",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z184",
+   "name": "Zone 184",
+   "cellNum": 184,
+   "gridPos": [
+    15,
+    7
+   ],
+   "fields": {
+    "coordinates": "row 8 · col 16",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z185",
+   "name": "Zone 185",
+   "cellNum": 185,
+   "gridPos": [
+    16,
+    7
+   ],
+   "fields": {
+    "coordinates": "row 8 · col 17",
+    "tier": "2",
+    "owner": "Lalothen",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#45D6E8"
+   }
+  },
+  {
+   "id": "z186",
+   "name": "Zone 186",
+   "cellNum": 186,
+   "gridPos": [
+    17,
+    7
+   ],
+   "fields": {
+    "coordinates": "row 8 · col 18",
+    "tier": "2",
+    "owner": "Lalothen",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#45D6E8"
+   }
+  },
+  {
+   "id": "z187",
+   "name": "Zone 187",
+   "cellNum": 187,
+   "gridPos": [
+    18,
+    7
+   ],
+   "fields": {
+    "coordinates": "row 8 · col 19"
+   }
+  },
+  {
+   "id": "z188",
+   "name": "Zone 188",
+   "cellNum": 188,
+   "gridPos": [
+    19,
+    7
+   ],
+   "fields": {
+    "coordinates": "row 8 · col 20",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z189",
+   "name": "Zone 189",
+   "cellNum": 189,
+   "gridPos": [
+    20,
+    7
+   ],
+   "fields": {
+    "coordinates": "row 8 · col 21",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z190",
+   "name": "Zone 190",
+   "cellNum": 190,
+   "gridPos": [
+    21,
+    7
+   ],
+   "fields": {
+    "coordinates": "row 8 · col 22",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z191",
+   "name": "Zone 191",
+   "cellNum": 191,
+   "gridPos": [
+    22,
+    7
+   ],
+   "fields": {
+    "coordinates": "row 8 · col 23",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z192",
+   "name": "Zone 192",
+   "cellNum": 192,
+   "gridPos": [
+    23,
+    7
+   ],
+   "fields": {
+    "coordinates": "row 8 · col 24",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z193",
+   "name": "Zone 193",
+   "cellNum": 193,
+   "gridPos": [
+    0,
+    8
+   ],
+   "fields": {
+    "coordinates": "row 9 · col 1",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z194",
+   "name": "Zone 194",
+   "cellNum": 194,
+   "gridPos": [
+    1,
+    8
+   ],
+   "fields": {
+    "coordinates": "row 9 · col 2"
+   }
+  },
+  {
+   "id": "z195",
+   "name": "Zone 195",
+   "cellNum": 195,
+   "gridPos": [
+    2,
+    8
+   ],
+   "fields": {
+    "coordinates": "row 9 · col 3",
+    "tier": "2",
+    "owner": "anachron",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#A6B84A"
+   }
+  },
+  {
+   "id": "z196",
+   "name": "Zone 196",
+   "cellNum": 196,
+   "gridPos": [
+    3,
+    8
+   ],
+   "fields": {
+    "coordinates": "row 9 · col 4",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z197",
+   "name": "Zone 197",
+   "cellNum": 197,
+   "gridPos": [
+    4,
+    8
+   ],
+   "fields": {
+    "coordinates": "row 9 · col 5",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z198",
+   "name": "Zone 198",
+   "cellNum": 198,
+   "gridPos": [
+    5,
+    8
+   ],
+   "fields": {
+    "coordinates": "row 9 · col 6",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z199",
+   "name": "Zone 199",
+   "cellNum": 199,
+   "gridPos": [
+    6,
+    8
+   ],
+   "fields": {
+    "coordinates": "row 9 · col 7",
+    "tier": "2",
+    "owner": "Roxy",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#40C050"
+   }
+  },
+  {
+   "id": "z200",
+   "name": "Zone 200",
+   "cellNum": 200,
+   "gridPos": [
+    7,
+    8
+   ],
+   "fields": {
+    "coordinates": "row 9 · col 8",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z201",
+   "name": "Zone 201",
+   "cellNum": 201,
+   "gridPos": [
+    8,
+    8
+   ],
+   "fields": {
+    "coordinates": "row 9 · col 9",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z202",
+   "name": "Zone 202",
+   "cellNum": 202,
+   "gridPos": [
+    9,
+    8
+   ],
+   "fields": {
+    "coordinates": "row 9 · col 10",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z203",
+   "name": "Zone 203",
+   "cellNum": 203,
+   "gridPos": [
+    10,
+    8
+   ],
+   "fields": {
+    "coordinates": "row 9 · col 11",
+    "tier": "2",
+    "owner": "Zigm4",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#4A7CF0"
+   }
+  },
+  {
+   "id": "z204",
+   "name": "Zone 204",
+   "cellNum": 204,
+   "gridPos": [
+    11,
+    8
+   ],
+   "fields": {
+    "coordinates": "row 9 · col 12",
+    "tier": "2",
+    "owner": "bin",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#d85a7e"
+   }
+  },
+  {
+   "id": "z205",
+   "name": "Zone 205",
+   "cellNum": 205,
+   "gridPos": [
+    12,
+    8
+   ],
+   "fields": {
+    "coordinates": "row 9 · col 13",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z206",
+   "name": "Zone 206",
+   "cellNum": 206,
+   "gridPos": [
+    13,
+    8
+   ],
+   "fields": {
+    "coordinates": "row 9 · col 14",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z207",
+   "name": "Zone 207",
+   "cellNum": 207,
+   "gridPos": [
+    14,
+    8
+   ],
+   "fields": {
+    "coordinates": "row 9 · col 15",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z208",
+   "name": "Zone 208",
+   "cellNum": 208,
+   "gridPos": [
+    15,
+    8
+   ],
+   "fields": {
+    "coordinates": "row 9 · col 16",
+    "tier": "2",
+    "owner": "anachron",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#A6B84A"
+   }
+  },
+  {
+   "id": "z209",
+   "name": "Zone 209",
+   "cellNum": 209,
+   "gridPos": [
+    16,
+    8
+   ],
+   "fields": {
+    "coordinates": "row 9 · col 17",
+    "role": "NPC Faction"
+   },
+   "themeOverride": {
+    "zoneFill": "#C0417F"
+   }
+  },
+  {
+   "id": "z210",
+   "name": "Zone 210",
+   "cellNum": 210,
+   "gridPos": [
+    17,
+    8
+   ],
+   "fields": {
+    "coordinates": "row 9 · col 18",
+    "role": "NPC Faction"
+   },
+   "themeOverride": {
+    "zoneFill": "#C0417F"
+   }
+  },
+  {
+   "id": "z211",
+   "name": "Zone 211",
+   "cellNum": 211,
+   "gridPos": [
+    18,
+    8
+   ],
+   "fields": {
+    "coordinates": "row 9 · col 19",
+    "role": "NPC Faction"
+   },
+   "themeOverride": {
+    "zoneFill": "#C0417F"
+   }
+  },
+  {
+   "id": "z212",
+   "name": "Zone 212",
+   "cellNum": 212,
+   "gridPos": [
+    19,
+    8
+   ],
+   "fields": {
+    "coordinates": "row 9 · col 20",
+    "role": "NPC Faction"
+   },
+   "themeOverride": {
+    "zoneFill": "#C0417F"
+   }
+  },
+  {
+   "id": "z213",
+   "name": "Zone 213",
+   "cellNum": 213,
+   "gridPos": [
+    20,
+    8
+   ],
+   "fields": {
+    "coordinates": "row 9 · col 21",
+    "tier": "2",
+    "owner": "Lalothen",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#45D6E8"
+   }
+  },
+  {
+   "id": "z214",
+   "name": "Zone 214",
+   "cellNum": 214,
+   "gridPos": [
+    21,
+    8
+   ],
+   "fields": {
+    "coordinates": "row 9 · col 22",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z215",
+   "name": "Zone 215",
+   "cellNum": 215,
+   "gridPos": [
+    22,
+    8
+   ],
+   "fields": {
+    "coordinates": "row 9 · col 23",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z216",
+   "name": "Zone 216",
+   "cellNum": 216,
+   "gridPos": [
+    23,
+    8
+   ],
+   "fields": {
+    "coordinates": "row 9 · col 24",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z217",
+   "name": "Zone 217",
+   "cellNum": 217,
+   "gridPos": [
+    0,
+    9
+   ],
+   "fields": {
+    "coordinates": "row 10 · col 1",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z218",
+   "name": "Zone 218",
+   "cellNum": 218,
+   "gridPos": [
+    1,
+    9
+   ],
+   "fields": {
+    "coordinates": "row 10 · col 2"
+   }
+  },
+  {
+   "id": "z219",
+   "name": "Zone 219",
+   "cellNum": 219,
+   "gridPos": [
+    2,
+    9
+   ],
+   "fields": {
+    "coordinates": "row 10 · col 3",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z220",
+   "name": "Zone 220",
+   "cellNum": 220,
+   "gridPos": [
+    3,
+    9
+   ],
+   "fields": {
+    "coordinates": "row 10 · col 4",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z221",
+   "name": "Zone 221",
+   "cellNum": 221,
+   "gridPos": [
+    4,
+    9
+   ],
+   "fields": {
+    "coordinates": "row 10 · col 5",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z222",
+   "name": "Zone 222",
+   "cellNum": 222,
+   "gridPos": [
+    5,
+    9
+   ],
+   "fields": {
+    "coordinates": "row 10 · col 6",
+    "tier": "2",
+    "owner": "Lalothen",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH.",
+    "role": "Medical Facility"
+   },
+   "themeOverride": {
+    "zoneStroke": "#45D6E8"
+   }
+  },
+  {
+   "id": "z223",
+   "name": "Zone 223",
+   "cellNum": 223,
+   "gridPos": [
+    6,
+    9
+   ],
+   "fields": {
+    "coordinates": "row 10 · col 7",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z224",
+   "name": "Zone 224",
+   "cellNum": 224,
+   "gridPos": [
+    7,
+    9
+   ],
+   "fields": {
+    "coordinates": "row 10 · col 8",
+    "tier": "2",
+    "owner": "lasergeek",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#F0883A"
+   }
+  },
+  {
+   "id": "z225",
+   "name": "Zone 225",
+   "cellNum": 225,
+   "gridPos": [
+    8,
+    9
+   ],
+   "fields": {
+    "coordinates": "row 10 · col 9",
+    "tier": "2",
+    "owner": "Lalothen",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#45D6E8"
+   }
+  },
+  {
+   "id": "z226",
+   "name": "Zone 226",
+   "cellNum": 226,
+   "gridPos": [
+    9,
+    9
+   ],
+   "fields": {
+    "coordinates": "row 10 · col 10",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z227",
+   "name": "Zone 227",
+   "cellNum": 227,
+   "gridPos": [
+    10,
+    9
+   ],
+   "fields": {
+    "coordinates": "row 10 · col 11",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z228",
+   "name": "Zone 228",
+   "cellNum": 228,
+   "gridPos": [
+    11,
+    9
+   ],
+   "fields": {
+    "coordinates": "row 10 · col 12",
+    "tier": "2",
+    "owner": "Lalothen",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#45D6E8"
+   }
+  },
+  {
+   "id": "z229",
+   "name": "Zone 229",
+   "cellNum": 229,
+   "gridPos": [
+    12,
+    9
+   ],
+   "fields": {
+    "coordinates": "row 10 · col 13",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z230",
+   "name": "Zone 230",
+   "cellNum": 230,
+   "gridPos": [
+    13,
+    9
+   ],
+   "fields": {
+    "coordinates": "row 10 · col 14",
+    "tier": "2",
+    "owner": "lasergeek",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#F0883A"
+   }
+  },
+  {
+   "id": "z231",
+   "name": "Zone 231",
+   "cellNum": 231,
+   "gridPos": [
+    14,
+    9
+   ],
+   "fields": {
+    "coordinates": "row 10 · col 15",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z232",
+   "name": "Zone 232",
+   "cellNum": 232,
+   "gridPos": [
+    15,
+    9
+   ],
+   "fields": {
+    "coordinates": "row 10 · col 16",
+    "tier": "2",
+    "owner": "Pawan the Air",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#B07A4A"
+   }
+  },
+  {
+   "id": "z233",
+   "name": "Zone 233",
+   "cellNum": 233,
+   "gridPos": [
+    16,
+    9
+   ],
+   "fields": {
+    "coordinates": "row 10 · col 17",
+    "role": "NPC Faction"
+   },
+   "themeOverride": {
+    "zoneFill": "#C0417F"
+   }
+  },
+  {
+   "id": "z234",
+   "name": "Zone 234",
+   "cellNum": 234,
+   "gridPos": [
+    17,
+    9
+   ],
+   "fields": {
+    "coordinates": "row 10 · col 18",
+    "railway": "On line",
+    "railwayLinks": [
+     235,
+     258
+    ]
+   }
+  },
+  {
+   "id": "z235",
+   "name": "Zone 235",
+   "cellNum": 235,
+   "gridPos": [
+    18,
+    9
+   ],
+   "fields": {
+    "coordinates": "row 10 · col 19",
+    "railway": "On line",
+    "railwayLinks": [
+     259,
+     234
+    ]
+   }
+  },
+  {
+   "id": "z236",
+   "name": "Zone 236",
+   "cellNum": 236,
+   "gridPos": [
+    19,
+    9
+   ],
+   "fields": {
+    "coordinates": "row 10 · col 20",
+    "role": "NPC Faction"
+   },
+   "themeOverride": {
+    "zoneFill": "#C0417F"
+   }
+  },
+  {
+   "id": "z237",
+   "name": "Zone 237",
+   "cellNum": 237,
+   "gridPos": [
+    20,
+    9
+   ],
+   "fields": {
+    "coordinates": "row 10 · col 21",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z238",
+   "name": "Zone 238",
+   "cellNum": 238,
+   "gridPos": [
+    21,
+    9
+   ],
+   "fields": {
+    "coordinates": "row 10 · col 22",
+    "tier": "2",
+    "owner": "Lalothen",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#45D6E8"
+   }
+  },
+  {
+   "id": "z239",
+   "name": "Zone 239",
+   "cellNum": 239,
+   "gridPos": [
+    22,
+    9
+   ],
+   "fields": {
+    "coordinates": "row 10 · col 23",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z240",
+   "name": "Zone 240",
+   "cellNum": 240,
+   "gridPos": [
+    23,
+    9
+   ],
+   "fields": {
+    "coordinates": "row 10 · col 24",
+    "tier": "2",
+    "owner": "Lalothen",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#45D6E8"
+   }
+  },
+  {
+   "id": "z241",
+   "name": "Zone 241",
+   "cellNum": 241,
+   "gridPos": [
+    0,
+    10
+   ],
+   "fields": {
+    "coordinates": "row 11 · col 1",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z242",
+   "name": "Zone 242",
+   "cellNum": 242,
+   "gridPos": [
+    1,
+    10
+   ],
+   "fields": {
+    "coordinates": "row 11 · col 2",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z243",
+   "name": "Zone 243",
+   "cellNum": 243,
+   "gridPos": [
+    2,
+    10
+   ],
+   "fields": {
+    "coordinates": "row 11 · col 3",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z244",
+   "name": "Zone 244",
+   "cellNum": 244,
+   "gridPos": [
+    3,
+    10
+   ],
+   "fields": {
+    "coordinates": "row 11 · col 4",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z245",
+   "name": "Zone 245",
+   "cellNum": 245,
+   "gridPos": [
+    4,
+    10
+   ],
+   "fields": {
+    "coordinates": "row 11 · col 5",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z246",
+   "name": "Zone 246",
+   "cellNum": 246,
+   "gridPos": [
+    5,
+    10
+   ],
+   "fields": {
+    "coordinates": "row 11 · col 6",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z247",
+   "name": "Zone 247",
+   "cellNum": 247,
+   "gridPos": [
+    6,
+    10
+   ],
+   "fields": {
+    "coordinates": "row 11 · col 7",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z248",
+   "name": "Zone 248",
+   "cellNum": 248,
+   "gridPos": [
+    7,
+    10
+   ],
+   "fields": {
+    "coordinates": "row 11 · col 8",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z249",
+   "name": "Zone 249",
+   "cellNum": 249,
+   "gridPos": [
+    8,
+    10
+   ],
+   "fields": {
+    "coordinates": "row 11 · col 9",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z250",
+   "name": "Zone 250",
+   "cellNum": 250,
+   "gridPos": [
+    9,
+    10
+   ],
+   "fields": {
+    "coordinates": "row 11 · col 10",
+    "tier": "2",
+    "owner": "lasergeek",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#F0883A"
+   }
+  },
+  {
+   "id": "z251",
+   "name": "Zone 251",
+   "cellNum": 251,
+   "gridPos": [
+    10,
+    10
+   ],
+   "fields": {
+    "coordinates": "row 11 · col 11",
+    "tier": "2",
+    "owner": "Zigm4",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#4A7CF0"
+   }
+  },
+  {
+   "id": "z252",
+   "name": "Zone 252",
+   "cellNum": 252,
+   "gridPos": [
+    11,
+    10
+   ],
+   "fields": {
+    "coordinates": "row 11 · col 12",
+    "tier": "2",
+    "owner": "Zigm4",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#4A7CF0"
+   }
+  },
+  {
+   "id": "z253",
+   "name": "Zone 253",
+   "cellNum": 253,
+   "gridPos": [
+    12,
+    10
+   ],
+   "fields": {
+    "coordinates": "row 11 · col 13",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z254",
+   "name": "Zone 254",
+   "cellNum": 254,
+   "gridPos": [
+    13,
+    10
+   ],
+   "fields": {
+    "coordinates": "row 11 · col 14",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z255",
+   "name": "Zone 255",
+   "cellNum": 255,
+   "gridPos": [
+    14,
+    10
+   ],
+   "fields": {
+    "coordinates": "row 11 · col 15",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z256",
+   "name": "Zone 256",
+   "cellNum": 256,
+   "gridPos": [
+    15,
+    10
+   ],
+   "fields": {
+    "coordinates": "row 11 · col 16",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z257",
+   "name": "Mars City West",
+   "cellNum": 257,
+   "gridPos": [
+    16,
+    10
+   ],
+   "fields": {
+    "coordinates": "row 11 · col 17",
+    "tier": "3",
+    "owner": "Zigm4",
+    "description": "This pure PROSPERA zone within the protected boundary of the new-human megacity on Mars is the perfect place to mine if you have REP with the Martians or the player-owned PEARL corporation. Mars has been completely terraformed and these Prospera biomes are rich in metals due to their ancient volcanic activity (now dormant). The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH.",
+    "role": "NPC Faction"
+   },
+   "themeOverride": {
+    "zoneStroke": "#4A7CF0",
+    "zoneFill": "#C0417F"
+   }
+  },
+  {
+   "id": "z258",
+   "name": "Zone 258",
+   "cellNum": 258,
+   "gridPos": [
+    17,
+    10
+   ],
+   "fields": {
+    "coordinates": "row 11 · col 18",
+    "railway": "On line",
+    "railwayLinks": [
+     234,
+     282
+    ]
+   }
+  },
+  {
+   "id": "z259",
+   "name": "Zone 259",
+   "cellNum": 259,
+   "gridPos": [
+    18,
+    10
+   ],
+   "fields": {
+    "coordinates": "row 11 · col 19",
+    "railway": "On line",
+    "railwayLinks": [
+     283,
+     235
+    ]
+   }
+  },
+  {
+   "id": "z260",
+   "name": "Zone 260",
+   "cellNum": 260,
+   "gridPos": [
+    19,
+    10
+   ],
+   "fields": {
+    "coordinates": "row 11 · col 20",
+    "role": "NPC Faction"
+   },
+   "themeOverride": {
+    "zoneFill": "#C0417F"
+   }
+  },
+  {
+   "id": "z261",
+   "name": "Zone 261",
+   "cellNum": 261,
+   "gridPos": [
+    20,
+    10
+   ],
+   "fields": {
+    "coordinates": "row 11 · col 21",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z262",
+   "name": "Zone 262",
+   "cellNum": 262,
+   "gridPos": [
+    21,
+    10
+   ],
+   "fields": {
+    "coordinates": "row 11 · col 22",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z263",
+   "name": "Zone 263",
+   "cellNum": 263,
+   "gridPos": [
+    22,
+    10
+   ],
+   "fields": {
+    "coordinates": "row 11 · col 23",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z264",
+   "name": "Zone 264",
+   "cellNum": 264,
+   "gridPos": [
+    23,
+    10
+   ],
+   "fields": {
+    "coordinates": "row 11 · col 24",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z265",
+   "name": "Zone 265",
+   "cellNum": 265,
+   "gridPos": [
+    0,
+    11
+   ],
+   "fields": {
+    "coordinates": "row 12 · col 1",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z266",
+   "name": "Zone 266",
+   "cellNum": 266,
+   "gridPos": [
+    1,
+    11
+   ],
+   "fields": {
+    "coordinates": "row 12 · col 2",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z267",
+   "name": "Zone 267",
+   "cellNum": 267,
+   "gridPos": [
+    2,
+    11
+   ],
+   "fields": {
+    "coordinates": "row 12 · col 3",
+    "tier": "2",
+    "owner": "MakerJay",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#3FA0B0"
+   }
+  },
+  {
+   "id": "z268",
+   "name": "Zone 268",
+   "cellNum": 268,
+   "gridPos": [
+    3,
+    11
+   ],
+   "fields": {
+    "coordinates": "row 12 · col 4",
+    "tier": "2",
+    "owner": "Lalothen",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#45D6E8"
+   }
+  },
+  {
+   "id": "z269",
+   "name": "Zone 269",
+   "cellNum": 269,
+   "gridPos": [
+    4,
+    11
+   ],
+   "fields": {
+    "coordinates": "row 12 · col 5",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z270",
+   "name": "Zone 270",
+   "cellNum": 270,
+   "gridPos": [
+    5,
+    11
+   ],
+   "fields": {
+    "coordinates": "row 12 · col 6",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z271",
+   "name": "Zone 271",
+   "cellNum": 271,
+   "gridPos": [
+    6,
+    11
+   ],
+   "fields": {
+    "coordinates": "row 12 · col 7",
+    "tier": "2",
+    "owner": "Lalothen",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#45D6E8"
+   }
+  },
+  {
+   "id": "z272",
+   "name": "Zone 272",
+   "cellNum": 272,
+   "gridPos": [
+    7,
+    11
+   ],
+   "fields": {
+    "coordinates": "row 12 · col 8",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z273",
+   "name": "Zone 273",
+   "cellNum": 273,
+   "gridPos": [
+    8,
+    11
+   ],
+   "fields": {
+    "coordinates": "row 12 · col 9",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z274",
+   "name": "Zone 274",
+   "cellNum": 274,
+   "gridPos": [
+    9,
+    11
+   ],
+   "fields": {
+    "coordinates": "row 12 · col 10",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z275",
+   "name": "Zone 275",
+   "cellNum": 275,
+   "gridPos": [
+    10,
+    11
+   ],
+   "fields": {
+    "coordinates": "row 12 · col 11",
+    "tier": "2",
+    "owner": "Zigm4",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#4A7CF0"
+   }
+  },
+  {
+   "id": "z276",
+   "name": "Zone 276",
+   "cellNum": 276,
+   "gridPos": [
+    11,
+    11
+   ],
+   "fields": {
+    "coordinates": "row 12 · col 12",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z277",
+   "name": "Zone 277",
+   "cellNum": 277,
+   "gridPos": [
+    12,
+    11
+   ],
+   "fields": {
+    "coordinates": "row 12 · col 13",
+    "tier": "2",
+    "owner": "Horst",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#EAC24A"
+   }
+  },
+  {
+   "id": "z278",
+   "name": "Zone 278",
+   "cellNum": 278,
+   "gridPos": [
+    13,
+    11
+   ],
+   "fields": {
+    "coordinates": "row 12 · col 14",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z279",
+   "name": "Rustwind Generator 279",
+   "cellNum": 279,
+   "gridPos": [
+    14,
+    11
+   ],
+   "fields": {
+    "coordinates": "row 12 · col 15",
+    "tier": "2",
+    "owner": "Lalothen",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH.",
+    "market": "On market",
+    "role": "Rustwind Gen"
+   },
+   "themeOverride": {
+    "zoneStroke": "#45D6E8"
+   }
+  },
+  {
+   "id": "z280",
+   "name": "Zone 280",
+   "cellNum": 280,
+   "gridPos": [
+    15,
+    11
+   ],
+   "fields": {
+    "coordinates": "row 12 · col 16",
+    "tier": "2",
+    "owner": "Lalothen",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#45D6E8"
+   }
+  },
+  {
+   "id": "z281",
+   "name": "Zone 281",
+   "cellNum": 281,
+   "gridPos": [
+    16,
+    11
+   ],
+   "fields": {
+    "coordinates": "row 12 · col 17",
+    "role": "NPC Faction"
+   },
+   "themeOverride": {
+    "zoneFill": "#C0417F"
+   }
+  },
+  {
+   "id": "z282",
+   "name": "Zone 282",
+   "cellNum": 282,
+   "gridPos": [
+    17,
+    11
+   ],
+   "fields": {
+    "coordinates": "row 12 · col 18",
+    "railway": "On line",
+    "railwayLinks": [
+     258,
+     306
+    ]
+   }
+  },
+  {
+   "id": "z283",
+   "name": "Zone 283",
+   "cellNum": 283,
+   "gridPos": [
+    18,
+    11
+   ],
+   "fields": {
+    "coordinates": "row 12 · col 19",
+    "railway": "On line",
+    "railwayLinks": [
+     307,
+     259
+    ]
+   }
+  },
+  {
+   "id": "z284",
+   "name": "Zone 284",
+   "cellNum": 284,
+   "gridPos": [
+    19,
+    11
+   ],
+   "fields": {
+    "coordinates": "row 12 · col 20",
+    "role": "NPC Faction"
+   },
+   "themeOverride": {
+    "zoneFill": "#C0417F"
+   }
+  },
+  {
+   "id": "z285",
+   "name": "Zone 285",
+   "cellNum": 285,
+   "gridPos": [
+    20,
+    11
+   ],
+   "fields": {
+    "coordinates": "row 12 · col 21",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z286",
+   "name": "Zone 286",
+   "cellNum": 286,
+   "gridPos": [
+    21,
+    11
+   ],
+   "fields": {
+    "coordinates": "row 12 · col 22",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z287",
+   "name": "Zone 287",
+   "cellNum": 287,
+   "gridPos": [
+    22,
+    11
+   ],
+   "fields": {
+    "coordinates": "row 12 · col 23",
+    "tier": "2",
+    "owner": "Zigm4",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#4A7CF0"
+   }
+  },
+  {
+   "id": "z288",
+   "name": "Zone 288",
+   "cellNum": 288,
+   "gridPos": [
+    23,
+    11
+   ],
+   "fields": {
+    "coordinates": "row 12 · col 24",
+    "tier": "2",
+    "owner": "Gainz",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#F04438"
+   }
+  },
+  {
+   "id": "z289",
+   "name": "Zone 289",
+   "cellNum": 289,
+   "gridPos": [
+    0,
+    12
+   ],
+   "fields": {
+    "coordinates": "row 13 · col 1",
+    "tier": "2",
+    "owner": "Lalothen",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#45D6E8"
+   }
+  },
+  {
+   "id": "z290",
+   "name": "Zone 290",
+   "cellNum": 290,
+   "gridPos": [
+    1,
+    12
+   ],
+   "fields": {
+    "coordinates": "row 13 · col 2",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z291",
+   "name": "Zone 291",
+   "cellNum": 291,
+   "gridPos": [
+    2,
+    12
+   ],
+   "fields": {
+    "coordinates": "row 13 · col 3",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z292",
+   "name": "Zone 292",
+   "cellNum": 292,
+   "gridPos": [
+    3,
+    12
+   ],
+   "fields": {
+    "coordinates": "row 13 · col 4",
+    "tier": "2",
+    "owner": "Lalothen",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#45D6E8"
+   }
+  },
+  {
+   "id": "z293",
+   "name": "Zone 293",
+   "cellNum": 293,
+   "gridPos": [
+    4,
+    12
+   ],
+   "fields": {
+    "coordinates": "row 13 · col 5",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z294",
+   "name": "Zone 294",
+   "cellNum": 294,
+   "gridPos": [
+    5,
+    12
+   ],
+   "fields": {
+    "coordinates": "row 13 · col 6",
+    "railway": "On line",
+    "railwayLinks": [
+     318
+    ],
+    "role": "NPC Faction"
+   },
+   "themeOverride": {
+    "zoneFill": "#C0417F"
+   }
+  },
+  {
+   "id": "z295",
+   "name": "Zone 295",
+   "cellNum": 295,
+   "gridPos": [
+    6,
+    12
+   ],
+   "fields": {
+    "coordinates": "row 13 · col 7",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z296",
+   "name": "Zone 296",
+   "cellNum": 296,
+   "gridPos": [
+    7,
+    12
+   ],
+   "fields": {
+    "coordinates": "row 13 · col 8",
+    "tier": "2",
+    "owner": "Zigm4",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#4A7CF0"
+   }
+  },
+  {
+   "id": "z297",
+   "name": "Zone 297",
+   "cellNum": 297,
+   "gridPos": [
+    8,
+    12
+   ],
+   "fields": {
+    "coordinates": "row 13 · col 9",
+    "tier": "2",
+    "owner": "anachron",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#A6B84A"
+   }
+  },
+  {
+   "id": "z298",
+   "name": "Zone 298",
+   "cellNum": 298,
+   "gridPos": [
+    9,
+    12
+   ],
+   "fields": {
+    "coordinates": "row 13 · col 10",
+    "tier": "2",
+    "owner": "Zigm4",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#4A7CF0"
+   }
+  },
+  {
+   "id": "z299",
+   "name": "Zone 299",
+   "cellNum": 299,
+   "gridPos": [
+    10,
+    12
+   ],
+   "fields": {
+    "coordinates": "row 13 · col 11",
+    "tier": "2",
+    "owner": "Gainz",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH.",
+    "railway": "On line",
+    "railwayLinks": [
+     323,
+     300
+    ]
+   },
+   "themeOverride": {
+    "zoneStroke": "#F04438"
+   }
+  },
+  {
+   "id": "z300",
+   "name": "Zone 300",
+   "cellNum": 300,
+   "gridPos": [
+    11,
+    12
+   ],
+   "fields": {
+    "coordinates": "row 13 · col 12",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH.",
+    "railway": "On line",
+    "railwayLinks": [
+     299,
+     301
+    ]
+   }
+  },
+  {
+   "id": "z301",
+   "name": "O.R.K. Ranch",
+   "cellNum": 301,
+   "gridPos": [
+    12,
+    12
+   ],
+   "fields": {
+    "coordinates": "row 13 · col 13",
+    "tier": "3",
+    "owner": "MakerJay",
+    "description": "This zone is a lawless blend of BADLANDS and MEADOW biomes, with the Great Martian Railway cutting through it, generating passive income through TAX and attracting a lot of attention from bandits. Situated between the Martian megacity and the remote town of Redwater Junction, this zone has been partially terraformed. The Meadows support biological gameplay, while the Badlands offer dangerous exploration opportunities. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH.",
+    "railway": "On line",
+    "railwayLinks": [
+     300,
+     302
+    ]
+   },
+   "themeOverride": {
+    "zoneStroke": "#3FA0B0"
+   }
+  },
+  {
+   "id": "z302",
+   "name": "Zone 302",
+   "cellNum": 302,
+   "gridPos": [
+    13,
+    12
+   ],
+   "fields": {
+    "coordinates": "row 13 · col 14",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH.",
+    "railway": "On line",
+    "railwayLinks": [
+     301,
+     303
+    ]
+   }
+  },
+  {
+   "id": "z303",
+   "name": "Zone 303",
+   "cellNum": 303,
+   "gridPos": [
+    14,
+    12
+   ],
+   "fields": {
+    "coordinates": "row 13 · col 15",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH.",
+    "railway": "On line",
+    "railwayLinks": [
+     302,
+     304
+    ]
+   }
+  },
+  {
+   "id": "z304",
+   "name": "Zone 304",
+   "cellNum": 304,
+   "gridPos": [
+    15,
+    12
+   ],
+   "fields": {
+    "coordinates": "row 13 · col 16",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH.",
+    "railway": "On line",
+    "railwayLinks": [
+     303,
+     305
+    ]
+   }
+  },
+  {
+   "id": "z305",
+   "name": "Zone 305",
+   "cellNum": 305,
+   "gridPos": [
+    16,
+    12
+   ],
+   "fields": {
+    "coordinates": "row 13 · col 17",
+    "railway": "On line",
+    "railwayLinks": [
+     304,
+     306
+    ],
+    "role": "NPC Faction"
+   },
+   "themeOverride": {
+    "zoneFill": "#C0417F"
+   }
+  },
+  {
+   "id": "z306",
+   "name": "PEARL Station",
+   "cellNum": 306,
+   "gridPos": [
+    17,
+    12
+   ],
+   "fields": {
+    "coordinates": "row 13 · col 18",
+    "tier": "3",
+    "owner": "Zigm4",
+    "description": "This zone, located on the southern boundary of the Martian megacity and crossed by the Great Martian Railway, is a mix of BADLANDS and PROSPERA biomes. Barely terraformed, it offers passive income through railway TAX. The Badlands provide risky, lawful vs chaotic gameplay, while the Prospera zones, rich in dormant volcanic metals, are ideal for resource extraction for those with REP with the Martians or the PEARL corporation. The image of this NFT is mutable and contains the available biomes on this land – which can be changed using very advanced TECH.",
+    "railway": "On line",
+    "railwayLinks": [
+     305,
+     307,
+     282
+    ],
+    "role": "NPC Faction"
+   },
+   "themeOverride": {
+    "zoneStroke": "#4A7CF0",
+    "zoneFill": "#C0417F"
+   }
+  },
+  {
+   "id": "z307",
+   "name": "Gainz World",
+   "cellNum": 307,
+   "gridPos": [
+    18,
+    12
+   ],
+   "fields": {
+    "coordinates": "row 13 · col 19",
+    "tier": "3",
+    "owner": "Gainz",
+    "description": "This zone is located on the southern boundary of the Martian megacity and right next door to the Stellar Nexus commercial district. Crossed by the Great Martian Railway, the land is a mix of BADLANDS and PROSPERA biomes. Barely terraformed, it offers passive income through railway TAX. The Badlands provide risky, lawful vs chaotic gameplay, while the Prospera zones, rich in dormant volcanic metals, are ideal for resource extraction. The image of this NFT is mutable and contains the available biomes on this land – which can be changed using very advanced TECH.",
+    "railway": "On line",
+    "railwayLinks": [
+     306,
+     283
+    ],
+    "role": "NPC Faction"
+   },
+   "themeOverride": {
+    "zoneStroke": "#F04438",
+    "zoneFill": "#C0417F"
+   }
+  },
+  {
+   "id": "z308",
+   "name": "Zone 308",
+   "cellNum": 308,
+   "gridPos": [
+    19,
+    12
+   ],
+   "fields": {
+    "coordinates": "row 13 · col 20",
+    "role": "NPC Faction"
+   },
+   "themeOverride": {
+    "zoneFill": "#C0417F"
+   }
+  },
+  {
+   "id": "z309",
+   "name": "Zone 309",
+   "cellNum": 309,
+   "gridPos": [
+    20,
+    12
+   ],
+   "fields": {
+    "coordinates": "row 13 · col 21",
+    "tier": "2",
+    "owner": "Lalothen",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#45D6E8"
+   }
+  },
+  {
+   "id": "z310",
+   "name": "Zone 310",
+   "cellNum": 310,
+   "gridPos": [
+    21,
+    12
+   ],
+   "fields": {
+    "coordinates": "row 13 · col 22",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z311",
+   "name": "Zone 311",
+   "cellNum": 311,
+   "gridPos": [
+    22,
+    12
+   ],
+   "fields": {
+    "coordinates": "row 13 · col 23",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z312",
+   "name": "Zone 312",
+   "cellNum": 312,
+   "gridPos": [
+    23,
+    12
+   ],
+   "fields": {
+    "coordinates": "row 13 · col 24",
+    "tier": "2",
+    "owner": "Lama - [GM]",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#E0489A"
+   }
+  },
+  {
+   "id": "z313",
+   "name": "Zone 313",
+   "cellNum": 313,
+   "gridPos": [
+    0,
+    13
+   ],
+   "fields": {
+    "coordinates": "row 14 · col 1",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z314",
+   "name": "Zone 314",
+   "cellNum": 314,
+   "gridPos": [
+    1,
+    13
+   ],
+   "fields": {
+    "coordinates": "row 14 · col 2",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z315",
+   "name": "Zone 315",
+   "cellNum": 315,
+   "gridPos": [
+    2,
+    13
+   ],
+   "fields": {
+    "coordinates": "row 14 · col 3",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z316",
+   "name": "Zone 316",
+   "cellNum": 316,
+   "gridPos": [
+    3,
+    13
+   ],
+   "fields": {
+    "coordinates": "row 14 · col 4",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z317",
+   "name": "Zone 317",
+   "cellNum": 317,
+   "gridPos": [
+    4,
+    13
+   ],
+   "fields": {
+    "coordinates": "row 14 · col 5",
+    "tier": "2",
+    "owner": "Lalothen",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#45D6E8"
+   }
+  },
+  {
+   "id": "z318",
+   "name": "Zone 318",
+   "cellNum": 318,
+   "gridPos": [
+    5,
+    13
+   ],
+   "fields": {
+    "coordinates": "row 14 · col 6",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH.",
+    "railway": "On line",
+    "railwayLinks": [
+     294,
+     319
+    ]
+   }
+  },
+  {
+   "id": "z319",
+   "name": "Zone 319",
+   "cellNum": 319,
+   "gridPos": [
+    6,
+    13
+   ],
+   "fields": {
+    "coordinates": "row 14 · col 7",
+    "tier": "2",
+    "owner": "Lalothen",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH.",
+    "railway": "On line",
+    "railwayLinks": [
+     318,
+     320
+    ]
+   },
+   "themeOverride": {
+    "zoneStroke": "#45D6E8"
+   }
+  },
+  {
+   "id": "z320",
+   "name": "Zone 320",
+   "cellNum": 320,
+   "gridPos": [
+    7,
+    13
+   ],
+   "fields": {
+    "coordinates": "row 14 · col 8",
+    "tier": "2",
+    "owner": "Cigale",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH.",
+    "market": "On market",
+    "railway": "On line",
+    "railwayLinks": [
+     319,
+     344
+    ]
+   },
+   "themeOverride": {
+    "zoneStroke": "#9B6FE0"
+   }
+  },
+  {
+   "id": "z321",
+   "name": "Zone 321",
+   "cellNum": 321,
+   "gridPos": [
+    8,
+    13
+   ],
+   "fields": {
+    "coordinates": "row 14 · col 9",
+    "tier": "2",
+    "owner": "Gainz",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH.",
+    "role": "Medical Facility"
+   },
+   "themeOverride": {
+    "zoneStroke": "#F04438"
+   }
+  },
+  {
+   "id": "z322",
+   "name": "Zone 322",
+   "cellNum": 322,
+   "gridPos": [
+    9,
+    13
+   ],
+   "fields": {
+    "coordinates": "row 14 · col 10",
+    "railway": "On line",
+    "railwayLinks": [
+     346,
+     323
+    ],
+    "role": "NPC Faction"
+   },
+   "themeOverride": {
+    "zoneFill": "#C0417F"
+   }
+  },
+  {
+   "id": "z323",
+   "name": "Zone 323",
+   "cellNum": 323,
+   "gridPos": [
+    10,
+    13
+   ],
+   "fields": {
+    "coordinates": "row 14 · col 11",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH.",
+    "railway": "On line",
+    "railwayLinks": [
+     322,
+     299
+    ]
+   }
+  },
+  {
+   "id": "z324",
+   "name": "Zone 324",
+   "cellNum": 324,
+   "gridPos": [
+    11,
+    13
+   ],
+   "fields": {
+    "coordinates": "row 14 · col 12",
+    "tier": "2",
+    "owner": "Lalothen",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#45D6E8"
+   }
+  },
+  {
+   "id": "z325",
+   "name": "Zone 325",
+   "cellNum": 325,
+   "gridPos": [
+    12,
+    13
+   ],
+   "fields": {
+    "coordinates": "row 14 · col 13",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z326",
+   "name": "Zone 326",
+   "cellNum": 326,
+   "gridPos": [
+    13,
+    13
+   ],
+   "fields": {
+    "coordinates": "row 14 · col 14",
+    "tier": "2",
+    "owner": "Lalothen",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#45D6E8"
+   }
+  },
+  {
+   "id": "z327",
+   "name": "Zone 327",
+   "cellNum": 327,
+   "gridPos": [
+    14,
+    13
+   ],
+   "fields": {
+    "coordinates": "row 14 · col 15",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z328",
+   "name": "Rustwind Generator 328",
+   "cellNum": 328,
+   "gridPos": [
+    15,
+    13
+   ],
+   "fields": {
+    "coordinates": "row 14 · col 16",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH.",
+    "role": "Rustwind Gen"
+   }
+  },
+  {
+   "id": "z329",
+   "name": "Zone 329",
+   "cellNum": 329,
+   "gridPos": [
+    16,
+    13
+   ],
+   "fields": {
+    "coordinates": "row 14 · col 17",
+    "tier": "2",
+    "owner": "Zigm4",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#4A7CF0"
+   }
+  },
+  {
+   "id": "z330",
+   "name": "Zone 330",
+   "cellNum": 330,
+   "gridPos": [
+    17,
+    13
+   ],
+   "fields": {
+    "coordinates": "row 14 · col 18",
+    "tier": "2",
+    "owner": "Lalothen",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#45D6E8"
+   }
+  },
+  {
+   "id": "z331",
+   "name": "Zone 331",
+   "cellNum": 331,
+   "gridPos": [
+    18,
+    13
+   ],
+   "fields": {
+    "coordinates": "row 14 · col 19",
+    "tier": "2",
+    "owner": "Zigm4",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH.",
+    "role": "Medical Facility"
+   },
+   "themeOverride": {
+    "zoneStroke": "#4A7CF0"
+   }
+  },
+  {
+   "id": "z332",
+   "name": "Zone 332",
+   "cellNum": 332,
+   "gridPos": [
+    19,
+    13
+   ],
+   "fields": {
+    "coordinates": "row 14 · col 20",
+    "tier": "2",
+    "owner": "Zigm4",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#4A7CF0"
+   }
+  },
+  {
+   "id": "z333",
+   "name": "Rustwind Generator 333",
+   "cellNum": 333,
+   "gridPos": [
+    20,
+    13
+   ],
+   "fields": {
+    "coordinates": "row 14 · col 21",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH.",
+    "role": "Rustwind Gen"
+   }
+  },
+  {
+   "id": "z334",
+   "name": "Zone 334",
+   "cellNum": 334,
+   "gridPos": [
+    21,
+    13
+   ],
+   "fields": {
+    "coordinates": "row 14 · col 22",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z335",
+   "name": "Zone 335",
+   "cellNum": 335,
+   "gridPos": [
+    22,
+    13
+   ],
+   "fields": {
+    "coordinates": "row 14 · col 23",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z336",
+   "name": "Zone 336",
+   "cellNum": 336,
+   "gridPos": [
+    23,
+    13
+   ],
+   "fields": {
+    "coordinates": "row 14 · col 24",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z337",
+   "name": "Zone 337",
+   "cellNum": 337,
+   "gridPos": [
+    0,
+    14
+   ],
+   "fields": {
+    "coordinates": "row 15 · col 1",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z338",
+   "name": "Zone 338",
+   "cellNum": 338,
+   "gridPos": [
+    1,
+    14
+   ],
+   "fields": {
+    "coordinates": "row 15 · col 2",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z339",
+   "name": "Zone 339",
+   "cellNum": 339,
+   "gridPos": [
+    2,
+    14
+   ],
+   "fields": {
+    "coordinates": "row 15 · col 3",
+    "tier": "2",
+    "owner": "Zigm4",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#4A7CF0"
+   }
+  },
+  {
+   "id": "z340",
+   "name": "Zone 340",
+   "cellNum": 340,
+   "gridPos": [
+    3,
+    14
+   ],
+   "fields": {
+    "coordinates": "row 15 · col 4",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z341",
+   "name": "Zone 341",
+   "cellNum": 341,
+   "gridPos": [
+    4,
+    14
+   ],
+   "fields": {
+    "coordinates": "row 15 · col 5",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z342",
+   "name": "Zone 342",
+   "cellNum": 342,
+   "gridPos": [
+    5,
+    14
+   ],
+   "fields": {
+    "coordinates": "row 15 · col 6",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z343",
+   "name": "Zone 343",
+   "cellNum": 343,
+   "gridPos": [
+    6,
+    14
+   ],
+   "fields": {
+    "coordinates": "row 15 · col 7",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z344",
+   "name": "Zone 344",
+   "cellNum": 344,
+   "gridPos": [
+    7,
+    14
+   ],
+   "fields": {
+    "coordinates": "row 15 · col 8",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH.",
+    "railway": "On line",
+    "railwayLinks": [
+     320,
+     345
+    ]
+   }
+  },
+  {
+   "id": "z345",
+   "name": "Zone 345",
+   "cellNum": 345,
+   "gridPos": [
+    8,
+    14
+   ],
+   "fields": {
+    "coordinates": "row 15 · col 9",
+    "tier": "2",
+    "owner": "Zigm4",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH.",
+    "railway": "On line",
+    "railwayLinks": [
+     344,
+     346
+    ]
+   },
+   "themeOverride": {
+    "zoneStroke": "#4A7CF0"
+   }
+  },
+  {
+   "id": "z346",
+   "name": "Zone 346",
+   "cellNum": 346,
+   "gridPos": [
+    9,
+    14
+   ],
+   "fields": {
+    "coordinates": "row 15 · col 10",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH.",
+    "railway": "On line",
+    "railwayLinks": [
+     345,
+     322
+    ]
+   }
+  },
+  {
+   "id": "z347",
+   "name": "Zone 347",
+   "cellNum": 347,
+   "gridPos": [
+    10,
+    14
+   ],
+   "fields": {
+    "coordinates": "row 15 · col 11",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z348",
+   "name": "Zone 348",
+   "cellNum": 348,
+   "gridPos": [
+    11,
+    14
+   ],
+   "fields": {
+    "coordinates": "row 15 · col 12",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z349",
+   "name": "Rustwind Generator 349",
+   "cellNum": 349,
+   "gridPos": [
+    12,
+    14
+   ],
+   "fields": {
+    "coordinates": "row 15 · col 13",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH.",
+    "role": "Rustwind Gen"
+   }
+  },
+  {
+   "id": "z350",
+   "name": "Zone 350",
+   "cellNum": 350,
+   "gridPos": [
+    13,
+    14
+   ],
+   "fields": {
+    "coordinates": "row 15 · col 14",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z351",
+   "name": "Zone 351",
+   "cellNum": 351,
+   "gridPos": [
+    14,
+    14
+   ],
+   "fields": {
+    "coordinates": "row 15 · col 15",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z352",
+   "name": "Zone 352",
+   "cellNum": 352,
+   "gridPos": [
+    15,
+    14
+   ],
+   "fields": {
+    "coordinates": "row 15 · col 16",
+    "tier": "2",
+    "owner": "Gainz",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#F04438"
+   }
+  },
+  {
+   "id": "z353",
+   "name": "Zone 353",
+   "cellNum": 353,
+   "gridPos": [
+    16,
+    14
+   ],
+   "fields": {
+    "coordinates": "row 15 · col 17",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z354",
+   "name": "Zone 354",
+   "cellNum": 354,
+   "gridPos": [
+    17,
+    14
+   ],
+   "fields": {
+    "coordinates": "row 15 · col 18",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z355",
+   "name": "Zone 355",
+   "cellNum": 355,
+   "gridPos": [
+    18,
+    14
+   ],
+   "fields": {
+    "coordinates": "row 15 · col 19",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z356",
+   "name": "Zone 356",
+   "cellNum": 356,
+   "gridPos": [
+    19,
+    14
+   ],
+   "fields": {
+    "coordinates": "row 15 · col 20",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z357",
+   "name": "Zone 357",
+   "cellNum": 357,
+   "gridPos": [
+    20,
+    14
+   ],
+   "fields": {
+    "coordinates": "row 15 · col 21",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z358",
+   "name": "Zone 358",
+   "cellNum": 358,
+   "gridPos": [
+    21,
+    14
+   ],
+   "fields": {
+    "coordinates": "row 15 · col 22",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z359",
+   "name": "Zone 359",
+   "cellNum": 359,
+   "gridPos": [
+    22,
+    14
+   ],
+   "fields": {
+    "coordinates": "row 15 · col 23",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z360",
+   "name": "Zone 360",
+   "cellNum": 360,
+   "gridPos": [
+    23,
+    14
+   ],
+   "fields": {
+    "coordinates": "row 15 · col 24",
+    "tier": "2",
+    "owner": "Lalothen",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH.",
+    "role": "Medical Facility"
+   },
+   "themeOverride": {
+    "zoneStroke": "#45D6E8"
+   }
+  },
+  {
+   "id": "z361",
+   "name": "Zone 361",
+   "cellNum": 361,
+   "gridPos": [
+    0,
+    15
+   ],
+   "fields": {
+    "coordinates": "row 16 · col 1",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z362",
+   "name": "Zone 362",
+   "cellNum": 362,
+   "gridPos": [
+    1,
+    15
+   ],
+   "fields": {
+    "coordinates": "row 16 · col 2",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z363",
+   "name": "Zone 363",
+   "cellNum": 363,
+   "gridPos": [
+    2,
+    15
+   ],
+   "fields": {
+    "coordinates": "row 16 · col 3",
+    "tier": "2",
+    "owner": "sam",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#5a6dd8"
+   }
+  },
+  {
+   "id": "z364",
+   "name": "Zone 364",
+   "cellNum": 364,
+   "gridPos": [
+    3,
+    15
+   ],
+   "fields": {
+    "coordinates": "row 16 · col 4",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z365",
+   "name": "Zone 365",
+   "cellNum": 365,
+   "gridPos": [
+    4,
+    15
+   ],
+   "fields": {
+    "coordinates": "row 16 · col 5",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z366",
+   "name": "Zone 366",
+   "cellNum": 366,
+   "gridPos": [
+    5,
+    15
+   ],
+   "fields": {
+    "coordinates": "row 16 · col 6",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z367",
+   "name": "Zone 367",
+   "cellNum": 367,
+   "gridPos": [
+    6,
+    15
+   ],
+   "fields": {
+    "coordinates": "row 16 · col 7",
+    "role": "NPC Faction"
+   },
+   "themeOverride": {
+    "zoneFill": "#C0417F"
+   }
+  },
+  {
+   "id": "z368",
+   "name": "Zone 368",
+   "cellNum": 368,
+   "gridPos": [
+    7,
+    15
+   ],
+   "fields": {
+    "coordinates": "row 16 · col 8",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z369",
+   "name": "Zone 369",
+   "cellNum": 369,
+   "gridPos": [
+    8,
+    15
+   ],
+   "fields": {
+    "coordinates": "row 16 · col 9",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z370",
+   "name": "Rustwind Generator 370",
+   "cellNum": 370,
+   "gridPos": [
+    9,
+    15
+   ],
+   "fields": {
+    "coordinates": "row 16 · col 10",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH.",
+    "role": "Rustwind Gen"
+   }
+  },
+  {
+   "id": "z371",
+   "name": "Zone 371",
+   "cellNum": 371,
+   "gridPos": [
+    10,
+    15
+   ],
+   "fields": {
+    "coordinates": "row 16 · col 11",
+    "tier": "2",
+    "owner": "Lama - [GM]",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#E0489A"
+   }
+  },
+  {
+   "id": "z372",
+   "name": "Zone 372",
+   "cellNum": 372,
+   "gridPos": [
+    11,
+    15
+   ],
+   "fields": {
+    "coordinates": "row 16 · col 12",
+    "tier": "2",
+    "owner": "Lalothen",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#45D6E8"
+   }
+  },
+  {
+   "id": "z373",
+   "name": "Zone 373",
+   "cellNum": 373,
+   "gridPos": [
+    12,
+    15
+   ],
+   "fields": {
+    "coordinates": "row 16 · col 13",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z374",
+   "name": "Zone 374",
+   "cellNum": 374,
+   "gridPos": [
+    13,
+    15
+   ],
+   "fields": {
+    "coordinates": "row 16 · col 14",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z375",
+   "name": "Zone 375",
+   "cellNum": 375,
+   "gridPos": [
+    14,
+    15
+   ],
+   "fields": {
+    "coordinates": "row 16 · col 15",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z376",
+   "name": "Zone 376",
+   "cellNum": 376,
+   "gridPos": [
+    15,
+    15
+   ],
+   "fields": {
+    "coordinates": "row 16 · col 16",
+    "tier": "2",
+    "owner": "Zigm4",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#4A7CF0"
+   }
+  },
+  {
+   "id": "z377",
+   "name": "Zone 377",
+   "cellNum": 377,
+   "gridPos": [
+    16,
+    15
+   ],
+   "fields": {
+    "coordinates": "row 16 · col 17",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z378",
+   "name": "Zone 378",
+   "cellNum": 378,
+   "gridPos": [
+    17,
+    15
+   ],
+   "fields": {
+    "coordinates": "row 16 · col 18",
+    "tier": "2",
+    "owner": ".ulji.wam",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#d85abd"
+   }
+  },
+  {
+   "id": "z379",
+   "name": "Zone 379",
+   "cellNum": 379,
+   "gridPos": [
+    18,
+    15
+   ],
+   "fields": {
+    "coordinates": "row 16 · col 19",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z380",
+   "name": "Zone 380",
+   "cellNum": 380,
+   "gridPos": [
+    19,
+    15
+   ],
+   "fields": {
+    "coordinates": "row 16 · col 20",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z381",
+   "name": "Zone 381",
+   "cellNum": 381,
+   "gridPos": [
+    20,
+    15
+   ],
+   "fields": {
+    "coordinates": "row 16 · col 21",
+    "tier": "2",
+    "owner": "Gainz",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#F04438"
+   }
+  },
+  {
+   "id": "z382",
+   "name": "Rustwind Generator 382",
+   "cellNum": 382,
+   "gridPos": [
+    21,
+    15
+   ],
+   "fields": {
+    "coordinates": "row 16 · col 22",
+    "tier": "2",
+    "owner": "Lalothen",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH.",
+    "market": "On market"
+   },
+   "themeOverride": {
+    "zoneStroke": "#45D6E8"
+   }
+  },
+  {
+   "id": "z383",
+   "name": "Zone 383",
+   "cellNum": 383,
+   "gridPos": [
+    22,
+    15
+   ],
+   "fields": {
+    "coordinates": "row 16 · col 23",
+    "tier": "2",
+    "owner": "Lalothen",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#45D6E8"
+   }
+  },
+  {
+   "id": "z384",
+   "name": "Zone 384",
+   "cellNum": 384,
+   "gridPos": [
+    23,
+    15
+   ],
+   "fields": {
+    "coordinates": "row 16 · col 24",
+    "tier": "2",
+    "owner": "Zigm4",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#4A7CF0"
+   }
+  },
+  {
+   "id": "z385",
+   "name": "Rustwind Generator 385",
+   "cellNum": 385,
+   "gridPos": [
+    0,
+    16
+   ],
+   "fields": {
+    "coordinates": "row 17 · col 1",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z386",
+   "name": "Zone 386",
+   "cellNum": 386,
+   "gridPos": [
+    1,
+    16
+   ],
+   "fields": {
+    "coordinates": "row 17 · col 2",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z387",
+   "name": "Zone 387",
+   "cellNum": 387,
+   "gridPos": [
+    2,
+    16
+   ],
+   "fields": {
+    "coordinates": "row 17 · col 3",
+    "tier": "2",
+    "owner": "MakerJay",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#3FA0B0"
+   }
+  },
+  {
+   "id": "z388",
+   "name": "Zone 388",
+   "cellNum": 388,
+   "gridPos": [
+    3,
+    16
+   ],
+   "fields": {
+    "coordinates": "row 17 · col 4",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z389",
+   "name": "Zone 389",
+   "cellNum": 389,
+   "gridPos": [
+    4,
+    16
+   ],
+   "fields": {
+    "coordinates": "row 17 · col 5",
+    "tier": "2",
+    "owner": "anachron",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#A6B84A"
+   }
+  },
+  {
+   "id": "z390",
+   "name": "Zone 390",
+   "cellNum": 390,
+   "gridPos": [
+    5,
+    16
+   ],
+   "fields": {
+    "coordinates": "row 17 · col 6",
+    "tier": "2",
+    "owner": "Zigm4",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#4A7CF0"
+   }
+  },
+  {
+   "id": "z391",
+   "name": "Zone 391",
+   "cellNum": 391,
+   "gridPos": [
+    6,
+    16
+   ],
+   "fields": {
+    "coordinates": "row 17 · col 7",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z392",
+   "name": "Zone 392",
+   "cellNum": 392,
+   "gridPos": [
+    7,
+    16
+   ],
+   "fields": {
+    "coordinates": "row 17 · col 8",
+    "tier": "2",
+    "owner": "Lalothen",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#45D6E8"
+   }
+  },
+  {
+   "id": "z393",
+   "name": "Zone 393",
+   "cellNum": 393,
+   "gridPos": [
+    8,
+    16
+   ],
+   "fields": {
+    "coordinates": "row 17 · col 9",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z394",
+   "name": "Zone 394",
+   "cellNum": 394,
+   "gridPos": [
+    9,
+    16
+   ],
+   "fields": {
+    "coordinates": "row 17 · col 10",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z395",
+   "name": "Zone 395",
+   "cellNum": 395,
+   "gridPos": [
+    10,
+    16
+   ],
+   "fields": {
+    "coordinates": "row 17 · col 11",
+    "tier": "2",
+    "owner": "Greg",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#D060D0"
+   }
+  },
+  {
+   "id": "z396",
+   "name": "Zone 396",
+   "cellNum": 396,
+   "gridPos": [
+    11,
+    16
+   ],
+   "fields": {
+    "coordinates": "row 17 · col 12",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z397",
+   "name": "Zone 397",
+   "cellNum": 397,
+   "gridPos": [
+    12,
+    16
+   ],
+   "fields": {
+    "coordinates": "row 17 · col 13",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z398",
+   "name": "Zone 398",
+   "cellNum": 398,
+   "gridPos": [
+    13,
+    16
+   ],
+   "fields": {
+    "coordinates": "row 17 · col 14",
+    "tier": "2",
+    "owner": "Qukatt",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#F040A0"
+   }
+  },
+  {
+   "id": "z399",
+   "name": "Zone 399",
+   "cellNum": 399,
+   "gridPos": [
+    14,
+    16
+   ],
+   "fields": {
+    "coordinates": "row 17 · col 15",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z400",
+   "name": "Zone 400",
+   "cellNum": 400,
+   "gridPos": [
+    15,
+    16
+   ],
+   "fields": {
+    "coordinates": "row 17 · col 16",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z401",
+   "name": "Zone 401",
+   "cellNum": 401,
+   "gridPos": [
+    16,
+    16
+   ],
+   "fields": {
+    "coordinates": "row 17 · col 17",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z402",
+   "name": "Zone 402",
+   "cellNum": 402,
+   "gridPos": [
+    17,
+    16
+   ],
+   "fields": {
+    "coordinates": "row 17 · col 18",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z403",
+   "name": "Qspot",
+   "cellNum": 403,
+   "gridPos": [
+    18,
+    16
+   ],
+   "fields": {
+    "coordinates": "row 17 · col 19",
+    "tier": "3",
+    "owner": "Qukatt",
+    "description": "This zone in the southern hemisphere of Mars, sits above The Hellas Abyss, Mars' deepest lake, fed by a Noxwater river that begins relatively pure but becomes increasingly toxic as it cascades into the abyss. Featuring five distinct biomes - Noxwater (river), Shore, Meadow, Badlands, and Prospera - this area offers both life-sustaining resources and deadly hazards. The Meadows offer thriving biological gameplay, while the Shore is an ideal place to launch boats and submarines to explore the corrupted gameplay of the abyss. Badlands stretch out with lawless danger and chaotic landscapes, contrasting with the wealth and opportunity of Prospera zones, rich with ancient volcanic metals. The image of this NFT is mutable and contains the available biomes on this land – which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#F040A0"
+   }
+  },
+  {
+   "id": "z404",
+   "name": "Zone 404",
+   "cellNum": 404,
+   "gridPos": [
+    19,
+    16
+   ],
+   "fields": {
+    "coordinates": "row 17 · col 20",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z405",
+   "name": "Zone 405",
+   "cellNum": 405,
+   "gridPos": [
+    20,
+    16
+   ],
+   "fields": {
+    "coordinates": "row 17 · col 21",
+    "tier": "2",
+    "owner": "Zigm4",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#4A7CF0"
+   }
+  },
+  {
+   "id": "z406",
+   "name": "Zone 406",
+   "cellNum": 406,
+   "gridPos": [
+    21,
+    16
+   ],
+   "fields": {
+    "coordinates": "row 17 · col 22",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z407",
+   "name": "Zone 407",
+   "cellNum": 407,
+   "gridPos": [
+    22,
+    16
+   ],
+   "fields": {
+    "coordinates": "row 17 · col 23",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z408",
+   "name": "Zone 408",
+   "cellNum": 408,
+   "gridPos": [
+    23,
+    16
+   ],
+   "fields": {
+    "coordinates": "row 17 · col 24",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z409",
+   "name": "Zone 409",
+   "cellNum": 409,
+   "gridPos": [
+    0,
+    17
+   ],
+   "fields": {
+    "coordinates": "row 18 · col 1",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z410",
+   "name": "Zone 410",
+   "cellNum": 410,
+   "gridPos": [
+    1,
+    17
+   ],
+   "fields": {
+    "coordinates": "row 18 · col 2",
+    "tier": "2",
+    "owner": "lasergeek",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#F0883A"
+   }
+  },
+  {
+   "id": "z411",
+   "name": "Zone 411",
+   "cellNum": 411,
+   "gridPos": [
+    2,
+    17
+   ],
+   "fields": {
+    "coordinates": "row 18 · col 3",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z412",
+   "name": "Zone 412",
+   "cellNum": 412,
+   "gridPos": [
+    3,
+    17
+   ],
+   "fields": {
+    "coordinates": "row 18 · col 4",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z413",
+   "name": "Zone 413",
+   "cellNum": 413,
+   "gridPos": [
+    4,
+    17
+   ],
+   "fields": {
+    "coordinates": "row 18 · col 5",
+    "tier": "2",
+    "owner": "bartleby",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#bdd85a"
+   }
+  },
+  {
+   "id": "z414",
+   "name": "Zone 414",
+   "cellNum": 414,
+   "gridPos": [
+    5,
+    17
+   ],
+   "fields": {
+    "coordinates": "row 18 · col 6",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z415",
+   "name": "Zone 415",
+   "cellNum": 415,
+   "gridPos": [
+    6,
+    17
+   ],
+   "fields": {
+    "coordinates": "row 18 · col 7",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z416",
+   "name": "Zone 416",
+   "cellNum": 416,
+   "gridPos": [
+    7,
+    17
+   ],
+   "fields": {
+    "coordinates": "row 18 · col 8",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z417",
+   "name": "Zone 417",
+   "cellNum": 417,
+   "gridPos": [
+    8,
+    17
+   ],
+   "fields": {
+    "coordinates": "row 18 · col 9",
+    "tier": "2",
+    "owner": "Gainz",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#F04438"
+   }
+  },
+  {
+   "id": "z418",
+   "name": "Zone 418",
+   "cellNum": 418,
+   "gridPos": [
+    9,
+    17
+   ],
+   "fields": {
+    "coordinates": "row 18 · col 10",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z419",
+   "name": "Zone 419",
+   "cellNum": 419,
+   "gridPos": [
+    10,
+    17
+   ],
+   "fields": {
+    "coordinates": "row 18 · col 11",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z420",
+   "name": "Zone 420",
+   "cellNum": 420,
+   "gridPos": [
+    11,
+    17
+   ],
+   "fields": {
+    "coordinates": "row 18 · col 12",
+    "role": "NPC Faction"
+   },
+   "themeOverride": {
+    "zoneFill": "#C0417F"
+   }
+  },
+  {
+   "id": "z421",
+   "name": "Zone 421",
+   "cellNum": 421,
+   "gridPos": [
+    12,
+    17
+   ],
+   "fields": {
+    "coordinates": "row 18 · col 13",
+    "tier": "2",
+    "owner": "Lalothen",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#45D6E8"
+   }
+  },
+  {
+   "id": "z422",
+   "name": "Zone 422",
+   "cellNum": 422,
+   "gridPos": [
+    13,
+    17
+   ],
+   "fields": {
+    "coordinates": "row 18 · col 14",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH.",
+    "role": "Rustwind Gen"
+   }
+  },
+  {
+   "id": "z423",
+   "name": "Zone 423",
+   "cellNum": 423,
+   "gridPos": [
+    14,
+    17
+   ],
+   "fields": {
+    "coordinates": "row 18 · col 15",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z424",
+   "name": "Zone 424",
+   "cellNum": 424,
+   "gridPos": [
+    15,
+    17
+   ],
+   "fields": {
+    "coordinates": "row 18 · col 16",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z425",
+   "name": "Zone 425",
+   "cellNum": 425,
+   "gridPos": [
+    16,
+    17
+   ],
+   "fields": {
+    "coordinates": "row 18 · col 17",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z426",
+   "name": "Zone 426",
+   "cellNum": 426,
+   "gridPos": [
+    17,
+    17
+   ],
+   "fields": {
+    "coordinates": "row 18 · col 18",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z427",
+   "name": "Zone 427",
+   "cellNum": 427,
+   "gridPos": [
+    18,
+    17
+   ],
+   "fields": {
+    "coordinates": "row 18 · col 19",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z428",
+   "name": "Zone 428",
+   "cellNum": 428,
+   "gridPos": [
+    19,
+    17
+   ],
+   "fields": {
+    "coordinates": "row 18 · col 20",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z429",
+   "name": "Zone 429",
+   "cellNum": 429,
+   "gridPos": [
+    20,
+    17
+   ],
+   "fields": {
+    "coordinates": "row 18 · col 21",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z430",
+   "name": "Zone 430",
+   "cellNum": 430,
+   "gridPos": [
+    21,
+    17
+   ],
+   "fields": {
+    "coordinates": "row 18 · col 22",
+    "tier": "2",
+    "owner": "Lalothen",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#45D6E8"
+   }
+  },
+  {
+   "id": "z431",
+   "name": "Zone 431",
+   "cellNum": 431,
+   "gridPos": [
+    22,
+    17
+   ],
+   "fields": {
+    "coordinates": "row 18 · col 23",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z432",
+   "name": "Zone 432",
+   "cellNum": 432,
+   "gridPos": [
+    23,
+    17
+   ],
+   "fields": {
+    "coordinates": "row 18 · col 24",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z433",
+   "name": "Zone 433",
+   "cellNum": 433,
+   "gridPos": [
+    0,
+    18
+   ],
+   "fields": {
+    "coordinates": "row 19 · col 1",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z434",
+   "name": "Zone 434",
+   "cellNum": 434,
+   "gridPos": [
+    1,
+    18
+   ],
+   "fields": {
+    "coordinates": "row 19 · col 2",
+    "tier": "2",
+    "owner": "Lalothen",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#45D6E8"
+   }
+  },
+  {
+   "id": "z435",
+   "name": "Zone 435",
+   "cellNum": 435,
+   "gridPos": [
+    2,
+    18
+   ],
+   "fields": {
+    "coordinates": "row 19 · col 3",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z436",
+   "name": "Zone 436",
+   "cellNum": 436,
+   "gridPos": [
+    3,
+    18
+   ],
+   "fields": {
+    "coordinates": "row 19 · col 4",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z437",
+   "name": "Zone 437",
+   "cellNum": 437,
+   "gridPos": [
+    4,
+    18
+   ],
+   "fields": {
+    "coordinates": "row 19 · col 5",
+    "tier": "2",
+    "owner": "Lalothen",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#45D6E8"
+   }
+  },
+  {
+   "id": "z438",
+   "name": "Zone 438",
+   "cellNum": 438,
+   "gridPos": [
+    5,
+    18
+   ],
+   "fields": {
+    "coordinates": "row 19 · col 6",
+    "tier": "2",
+    "owner": "Lalothen",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#45D6E8"
+   }
+  },
+  {
+   "id": "z439",
+   "name": "Zone 439",
+   "cellNum": 439,
+   "gridPos": [
+    6,
+    18
+   ],
+   "fields": {
+    "coordinates": "row 19 · col 7",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z440",
+   "name": "Zone 440",
+   "cellNum": 440,
+   "gridPos": [
+    7,
+    18
+   ],
+   "fields": {
+    "coordinates": "row 19 · col 8",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z441",
+   "name": "Zone 441",
+   "cellNum": 441,
+   "gridPos": [
+    8,
+    18
+   ],
+   "fields": {
+    "coordinates": "row 19 · col 9",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z442",
+   "name": "Zone 442",
+   "cellNum": 442,
+   "gridPos": [
+    9,
+    18
+   ],
+   "fields": {
+    "coordinates": "row 19 · col 10",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z443",
+   "name": "Zone 443",
+   "cellNum": 443,
+   "gridPos": [
+    10,
+    18
+   ],
+   "fields": {
+    "coordinates": "row 19 · col 11",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z444",
+   "name": "Zone 444",
+   "cellNum": 444,
+   "gridPos": [
+    11,
+    18
+   ],
+   "fields": {
+    "coordinates": "row 19 · col 12",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z445",
+   "name": "Zone 445",
+   "cellNum": 445,
+   "gridPos": [
+    12,
+    18
+   ],
+   "fields": {
+    "coordinates": "row 19 · col 13",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z446",
+   "name": "Zone 446",
+   "cellNum": 446,
+   "gridPos": [
+    13,
+    18
+   ],
+   "fields": {
+    "coordinates": "row 19 · col 14",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z447",
+   "name": "Zone 447",
+   "cellNum": 447,
+   "gridPos": [
+    14,
+    18
+   ],
+   "fields": {
+    "coordinates": "row 19 · col 15",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z448",
+   "name": "Dreadshore",
+   "cellNum": 448,
+   "gridPos": [
+    15,
+    18
+   ],
+   "fields": {
+    "coordinates": "row 19 · col 16",
+    "tier": "3",
+    "owner": "lasergeek",
+    "description": "This zone, located on the south-west shore of the Hellas Abyss, is a precarious stretch of land featuring three biomes - Noxwater, Shore, and Meadow. Sitting right on the edge of Promethean Revenants (PRV) territory, this area is perfect for those seeking corrupted gameplay and opportunities to earn REP with the ruthless mutant hackers. The Meadows offer a false sense of serenity, while the Shore is a volatile boundary between the toxic Noxwater of the Abyss and the chaotic influence of the PRV. Players here can engage in clandestine operations, sabotage missions, or tap into the Promethean Revenants' black market for illicit tech.",
+    "role": "Medical Facility"
+   },
+   "themeOverride": {
+    "zoneStroke": "#F0883A"
+   }
+  },
+  {
+   "id": "z449",
+   "name": "Zone 449",
+   "cellNum": 449,
+   "gridPos": [
+    16,
+    18
+   ],
+   "fields": {
+    "coordinates": "row 19 · col 17",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z450",
+   "name": "Zone 450",
+   "cellNum": 450,
+   "gridPos": [
+    17,
+    18
+   ],
+   "fields": {
+    "coordinates": "row 19 · col 18",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z451",
+   "name": "Zone 451",
+   "cellNum": 451,
+   "gridPos": [
+    18,
+    18
+   ],
+   "fields": {
+    "coordinates": "row 19 · col 19",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z452",
+   "name": "Zone 452",
+   "cellNum": 452,
+   "gridPos": [
+    19,
+    18
+   ],
+   "fields": {
+    "coordinates": "row 19 · col 20",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z453",
+   "name": "Zone 453",
+   "cellNum": 453,
+   "gridPos": [
+    20,
+    18
+   ],
+   "fields": {
+    "coordinates": "row 19 · col 21",
+    "tier": "2",
+    "owner": "Zigm4",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#4A7CF0"
+   }
+  },
+  {
+   "id": "z454",
+   "name": "Zone 454",
+   "cellNum": 454,
+   "gridPos": [
+    21,
+    18
+   ],
+   "fields": {
+    "coordinates": "row 19 · col 22",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z455",
+   "name": "Zone 455",
+   "cellNum": 455,
+   "gridPos": [
+    22,
+    18
+   ],
+   "fields": {
+    "coordinates": "row 19 · col 23",
+    "tier": "2",
+    "owner": "Lalothen",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#45D6E8"
+   }
+  },
+  {
+   "id": "z456",
+   "name": "Rustwind Generator 456",
+   "cellNum": 456,
+   "gridPos": [
+    23,
+    18
+   ],
+   "fields": {
+    "coordinates": "row 19 · col 24",
+    "tier": "2",
+    "owner": "Rojostormer",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH.",
+    "role": "Rustwind Gen"
+   },
+   "themeOverride": {
+    "zoneStroke": "#7A6AE0"
+   }
+  },
+  {
+   "id": "z457",
+   "name": "Zone 457",
+   "cellNum": 457,
+   "gridPos": [
+    0,
+    19
+   ],
+   "fields": {
+    "coordinates": "row 20 · col 1",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z458",
+   "name": "Zone 458",
+   "cellNum": 458,
+   "gridPos": [
+    1,
+    19
+   ],
+   "fields": {
+    "coordinates": "row 20 · col 2",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z459",
+   "name": "Zone 459",
+   "cellNum": 459,
+   "gridPos": [
+    2,
+    19
+   ],
+   "fields": {
+    "coordinates": "row 20 · col 3",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z460",
+   "name": "Zone 460",
+   "cellNum": 460,
+   "gridPos": [
+    3,
+    19
+   ],
+   "fields": {
+    "coordinates": "row 20 · col 4",
+    "tier": "2",
+    "owner": "Zigm4",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#4A7CF0"
+   }
+  },
+  {
+   "id": "z461",
+   "name": "Zone 461",
+   "cellNum": 461,
+   "gridPos": [
+    4,
+    19
+   ],
+   "fields": {
+    "coordinates": "row 20 · col 5",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z462",
+   "name": "Zone 462",
+   "cellNum": 462,
+   "gridPos": [
+    5,
+    19
+   ],
+   "fields": {
+    "coordinates": "row 20 · col 6",
+    "tier": "2",
+    "owner": "Lalothen",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH.",
+    "role": "Rustwind Gen"
+   },
+   "themeOverride": {
+    "zoneStroke": "#45D6E8"
+   }
+  },
+  {
+   "id": "z463",
+   "name": "Zone 463",
+   "cellNum": 463,
+   "gridPos": [
+    6,
+    19
+   ],
+   "fields": {
+    "coordinates": "row 20 · col 7"
+   }
+  },
+  {
+   "id": "z464",
+   "name": "Zone 464",
+   "cellNum": 464,
+   "gridPos": [
+    7,
+    19
+   ],
+   "fields": {
+    "coordinates": "row 20 · col 8"
+   }
+  },
+  {
+   "id": "z465",
+   "name": "Zone 465",
+   "cellNum": 465,
+   "gridPos": [
+    8,
+    19
+   ],
+   "fields": {
+    "coordinates": "row 20 · col 9",
+    "tier": "2",
+    "owner": "Zigm4",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#4A7CF0"
+   }
+  },
+  {
+   "id": "z466",
+   "name": "Zone 466",
+   "cellNum": 466,
+   "gridPos": [
+    9,
+    19
+   ],
+   "fields": {
+    "coordinates": "row 20 · col 10",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z467",
+   "name": "Zone 467",
+   "cellNum": 467,
+   "gridPos": [
+    10,
+    19
+   ],
+   "fields": {
+    "coordinates": "row 20 · col 11",
+    "tier": "2",
+    "owner": "Zigm4",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#4A7CF0"
+   }
+  },
+  {
+   "id": "z468",
+   "name": "Zone 468",
+   "cellNum": 468,
+   "gridPos": [
+    11,
+    19
+   ],
+   "fields": {
+    "coordinates": "row 20 · col 12",
+    "tier": "2",
+    "owner": "Zigm4",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH.",
+    "role": "Rustwind Gen"
+   },
+   "themeOverride": {
+    "zoneStroke": "#4A7CF0"
+   }
+  },
+  {
+   "id": "z469",
+   "name": "Zone 469",
+   "cellNum": 469,
+   "gridPos": [
+    12,
+    19
+   ],
+   "fields": {
+    "coordinates": "row 20 · col 13",
+    "tier": "2",
+    "owner": "Zigm4",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#4A7CF0"
+   }
+  },
+  {
+   "id": "z470",
+   "name": "Zone 470",
+   "cellNum": 470,
+   "gridPos": [
+    13,
+    19
+   ],
+   "fields": {
+    "coordinates": "row 20 · col 14",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z471",
+   "name": "Zone 471",
+   "cellNum": 471,
+   "gridPos": [
+    14,
+    19
+   ],
+   "fields": {
+    "coordinates": "row 20 · col 15",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z472",
+   "name": "Zone 472",
+   "cellNum": 472,
+   "gridPos": [
+    15,
+    19
+   ],
+   "fields": {
+    "coordinates": "row 20 · col 16",
+    "role": "NPC Faction"
+   },
+   "themeOverride": {
+    "zoneFill": "#C0417F"
+   }
+  },
+  {
+   "id": "z473",
+   "name": "Zone 473",
+   "cellNum": 473,
+   "gridPos": [
+    16,
+    19
+   ],
+   "fields": {
+    "coordinates": "row 20 · col 17",
+    "role": "NPC Faction"
+   },
+   "themeOverride": {
+    "zoneFill": "#C0417F"
+   }
+  },
+  {
+   "id": "z474",
+   "name": "Zone 474",
+   "cellNum": 474,
+   "gridPos": [
+    17,
+    19
+   ],
+   "fields": {
+    "coordinates": "row 20 · col 18",
+    "role": "NPC Faction"
+   },
+   "themeOverride": {
+    "zoneFill": "#C0417F"
+   }
+  },
+  {
+   "id": "z475",
+   "name": "Zone 475",
+   "cellNum": 475,
+   "gridPos": [
+    18,
+    19
+   ],
+   "fields": {
+    "coordinates": "row 20 · col 19",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z476",
+   "name": "Zone 476",
+   "cellNum": 476,
+   "gridPos": [
+    19,
+    19
+   ],
+   "fields": {
+    "coordinates": "row 20 · col 20",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z477",
+   "name": "Zone 477",
+   "cellNum": 477,
+   "gridPos": [
+    20,
+    19
+   ],
+   "fields": {
+    "coordinates": "row 20 · col 21",
+    "tier": "2",
+    "owner": "Gainz",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#F04438"
+   }
+  },
+  {
+   "id": "z478",
+   "name": "Zone 478",
+   "cellNum": 478,
+   "gridPos": [
+    21,
+    19
+   ],
+   "fields": {
+    "coordinates": "row 20 · col 22",
+    "tier": "2",
+    "owner": "Lalothen",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#45D6E8"
+   }
+  },
+  {
+   "id": "z479",
+   "name": "Zone 479",
+   "cellNum": 479,
+   "gridPos": [
+    22,
+    19
+   ],
+   "fields": {
+    "coordinates": "row 20 · col 23",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH.",
+    "role": "Rustwind Gen"
+   }
+  },
+  {
+   "id": "z480",
+   "name": "Zone 480",
+   "cellNum": 480,
+   "gridPos": [
+    23,
+    19
+   ],
+   "fields": {
+    "coordinates": "row 20 · col 24",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z481",
+   "name": "Zone 481",
+   "cellNum": 481,
+   "gridPos": [
+    0,
+    20
+   ],
+   "fields": {
+    "coordinates": "row 21 · col 1",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z482",
+   "name": "Zone 482",
+   "cellNum": 482,
+   "gridPos": [
+    1,
+    20
+   ],
+   "fields": {
+    "coordinates": "row 21 · col 2",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z483",
+   "name": "Zone 483",
+   "cellNum": 483,
+   "gridPos": [
+    2,
+    20
+   ],
+   "fields": {
+    "coordinates": "row 21 · col 3",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z484",
+   "name": "Zone 484",
+   "cellNum": 484,
+   "gridPos": [
+    3,
+    20
+   ],
+   "fields": {
+    "coordinates": "row 21 · col 4",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z485",
+   "name": "Zone 485",
+   "cellNum": 485,
+   "gridPos": [
+    4,
+    20
+   ],
+   "fields": {
+    "coordinates": "row 21 · col 5",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z486",
+   "name": "Zone 486",
+   "cellNum": 486,
+   "gridPos": [
+    5,
+    20
+   ],
+   "fields": {
+    "coordinates": "row 21 · col 6"
+   }
+  },
+  {
+   "id": "z487",
+   "name": "Zone 487",
+   "cellNum": 487,
+   "gridPos": [
+    6,
+    20
+   ],
+   "fields": {
+    "coordinates": "row 21 · col 7"
+   }
+  },
+  {
+   "id": "z488",
+   "name": "Zone 488",
+   "cellNum": 488,
+   "gridPos": [
+    7,
+    20
+   ],
+   "fields": {
+    "coordinates": "row 21 · col 8"
+   }
+  },
+  {
+   "id": "z489",
+   "name": "Zone 489",
+   "cellNum": 489,
+   "gridPos": [
+    8,
+    20
+   ],
+   "fields": {
+    "coordinates": "row 21 · col 9",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z490",
+   "name": "Zone 490",
+   "cellNum": 490,
+   "gridPos": [
+    9,
+    20
+   ],
+   "fields": {
+    "coordinates": "row 21 · col 10",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z491",
+   "name": "Zone 491",
+   "cellNum": 491,
+   "gridPos": [
+    10,
+    20
+   ],
+   "fields": {
+    "coordinates": "row 21 · col 11",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z492",
+   "name": "Zone 492",
+   "cellNum": 492,
+   "gridPos": [
+    11,
+    20
+   ],
+   "fields": {
+    "coordinates": "row 21 · col 12"
+   }
+  },
+  {
+   "id": "z493",
+   "name": "Zone 493",
+   "cellNum": 493,
+   "gridPos": [
+    12,
+    20
+   ],
+   "fields": {
+    "coordinates": "row 21 · col 13"
+   }
+  },
+  {
+   "id": "z494",
+   "name": "Zone 494",
+   "cellNum": 494,
+   "gridPos": [
+    13,
+    20
+   ],
+   "fields": {
+    "coordinates": "row 21 · col 14",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z495",
+   "name": "Zone 495",
+   "cellNum": 495,
+   "gridPos": [
+    14,
+    20
+   ],
+   "fields": {
+    "coordinates": "row 21 · col 15",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z496",
+   "name": "Zone 496",
+   "cellNum": 496,
+   "gridPos": [
+    15,
+    20
+   ],
+   "fields": {
+    "coordinates": "row 21 · col 16",
+    "role": "NPC Faction"
+   },
+   "themeOverride": {
+    "zoneFill": "#C0417F"
+   }
+  },
+  {
+   "id": "z497",
+   "name": "Zone 497",
+   "cellNum": 497,
+   "gridPos": [
+    16,
+    20
+   ],
+   "fields": {
+    "coordinates": "row 21 · col 17",
+    "role": "NPC Faction"
+   },
+   "themeOverride": {
+    "zoneFill": "#C0417F"
+   }
+  },
+  {
+   "id": "z498",
+   "name": "Zone 498",
+   "cellNum": 498,
+   "gridPos": [
+    17,
+    20
+   ],
+   "fields": {
+    "coordinates": "row 21 · col 18",
+    "role": "NPC Faction"
+   },
+   "themeOverride": {
+    "zoneFill": "#C0417F"
+   }
+  },
+  {
+   "id": "z499",
+   "name": "Zone 499",
+   "cellNum": 499,
+   "gridPos": [
+    18,
+    20
+   ],
+   "fields": {
+    "coordinates": "row 21 · col 19",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z500",
+   "name": "Zone 500",
+   "cellNum": 500,
+   "gridPos": [
+    19,
+    20
+   ],
+   "fields": {
+    "coordinates": "row 21 · col 20",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z501",
+   "name": "Zone 501",
+   "cellNum": 501,
+   "gridPos": [
+    20,
+    20
+   ],
+   "fields": {
+    "coordinates": "row 21 · col 21",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z502",
+   "name": "Zone 502",
+   "cellNum": 502,
+   "gridPos": [
+    21,
+    20
+   ],
+   "fields": {
+    "coordinates": "row 21 · col 22",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z503",
+   "name": "Zone 503",
+   "cellNum": 503,
+   "gridPos": [
+    22,
+    20
+   ],
+   "fields": {
+    "coordinates": "row 21 · col 23",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z504",
+   "name": "Zone 504",
+   "cellNum": 504,
+   "gridPos": [
+    23,
+    20
+   ],
+   "fields": {
+    "coordinates": "row 21 · col 24",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z505",
+   "name": "Zone 505",
+   "cellNum": 505,
+   "gridPos": [
+    0,
+    21
+   ],
+   "fields": {
+    "coordinates": "row 22 · col 1"
+   }
+  },
+  {
+   "id": "z506",
+   "name": "Zone 506",
+   "cellNum": 506,
+   "gridPos": [
+    1,
+    21
+   ],
+   "fields": {
+    "coordinates": "row 22 · col 2",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH.",
+    "role": "Rustwind Gen"
+   }
+  },
+  {
+   "id": "z507",
+   "name": "Zone 507",
+   "cellNum": 507,
+   "gridPos": [
+    2,
+    21
+   ],
+   "fields": {
+    "coordinates": "row 22 · col 3",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z508",
+   "name": "Zone 508",
+   "cellNum": 508,
+   "gridPos": [
+    3,
+    21
+   ],
+   "fields": {
+    "coordinates": "row 22 · col 4",
+    "role": "NPC Faction"
+   },
+   "themeOverride": {
+    "zoneFill": "#C0417F"
+   }
+  },
+  {
+   "id": "z509",
+   "name": "Zone 509",
+   "cellNum": 509,
+   "gridPos": [
+    4,
+    21
+   ],
+   "fields": {
+    "coordinates": "row 22 · col 5",
+    "role": "NPC Faction"
+   },
+   "themeOverride": {
+    "zoneFill": "#C0417F"
+   }
+  },
+  {
+   "id": "z510",
+   "name": "Zone 510",
+   "cellNum": 510,
+   "gridPos": [
+    5,
+    21
+   ],
+   "fields": {
+    "coordinates": "row 22 · col 6"
+   }
+  },
+  {
+   "id": "z511",
+   "name": "Zone 511",
+   "cellNum": 511,
+   "gridPos": [
+    6,
+    21
+   ],
+   "fields": {
+    "coordinates": "row 22 · col 7"
+   }
+  },
+  {
+   "id": "z512",
+   "name": "Zone 512",
+   "cellNum": 512,
+   "gridPos": [
+    7,
+    21
+   ],
+   "fields": {
+    "coordinates": "row 22 · col 8"
+   }
+  },
+  {
+   "id": "z513",
+   "name": "Zone 513",
+   "cellNum": 513,
+   "gridPos": [
+    8,
+    21
+   ],
+   "fields": {
+    "coordinates": "row 22 · col 9"
+   }
+  },
+  {
+   "id": "z514",
+   "name": "Zone 514",
+   "cellNum": 514,
+   "gridPos": [
+    9,
+    21
+   ],
+   "fields": {
+    "coordinates": "row 22 · col 10"
+   }
+  },
+  {
+   "id": "z515",
+   "name": "Zone 515",
+   "cellNum": 515,
+   "gridPos": [
+    10,
+    21
+   ],
+   "fields": {
+    "coordinates": "row 22 · col 11"
+   }
+  },
+  {
+   "id": "z516",
+   "name": "Zone 516",
+   "cellNum": 516,
+   "gridPos": [
+    11,
+    21
+   ],
+   "fields": {
+    "coordinates": "row 22 · col 12"
+   }
+  },
+  {
+   "id": "z517",
+   "name": "Zone 517",
+   "cellNum": 517,
+   "gridPos": [
+    12,
+    21
+   ],
+   "fields": {
+    "coordinates": "row 22 · col 13"
+   }
+  },
+  {
+   "id": "z518",
+   "name": "Zone 518",
+   "cellNum": 518,
+   "gridPos": [
+    13,
+    21
+   ],
+   "fields": {
+    "coordinates": "row 22 · col 14"
+   }
+  },
+  {
+   "id": "z519",
+   "name": "Zone 519",
+   "cellNum": 519,
+   "gridPos": [
+    14,
+    21
+   ],
+   "fields": {
+    "coordinates": "row 22 · col 15"
+   }
+  },
+  {
+   "id": "z520",
+   "name": "Zone 520",
+   "cellNum": 520,
+   "gridPos": [
+    15,
+    21
+   ],
+   "fields": {
+    "coordinates": "row 22 · col 16",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z521",
+   "name": "Zone 521",
+   "cellNum": 521,
+   "gridPos": [
+    16,
+    21
+   ],
+   "fields": {
+    "coordinates": "row 22 · col 17",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z522",
+   "name": "Zone 522",
+   "cellNum": 522,
+   "gridPos": [
+    17,
+    21
+   ],
+   "fields": {
+    "coordinates": "row 22 · col 18",
+    "tier": "2",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   }
+  },
+  {
+   "id": "z523",
+   "name": "Zone 523",
+   "cellNum": 523,
+   "gridPos": [
+    18,
+    21
+   ],
+   "fields": {
+    "coordinates": "row 22 · col 19",
+    "tier": "2",
+    "owner": "Lalothen",
+    "description": "This land is claimable via a MARS PACK on NeftyBlocks. The image of this NFT is mutable and contains the available biomes on this land - which can be changed using very advanced TECH."
+   },
+   "themeOverride": {
+    "zoneStroke": "#45D6E8"
+   }
+  },
+  {
+   "id": "z524",
+   "name": "Zone 524",
+   "cellNum": 524,
+   "gridPos": [
+    19,
+    21
+   ],
+   "fields": {
+    "coordinates": "row 22 · col 20"
+   }
+  },
+  {
+   "id": "z525",
+   "name": "Zone 525",
+   "cellNum": 525,
+   "gridPos": [
+    20,
+    21
+   ],
+   "fields": {
+    "coordinates": "row 22 · col 21"
+   }
+  },
+  {
+   "id": "z526",
+   "name": "Zone 526",
+   "cellNum": 526,
+   "gridPos": [
+    21,
+    21
+   ],
+   "fields": {
+    "coordinates": "row 22 · col 22"
+   }
+  },
+  {
+   "id": "z527",
+   "name": "Zone 527",
+   "cellNum": 527,
+   "gridPos": [
+    22,
+    21
+   ],
+   "fields": {
+    "coordinates": "row 22 · col 23"
+   }
+  },
+  {
+   "id": "z528",
+   "name": "Zone 528",
+   "cellNum": 528,
+   "gridPos": [
+    23,
+    21
+   ],
+   "fields": {
+    "coordinates": "row 22 · col 24"
+   }
+  },
+  {
+   "id": "z529",
+   "name": "Zone 529",
+   "cellNum": 529,
+   "gridPos": [
+    0,
+    22
+   ],
+   "fields": {
+    "coordinates": "row 23 · col 1"
+   }
+  },
+  {
+   "id": "z530",
+   "name": "Zone 530",
+   "cellNum": 530,
+   "gridPos": [
+    1,
+    22
+   ],
+   "fields": {
+    "coordinates": "row 23 · col 2"
+   }
+  },
+  {
+   "id": "z531",
+   "name": "Zone 531",
+   "cellNum": 531,
+   "gridPos": [
+    2,
+    22
+   ],
+   "fields": {
+    "coordinates": "row 23 · col 3"
+   }
+  },
+  {
+   "id": "z532",
+   "name": "Zone 532",
+   "cellNum": 532,
+   "gridPos": [
+    3,
+    22
+   ],
+   "fields": {
+    "coordinates": "row 23 · col 4"
+   }
+  },
+  {
+   "id": "z533",
+   "name": "Zone 533",
+   "cellNum": 533,
+   "gridPos": [
+    4,
+    22
+   ],
+   "fields": {
+    "coordinates": "row 23 · col 5"
+   }
+  },
+  {
+   "id": "z534",
+   "name": "Zone 534",
+   "cellNum": 534,
+   "gridPos": [
+    5,
+    22
+   ],
+   "fields": {
+    "coordinates": "row 23 · col 6"
+   }
+  },
+  {
+   "id": "z535",
+   "name": "Zone 535",
+   "cellNum": 535,
+   "gridPos": [
+    6,
+    22
+   ],
+   "fields": {
+    "coordinates": "row 23 · col 7"
+   }
+  },
+  {
+   "id": "z536",
+   "name": "Zone 536",
+   "cellNum": 536,
+   "gridPos": [
+    7,
+    22
+   ],
+   "fields": {
+    "coordinates": "row 23 · col 8"
+   }
+  },
+  {
+   "id": "z537",
+   "name": "Zone 537",
+   "cellNum": 537,
+   "gridPos": [
+    8,
+    22
+   ],
+   "fields": {
+    "coordinates": "row 23 · col 9"
+   }
+  },
+  {
+   "id": "z538",
+   "name": "Zone 538",
+   "cellNum": 538,
+   "gridPos": [
+    9,
+    22
+   ],
+   "fields": {
+    "coordinates": "row 23 · col 10"
+   }
+  },
+  {
+   "id": "z539",
+   "name": "Zone 539",
+   "cellNum": 539,
+   "gridPos": [
+    10,
+    22
+   ],
+   "fields": {
+    "coordinates": "row 23 · col 11"
+   }
+  },
+  {
+   "id": "z540",
+   "name": "Zone 540",
+   "cellNum": 540,
+   "gridPos": [
+    11,
+    22
+   ],
+   "fields": {
+    "coordinates": "row 23 · col 12"
+   }
+  },
+  {
+   "id": "z541",
+   "name": "Zone 541",
+   "cellNum": 541,
+   "gridPos": [
+    12,
+    22
+   ],
+   "fields": {
+    "coordinates": "row 23 · col 13"
+   }
+  },
+  {
+   "id": "z542",
+   "name": "Zone 542",
+   "cellNum": 542,
+   "gridPos": [
+    13,
+    22
+   ],
+   "fields": {
+    "coordinates": "row 23 · col 14"
+   }
+  },
+  {
+   "id": "z543",
+   "name": "Zone 543",
+   "cellNum": 543,
+   "gridPos": [
+    14,
+    22
+   ],
+   "fields": {
+    "coordinates": "row 23 · col 15"
+   }
+  },
+  {
+   "id": "z544",
+   "name": "Zone 544",
+   "cellNum": 544,
+   "gridPos": [
+    15,
+    22
+   ],
+   "fields": {
+    "coordinates": "row 23 · col 16"
+   }
+  },
+  {
+   "id": "z545",
+   "name": "Zone 545",
+   "cellNum": 545,
+   "gridPos": [
+    16,
+    22
+   ],
+   "fields": {
+    "coordinates": "row 23 · col 17"
+   }
+  },
+  {
+   "id": "z546",
+   "name": "Zone 546",
+   "cellNum": 546,
+   "gridPos": [
+    17,
+    22
+   ],
+   "fields": {
+    "coordinates": "row 23 · col 18"
+   }
+  },
+  {
+   "id": "z547",
+   "name": "Zone 547",
+   "cellNum": 547,
+   "gridPos": [
+    18,
+    22
+   ],
+   "fields": {
+    "coordinates": "row 23 · col 19"
+   }
+  },
+  {
+   "id": "z548",
+   "name": "Zone 548",
+   "cellNum": 548,
+   "gridPos": [
+    19,
+    22
+   ],
+   "fields": {
+    "coordinates": "row 23 · col 20"
+   }
+  },
+  {
+   "id": "z549",
+   "name": "Zone 549",
+   "cellNum": 549,
+   "gridPos": [
+    20,
+    22
+   ],
+   "fields": {
+    "coordinates": "row 23 · col 21"
+   }
+  },
+  {
+   "id": "z550",
+   "name": "Zone 550",
+   "cellNum": 550,
+   "gridPos": [
+    21,
+    22
+   ],
+   "fields": {
+    "coordinates": "row 23 · col 22"
+   }
+  },
+  {
+   "id": "z551",
+   "name": "Zone 551",
+   "cellNum": 551,
+   "gridPos": [
+    22,
+    22
+   ],
+   "fields": {
+    "coordinates": "row 23 · col 23"
+   }
+  },
+  {
+   "id": "z552",
+   "name": "Zone 552",
+   "cellNum": 552,
+   "gridPos": [
+    23,
+    22
+   ],
+   "fields": {
+    "coordinates": "row 23 · col 24"
+   }
+  },
+  {
+   "id": "z553",
+   "name": "Zone 553",
+   "cellNum": 553,
+   "gridPos": [
+    0,
+    23
+   ],
+   "fields": {
+    "coordinates": "row 24 · col 1"
+   }
+  },
+  {
+   "id": "z554",
+   "name": "Zone 554",
+   "cellNum": 554,
+   "gridPos": [
+    1,
+    23
+   ],
+   "fields": {
+    "coordinates": "row 24 · col 2"
+   }
+  },
+  {
+   "id": "z555",
+   "name": "Zone 555",
+   "cellNum": 555,
+   "gridPos": [
+    2,
+    23
+   ],
+   "fields": {
+    "coordinates": "row 24 · col 3"
+   }
+  },
+  {
+   "id": "z556",
+   "name": "Zone 556",
+   "cellNum": 556,
+   "gridPos": [
+    3,
+    23
+   ],
+   "fields": {
+    "coordinates": "row 24 · col 4"
+   }
+  },
+  {
+   "id": "z557",
+   "name": "Zone 557",
+   "cellNum": 557,
+   "gridPos": [
+    4,
+    23
+   ],
+   "fields": {
+    "coordinates": "row 24 · col 5"
+   }
+  },
+  {
+   "id": "z558",
+   "name": "Zone 558",
+   "cellNum": 558,
+   "gridPos": [
+    5,
+    23
+   ],
+   "fields": {
+    "coordinates": "row 24 · col 6"
+   }
+  },
+  {
+   "id": "z559",
+   "name": "Zone 559",
+   "cellNum": 559,
+   "gridPos": [
+    6,
+    23
+   ],
+   "fields": {
+    "coordinates": "row 24 · col 7"
+   }
+  },
+  {
+   "id": "z560",
+   "name": "Zone 560",
+   "cellNum": 560,
+   "gridPos": [
+    7,
+    23
+   ],
+   "fields": {
+    "coordinates": "row 24 · col 8"
+   }
+  },
+  {
+   "id": "z561",
+   "name": "Zone 561",
+   "cellNum": 561,
+   "gridPos": [
+    8,
+    23
+   ],
+   "fields": {
+    "coordinates": "row 24 · col 9"
+   }
+  },
+  {
+   "id": "z562",
+   "name": "Zone 562",
+   "cellNum": 562,
+   "gridPos": [
+    9,
+    23
+   ],
+   "fields": {
+    "coordinates": "row 24 · col 10"
+   }
+  },
+  {
+   "id": "z563",
+   "name": "Zone 563",
+   "cellNum": 563,
+   "gridPos": [
+    10,
+    23
+   ],
+   "fields": {
+    "coordinates": "row 24 · col 11"
+   }
+  },
+  {
+   "id": "z564",
+   "name": "Zone 564",
+   "cellNum": 564,
+   "gridPos": [
+    11,
+    23
+   ],
+   "fields": {
+    "coordinates": "row 24 · col 12"
+   }
+  },
+  {
+   "id": "z565",
+   "name": "Zone 565",
+   "cellNum": 565,
+   "gridPos": [
+    12,
+    23
+   ],
+   "fields": {
+    "coordinates": "row 24 · col 13"
+   }
+  },
+  {
+   "id": "z566",
+   "name": "Zone 566",
+   "cellNum": 566,
+   "gridPos": [
+    13,
+    23
+   ],
+   "fields": {
+    "coordinates": "row 24 · col 14"
+   }
+  },
+  {
+   "id": "z567",
+   "name": "Zone 567",
+   "cellNum": 567,
+   "gridPos": [
+    14,
+    23
+   ],
+   "fields": {
+    "coordinates": "row 24 · col 15"
+   }
+  },
+  {
+   "id": "z568",
+   "name": "Zone 568",
+   "cellNum": 568,
+   "gridPos": [
+    15,
+    23
+   ],
+   "fields": {
+    "coordinates": "row 24 · col 16"
+   }
+  },
+  {
+   "id": "z569",
+   "name": "Zone 569",
+   "cellNum": 569,
+   "gridPos": [
+    16,
+    23
+   ],
+   "fields": {
+    "coordinates": "row 24 · col 17"
+   }
+  },
+  {
+   "id": "z570",
+   "name": "Zone 570",
+   "cellNum": 570,
+   "gridPos": [
+    17,
+    23
+   ],
+   "fields": {
+    "coordinates": "row 24 · col 18"
+   }
+  },
+  {
+   "id": "z571",
+   "name": "Zone 571",
+   "cellNum": 571,
+   "gridPos": [
+    18,
+    23
+   ],
+   "fields": {
+    "coordinates": "row 24 · col 19"
+   }
+  },
+  {
+   "id": "z572",
+   "name": "Zone 572",
+   "cellNum": 572,
+   "gridPos": [
+    19,
+    23
+   ],
+   "fields": {
+    "coordinates": "row 24 · col 20"
+   }
+  },
+  {
+   "id": "z573",
+   "name": "Zone 573",
+   "cellNum": 573,
+   "gridPos": [
+    20,
+    23
+   ],
+   "fields": {
+    "coordinates": "row 24 · col 21"
+   }
+  },
+  {
+   "id": "z574",
+   "name": "Zone 574",
+   "cellNum": 574,
+   "gridPos": [
+    21,
+    23
+   ],
+   "fields": {
+    "coordinates": "row 24 · col 22"
+   }
+  },
+  {
+   "id": "z575",
+   "name": "Zone 575",
+   "cellNum": 575,
+   "gridPos": [
+    22,
+    23
+   ],
+   "fields": {
+    "coordinates": "row 24 · col 23"
+   }
+  },
+  {
+   "id": "z576",
+   "name": "Zone 576",
+   "cellNum": 576,
+   "gridPos": [
+    23,
+    23
+   ],
+   "fields": {
+    "coordinates": "row 24 · col 24"
+   }
+  }
+ ]
+}

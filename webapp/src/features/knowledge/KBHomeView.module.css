@@ -101,6 +101,71 @@
   gap: 12px;
 }
 
+/* Interactive maps listed under the Maps header. */
+.mapsList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Field notes (map KB articles, e.g. APMs) under the Maps section. */
+.references {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 16px 0;
+}
+.refHeader {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  padding: 0 2px;
+}
+.refIcon {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  color: var(--accent-primary);
+  background: rgba(79, 195, 255, 0.1);
+}
+
+/* Root-level draft + contribution call (bottom of the home). */
+.contribute {
+  margin-top: 24px;
+}
+.contributeCaption {
+  margin: 8px 0 0;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+.contributeButton {
+  margin-top: 12px;
+}
+.discord {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 8px;
+  padding: 6px 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--accent-secondary);
+}
+
 .card {
   padding: 12px;
 }

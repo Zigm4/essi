@@ -26,6 +26,7 @@ import type { MapDocument, MapZone } from '../model/types';
 import { globeCenter, globeRadius, type ScreenPoint } from '../model/projection';
 import { drawCenteredLabel } from './labels';
 import { paintPolygonZone } from './paintOps';
+import { drawMedicalMarker, drawTurbineMarker, RAIL_COLOR } from './gridRender';
 
 export const SPHERE_LABEL_FONT_SIZE = 26;
 const LABEL_MIN_RADIUS = 120;
@@ -46,6 +47,60 @@ export interface SphereRenderItem {
   readonly gridCell: { readonly col: number; readonly row: number } | null;
 }
 
+/** POI overlay (medical cross / rustwind turbine) drawn on the globe. */
+export interface SphereMarker {
+  readonly zoneId: string;
+  readonly kind: 'medical' | 'rustwind';
+  readonly centroid: GeoPoint;
+}
+/** One dashed railway segment (between two cell centres) on the globe. */
+export interface SphereEdge {
+  readonly zoneId: string;
+  readonly a: GeoPoint;
+  readonly b: GeoPoint;
+}
+
+/** Cell-centre overlays (markers + railway edges) for grid globes. */
+function computeGridOverlays(
+  doc: MapDocument,
+  grid: MapGrid,
+): { markers: SphereMarker[]; railEdges: SphereEdge[] } {
+  const markers: SphereMarker[] = [];
+  const centroidByCellNum = new Map<number, GeoPoint>();
+  for (const zone of doc.zones) {
+    if (zone.gridPos === null || zone.cellNum === null) continue;
+    centroidByCellNum.set(zone.cellNum, cellCenter(grid, zone.gridPos.col, zone.gridPos.row));
+  }
+  for (const zone of doc.zones) {
+    if (zone.gridPos === null) continue;
+    const role = typeof zone.fields.role === 'string' ? zone.fields.role : '';
+    if (role === 'Medical Facility' || role === 'Rustwind Gen') {
+      markers.push({
+        zoneId: zone.id,
+        kind: role === 'Medical Facility' ? 'medical' : 'rustwind',
+        centroid: cellCenter(grid, zone.gridPos.col, zone.gridPos.row),
+      });
+    }
+  }
+  const railEdges: SphereEdge[] = [];
+  const seen = new Set<string>();
+  for (const zone of doc.zones) {
+    if (zone.cellNum === null) continue;
+    const a = centroidByCellNum.get(zone.cellNum);
+    if (a === undefined) continue;
+    const links = Array.isArray(zone.fields.railwayLinks) ? zone.fields.railwayLinks : [];
+    for (const to of links) {
+      if (typeof to !== 'number') continue;
+      const key = zone.cellNum < to ? `${zone.cellNum},${to}` : `${to},${zone.cellNum}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const b = centroidByCellNum.get(to);
+      if (b !== undefined) railEdges.push({ zoneId: zone.id, a, b });
+    }
+  }
+  return { markers, railEdges };
+}
+
 export interface SphereRender {
   readonly theme: MapTheme;
   readonly labelFontSize: number;
@@ -55,6 +110,8 @@ export interface SphereRender {
   readonly gridZoneIdByCell: (string | null)[] | null;
   readonly gridPosById: ReadonlyMap<string, { col: number; row: number }>;
   readonly graticule: readonly (readonly GeoPoint[])[] | null;
+  readonly markers: readonly SphereMarker[];
+  readonly railEdges: readonly SphereEdge[];
 }
 
 function buildGraticule(grid: MapGrid): GeoPoint[][] {
@@ -123,6 +180,8 @@ export function buildSphereRender(doc: MapDocument): SphereRender {
       gridZoneIdByCell: null,
       gridPosById,
       graticule: null,
+      markers: [],
+      railEdges: [],
     };
   }
 
@@ -167,6 +226,7 @@ export function buildSphereRender(doc: MapDocument): SphereRender {
     });
   }
 
+  const { markers, railEdges } = computeGridOverlays(doc, grid);
   return {
     theme,
     labelFontSize: SPHERE_LABEL_FONT_SIZE,
@@ -176,6 +236,8 @@ export function buildSphereRender(doc: MapDocument): SphereRender {
     gridZoneIdByCell,
     gridPosById,
     graticule: buildGraticule(grid),
+    markers,
+    railEdges,
   };
 }
 
@@ -283,6 +345,50 @@ function projectRingsPath(
 function frontProject(g: GeoPoint, q: Quat, R: number, C: ScreenPoint): { x: number; y: number; front: boolean } {
   const v = rotate(q, worldVec(g));
   return { x: C.x + R * v.x, y: C.y - R * v.y, front: v.z >= 0 };
+}
+
+/** Draw the Mars railway dashes + medical/rustwind markers on the front hemisphere. */
+function drawSphereOverlays(
+  ctx: CanvasRenderingContext2D,
+  render: SphereRender,
+  q: Quat,
+  R: number,
+  C: ScreenPoint,
+  dimmed: ReadonlySet<string>,
+  hideDimmed: boolean,
+): void {
+  if (render.railEdges.length > 0) {
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineWidth = Math.max(1.5, R * 0.008);
+    ctx.setLineDash([Math.max(4, R * 0.03), Math.max(3, R * 0.022)]);
+    ctx.strokeStyle = colorAlpha(RAIL_COLOR, 1);
+    for (const e of render.railEdges) {
+      if (dimmed.has(e.zoneId) && hideDimmed) continue;
+      const pa = frontProject(e.a, q, R, C);
+      const pb = frontProject(e.b, q, R, C);
+      if (!pa.front || !pb.front) continue; // hide segments wrapping the limb
+      ctx.globalAlpha = dimmed.has(e.zoneId) ? 0.3 : 0.95;
+      ctx.beginPath();
+      ctx.moveTo(pa.x, pa.y);
+      ctx.lineTo(pb.x, pb.y);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  const arm = Math.max(4, R * 0.03);
+  const fontPx = Math.max(12, R * 0.055);
+  for (const m of render.markers) {
+    if (dimmed.has(m.zoneId) && hideDimmed) continue;
+    const p = frontProject(m.centroid, q, R, C);
+    if (!p.front || Math.hypot(p.x - C.x, p.y - C.y) > 0.98 * R) continue;
+    ctx.save();
+    ctx.globalAlpha = dimmed.has(m.zoneId) ? 0.3 : 1;
+    if (m.kind === 'medical') drawMedicalMarker(ctx, p.x, p.y, arm);
+    else drawTurbineMarker(ctx, p.x, p.y, fontPx, render.theme.fontFamily);
+    ctx.restore();
+  }
 }
 
 export function drawGlobe(
@@ -400,6 +506,9 @@ export function drawGlobe(
       }
     }
   }
+
+  // 6b. Mars overlays: railway dashes + POI markers threaded on the sphere.
+  drawSphereOverlays(ctx, render, q, R, C, dimmed, hideDimmed);
 
   // 7. Limb darkening.
   const limb = ctx.createRadialGradient(C.x, C.y, 0, C.x, C.y, R);
