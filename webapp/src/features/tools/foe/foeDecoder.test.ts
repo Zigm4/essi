@@ -72,7 +72,9 @@ describe('analyze - faction-dependent fields (2D)', () => {
     expect(field('3040000000', 'rank').name).toBe('Sheriff'); // LYC rank 4
     expect(field('4040000000', 'rank').name).toBe('Captain'); // MRT rank 4
     expect(field('7070000000', 'rank').name).toBe('Commander'); // AEA rank 7
-    expect(field('7000000000', 'rank').name).toBe('Scoot'); // AEA rank 0
+    expect(field('7000000000', 'rank').name).toBe('Scout'); // AEA rank 0
+    expect(field('7050000000', 'rank').name).toBe('HARVESTER'); // AEA rank 5
+    expect(field('3080000000', 'rank').name).toBe('General'); // LYC rank 8
     expect(field('6040000000', 'rank').name).toBe('Gang leader'); // OUT rank 4
     expect(field('6080000000', 'rank').name).toBe('King'); // OUT rank 8
   });
@@ -142,6 +144,17 @@ describe('analyze - family name (three concatenated fragments, positions 8-10)',
     expect(analyze('7000000254', tables).familyName).toBe('Algaebit0101PB'); // AEA 2/5/4
     expect(analyze('4000000870', tables).familyName).toBe('Yagtonschei'); // MRT 8/7/0
     expect(analyze('6000000223', tables).familyName).toBe('Spiock'); // OUT 2/2/3
+  });
+
+  it('matches real sighting names end-to-end (from foe_sightings.json)', () => {
+    expect(analyze('6022111684', tables).familyName).toBe('Fanperft'); // OUT
+    expect(analyze('6011214852', tables).familyName).toBe('Vileby'); // OUT
+    expect(analyze('6236111033', tables).familyName).toBe('Boneck'); // OUT
+    expect(analyze('7353352440', tables).familyName).toBe('BIOMIMIC0100KB'); // AEA
+
+    const s = analyze('6022111684', tables);
+    expect(s.fields.find((f) => f.key === 'rank')?.name).toBe('Outlaw');
+    expect(s.fields.find((f) => f.key === 'weapon')?.name).toBe('DUST THROWER');
   });
 
   it('returns null full name when any fragment is unmapped, keeping known parts', () => {

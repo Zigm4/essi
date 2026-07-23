@@ -18,7 +18,7 @@
   "subfaction": { "QNX": {}, "LYC": {}, "MRT": {}, "REV": {}, "OUT": {}, "AEA": {} },
   "rank": {
     "QNX": {},
-    "LYC": { "4": { "name": "Sheriff" } },
+    "LYC": { "4": { "name": "Sheriff" }, "8": { "name": "General" } },
     "MRT": { "4": { "name": "Captain" } },
     "REV": {},
     "OUT": {
@@ -31,10 +31,11 @@
       "8": { "name": "King" }
     },
     "AEA": {
-      "0": { "name": "Scoot" },
+      "0": { "name": "Scout" },
       "2": { "name": "Gardener" },
       "3": { "name": "Engineer" },
       "4": { "name": "Guardian" },
+      "5": { "name": "HARVESTER" },
       "7": { "name": "Commander" }
     }
   },
@@ -42,7 +43,8 @@
     "QNX": { "0": { "name": "unarmed" } },
     "LYC": {
       "0": { "name": "unarmed" },
-      "3": { "name": "Old revolver", "note": "Range 3" }
+      "3": { "name": "Old revolver", "note": "Range 3" },
+      "5": { "name": "Gatling gun", "note": "Range 6" }
     },
     "MRT": { "0": { "name": "unarmed" } },
     "REV": { "0": { "name": "unarmed" } },
@@ -51,17 +53,19 @@
       "1": { "name": "DUST THROWER", "note": "Range 1" },
       "2": { "name": "IRON HALBERD", "note": "Range 2" },
       "3": { "name": "SAND GUN", "note": "Range 3" },
-      "4": { "name": "SHOTGUN", "note": "Range 3" }
+      "4": { "name": "SHOTGUN", "note": "Range 3" },
+      "5": { "name": "OXIDE CANNON", "note": "Range 5" }
     },
     "AEA": {
       "0": { "name": "unarmed" },
+      "2": { "name": "SPORE MINE", "note": "Range 2" },
       "3": { "name": "Plasnet", "note": "Range 3" },
       "5": { "name": "Acid bomb", "note": "Range 5" }
     }
   },
   "family1": {
     "QNX": {},
-    "LYC": { "0": { "name": "Zeb" } },
+    "LYC": { "0": { "name": "Zeb" }, "1": { "name": "Jed" } },
     "MRT": { "8": { "name": "Yag" } },
     "REV": {},
     "OUT": {
@@ -69,13 +73,14 @@
       "2": { "name": "Spi" },
       "4": { "name": "Gat" },
       "6": { "name": "Fan" },
-      "8": { "name": "Vie" }
+      "8": { "name": "Vi" }
     },
     "AEA": {
       "0": { "name": "Aerobit" },
       "1": { "name": "Phytobit" },
       "2": { "name": "Algaebit" },
       "3": { "name": "Geobit" },
+      "4": { "name": "BIOMIMIC" },
       "5": { "name": "Aerobyte" },
       "6": { "name": "Phytobyte" },
       "7": { "name": "Algaebyte" },
@@ -84,13 +89,16 @@
   },
   "family2": {
     "QNX": {},
-    "LYC": { "1": { "name": "son" } },
+    "LYC": { "1": { "name": "son" }, "4": { "name": "lin" } },
     "MRT": { "7": { "name": "ton" } },
     "REV": {},
     "OUT": {
       "0": { "name": "r" },
+      "1": { "name": "ty" },
       "2": { "name": "o" },
-      "5": { "name": "el" }
+      "3": { "name": "e" },
+      "5": { "name": "le" },
+      "8": { "name": "per" }
     },
     "AEA": {
       "0": { "name": "0000" },
@@ -107,7 +115,7 @@
   },
   "family3": {
     "QNX": {},
-    "LYC": { "6": { "name": "man" } },
+    "LYC": { "2": { "name": "iah" }, "6": { "name": "man" } },
     "MRT": { "0": { "name": "schei" } },
     "REV": {},
     "OUT": {
@@ -124,6 +132,7 @@
       "3": { "name": "TB" },
       "4": { "name": "PB" },
       "5": { "name": "EB" },
+      "6": { "name": "ZB" },
       "7": { "name": "YB" },
       "8": { "name": "RB" },
       "9": { "name": "QB" }
