@@ -150,6 +150,9 @@ describe('analyze - family name (three concatenated fragments, positions 8-10)',
     expect(analyze('6022111684', tables).familyName).toBe('Fanperft'); // OUT
     expect(analyze('6011214852', tables).familyName).toBe('Vileby'); // OUT
     expect(analyze('6236111033', tables).familyName).toBe('Boneck'); // OUT
+    expect(analyze('6138111057', tables).familyName).toBe('Bonleth'); // OUT (Bon+le+th)
+    expect(analyze('6016210558', tables).familyName).toBe('Knuleng'); // OUT (Knu+le+ng)
+    expect(analyze('6139311468', tables).familyName).toBe('Gateyng'); // OUT (Gat+ey+ng)
     expect(analyze('7353352440', tables).familyName).toBe('BIOMIMIC0100KB'); // AEA
 
     const s = analyze('6022111684', tables);

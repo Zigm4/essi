@@ -72,6 +72,7 @@
       "0": { "name": "Bon" },
       "2": { "name": "Spi" },
       "4": { "name": "Gat" },
+      "5": { "name": "Knu" },
       "6": { "name": "Fan" },
       "8": { "name": "Vi" }
     },
@@ -98,6 +99,7 @@
       "2": { "name": "o" },
       "3": { "name": "e" },
       "5": { "name": "le" },
+      "6": { "name": "ey" },
       "8": { "name": "per" }
     },
     "AEA": {
@@ -123,7 +125,9 @@
       "2": { "name": "by" },
       "3": { "name": "ck" },
       "4": { "name": "ft" },
-      "5": { "name": "st" }
+      "5": { "name": "st" },
+      "7": { "name": "th" },
+      "8": { "name": "ng" }
     },
     "AEA": {
       "0": { "name": "KB" },
