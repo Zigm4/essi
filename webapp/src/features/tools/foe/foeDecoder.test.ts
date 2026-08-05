@@ -73,9 +73,11 @@ describe('analyze - faction-dependent fields (2D)', () => {
     expect(field('4040000000', 'rank').name).toBe('Captain'); // MRT rank 4
     expect(field('7070000000', 'rank').name).toBe('Commander'); // AEA rank 7
     expect(field('7000000000', 'rank').name).toBe('Scout'); // AEA rank 0
-    expect(field('7050000000', 'rank').name).toBe('HARVESTER'); // AEA rank 5
+    expect(field('7050000000', 'rank').name).toBe('Harvester'); // AEA rank 5
     expect(field('3080000000', 'rank').name).toBe('General'); // LYC rank 8
     expect(field('6040000000', 'rank').name).toBe('Gang leader'); // OUT rank 4
+    expect(field('6060000000', 'rank').name).toBe('Tyrant'); // OUT rank 6
+    expect(field('6070000000', 'rank').name).toBe('Baron'); // OUT rank 7
     expect(field('6080000000', 'rank').name).toBe('King'); // OUT rank 8
   });
 
@@ -106,10 +108,11 @@ describe('analyze - faction-dependent fields (2D)', () => {
     expect(field('7000300000', 'weapon').name).toBe('Plasnet'); // AEA weapon 3
   });
 
-  it('maps weapon 0 to unarmed for every faction', () => {
+  it('maps weapon 0 to unarmed, except factions with a starter weapon', () => {
     expect(field('1000000000', 'weapon').name).toBe('unarmed'); // QNX weapon 0
     expect(field('3000000000', 'weapon').name).toBe('unarmed'); // LYC weapon 0
     expect(field('7000000000', 'weapon').name).toBe('unarmed'); // AEA weapon 0
+    expect(field('6000000000', 'weapon').name).toBe('RUSTY BLADE'); // OUT weapon 0
   });
 
   it('treats dodge and protection as raw values (equal to their digit)', () => {
@@ -164,6 +167,7 @@ describe('analyze - family name (three concatenated fragments, positions 8-10)',
     expect(analyze('6138111057', tables).familyName).toBe('Bonleth'); // OUT (Bon+le+th)
     expect(analyze('6016210558', tables).familyName).toBe('Knuleng'); // OUT (Knu+le+ng)
     expect(analyze('6139311468', tables).familyName).toBe('Gateyng'); // OUT (Gat+ey+ng)
+    expect(analyze('6187494140', tables).familyName).toBe('Tanorson'); // OUT (Tan+or+son)
     expect(analyze('7353352440', tables).familyName).toBe('BIOMIMIC0100KB'); // AEA
 
     const s = analyze('6022111684', tables);

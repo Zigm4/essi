@@ -1,33 +1,93 @@
 {
   "faction": {
-    "1": { "name": "QNX Robot", "code": "QNX", "emoji": "🤖" },
-    "3": { "name": "Lycanox",   "code": "LYC", "emoji": "🐺" },
-    "4": { "name": "Martian",   "code": "MRT", "emoji": "👽" },
-    "5": { "name": "Revenant",  "code": "REV", "emoji": "💀" },
-    "6": { "name": "Outlaws",   "code": "OUT", "emoji": "🏴" },
-    "7": { "name": "AEA",       "code": "AEA", "emoji": "🛡️" }
+    "1": {
+      "name": "QNX Robot",
+      "code": "QNX",
+      "emoji": "🤖"
+    },
+    "3": {
+      "name": "Lycanox",
+      "code": "LYC",
+      "emoji": "🐺"
+    },
+    "4": {
+      "name": "Martian",
+      "code": "MRT",
+      "emoji": "👽"
+    },
+    "5": {
+      "name": "Revenant",
+      "code": "REV",
+      "emoji": "💀"
+    },
+    "6": {
+      "name": "Outlaws",
+      "code": "OUT",
+      "emoji": "🏴"
+    },
+    "7": {
+      "name": "AEA",
+      "code": "AEA",
+      "emoji": "🛡️"
+    }
   },
   "loot": {
-    "0": { "name": "Blood",       "emoji": "🩸" },
-    "1": { "name": "100c",        "emoji": "🪙" },
-    "2": { "name": "Clothing BP", "emoji": "🧥" },
-    "3": { "name": "Armour BP",   "emoji": "🛡️" },
-    "4": { "name": "Weapon",      "emoji": "🔫" },
-    "5": { "name": "Vessel BP",   "emoji": "🚀" }
+    "0": {
+      "name": "Blood",
+      "emoji": "🩸"
+    },
+    "1": {
+      "name": "100c",
+      "emoji": "🪙"
+    },
+    "2": {
+      "name": "Clothing BP",
+      "emoji": "🧥"
+    },
+    "3": {
+      "name": "Armour BP",
+      "emoji": "🛡️"
+    },
+    "4": {
+      "name": "Weapon",
+      "emoji": "🔫"
+    },
+    "5": {
+      "name": "Vessel BP",
+      "emoji": "🚀"
+    }
   },
   "subfaction": {
     "QNX": {},
     "LYC": {},
     "MRT": {
-      "0": { "name": "Solstice Sentinels" },
-      "1": { "name": "Martian Mercantile Syndicate" },
-      "2": { "name": "Rustwind Union" },
-      "3": { "name": "Clandestine Cult of Ares" },
-      "4": { "name": "Red Dawn Dominion" },
-      "5": { "name": "The Red veil" },
-      "6": { "name": "Project Eclipse" },
-      "7": { "name": "Terraformer's Gambit" },
-      "8": { "name": "The Iron Vaults" }
+      "0": {
+        "name": "Solstice Sentinels"
+      },
+      "1": {
+        "name": "Martian Mercantile Syndicate"
+      },
+      "2": {
+        "name": "Rustwind Union"
+      },
+      "3": {
+        "name": "Clandestine Cult of Ares"
+      },
+      "4": {
+        "name": "Red Dawn Dominion"
+      },
+      "5": {
+        "name": "The Red veil"
+      },
+      "6": {
+        "name": "Project Eclipse"
+      },
+      "7": {
+        "name": "Terraformer's Gambit"
+      },
+      "8": {
+        "name": "The Iron Vaults"
+      }
     },
     "REV": {},
     "OUT": {},
@@ -35,138 +95,431 @@
   },
   "rank": {
     "QNX": {},
-    "LYC": { "4": { "name": "Sheriff" }, "8": { "name": "General" } },
-    "MRT": {
-      "0": { "name": "Petty Officer" },
-      "1": { "name": "Ensign" },
-      "2": { "name": "Lieutenant" },
-      "3": { "name": "Commander" },
-      "4": { "name": "Captain" },
-      "5": { "name": "Commodore" },
-      "6": { "name": "Admiral" },
-      "7": { "name": "Fleet Admiral" },
-      "8": { "name": "Corrupt Officer" }
+    "LYC": {
+      "4": {
+        "name": "Sheriff"
+      },
+      "8": {
+        "name": "General"
+      }
     },
-    "REV": {},
+    "MRT": {
+      "0": {
+        "name": "Petty Officer"
+      },
+      "1": {
+        "name": "Ensign"
+      },
+      "2": {
+        "name": "Lieutenant"
+      },
+      "3": {
+        "name": "Commander"
+      },
+      "4": {
+        "name": "Captain"
+      },
+      "5": {
+        "name": "Commodore"
+      },
+      "6": {
+        "name": "Admiral"
+      },
+      "7": {
+        "name": "Fleet Admiral"
+      },
+      "8": {
+        "name": "Corrupt Officer"
+      }
+    },
+    "REV": {
+      "3": {
+        "name": "Saboteur"
+      }
+    },
     "OUT": {
-      "0": { "name": "Scavenger" },
-      "1": { "name": "Raider" },
-      "2": { "name": "Outlaw" },
-      "3": { "name": "Bandit" },
-      "4": { "name": "Gang leader" },
-      "5": { "name": "Chief" },
-      "8": { "name": "King" }
+      "0": {
+        "name": "Scavenger"
+      },
+      "1": {
+        "name": "Raider"
+      },
+      "2": {
+        "name": "Outlaw"
+      },
+      "3": {
+        "name": "Bandit"
+      },
+      "4": {
+        "name": "Gang leader"
+      },
+      "5": {
+        "name": "Chief"
+      },
+      "6": {
+        "name": "Tyrant"
+      },
+      "7": {
+        "name": "Baron"
+      },
+      "8": {
+        "name": "King"
+      }
     },
     "AEA": {
-      "0": { "name": "Scout" },
-      "2": { "name": "Gardener" },
-      "3": { "name": "Engineer" },
-      "4": { "name": "Guardian" },
-      "5": { "name": "HARVESTER" },
-      "7": { "name": "Commander" }
+      "0": {
+        "name": "Scout"
+      },
+      "2": {
+        "name": "Gardener"
+      },
+      "3": {
+        "name": "Engineer"
+      },
+      "4": {
+        "name": "Guardian"
+      },
+      "5": {
+        "name": "Harvester"
+      },
+      "6": {
+        "name": "ARCHITECT"
+      },
+      "7": {
+        "name": "Commander"
+      },
+      "8": {
+        "name": "TITAN"
+      }
     }
   },
   "weapon": {
-    "QNX": { "0": { "name": "unarmed" } },
-    "LYC": {
-      "0": { "name": "unarmed" },
-      "3": { "name": "Old revolver", "note": "Range 3" },
-      "5": { "name": "Gatling gun", "note": "Range 6" }
+    "QNX": {
+      "0": {
+        "name": "unarmed"
+      }
     },
-    "MRT": { "0": { "name": "unarmed" } },
-    "REV": { "0": { "name": "unarmed" } },
+    "LYC": {
+      "0": {
+        "name": "unarmed"
+      },
+      "3": {
+        "name": "Old revolver",
+        "note": "Range 3"
+      },
+      "5": {
+        "name": "Gatling gun",
+        "note": "Range 6"
+      }
+    },
+    "MRT": {
+      "0": {
+        "name": "unarmed"
+      },
+      "3": {
+        "name": "MILITARY NRG BLASTER",
+        "note": "Range 5"
+      },
+      "5": {
+        "name": "MILITARY NRG CANNON",
+        "note": "Range 7"
+      }
+    },
+    "REV": {
+      "0": {
+        "name": "unarmed"
+      },
+      "1": {
+        "name": "FUSION BLADE",
+        "note": "Range 0"
+      }
+    },
     "OUT": {
-      "0": { "name": "unarmed" },
-      "1": { "name": "DUST THROWER", "note": "Range 1" },
-      "2": { "name": "IRON HALBERD", "note": "Range 2" },
-      "3": { "name": "SAND GUN", "note": "Range 3" },
-      "4": { "name": "SHOTGUN", "note": "Range 3" },
-      "5": { "name": "OXIDE CANNON", "note": "Range 5" }
+      "0": {
+        "name": "RUSTY BLADE",
+        "note": "Range 0"
+      },
+      "1": {
+        "name": "DUST THROWER",
+        "note": "Range 1"
+      },
+      "2": {
+        "name": "IRON HALBERD",
+        "note": "Range 2"
+      },
+      "3": {
+        "name": "SAND GUN",
+        "note": "Range 3"
+      },
+      "4": {
+        "name": "SHOTGUN",
+        "note": "Range 3"
+      },
+      "5": {
+        "name": "OXIDE CANNON",
+        "note": "Range 5"
+      }
     },
     "AEA": {
-      "0": { "name": "unarmed" },
-      "2": { "name": "SPORE MINE", "note": "Range 2" },
-      "3": { "name": "Plasnet", "note": "Range 3" },
-      "5": { "name": "Acid bomb", "note": "Range 5" }
+      "0": {
+        "name": "unarmed"
+      },
+      "2": {
+        "name": "Spore mine",
+        "note": "Range 2"
+      },
+      "3": {
+        "name": "Plasnet",
+        "note": "Range 3"
+      },
+      "4": {
+        "name": "SONIC BLASTER",
+        "note": "Range 3"
+      },
+      "5": {
+        "name": "Acid bomb",
+        "note": "Range 5"
+      }
     }
   },
   "family1": {
     "QNX": {},
-    "LYC": { "0": { "name": "Zeb" }, "1": { "name": "Jed" } },
-    "MRT": { "8": { "name": "Yag" } },
+    "LYC": {
+      "0": {
+        "name": "Zeb"
+      },
+      "1": {
+        "name": "Jed"
+      }
+    },
+    "MRT": {
+      "8": {
+        "name": "Yag"
+      }
+    },
     "REV": {},
     "OUT": {
-      "0": { "name": "Bon" },
-      "2": { "name": "Spi" },
-      "4": { "name": "Gat" },
-      "5": { "name": "Knu" },
-      "6": { "name": "Fan" },
-      "8": { "name": "Vi" }
+      "0": {
+        "name": "Bon"
+      },
+      "1": {
+        "name": "Tan"
+      },
+      "2": {
+        "name": "Spi"
+      },
+      "3": {
+        "name": "Cro"
+      },
+      "4": {
+        "name": "Gat"
+      },
+      "5": {
+        "name": "Knu"
+      },
+      "6": {
+        "name": "Fan"
+      },
+      "7": {
+        "name": "Rat"
+      },
+      "8": {
+        "name": "Vi"
+      },
+      "9": {
+        "name": "Haw"
+      }
     },
     "AEA": {
-      "0": { "name": "Aerobit" },
-      "1": { "name": "Phytobit" },
-      "2": { "name": "Algaebit" },
-      "3": { "name": "Geobit" },
-      "4": { "name": "BIOMIMIC" },
-      "5": { "name": "Aerobyte" },
-      "6": { "name": "Phytobyte" },
-      "7": { "name": "Algaebyte" },
-      "8": { "name": "Geobyte" }
+      "0": {
+        "name": "Aerobit"
+      },
+      "1": {
+        "name": "Phytobit"
+      },
+      "2": {
+        "name": "Algaebit"
+      },
+      "3": {
+        "name": "Geobit"
+      },
+      "4": {
+        "name": "BIOMIMIC"
+      },
+      "5": {
+        "name": "Aerobyte"
+      },
+      "6": {
+        "name": "Phytobyte"
+      },
+      "7": {
+        "name": "Algaebyte"
+      },
+      "8": {
+        "name": "Geobyte"
+      }
     }
   },
   "family2": {
     "QNX": {},
-    "LYC": { "1": { "name": "son" }, "4": { "name": "lin" } },
-    "MRT": { "7": { "name": "ton" } },
+    "LYC": {
+      "1": {
+        "name": "son"
+      },
+      "4": {
+        "name": "lin"
+      }
+    },
+    "MRT": {
+      "7": {
+        "name": "ton"
+      }
+    },
     "REV": {},
     "OUT": {
-      "0": { "name": "r" },
-      "1": { "name": "ty" },
-      "2": { "name": "o" },
-      "3": { "name": "e" },
-      "5": { "name": "le" },
-      "6": { "name": "ey" },
-      "8": { "name": "per" }
+      "0": {
+        "name": "er"
+      },
+      "1": {
+        "name": "ty"
+      },
+      "2": {
+        "name": "o"
+      },
+      "3": {
+        "name": "e"
+      },
+      "4": {
+        "name": "or"
+      },
+      "5": {
+        "name": "le"
+      },
+      "6": {
+        "name": "ey"
+      },
+      "7": {
+        "name": "k"
+      },
+      "8": {
+        "name": "per"
+      },
+      "9": {
+        "name": "e"
+      }
     },
     "AEA": {
-      "0": { "name": "0000" },
-      "1": { "name": "0001" },
-      "2": { "name": "0010" },
-      "3": { "name": "0011" },
-      "4": { "name": "0100" },
-      "5": { "name": "0101" },
-      "6": { "name": "0110" },
-      "7": { "name": "0111" },
-      "8": { "name": "1000" },
-      "9": { "name": "1001" }
+      "0": {
+        "name": "0000"
+      },
+      "1": {
+        "name": "0001"
+      },
+      "2": {
+        "name": "0010"
+      },
+      "3": {
+        "name": "0011"
+      },
+      "4": {
+        "name": "0100"
+      },
+      "5": {
+        "name": "0101"
+      },
+      "6": {
+        "name": "0110"
+      },
+      "7": {
+        "name": "0111"
+      },
+      "8": {
+        "name": "1000"
+      },
+      "9": {
+        "name": "1001"
+      }
     }
   },
   "family3": {
     "QNX": {},
-    "LYC": { "2": { "name": "iah" }, "6": { "name": "man" } },
-    "MRT": { "0": { "name": "schei" } },
+    "LYC": {
+      "2": {
+        "name": "iah"
+      },
+      "6": {
+        "name": "man"
+      }
+    },
+    "MRT": {
+      "0": {
+        "name": "schei"
+      }
+    },
     "REV": {},
     "OUT": {
-      "0": { "name": "son" },
-      "2": { "name": "by" },
-      "3": { "name": "ck" },
-      "4": { "name": "ft" },
-      "5": { "name": "st" },
-      "7": { "name": "th" },
-      "8": { "name": "ng" }
+      "0": {
+        "name": "son"
+      },
+      "1": {
+        "name": "man"
+      },
+      "2": {
+        "name": "by"
+      },
+      "3": {
+        "name": "ck"
+      },
+      "4": {
+        "name": "ft"
+      },
+      "5": {
+        "name": "st"
+      },
+      "6": {
+        "name": "rd"
+      },
+      "7": {
+        "name": "th"
+      },
+      "8": {
+        "name": "ng"
+      },
+      "9": {
+        "name": "sh"
+      }
     },
     "AEA": {
-      "0": { "name": "KB" },
-      "1": { "name": "MB" },
-      "2": { "name": "GB" },
-      "3": { "name": "TB" },
-      "4": { "name": "PB" },
-      "5": { "name": "EB" },
-      "6": { "name": "ZB" },
-      "7": { "name": "YB" },
-      "8": { "name": "RB" },
-      "9": { "name": "QB" }
+      "0": {
+        "name": "KB"
+      },
+      "1": {
+        "name": "MB"
+      },
+      "2": {
+        "name": "GB"
+      },
+      "3": {
+        "name": "TB"
+      },
+      "4": {
+        "name": "PB"
+      },
+      "5": {
+        "name": "EB"
+      },
+      "6": {
+        "name": "ZB"
+      },
+      "7": {
+        "name": "YB"
+      },
+      "8": {
+        "name": "RB"
+      },
+      "9": {
+        "name": "QB"
+      }
     }
   }
 }
