@@ -33,6 +33,7 @@ import {
   type FoeReport,
   type FoeTables,
 } from './foe/foeDecoder';
+import { isBlueprintLoot, lootPool } from './foe/lootPools';
 import styles from './foe/FoeDecoder.module.css';
 
 const NOTES = [
@@ -226,17 +227,51 @@ function Report({ report }: { report: FoeReport }) {
         </div>
       </GlassCard>
 
-      <GlassCard>
-        <SectionHeader title="Reward" icon={<IconAttachMoney size={18} />} />
-        <div className={styles.fieldRows}>
-          <FieldRow field={byKey('loot')} />
-        </div>
-        <p className={styles.rewardHint}>
-          Loot is RNG: this is the best drop this FOE can give, not a guarantee. You may get
-          something lesser instead, for example scrap in place of a Clothing BP.
-        </p>
-      </GlassCard>
+      <RewardCard loot={byKey('loot')} factionCode={report.factionCode} factionName={faction.name} />
     </div>
+  );
+}
+
+function RewardCard({
+  loot,
+  factionCode,
+  factionName,
+}: {
+  loot: FoeField;
+  factionCode: string | null;
+  factionName: string;
+}) {
+  const pool = lootPool(factionCode, loot.digit);
+  return (
+    <GlassCard>
+      <SectionHeader title="Reward" icon={<IconAttachMoney size={18} />} />
+      <div className={styles.fieldRows}>
+        <FieldRow field={loot} />
+      </div>
+      <p className={styles.rewardHint}>
+        Loot is RNG: this is the best drop this FOE can give, not a guarantee. You may get something
+        lesser instead, for example scrap in place of a Clothing BP.
+      </p>
+      {pool !== undefined && (
+        <div className={styles.lootPool}>
+          <span className={styles.lootPoolLabel}>
+            {`Possible ${factionName} ${loot.name} drops`}
+          </span>
+          <div className={styles.lootPoolItems}>
+            {pool.map((item) => (
+              <span key={item} className={styles.lootPoolItem}>
+                {item}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+      {isBlueprintLoot(loot.digit) && (
+        <p className={styles.rewardHint}>
+          Blueprints are extremely rare: once you own one, you can craft as many as you can afford.
+        </p>
+      )}
+    </GlassCard>
   );
 }
 

@@ -244,6 +244,34 @@
   color: var(--text-secondary);
 }
 
+.lootPool {
+  margin-top: 12px;
+}
+
+.lootPoolLabel {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.lootPoolItems {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.lootPoolItem {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-primary);
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
+}
+
 .noticeHeader {
   display: flex;
   align-items: center;
