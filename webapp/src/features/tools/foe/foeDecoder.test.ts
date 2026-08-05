@@ -79,6 +79,17 @@ describe('analyze - faction-dependent fields (2D)', () => {
     expect(field('6080000000', 'rank').name).toBe('King'); // OUT rank 8
   });
 
+  it('fills the Martian subfaction + rank hierarchy (index = digit, Captain anchors at 4)', () => {
+    // subfaction is position 2 (index 1), rank position 3 (index 2).
+    expect(field('4000000000', 'subfaction').name).toBe('Solstice Sentinels'); // sub 0
+    expect(field('4400000000', 'subfaction').name).toBe('Red Dawn Dominion'); // sub 4
+    expect(field('4800000000', 'subfaction').name).toBe('The Iron Vaults'); // sub 8
+    expect(field('4000000000', 'rank').name).toBe('Petty Officer'); // rank 0
+    expect(field('4040000000', 'rank').name).toBe('Captain'); // rank 4 (anchor)
+    expect(field('4070000000', 'rank').name).toBe('Fleet Admiral'); // rank 7
+    expect(field('4080000000', 'rank').name).toBe('Corrupt Officer'); // rank 8
+  });
+
   it('carries a weapon note (range) when present', () => {
     const weapon = field('3000300000', 'weapon'); // LYC weapon 3
     expect(weapon.name).toBe('Old revolver');

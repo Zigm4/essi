@@ -15,11 +15,38 @@
     "4": { "name": "Weapon",      "emoji": "🔫" },
     "5": { "name": "Vessel BP",   "emoji": "🚀" }
   },
-  "subfaction": { "QNX": {}, "LYC": {}, "MRT": {}, "REV": {}, "OUT": {}, "AEA": {} },
+  "subfaction": {
+    "QNX": {},
+    "LYC": {},
+    "MRT": {
+      "0": { "name": "Solstice Sentinels" },
+      "1": { "name": "Martian Mercantile Syndicate" },
+      "2": { "name": "Rustwind Union" },
+      "3": { "name": "Clandestine Cult of Ares" },
+      "4": { "name": "Red Dawn Dominion" },
+      "5": { "name": "The Red veil" },
+      "6": { "name": "Project Eclipse" },
+      "7": { "name": "Terraformer's Gambit" },
+      "8": { "name": "The Iron Vaults" }
+    },
+    "REV": {},
+    "OUT": {},
+    "AEA": {}
+  },
   "rank": {
     "QNX": {},
     "LYC": { "4": { "name": "Sheriff" }, "8": { "name": "General" } },
-    "MRT": { "4": { "name": "Captain" } },
+    "MRT": {
+      "0": { "name": "Petty Officer" },
+      "1": { "name": "Ensign" },
+      "2": { "name": "Lieutenant" },
+      "3": { "name": "Commander" },
+      "4": { "name": "Captain" },
+      "5": { "name": "Commodore" },
+      "6": { "name": "Admiral" },
+      "7": { "name": "Fleet Admiral" },
+      "8": { "name": "Corrupt Officer" }
+    },
     "REV": {},
     "OUT": {
       "0": { "name": "Scavenger" },
