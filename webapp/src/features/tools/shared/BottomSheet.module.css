@@ -61,6 +61,18 @@
   padding-bottom: calc(20px + env(safe-area-inset-bottom));
 }
 
+/* With a pinned footer the footer owns the bottom inset. */
+.bodyWithFooter {
+  padding-bottom: 0;
+}
+
+.footer {
+  flex: none;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  background: var(--bg-elevated);
+  border-top: 1px solid var(--border-subtle);
+}
+
 @keyframes scrimIn {
   from {
     opacity: 0;

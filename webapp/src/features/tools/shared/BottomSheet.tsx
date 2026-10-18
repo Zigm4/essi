@@ -13,7 +13,9 @@ import styles from './BottomSheet.module.css';
  * Modal bottom sheet (spec §1.4). The grab handle is a live control: drag it
  * down to dismiss, or tap it to close (the native mobile gesture) - scrim tap
  * and Escape also dismiss. The body scrolls internally with a safe-area bottom
- * inset so the last control never hides behind the phone's bottom bar.
+ * inset so the last control never hides behind the phone's bottom bar. An
+ * optional `footer` is pinned under the scrolling body (it carries the
+ * safe-area inset instead), so nothing scrolls beneath it.
  */
 
 const DISMISS_THRESHOLD_PX = 110;
@@ -25,6 +27,7 @@ export function BottomSheet({
   heightFraction = 0.85,
   radius = 22,
   ariaLabel,
+  footer,
   children,
 }: {
   open: boolean;
@@ -33,6 +36,8 @@ export function BottomSheet({
   heightFraction?: number;
   radius?: number;
   ariaLabel?: string;
+  /** Pinned below the scrolling body (e.g. an Apply bar). */
+  footer?: ReactNode;
   children: ReactNode;
 }) {
   const [dragY, setDragY] = useState(0);
@@ -96,7 +101,10 @@ export function BottomSheet({
         >
           <span className={styles.handle} />
         </div>
-        <div className={styles.body}>{children}</div>
+        <div className={footer === undefined ? styles.body : `${styles.body} ${styles.bodyWithFooter}`}>
+          {children}
+        </div>
+        {footer !== undefined && <div className={styles.footer}>{footer}</div>}
       </div>
     </>,
     document.body,

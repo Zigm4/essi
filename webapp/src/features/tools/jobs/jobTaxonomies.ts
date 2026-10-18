@@ -1,6 +1,6 @@
 /**
  * Jobs taxonomies (spec §3.2) - labels & tints for factions, tags, skills,
- * rewards, and the type buckets used to group type chips in the filter sheet.
+ * rewards, and the type buckets behind the filter sheet's job categories.
  * Every tint is a #RRGGBB hex so it works both as a CSS color and via
  * withAlpha().
  */
@@ -43,14 +43,6 @@ export const RIVAL_ONLY_FACTIONS: Record<string, Tinted> = {
   rep_qnxs: { label: 'Qnexus', tint: '#66E0DD' },
 };
 
-/** Ordered allied faction keys (filter-sheet order = taxonomy order). */
-export const ALLIED_FACTION_KEYS = Object.keys(ALLIED_FACTIONS);
-/** Ordered keys for the rival filter (15 allied + 5 rival-only = 20). */
-export const RIVAL_FACTION_KEYS = [
-  ...ALLIED_FACTION_KEYS,
-  ...Object.keys(RIVAL_ONLY_FACTIONS),
-];
-
 /** Faction lookup across both lists; unknown → raw key + default tint. */
 export function factionInfo(key: string): Tinted {
   return ALLIED_FACTIONS[key] ?? RIVAL_ONLY_FACTIONS[key] ?? { label: key, tint: DEFAULT_TINT };
@@ -66,9 +58,6 @@ export const TAG_LABELS: Record<string, string> = {
   DownSquire: 'Down Squire',
   VERIFIED: 'Verified',
 };
-
-/** The 7 taxonomy tag keys, in definition order. */
-export const TAG_KEYS = Object.keys(TAG_LABELS);
 
 export function tagLabel(key: string): string {
   return TAG_LABELS[key] ?? key;
@@ -124,9 +113,9 @@ export function rewardInfo(key: string): Tinted {
 }
 
 /**
- * Type buckets (§3.2) - grouping is on the lowercased type. Buckets are sorted
- * alphabetically in the filter sheet: Beginner, Event, Expansion, Other,
- * Regular, Skill gain, Unknown (only the present ones render).
+ * Type buckets (§3.2) - grouping is on the lowercased type. Anything unmapped
+ * falls into `Other`. The filter sheet never shows buckets directly: it shows
+ * the coarser job categories below.
  */
 const BUCKET_MEMBERS: Record<string, string[]> = {
   Beginner: ['beginner'],
@@ -190,5 +179,38 @@ export function typeBucket(type: string): string {
   return TYPE_TO_BUCKET[type] ?? 'Other';
 }
 
-/** Buckets in alphabetical order (used to sort the TYPE section). */
-export const BUCKET_ORDER = ['Beginner', 'Event', 'Expansion', 'Other', 'Regular', 'Skill gain', 'Unknown'];
+/**
+ * Job categories (filter sheet §3.5, section 3) - the type buckets folded into
+ * six stable, lowercase keys. `Regular` and `Other` both read as "Standard".
+ * Listed in display order.
+ */
+export const JOB_CATEGORIES: readonly { key: string; label: string }[] = [
+  { key: 'beginner', label: 'Beginner' },
+  { key: 'skill-gain', label: 'Skill gain' },
+  { key: 'standard', label: 'Standard' },
+  { key: 'expansion', label: 'Expansion' },
+  { key: 'event', label: 'Event' },
+  { key: 'unknown', label: 'Unknown' },
+];
+
+const BUCKET_TO_CATEGORY: Record<string, string> = {
+  Beginner: 'beginner',
+  'Skill gain': 'skill-gain',
+  Regular: 'standard',
+  Other: 'standard',
+  Expansion: 'expansion',
+  Event: 'event',
+  Unknown: 'unknown',
+};
+
+const CATEGORY_LABELS = new Map(JOB_CATEGORIES.map((c) => [c.key, c.label]));
+
+/** The category key for a lowercased type (unmapped types → `standard`). */
+export function jobCategory(type: string): string {
+  return BUCKET_TO_CATEGORY[typeBucket(type)] ?? 'standard';
+}
+
+/** Human label for a category key; unknown keys render raw. */
+export function categoryLabel(key: string): string {
+  return CATEGORY_LABELS.get(key) ?? key;
+}
