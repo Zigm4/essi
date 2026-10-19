@@ -20,8 +20,13 @@ export function allowedExternalUrl(href: string): string | null {
 
 /**
  * Security-conscious single entry point for opening external URLs.
- * Mirrors lib/core/external_link.dart - disallowed/unopenable links surface
- * the exact "Couldn't open that link." snackbar and nothing else happens.
+ * Mirrors lib/core/external_link.dart - a disallowed link surfaces the exact
+ * "Couldn't open that link." snackbar and nothing else happens.
+ *
+ * Allowed http(s) links open through a temporary `<a target="_blank"
+ * rel="noopener noreferrer">` click. `window.open(…, 'noopener')` returns null
+ * even when the tab opens (HTML spec), so its result can't tell success from
+ * failure; a click from a user gesture isn't popup-blocked.
  */
 export function launchExternal(href: string): boolean {
   const url = allowedExternalUrl(href);
@@ -34,10 +39,12 @@ export function launchExternal(href: string): boolean {
     window.location.href = url;
     return true;
   }
-  const opened = window.open(url, '_blank', 'noopener,noreferrer');
-  if (opened === null) {
-    showSnackbar("Couldn't open that link.", { danger: true });
-    return false;
-  }
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.target = '_blank';
+  anchor.rel = 'noopener noreferrer';
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
   return true;
 }

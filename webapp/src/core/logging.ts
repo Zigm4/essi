@@ -11,9 +11,8 @@ export function setErrorReporter(fn: ErrorReporter | null): void {
 
 /** The single sink for every caught/uncaught error. */
 export function logError(error: unknown, stack?: string): void {
-  if (import.meta.env.DEV) {
-    console.error('[ESSI] ERROR:', error, stack ?? '');
-  }
+  // Also in production: there is no crash reporter, so the console is the only trace.
+  console.error('[ESSI] ERROR:', error, stack ?? '');
   if (reporter) {
     try {
       reporter(error, stack);

@@ -17,7 +17,7 @@ import {
 } from '../../design-system/icons';
 import { Haptics } from '../../core/haptics';
 import { discordInviteUrl } from '../../core/constants';
-import { showSnackbar } from '../../core/snackbar';
+import { launchExternal } from '../../core/externalLink';
 import { friendlyError } from '../../core/errorText';
 import type { KBArticle, KBArticleRef, KBCategory } from './data/kbModels';
 import { useKBData } from './data/kbLoader';
@@ -134,8 +134,7 @@ function ContributeBanner() {
   };
   const openDiscord = (): void => {
     Haptics.tap();
-    const opened = window.open(discordInviteUrl, '_blank', 'noopener,noreferrer');
-    if (opened === null) showSnackbar("Couldn't open Discord - try again", { danger: true });
+    launchExternal(discordInviteUrl);
   };
 
   return (
@@ -222,7 +221,11 @@ export function KBHomeView() {
         {kb.status === 'loading' && <Spinner />}
 
         {kb.status === 'error' && (
-          <p className={styles.errorText}>{friendlyError(kb.error, "Couldn't load the knowledge base.")}</p>
+          <>
+            <p className={styles.errorText}>{friendlyError(kb.error, "Couldn't load the knowledge base.")}</p>
+            {/* Installed maps live in IndexedDB: still list them when the KB can't load. */}
+            {trimmedIsEmpty && <MapsList />}
+          </>
         )}
 
         {kb.status === 'ready' && trimmedIsEmpty && (

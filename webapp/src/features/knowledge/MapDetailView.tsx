@@ -9,7 +9,8 @@
  */
 
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
+import { useBack } from '../../core/useBack';
 import { friendlyError } from '../../core/errorText';
 import { Haptics } from '../../core/haptics';
 import { logError } from '../../core/logging';
@@ -101,7 +102,7 @@ export function MapDetailView() {
   const id = rawId ?? '';
   const [params] = useSearchParams();
   const deepLinkZone = params.get('zone');
-  const navigate = useNavigate();
+  const goBack = useBack();
 
   const [state, setState] = useState<DetailState>({ status: 'loading' });
   const [bgBlob, setBgBlob] = useState<Blob | null>(null);
@@ -257,7 +258,7 @@ export function MapDetailView() {
     <AppBackground>
       <div className={styles.page}>
         <div className={styles.appBar}>
-          <button type="button" className={styles.back} aria-label="Back" onClick={() => navigate(-1)}>
+          <button type="button" className={styles.back} aria-label="Back" onClick={goBack}>
             <IconArrowBack size={24} />
           </button>
           <span className={styles.title}>{title}</span>

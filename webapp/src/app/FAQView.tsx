@@ -43,7 +43,11 @@ const SECTIONS: { key: string; entries: FaqEntry[] }[] = [
     entries: [
       {
         q: 'Does the app need internet?',
-        a: 'Not for normal use. Notes, links, ships, the knowledge base, the Asteroid Analyzer, the Fishing Map, the Mars Express schedule and the Wallet Lookup all work fully offline. Three tools are opt-in and do talk to a network: System Scan, Discoveries, and Tracker. They call NASA APIs (JPL Horizons and SBDB) through a small proxy (see "How do the NASA tools reach JPL?"). Nothing happens unless you tap their action button. Interactive maps are the one feature that reaches out on its own: they download map content from GitHub (see the next question). Tapping the Discord invite link in the Menu also opens the network, but only at the moment you tap it.',
+        a: 'Not for normal use. Notes, links, ships, the knowledge base, the Job Allocation Desk, the Asteroid Analyzer, the Bounty Decoder, the Fishing Map, the Mars Express schedule and the Wallet Lookup all work fully offline (see "How do I use ESSI offline?"). Three tools are opt-in and do talk to a network: System Scan, Discoveries, and Tracker. They call NASA APIs (JPL Horizons and SBDB) through a small proxy (see "How do the NASA tools reach JPL?"). Nothing happens unless you tap their action button. Interactive maps are the one feature that reaches out on its own: they download map content from GitHub (see the next question). Tapping the Discord invite link in the Menu also opens the network, but only at the moment you tap it.',
+      },
+      {
+        q: 'How do I use ESSI offline?',
+        a: 'Open ESSI once while you are online. The app, the job list, the tool catalogs, the knowledge base and the built-in maps are then saved on your device in the background - the message "ESSI is ready to work offline" confirms it. From then on, everything except the three NASA tools works without a connection. For the best experience, install it: browser menu › "Add to Home Screen" or "Install app". When a new version is published, ESSI downloads it in the background and shows "A new version of ESSI is ready": tap Reload to switch. Your notes, ships, favorites and job progress are kept.',
       },
       {
         q: 'How do the NASA tools reach JPL?',

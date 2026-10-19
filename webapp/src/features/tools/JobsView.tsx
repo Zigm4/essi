@@ -8,7 +8,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
 } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useBack } from '../../core/useBack';
 import { AppBackground } from '../../design-system/components/AppBackground';
 import { BannerAction, TransmissionHeader } from '../../design-system/components/TransmissionHeader';
 import { withAlpha } from '../../design-system/color';
@@ -69,7 +69,6 @@ function chipStyle(tint: string, active: boolean): CSSProperties {
 
 /** /tools/jobs - search 371 jobs by faction, place, category, reward, requirements (spec §3.3). */
 export function JobsView() {
-  const navigate = useNavigate();
   const storeRef = useRef(createScrollOffsetStore());
   const { jobs, error } = useJobs();
   const starred = useFavoriteSet('job');
@@ -115,11 +114,7 @@ export function JobsView() {
   });
 
   // A shared link opened in a fresh tab has no in-app history to go back to.
-  const goBack = () => {
-    const idx = (window.history.state as { idx?: number } | null)?.idx ?? 0;
-    if (idx > 0) navigate(-1);
-    else navigate('/tools');
-  };
+  const goBack = useBack('/tools');
 
   return (
     <ScrollOffsetContext.Provider value={storeRef.current}>

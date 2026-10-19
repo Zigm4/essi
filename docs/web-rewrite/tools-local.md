@@ -253,20 +253,20 @@ Sample cargo job with rival + resource side-fields (kept only partially by the m
 
 ### 3.2 Taxonomies (`domain/job_taxonomies.dart`) — labels & tints
 
-**Factions** (`jobTaxonomies.ts`) — one table for every reputation key (`factionRep`, `factionRival` and the rival-function stems). Each faction has a **code** — what the game's bot shows (descriptions read `**MSC & QNX**`, `[PRQ SQUIRE: …]`) — and a **name** only where a source attests it. The UI shows the name when attested, else the code (`label`: cards, active-filter chips); the detail sheet and the filter sheet show `Name (CODE)` when the name exists, else the code alone (`fullLabel`). The search matches the code and the name. Earlier labels "Proquinox", "Mischen", "55 Imperials" and "Co8" were invented (no source has them); the names left empty below are still **to be confirmed with the game's developer**.
+**Factions** (`jobTaxonomies.ts`) — one table for every reputation key (`factionRep`, `factionRival` and the rival-function stems). Each faction has a **code** — what the game's bot shows (descriptions read `**MSC & QNX**`, `[PRQ SQUIRE: …]`) — and a **name** only where a source attests it. The UI shows the name when attested, else the code (`label`: cards, active-filter chips); the detail sheet and the filter sheet show `Name (CODE)` when the name exists, else the code alone (`fullLabel`). The search matches the code and the name. Earlier labels "Proquinox", "Mischen", "55 Imperials" and "Z-Corp" were invented (no source has them). The names of PRQ, TFI, HEX, ZCP, 55th and CO8 were given by the game's developer (Oct 2026); the names left empty below are still **to be confirmed**.
 
 | key | code | name | tint | appears as |
 |---|---|---|---|---|
 | `rep_mschf` | MSC | Mischief | `#FFC766` | factionRep |
 | `rep_pearl` | PRL | Pearl | `#FFE9A8` | factionRep |
-| `rep_proq` | PRQ | — | `#9C9C9C` | factionRep |
-| `rep_tfi` | TFI | — | `#5FE8A0` | factionRep |
-| `rep_hex` | HEX | — | `#FF77AA` | factionRep |
+| `rep_proq` | PRQ | Professor Q | `#9C9C9C` | factionRep |
+| `rep_tfi` | TFI | Treasure Financials Inc | `#5FE8A0` | factionRep |
+| `rep_hex` | HEX | Helios Exploration Group | `#FF77AA` | factionRep |
 | `rep_clst` | CLS | Celestyn | `#E6E6FF` | factionRep |
 | `rep_mrtn` | MRT | Martian | `#FF7755` | both |
 | `rep_lycnx` | LYC | Lycanox | `#9DDCFF` | both |
 | `rep_rts` | RTS | Rustwind | `#C58A4F` | factionRep |
-| `rep_zcorp` | ZCP | Z-Corp | `#4FC3FF` | factionRep |
+| `rep_zcorp` | ZCP | Zibethicus Corporation | `#4FC3FF` | factionRep |
 | `rep_king` | KING | King | `#FFD15C` | both |
 | `rep_rsa` | RSA | — | `#FF5577` | both |
 | `rep_rvnts` | PRV | Revenants | `#8B6FFF` | both |
@@ -274,9 +274,9 @@ Sample cargo job with rival + resource side-fields (kept only partially by the m
 | `rep_uurt` | URT | Uurtians | `#3FBFA0` | both |
 | `rep_qnxs` | QNX | Qnexus | `#66E0DD` | second faction only |
 | `rep_oort` | ORT | Oortians | `#AACCFF` | second faction only |
-| `rep_55imp` | 55th | — | `#FF7777` | second faction only |
+| `rep_55imp` | 55th | 55th Imperial Legion | `#FF7777` | second faction only |
 | `rep_mschn` | MSN | — | `#FF8844` | second faction only |
-| `rep_co8` | CO8 | — | `#8B7BFF` | second faction only |
+| `rep_co8` | CO8 | Cult of 8 | `#8B7BFF` | second faction only |
 
 An unknown key renders raw (as its own code) with a default tint.
 
@@ -593,6 +593,8 @@ Same frame as the job card (380px, bgDeepest + tint@8% gradient where tint = dep
 
 A live view of the in-game train that loops the same route **every hour**, keyed purely on the wall-clock minute.
 
+> **Web build, Oct 2026 — zone alerts removed.** The native app armed local notifications (§5.5–§5.10). A web page can only schedule them in-page (`setTimeout` + Notification API): nothing fires once the browser is closed, a mobile browser suspends background tabs, `new Notification()` fails on Android, and there is no server to send Web Push. The web tool therefore keeps the live card, the schedule and the zone sheet (name, "Next arrival in N min" and the next 3 arrival times) and has no alerts: no arm / cancel / repeat UI, no armed-alerts card, no permission prompt. The obsolete `underdeck.trainAlert.*` localStorage keys are deleted at startup. §5.5–§5.10 describe the native app only.
+
 ### 5.1 Data — `train_schedule.json`
 
 Array of exactly 60 objects, one per minute 0–59:
@@ -697,7 +699,9 @@ AppBar: transparent, title `Mars Express` (headline), back tint accentPrimary. C
    - Tap → Zone detail sheet (§5.4).
 4. **Armed alerts card** (only when ≥1 armed zone): SectionHeader `Armed alert` (1 zone) or `Armed alerts ({n})`, icon `notifications_active`; when n > 1 a right-aligned text-button `Cancel all` (caption, accentDanger). Then one row per armed zone: `notifications_active` 18 accentWarn; `Zone {zone}` body (+ a `repeat` 14 accentPrimary icon when the entry repeats); caption below: `Next arrival {HH:mm}` (live-computed) — fallback `Recurring alert` (repeat) or `Alert armed`; when exact alarms are unavailable (Android-only concept) an extra hint line — `schedule` 12 accentWarn + caption `Approximate timing` in accentWarn; trailing cancel icon-button (`cancel`, accentDanger) → cancel that zone.
 
-**Refresh cadence**: a 5-second interval updates `now` (so the LIVE minute, current-row highlight, and consolidation stay fresh) and calls the alert controller's `refresh(stops)` (prunes expired one-shots / tops up repeating zones). On window refocus (app resume): reset `now`, re-check exact-alarm capability, refresh alerts. On first frame: one-shot legacy notification-id cleanup (§5.7).
+**Web build:** no armed-alerts card, no armed marker on schedule rows, and the caption reads `Tap a row for zone details and the next arrivals.` The ticker below only refreshes `now` (also on window focus / tab resume).
+
+**Refresh cadence (native)**: a 5-second interval updates `now` (so the LIVE minute, current-row highlight, and consolidation stay fresh) and calls the alert controller's `refresh(stops)` (prunes expired one-shots / tops up repeating zones). On window refocus (app resume): reset `now`, re-check exact-alarm capability, refresh alerts. On first frame: one-shot legacy notification-id cleanup (§5.7).
 
 ### 5.4 Zone detail sheet (`ZoneDetailSheet`)
 
@@ -705,7 +709,8 @@ Bottom sheet 0.55 / 0.4 / 0.92, `bgElevated`, top radius 22, padding (16, 12, 16
 
 1. Drag handle.
 2. **Zone card** (GlassCard): `Zone {zone}` overline (mono 11/ls1.6/700 accentPrimary); headline = zone name via `nameFor(zone)` or `Transit route`; if there is a next arrival: row — `tram` icon accentPrimary, caption `Next arrival in`, then `{N} min` in mono 22/700 accentSecondary, where `N = nextArrivals(zone, now.minute)[0] − now.minute` (§5.2 — may exceed 60 when wrapped).
-3. **Alerts card** (GlassCard):
+3. **Web build:** instead of the alerts card, a **Next arrivals** block (`schedule` icon + headline) lists the next 3 arrival times as `HH:MM  ·  HH:MM  ·  HH:MM` (`nextOccurrences(zone, stops, 3, now)`). The native alerts card was:
+   **Alerts card** (GlassCard):
    - Header: `notifications_outlined` 18 accentPrimary + headline `Alert armed` (if this zone is armed) else `Local alerts`.
    - Caption: `You'll get 3 notifications per arrival: 2 min before, 1 min before, and on arrival. You can arm several zones at once.`
    - **Repeat toggle row**: body `Repeat every hour` with caption below: `Schedules the next 6 arrivals (up to ~6 h ahead). Reopen the app to extend further — alerts can only be scheduled while the app is running.` (the "6" comes from `TrainAlertIds.repeatOccurrences`); right: a switch (active thumb accentPrimary). Toggle pre-set from the armed entry when re-opening an armed zone.

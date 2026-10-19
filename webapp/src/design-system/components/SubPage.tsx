@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useBack } from '../../core/useBack';
 import { AppBackground } from './AppBackground';
 import { PageScrollView } from './PageScrollView';
 import { IconArrowBack } from '../icons';
@@ -11,7 +11,7 @@ import styles from './SubPage.module.css';
  * back icon tinted accentPrimary, body padded below the toolbar.
  */
 export function SubPage({ title, children }: { title: string; children: ReactNode }) {
-  const navigate = useNavigate();
+  const goBack = useBack();
   return (
     <AppBackground>
       <div className={styles.page}>
@@ -20,7 +20,7 @@ export function SubPage({ title, children }: { title: string; children: ReactNod
             type="button"
             className={styles.back}
             aria-label="Back"
-            onClick={() => navigate(-1)}
+            onClick={goBack}
           >
             <IconArrowBack size={24} />
           </button>

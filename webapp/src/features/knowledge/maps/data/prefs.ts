@@ -3,6 +3,8 @@
  * `underdeck.` prefix - the same keys Settings › Clear removes.
  */
 
+import { safeGetItem, safeRemoveItem, safeSetItem } from '../../../../core/safeStorage';
+
 const PREFIX = 'underdeck.';
 
 const KEYS = {
@@ -13,13 +15,13 @@ const KEYS = {
 } as const;
 
 function read(key: string): string | null {
-  return localStorage.getItem(PREFIX + key);
+  return safeGetItem(PREFIX + key);
 }
 function write(key: string, value: string): void {
-  localStorage.setItem(PREFIX + key, value);
+  safeSetItem(PREFIX + key, value);
 }
 function remove(key: string): void {
-  localStorage.removeItem(PREFIX + key);
+  safeRemoveItem(PREFIX + key);
 }
 
 export function getPointerEtag(): string {

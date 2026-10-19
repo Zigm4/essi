@@ -33,23 +33,25 @@ describe('launchExternal', () => {
     useSnackbarStore.getState().dismiss();
   });
 
-  it('opens allowed http(s) URLs with noopener,noreferrer', () => {
-    const open = vi.spyOn(window, 'open').mockReturnValue({} as Window);
+  it('opens allowed http(s) URLs in a new tab with noopener noreferrer, without a false error', () => {
+    const clicked: HTMLAnchorElement[] = [];
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+      clicked.push(this);
+    });
     expect(launchExternal('https://example.com')).toBe(true);
-    expect(open).toHaveBeenCalledWith('https://example.com/', '_blank', 'noopener,noreferrer');
+    expect(clicked).toHaveLength(1);
+    expect(clicked[0]!.href).toBe('https://example.com/');
+    expect(clicked[0]!.target).toBe('_blank');
+    expect(clicked[0]!.rel).toBe('noopener noreferrer');
+    expect(clicked[0]!.isConnected).toBe(false); // removed after the click
+    expect(useSnackbarStore.getState().message).toBeNull();
   });
 
   it('never opens a disallowed scheme and shows the exact snackbar copy', () => {
-    const open = vi.spyOn(window, 'open').mockReturnValue({} as Window);
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
     expect(launchExternal('javascript:alert(1)')).toBe(false);
-    expect(open).not.toHaveBeenCalled();
+    expect(click).not.toHaveBeenCalled();
     expect(useSnackbarStore.getState().message).toBe("Couldn't open that link.");
     expect(useSnackbarStore.getState().danger).toBe(true);
-  });
-
-  it('reports failure when the window fails to open', () => {
-    vi.spyOn(window, 'open').mockReturnValue(null);
-    expect(launchExternal('https://blocked.example')).toBe(false);
-    expect(useSnackbarStore.getState().message).toBe("Couldn't open that link.");
   });
 });

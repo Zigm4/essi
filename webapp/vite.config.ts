@@ -10,7 +10,9 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // 'prompt': a new version waits until the user taps "Reload" (see
+      // src/app/registerServiceWorker.ts) instead of swapping under an open editor.
+      registerType: 'prompt',
       // Fonts are imported from src (hashed assets, base-path safe); only the
       // OFL license texts and the favicon live in public.
       includeAssets: ['fonts/*.txt', 'favicon.svg'],
@@ -29,7 +31,10 @@ export default defineConfig({
       },
       workbox: {
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
-        globPatterns: ['**/*.{js,css,html,ttf,svg,png}'],
+        // The data ships with the code: catalogs (json), the knowledge base
+        // (md + manifest) and the map seed are precached so every tool works
+        // offline, and code and data always update together.
+        globPatterns: ['**/*.{js,css,html,ttf,svg,png,json,md}'],
       },
     }),
   ],

@@ -94,7 +94,8 @@ function buildCatalog(models: ShipCatalogEntry[], locations: ShipLocation[]): Ca
   };
 }
 
-async function fetchJson<T>(file: string): Promise<T[]> {
+/** `null` when the file couldn't be loaded (so the caller can retry later). */
+async function fetchJson<T>(file: string): Promise<T[] | null> {
   try {
     const res = await fetch(import.meta.env.BASE_URL + file);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -103,22 +104,32 @@ async function fetchJson<T>(file: string): Promise<T[]> {
   } catch (err) {
     // Spec §10.3: log and fall back to an empty list.
     console.error(`Failed to load ${file}:`, err);
-    return [];
+    return null;
   }
 }
 
 let catalogPromise: Promise<CatalogData> | null = null;
 
-/** Loads (and memoizes) both catalog files. Never rejects. */
+/**
+ * Loads (and memoizes) both catalog files. Never rejects: a file that fails
+ * falls back to an empty list, and a failed load is not memoized, so the next
+ * call (e.g. back online) tries again.
+ */
 export function loadCatalogs(): Promise<CatalogData> {
   if (catalogPromise === null) {
-    catalogPromise = (async () => {
+    let failed = false;
+    const attempt = (async () => {
       const [models, locations] = await Promise.all([
         fetchJson<ShipCatalogEntry>('catalog/ship_catalog.json'),
         fetchJson<ShipLocation>('catalog/ship_locations.json'),
       ]);
-      return buildCatalog(models, locations);
+      failed = models === null || locations === null;
+      return buildCatalog(models ?? [], locations ?? []);
     })();
+    catalogPromise = attempt;
+    void attempt.then(() => {
+      if (failed && catalogPromise === attempt) catalogPromise = null;
+    });
   }
   return catalogPromise;
 }

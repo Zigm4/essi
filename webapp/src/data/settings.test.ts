@@ -69,3 +69,24 @@ describe('settings store persistence', () => {
     expect(localStorage.getItem('underdeck.settings.mapsLastSeenChangelogVersion')).toBe('1.2.0');
   });
 });
+
+describe('settings store without storage', () => {
+  it('loads with defaults and keeps working when the browser blocks localStorage', async () => {
+    const original = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+    Object.defineProperty(globalThis, 'localStorage', {
+      configurable: true,
+      get() {
+        throw new DOMException('Access is denied for this document.', 'SecurityError');
+      },
+    });
+    try {
+      const store = await freshStore();
+      expect(store.getState().hapticsEnabled).toBe(true);
+      expect(store.getState().onboardingSeen).toBe(false);
+      (store.getState() as SettingsState).setOnboardingSeen(true);
+      expect(store.getState().onboardingSeen).toBe(true);
+    } finally {
+      if (original !== undefined) Object.defineProperty(globalThis, 'localStorage', original);
+    }
+  });
+});

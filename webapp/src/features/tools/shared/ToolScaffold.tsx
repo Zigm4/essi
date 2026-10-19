@@ -1,5 +1,5 @@
 import { useRef, type ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useBack } from '../../../core/useBack';
 import { AppBackground } from '../../../design-system/components/AppBackground';
 import { PageScrollView } from '../../../design-system/components/PageScrollView';
 import { IconArrowBack } from '../../../design-system/icons';
@@ -22,7 +22,7 @@ export function ToolScaffold({
   padding?: string;
   children: ReactNode;
 }) {
-  const navigate = useNavigate();
+  const goBack = useBack();
   const storeRef = useRef(createScrollOffsetStore());
   return (
     <ScrollOffsetContext.Provider value={storeRef.current}>
@@ -33,7 +33,7 @@ export function ToolScaffold({
               type="button"
               className={styles.back}
               aria-label="Back"
-              onClick={() => navigate(-1)}
+              onClick={goBack}
             >
               <IconArrowBack size={24} />
             </button>

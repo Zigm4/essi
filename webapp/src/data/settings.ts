@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { safeGetItem, safeRemoveItem, safeSetItem } from '../core/safeStorage';
 
 /**
  * App settings - mirrors lib/services/app_settings.dart (app-shell spec §15).
@@ -29,27 +30,27 @@ function storageKey(key: string): string {
 }
 
 function readBool(key: string, fallback: boolean): boolean {
-  const raw = localStorage.getItem(storageKey(key));
+  const raw = safeGetItem(storageKey(key));
   return raw === null ? fallback : raw === 'true';
 }
 
 function readIntOrNull(key: string): number | null {
-  const raw = localStorage.getItem(storageKey(key));
+  const raw = safeGetItem(storageKey(key));
   if (raw === null) return null;
   const n = Number.parseInt(raw, 10);
   return Number.isFinite(n) ? n : null;
 }
 
 function readStringOrNull(key: string): string | null {
-  return localStorage.getItem(storageKey(key));
+  return safeGetItem(storageKey(key));
 }
 
 function write(key: string, value: boolean | number | string): void {
-  localStorage.setItem(storageKey(key), String(value));
+  safeSetItem(storageKey(key), String(value));
 }
 
 function remove(key: string): void {
-  localStorage.removeItem(storageKey(key));
+  safeRemoveItem(storageKey(key));
 }
 
 export interface SettingsState {

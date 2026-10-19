@@ -4,20 +4,32 @@ import styles from './SnackbarHost.module.css';
 
 const AUTO_DISMISS_MS = 4000;
 
-/** Renders the app-wide snackbar/toast; auto-dismisses after 4s. */
+/** Renders the app-wide snackbar/toast; auto-dismisses after 4s unless persistent. */
 export function SnackbarHost() {
-  const { message, danger, key, dismiss } = useSnackbarStore();
+  const { message, danger, action, persistent, key, dismiss } = useSnackbarStore();
 
   useEffect(() => {
-    if (message === null) return;
+    if (message === null || persistent) return;
     const timer = setTimeout(dismiss, AUTO_DISMISS_MS);
     return () => clearTimeout(timer);
-  }, [message, key, dismiss]);
+  }, [message, persistent, key, dismiss]);
 
   if (message === null) return null;
   return (
     <div className={`${styles.snackbar} ${danger ? styles.danger : ''}`} role="status">
-      {message}
+      <span className={styles.message}>{message}</span>
+      {action !== null && (
+        <button
+          type="button"
+          className={styles.action}
+          onClick={() => {
+            dismiss();
+            action.onClick();
+          }}
+        >
+          {action.label}
+        </button>
+      )}
     </div>
   );
 }
