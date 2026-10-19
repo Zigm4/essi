@@ -12,7 +12,7 @@ import { stripMarkdown } from '../shared/markdown';
 import { appLink, DISCORD_MAX, escapeDiscord, type ShareContent } from '../shared/shareActions';
 import type { CardBlock, CardSpec } from '../shared/shareCard';
 import { transmission } from '../shared/transmission';
-import { bonusFactText, costText, equipmentText, repText, skillText, trainsText } from './jobFacts';
+import { bonusFactText, costText, equipmentText, jobFactRows, repText, skillText, trainsText } from './jobFacts';
 import { coordsLabel, type Job, type JobLocation } from './jobModel';
 import { locationDisplayLabel, locationName } from './jobPlaces';
 import type { JobFilter } from './jobsLogic';
@@ -21,7 +21,6 @@ import { factionInfo, rewardInfo, tagLabel } from './jobTaxonomies';
 
 const SITE = 'zigm4.github.io/essi';
 const SIGN_OFF = 'Job Allocation Desk, East Shire Space Industries (ESSI)';
-const DANGER = '#FF5577';
 const DESCRIPTION_MAX = 320;
 
 /** The link that opens one job's sheet. */
@@ -110,41 +109,37 @@ export function jobShare(job: Job): ShareContent {
     signOff: SIGN_OFF,
   });
 
-  const blocks: CardBlock[] = [
-    { kind: 'hero', emoji: '💼', title: `Job #${job.id}`, caption: ally?.fullLabel ?? type },
-  ];
-  if (description.length > 0) {
-    blocks.push({ kind: 'space', height: 4 }, { kind: 'paragraph', text: description, maxLines: 5 });
+  // The image is the job sheet itself: description, fact table, ON COMPLETE.
+  const blocks: CardBlock[] = [];
+  if (job.description.trim().length > 0) {
+    blocks.push({ kind: 'panel', items: [{ kind: 'rich', text: job.description, maxLines: 8 }] });
   }
-  blocks.push(
-    { kind: 'divider', alpha: 0.3 },
-    { kind: 'space', height: 4 },
-    { kind: 'kv', label: 'Pickup', value: locationDisplayLabel(job.pickupLocation) },
-    { kind: 'kv', label: 'Drop-off', value: locationDisplayLabel(job.dropoffLocation) },
-    { kind: 'kv', label: 'Reward', value: `${reward.label} · ${bonusFactText(job.bonus)}`, valueColor: reward.tint },
-  );
-  if (ally !== null) blocks.push({ kind: 'kv', label: 'Reputation', value: `+ ${ally.label}`, valueColor: ally.tint });
-  if (gains !== null) blocks.push({ kind: 'kv', label: 'Also gains', value: `+ ${gains.label}`, valueColor: gains.tint });
-  if (harmed !== null) blocks.push({ kind: 'kv', label: 'Loses rep', value: harmed.label, valueColor: DANGER });
-  if (requirements.length === 0) blocks.push({ kind: 'kv', label: 'Requirements', value: 'none' });
-  else {
-    if (job.requiredTag !== null) blocks.push({ kind: 'kv', label: 'Tag', value: tagLabel(job.requiredTag) });
-    if (job.skillRequirement !== null) blocks.push({ kind: 'kv', label: 'Skill', value: skillText(job) });
-    if (job.requiredRep > 0) blocks.push({ kind: 'kv', label: 'Reputation needed', value: repText(job) });
-    const equipment = equipmentText(job);
-    if (equipment !== null) blocks.push({ kind: 'kv', label: 'Equipment', value: equipment });
-    const cost = costText(job);
-    if (cost !== null) blocks.push({ kind: 'kv', label: 'Cost', value: cost, valueColor: '#FFB347' });
+  blocks.push({
+    kind: 'panel',
+    items: [
+      {
+        kind: 'facts',
+        rows: jobFactRows(job).map((r) => ({
+          label: r.label,
+          value: r.harm === true ? `⚠ ${r.value}` : r.value,
+          color: r.tint,
+        })),
+      },
+    ],
+  });
+  if (job.onComplete.trim().length > 0) {
+    blocks.push({
+      kind: 'panel',
+      items: [
+        { kind: 'heading', text: 'ON COMPLETE', color: '#5FE8A0' },
+        { kind: 'rich', text: job.onComplete, maxLines: 9 },
+      ],
+    });
   }
-  const trains = trainsText(job);
-  if (trains !== null) blocks.push({ kind: 'kv', label: 'Trains', value: trains, valueColor: '#5FE8A0' });
-  blocks.push({ kind: 'kv', label: 'Risk', value: String(job.risk) });
-  if (cargo !== null) blocks.push({ kind: 'kv', label: 'Cargo', value: cargo });
-  blocks.push({ kind: 'space', height: 6 }, { kind: 'divider' });
 
   const card: CardSpec = {
-    title: 'ESSI · Job briefing',
-    pill: type.toUpperCase(),
+    title: type,
+    pill: `#${job.id}`,
     blocks,
     footer: `ESSI · Job Allocation Desk · ${SITE}`,
   };

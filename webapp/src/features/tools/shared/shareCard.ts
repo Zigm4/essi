@@ -27,6 +27,11 @@ export type CardBlock =
    * renderCardPng with the real font; until then the height is estimated.
    */
   | { kind: 'paragraph'; text: string; maxLines?: number; color?: string; lines?: readonly string[] }
+  /**
+   * A card like the app's GlassCard (the job sheet's panels). Its items are
+   * laid out by renderCardPng (`layout`); until then the height is estimated.
+   */
+  | { kind: 'panel'; items: readonly PanelItem[]; layout?: PanelLayout }
   | { kind: 'listRow'; emoji: string; text: string; trailing: string }
   | {
       kind: 'planet';
@@ -37,6 +42,35 @@ export type CardBlock =
       sector: number;
       sl: string;
     };
+
+/** A fact-table row: dimmed mono label, coloured value (wraps to 2 lines). */
+export interface FactRowSpec {
+  label: string;
+  value: string;
+  color?: string;
+}
+
+export type PanelItem =
+  /** Job text with the app's inline markdown: **bold** (blue, heavy), `code`. */
+  | { kind: 'rich'; text: string; maxLines?: number }
+  | { kind: 'facts'; rows: readonly FactRowSpec[] }
+  /** "ON COMPLETE"-style small caps heading. */
+  | { kind: 'heading'; text: string; color?: string };
+
+export type RunStyle = 'plain' | 'bold' | 'code';
+export interface Run {
+  text: string;
+  style: RunStyle;
+}
+
+type LaidItem =
+  | { kind: 'rich'; lines: Run[][] }
+  | { kind: 'facts'; rows: { label: string; lines: string[]; color?: string }[] }
+  | { kind: 'heading'; text: string; color?: string };
+
+export interface PanelLayout {
+  items: LaidItem[];
+}
 
 export interface CardSpec {
   title: string;
@@ -67,6 +101,8 @@ export function blockHeight(block: CardBlock): number {
       return 20;
     case 'paragraph':
       return PARAGRAPH_PAD + PARAGRAPH_LINE * (block.lines?.length ?? estimateLines(block));
+    case 'panel':
+      return panelHeight(block) + PANEL_GAP;
     case 'listRow':
       return 22;
     case 'planet':
@@ -84,6 +120,172 @@ function estimateLines(block: { text: string; maxLines?: number }): number {
   return Math.max(1, Math.min(block.maxLines ?? PARAGRAPH_MAX_LINES, Math.ceil(block.text.length / 52)));
 }
 
+// Panels mirror the app's GlassCard (12 px padding, 14 px corners) and the
+// job sheet's text sizes, scaled to the 380 px card.
+const PANEL_PAD = 12;
+const PANEL_GAP = 10;
+const PANEL_ITEM_GAP = 6;
+const RICH_LINE = 18;
+const FACT_LINE = 17;
+const FACT_ROW_PAD = 6;
+const FACT_KEY_WIDTH = 134;
+const HEADING_HEIGHT = 18;
+const PANEL_INNER = CARD_WIDTH - PAD * 2 - PANEL_PAD * 2;
+
+function itemHeight(item: LaidItem): number {
+  switch (item.kind) {
+    case 'rich':
+      return item.lines.length * RICH_LINE;
+    case 'facts':
+      return item.rows.reduce((h, r) => h + Math.max(1, r.lines.length) * FACT_LINE + FACT_ROW_PAD, 0);
+    case 'heading':
+      return HEADING_HEIGHT;
+  }
+}
+
+/** Rough layout before measuring (~48 characters per text line). */
+function estimateLayout(items: readonly PanelItem[]): PanelLayout {
+  return {
+    items: items.map((item): LaidItem => {
+      switch (item.kind) {
+        case 'rich': {
+          const n = Math.max(1, Math.min(item.maxLines ?? 10, Math.ceil(item.text.length / 48)));
+          return { kind: 'rich', lines: Array.from({ length: n }, () => []) };
+        }
+        case 'facts':
+          return { kind: 'facts', rows: item.rows.map((r) => ({ label: r.label, lines: [r.value], color: r.color })) };
+        case 'heading':
+          return item;
+      }
+    }),
+  };
+}
+
+function panelHeight(block: { items: readonly PanelItem[]; layout?: PanelLayout }): number {
+  const items = (block.layout ?? estimateLayout(block.items)).items;
+  const body = items.reduce((h, item) => h + itemHeight(item), 0);
+  return PANEL_PAD * 2 + body + Math.max(0, items.length - 1) * PANEL_ITEM_GAP;
+}
+
+/**
+ * The app's inline markdown (shared/markdown.tsx): `**bold**`, ``` ``code`` ```
+ * and `` `code` ``. One array of runs per paragraph (newline-separated).
+ */
+export function parseInlineMarkdown(text: string): Run[][] {
+  return text
+    .split(/\n+/)
+    .map((p) => p.trim())
+    .filter((p) => p.length > 0)
+    .map((p) => {
+      const runs: Run[] = [];
+      let i = 0;
+      let plainStart = 0;
+      const flush = (end: number) => {
+        if (end > plainStart) runs.push({ text: p.slice(plainStart, end), style: 'plain' });
+      };
+      while (i < p.length) {
+        const marker = p.startsWith('**', i) ? '**' : p.startsWith('``', i) ? '``' : p[i] === '`' ? '`' : null;
+        const close = marker === null ? -1 : p.indexOf(marker, i + marker.length);
+        if (marker !== null && close !== -1) {
+          flush(i);
+          const inner = p.slice(i + marker.length, close);
+          runs.push({ text: marker === '**' ? inner : inner.trim(), style: marker === '**' ? 'bold' : 'code' });
+          i = close + marker.length;
+          plainStart = i;
+          continue;
+        }
+        i++;
+      }
+      flush(p.length);
+      return runs;
+    });
+}
+
+type MeasureRun = (text: string, style: RunStyle) => number;
+
+/** Words as units of styled pieces ("**PRQ**:" stays one unit), with the spacing before them. */
+function wordUnits(runs: readonly Run[]): { pieces: Run[]; spaced: boolean }[] {
+  const units: { pieces: Run[]; spaced: boolean }[] = [];
+  let current: Run[] = [];
+  let spaced = false;
+  const close = () => {
+    if (current.length > 0) units.push({ pieces: current, spaced });
+    current = [];
+  };
+  for (const run of runs) {
+    for (const part of run.text.split(/(\s+)/)) {
+      if (part.length === 0) continue;
+      if (/^\s+$/.test(part)) {
+        close();
+        spaced = units.length > 0;
+        continue;
+      }
+      current.push({ text: part, style: run.style });
+    }
+  }
+  close();
+  return units;
+}
+
+function appendRun(line: Run[], run: Run): void {
+  const last = line[line.length - 1];
+  if (last !== undefined && last.style === run.style) last.text += run.text;
+  else line.push({ ...run });
+}
+
+/**
+ * Word-wraps styled paragraphs into lines of `width`, at most `maxLines`; text
+ * left over ends the last line with "…".
+ */
+export function wrapRich(
+  paragraphs: readonly Run[][],
+  width: number,
+  maxLines: number,
+  measure: MeasureRun,
+): Run[][] {
+  const lines: Run[][] = [];
+  let truncated = false;
+  for (const paragraph of paragraphs) {
+    let line: Run[] = [];
+    let lineWidth = 0;
+    for (const unit of wordUnits(paragraph)) {
+      const unitWidth = unit.pieces.reduce((w, p) => w + measure(p.text, p.style), 0);
+      const space = line.length > 0 && unit.spaced ? measure(' ', 'plain') : 0;
+      if (line.length > 0 && lineWidth + space + unitWidth > width) {
+        lines.push(line);
+        line = [];
+        lineWidth = 0;
+      }
+      if (line.length > 0 && unit.spaced) {
+        appendRun(line, { text: ' ', style: 'plain' });
+        lineWidth += measure(' ', 'plain');
+      }
+      for (const piece of unit.pieces) appendRun(line, piece);
+      lineWidth += unitWidth;
+    }
+    if (line.length > 0) lines.push(line);
+    if (lines.length > maxLines) {
+      truncated = true;
+      break;
+    }
+  }
+  if (lines.length > maxLines) {
+    lines.length = maxLines;
+    truncated = true;
+  }
+  if (truncated && lines.length > 0) {
+    const last = lines[lines.length - 1]!;
+    const widthOf = (l: Run[]) => l.reduce((w, r) => w + measure(r.text, r.style), 0);
+    while (widthOf(last) + measure('…', 'plain') > width && last.length > 0) {
+      const tail = last[last.length - 1]!;
+      tail.text = tail.text.slice(0, -1).trimEnd();
+      if (tail.text.length === 0) last.pop();
+    }
+    appendRun(last, { text: '…', style: 'plain' });
+  }
+  return lines;
+}
+
 const HEADER_HEIGHT = 34; // title + subtitle
 const HEADER_HEIGHT_NO_SUBTITLE = 16;
 const FOOTER_HEIGHT = 24; // gap + footer line
@@ -97,6 +299,8 @@ export function measureCard(spec: CardSpec): number {
 
 interface Palette {
   bg: string;
+  /** GlassCard fill (--bg-card). */
+  card: string;
   accent: string;
   accent2: string;
   text: string;
@@ -107,6 +311,7 @@ interface Palette {
 
 const FALLBACK: Palette = {
   bg: '#03060b',
+  card: '#111e30',
   accent: '#4fc3ff',
   accent2: '#7ae3ff',
   text: '#e8f4ff',
@@ -121,6 +326,7 @@ function palette(): Palette {
   const read = (name: string, fallback: string) => css.getPropertyValue(name).trim() || fallback;
   return {
     bg: read('--bg-deepest', FALLBACK.bg),
+    card: read('--bg-card', FALLBACK.card),
     accent: read('--accent-primary', FALLBACK.accent),
     accent2: read('--accent-secondary', FALLBACK.accent2),
     text: read('--text-primary', FALLBACK.text),
@@ -140,6 +346,8 @@ async function fontsReady(): Promise<void> {
     document.fonts.load(`600 14px ${MONO}`),
     document.fonts.load(`600 16px ${SANS}`),
     document.fonts.load(`400 13px ${SANS}`),
+    document.fonts.load(`800 13px ${SANS}`),
+    document.fonts.load(`12px ${MONO}`),
   ]).catch(() => undefined);
 }
 
@@ -168,7 +376,8 @@ export function wrapLines(
   maxWidth: number,
   maxLines: number,
 ): string[] {
-  const words = text.split(/\s+/).filter((w) => w.length > 0);
+  // Plain spaces only: a no-break space (U+00A0) keeps its words together.
+  const words = text.split(/[ \t\r\n]+/).filter((w) => w.length > 0);
   const lines: string[] = [];
   let current = '';
   let i = 0;
@@ -283,6 +492,10 @@ function drawBlock(ctx: Ctx, block: CardBlock, y: number, p: Palette): void {
       });
       return;
     }
+    case 'panel': {
+      drawPanel(ctx, block.layout ?? estimateLayout(block.items), y, panelHeight(block), p);
+      return;
+    }
     case 'listRow': {
       setFont(ctx, `14px ${SANS}`);
       ctx.fillStyle = p.text;
@@ -324,6 +537,111 @@ function drawBlock(ctx: Ctx, block: CardBlock, y: number, p: Palette): void {
   }
 }
 
+const RICH_FONT: Record<RunStyle, string> = {
+  plain: `13px ${SANS}`,
+  bold: `800 13px ${SANS}`,
+  code: `12px ${MONO}`,
+};
+
+function runMeasurer(ctx: Ctx): MeasureRun {
+  return (text, style) => {
+    setFont(ctx, RICH_FONT[style]);
+    return ctx.measureText(text).width;
+  };
+}
+
+function drawPanel(ctx: Ctx, layout: PanelLayout, y: number, height: number, p: Palette): void {
+  const x = PAD;
+  const w = CARD_WIDTH - PAD * 2;
+  ctx.fillStyle = p.card;
+  ctx.beginPath();
+  ctx.roundRect(x, y, w, height, 14);
+  ctx.fill();
+  ctx.strokeStyle = p.border;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  const left = x + PANEL_PAD;
+  const measure = runMeasurer(ctx);
+  let cy = y + PANEL_PAD;
+  layout.items.forEach((item, index) => {
+    if (index > 0) cy += PANEL_ITEM_GAP;
+    switch (item.kind) {
+      case 'heading':
+        setFont(ctx, `700 11px ${MONO}`, '1.5px');
+        ctx.fillStyle = item.color ?? p.accent;
+        ctx.fillText(item.text, left, cy + 12);
+        break;
+      case 'rich':
+        item.lines.forEach((line, i) => {
+          let lx = left;
+          const baseline = cy + 13 + i * RICH_LINE;
+          for (const run of line) {
+            const runWidth = measure(run.text, run.style);
+            if (run.style === 'code') {
+              ctx.fillStyle = p.bg;
+              ctx.beginPath();
+              ctx.roundRect(lx - 1, baseline - 11, runWidth + 2, 15, 3);
+              ctx.fill();
+            }
+            setFont(ctx, RICH_FONT[run.style]);
+            ctx.fillStyle = run.style === 'bold' ? p.accent : run.style === 'code' ? p.accent2 : p.text;
+            ctx.fillText(run.text, lx, baseline);
+            lx += runWidth;
+          }
+        });
+        break;
+      case 'facts': {
+        let ry = cy;
+        for (const row of item.rows) {
+          setFont(ctx, `11px ${MONO}`);
+          ctx.fillStyle = p.dim;
+          ctx.fillText(fit(ctx, row.label, FACT_KEY_WIDTH - 8), left, ry + 13);
+          setFont(ctx, `13px ${SANS}`);
+          ctx.fillStyle = row.color ?? p.text;
+          row.lines.forEach((l, i) => ctx.fillText(l, left + FACT_KEY_WIDTH, ry + 13 + i * FACT_LINE));
+          ry += Math.max(1, row.lines.length) * FACT_LINE + FACT_ROW_PAD;
+        }
+        break;
+      }
+    }
+    cy += itemHeight(item);
+  });
+}
+
+export function keepParenthesesTogether(text: string): string {
+  return text.replace(/\([^)]*\)/g, (m) => m.replace(/ /g, '\u00A0'));
+}
+
+/** Lays out a panel's text with the real fonts (line breaks set its height). */
+function layoutPanel(ctx: Ctx, items: readonly PanelItem[]): PanelLayout {
+  const measure = runMeasurer(ctx);
+  return {
+    items: items.map((item): LaidItem => {
+      switch (item.kind) {
+        case 'heading':
+          return item;
+        case 'rich':
+          return {
+            kind: 'rich',
+            lines: wrapRich(parseInlineMarkdown(item.text), PANEL_INNER, item.maxLines ?? 10, measure),
+          };
+        case 'facts':
+          setFont(ctx, `13px ${SANS}`);
+          return {
+            kind: 'facts',
+            rows: item.rows.map((r) => ({
+              label: r.label,
+              color: r.color,
+              // "(355 · z35)" never splits: a long place breaks before its coordinates.
+              lines: wrapLines(ctx, keepParenthesesTogether(r.value), PANEL_INNER - FACT_KEY_WIDTH, 2),
+            })),
+          };
+      }
+    }),
+  };
+}
+
 /**
  * Draws the card and returns it as a PNG blob.
  * @throws when the browser has no 2D canvas.
@@ -334,15 +652,17 @@ export async function renderCardPng(input: CardSpec): Promise<Blob> {
   canvas.width = CARD_WIDTH * CARD_SCALE;
   const ctx = canvas.getContext('2d') as Ctx | null;
   if (ctx === null) throw new Error('No 2D canvas');
-  // Wrap paragraphs with the real font first: their line count sets the height.
-  setFont(ctx, `${PARAGRAPH_FONT_SIZE}px ${SANS}`);
+  // Lay text out with the real fonts first: line counts set the height.
   const spec: CardSpec = {
     ...input,
-    blocks: input.blocks.map((b) =>
-      b.kind === 'paragraph'
-        ? { ...b, lines: wrapLines(ctx, b.text, CARD_WIDTH - PAD * 2, b.maxLines ?? PARAGRAPH_MAX_LINES) }
-        : b,
-    ),
+    blocks: input.blocks.map((b) => {
+      if (b.kind === 'paragraph') {
+        setFont(ctx, `${PARAGRAPH_FONT_SIZE}px ${SANS}`);
+        return { ...b, lines: wrapLines(ctx, b.text, CARD_WIDTH - PAD * 2, b.maxLines ?? PARAGRAPH_MAX_LINES) };
+      }
+      if (b.kind === 'panel') return { ...b, layout: layoutPanel(ctx, b.items) };
+      return b;
+    }),
   };
   const height = measureCard(spec);
   canvas.height = height * CARD_SCALE; // also resets the context state

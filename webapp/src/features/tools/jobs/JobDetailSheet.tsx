@@ -12,11 +12,9 @@ import { copyToClipboard } from '../shared/share';
 import { ShareSheet } from '../shared/ShareSheet';
 import type { ShareContent } from '../shared/shareActions';
 import { IconGppBad, IconIosShare } from '../shared/toolIcons';
-import { bonusFactText, costText, equipmentText, repText, skillText, trainsText } from './jobFacts';
+import { jobFactRows } from './jobFacts';
 import type { Job } from './jobModel';
 import { jobShare } from './jobShare';
-import { locationDisplayLabel } from './jobPlaces';
-import { factionInfo, rewardInfo, tagLabel } from './jobTaxonomies';
 import styles from './Jobs.module.css';
 
 const TEXT_SECONDARY = '#8AA4C2';
@@ -79,11 +77,6 @@ function JobDetailContent({
   status: JobStatusValue;
   starred: boolean;
 }) {
-  const ally = job.factionRep !== null ? factionInfo(job.factionRep) : null;
-  const harmed = job.harmedFaction !== null ? factionInfo(job.harmedFaction) : null;
-  const gains = job.alsoGainsFaction !== null ? factionInfo(job.alsoGainsFaction) : null;
-  const reward = rewardInfo(job.reward);
-  const equipment = equipmentText(job);
   const showDataWarn = job.pickupLocation.astnum === 355 && job.pickupLocation.zone === 70;
 
   const onCopyId = () => {
@@ -155,32 +148,16 @@ function JobDetailContent({
       )}
 
       <GlassCard>
-        <FactRow label="Allied faction" value={ally?.fullLabel ?? '-'} tint={ally?.tint} />
-        {gains !== null && <FactRow label="Also gains rep" value={gains.fullLabel} tint={gains.tint} />}
-        {harmed !== null && (
-          <FactRow label="Loses rep" value={harmed.fullLabel} tint={harmed.tint} icon={<IconGppBad size={14} />} />
-        )}
-        <FactRow label="Required tag" value={job.requiredTag !== null ? tagLabel(job.requiredTag) : '-'} />
-        <FactRow label="Required skill" value={skillText(job)} />
-        {trainsText(job) !== null && <FactRow label="Trains" value={trainsText(job)!} tint={ACCENT_SUCCESS} />}
-        {costText(job) !== null && <FactRow label="Cost" value={costText(job)!} tint={ACCENT_WARN} />}
-        <FactRow label="Required reputation" value={repText(job)} />
-        {equipment !== null && <FactRow label="Equipment" value={equipment} tint={ACCENT_WARN} />}
-        <FactRow label="Risk" value={String(job.risk)} />
-        <FactRow
-          label="Reward"
-          value={`${reward.label} · ${bonusFactText(job.bonus)}`}
-          tint={reward.tint}
-        />
-        <FactRow label="Pickup" value={locationDisplayLabel(job.pickupLocation)} />
-        <FactRow label="Dropoff" value={locationDisplayLabel(job.dropoffLocation)} />
-        {job.isCargoJob && (
+        {/* Same rows as the share card (jobFactRows), so the image matches the sheet. */}
+        {jobFactRows(job).map((row) => (
           <FactRow
-            label="Cargo"
-            value={job.ship !== null ? `capacity ${job.capacity} · ship ${job.ship}` : `capacity ${job.capacity}`}
-            tint={ACCENT_WARN}
+            key={row.label}
+            label={row.label}
+            value={row.value}
+            tint={row.tint}
+            icon={row.harm === true ? <IconGppBad size={14} /> : undefined}
           />
-        )}
+        ))}
       </GlassCard>
 
       {job.mapRef !== null && (

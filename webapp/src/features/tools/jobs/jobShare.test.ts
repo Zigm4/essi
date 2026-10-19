@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { jobFactRows } from './jobFacts';
 import { parseJobsJson, type Job } from './jobModel';
 import { pristineFilter } from './jobsLogic';
 import { jobIdFromSearch, jobRoute, jobShare, jobsListShare } from './jobShare';
@@ -59,9 +60,26 @@ describe('jobShare', () => {
       const share = jobShare(job);
       expect(share.discordText.length, `#${job.id}`).toBeLessThanOrEqual(1900);
       if (job.description.trim().length > 0) {
-        expect(share.card.blocks.some((b) => b.kind === 'paragraph')).toBe(true);
+        const first = share.card.blocks[0]!;
+        expect(first.kind === 'panel' && first.items[0]!.kind === 'rich').toBe(true);
       }
     }
+  });
+});
+
+describe('job image', () => {
+  it('is the job sheet: description, the same fact rows, ON COMPLETE', () => {
+    const job = byId(35511202);
+    const card = jobShare(job).card;
+    expect(card.title).toBe('Beginner');
+    expect(card.pill).toBe('#35511202');
+    expect(card.blocks.map((b) => b.kind)).toEqual(['panel', 'panel', 'panel']);
+    const [description, facts, onComplete] = card.blocks as Extract<(typeof card.blocks)[number], { kind: 'panel' }>[];
+    expect(description!.items[0]).toEqual({ kind: 'rich', text: job.description, maxLines: 8 });
+    const rows = facts!.items[0]!.kind === 'facts' ? facts!.items[0]!.rows : [];
+    expect(rows.map((r) => r.label)).toEqual(jobFactRows(job).map((r) => r.label));
+    expect(rows.find((r) => r.label === 'Trains')?.value).toBe('Strength (+0.001)');
+    expect(onComplete!.items[0]).toEqual({ kind: 'heading', text: 'ON COMPLETE', color: '#5FE8A0' });
   });
 });
 

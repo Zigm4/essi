@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { blockHeight, measureCard, wrapLines } from './shareCard';
+import { blockHeight, keepParenthesesTogether, measureCard, parseInlineMarkdown, wrapLines, wrapRich } from './shareCard';
 
 /** 1 px per character: easy widths. */
 const ctx = { measureText: (t: string) => ({ width: t.length }) as TextMetrics };
@@ -26,5 +26,69 @@ describe('paragraph height', () => {
     expect(blockHeight({ kind: 'paragraph', text: 'x', lines: ['a', 'b', 'c'] })).toBe(8 + 3 * 17);
     expect(blockHeight({ kind: 'paragraph', text: 'x'.repeat(520), maxLines: 4 })).toBe(8 + 4 * 17);
     expect(measureCard({ title: 't', blocks: [{ kind: 'paragraph', text: 'x', lines: ['a'] }], footer: 'f' })).toBeGreaterThan(25);
+  });
+});
+
+describe('parseInlineMarkdown', () => {
+  it('reads bold and code like the app', () => {
+    expect(parseInlineMarkdown('**PRQ**: Compose a jingle.')).toEqual([
+      [
+        { text: 'PRQ', style: 'bold' },
+        { text: ': Compose a jingle.', style: 'plain' },
+      ],
+    ]);
+    expect(parseInlineMarkdown('use ``!work`` or `!job`')).toEqual([
+      [
+        { text: 'use ', style: 'plain' },
+        { text: '!work', style: 'code' },
+        { text: ' or ', style: 'plain' },
+        { text: '!job', style: 'code' },
+      ],
+    ]);
+  });
+
+  it('keeps paragraphs apart', () => {
+    expect(parseInlineMarkdown('one\n\ntwo')).toHaveLength(2);
+  });
+});
+
+describe('wrapRich', () => {
+  const measure = (t: string) => t.length;
+
+  it('keeps "**PRQ**:" together and wraps on spaces', () => {
+    const lines = wrapRich(parseInlineMarkdown('**PRQ**: one two three'), 9, 5, measure);
+    expect(lines).toEqual([
+      [
+        { text: 'PRQ', style: 'bold' },
+        { text: ': one', style: 'plain' },
+      ],
+      [{ text: 'two three', style: 'plain' }],
+    ]);
+  });
+
+  it('ends a cut text with …', () => {
+    const lines = wrapRich(parseInlineMarkdown('aa bb cc dd ee ff'), 5, 2, measure);
+    expect(lines).toHaveLength(2);
+    const last = lines[1]!.map((r) => r.text).join('');
+    expect(last.endsWith('…')).toBe(true);
+    expect(last.length).toBeLessThanOrEqual(5);
+  });
+});
+
+describe('panel height', () => {
+  it('grows with its content', () => {
+    const small = blockHeight({ kind: 'panel', items: [{ kind: 'facts', rows: [{ label: 'a', value: 'b' }] }] });
+    const big = blockHeight({
+      kind: 'panel',
+      items: [{ kind: 'facts', rows: Array.from({ length: 6 }, () => ({ label: 'a', value: 'b' })) }],
+    });
+    expect(big).toBeGreaterThan(small);
+  });
+});
+
+describe('keepParenthesesTogether', () => {
+  it('breaks a place before its coordinates, never inside them', () => {
+    const value = keepParenthesesTogether('Ratropia · Northshire (355 · z35)');
+    expect(wrapLines(ctx, value, 24, 2)).toEqual(['Ratropia · Northshire', '(355\u00A0·\u00A0z35)']);
   });
 });
