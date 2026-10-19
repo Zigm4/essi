@@ -1,4 +1,5 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useUnsavedChangesGuard } from '../../../core/useUnsavedChangesGuard';
 import { AppBackground } from '../../../design-system/components/AppBackground';
 import { ConfirmDialog } from './ConfirmDialog';
 import styles from './SheetShell.module.css';
@@ -6,9 +7,11 @@ import styles from './SheetShell.module.css';
 /**
  * Modal bottom-sheet shell shared by the Note and Link editors (spec §8/§9).
  * Transparent app bar (Cancel / title / Save) over an AppBackground with no
- * scanlines; body scrolls. Cancel, backdrop click and Esc all route through the
- * unsaved-changes guard (`enableDrag:false` semantics - the sheet can't be
- * dismissed around the dirty check).
+ * scanlines; body scrolls. Cancel, backdrop click, Esc and the back gesture /
+ * browser Back all route through the unsaved-changes guard (`enableDrag:false`
+ * semantics - the sheet can't be dismissed around the dirty check); a reload
+ * or tab close with unsaved changes gets the browser's "Leave site?" prompt.
+ * While an async save runs, Save is disabled so a double click can't save twice.
  */
 export function SheetShell({
   title,
@@ -22,10 +25,27 @@ export function SheetShell({
   canSave: boolean;
   dirty: boolean;
   onClose: () => void;
-  onSave: () => void;
+  onSave: () => void | Promise<void>;
   children: ReactNode;
 }) {
   const [showDiscard, setShowDiscard] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
+
+  useUnsavedChangesGuard(dirty, () => setShowDiscard(true));
+
+  const handleSave = () => {
+    if (savingRef.current) return;
+    const result = onSave();
+    if (result instanceof Promise) {
+      savingRef.current = true;
+      setSaving(true);
+      void result.finally(() => {
+        savingRef.current = false;
+        setSaving(false);
+      });
+    }
+  };
 
   const requestClose = () => {
     if (dirty) setShowDiscard(true);
@@ -63,8 +83,8 @@ export function SheetShell({
               <button
                 type="button"
                 className={styles.save}
-                disabled={!canSave}
-                onClick={onSave}
+                disabled={!canSave || saving}
+                onClick={handleSave}
               >
                 Save
               </button>

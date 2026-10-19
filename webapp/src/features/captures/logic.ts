@@ -185,3 +185,19 @@ export function lastBackupLabel(lastBackupAt: number | null, now: number): strin
 export function isDiscordUrl(url: string): boolean {
   return url.includes('discord');
 }
+
+/**
+ * The tag filter actually in force: the stored selection minus tags that no
+ * longer exist. Deleting the last note with a selected tag removes the tag (and
+ * its chip); without this, its id stayed selected and hid every note with no
+ * way to clear it.
+ */
+export function liveTagSelection(
+  selected: ReadonlySet<string>,
+  existingTags: readonly { id: string }[] | undefined,
+): ReadonlySet<string> {
+  if (existingTags === undefined || selected.size === 0) return selected;
+  const existing = new Set(existingTags.map((t) => t.id));
+  const live = [...selected].filter((id) => existing.has(id));
+  return live.length === selected.size ? selected : new Set(live);
+}

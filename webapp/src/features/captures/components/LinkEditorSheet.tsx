@@ -48,19 +48,18 @@ export function LinkEditorSheet({
     note !== initialNote ||
     !sameTags(tags, initialTags);
 
-  const onSave = () => {
+  // Returns the save so SheetShell can lock Save until it settles (no double save).
+  const onSave = async () => {
     // F38: commit any half-typed tag token before saving.
     const finalTags = tagInputRef.current?.commitPending() ?? tags;
-    void (async () => {
-      try {
-        await saveLink({ id: initial?.id, title, url, note, tagDisplayNames: finalTags });
-        Haptics.success();
-        onClose();
-      } catch (e) {
-        logError(e);
-        showSnackbar(friendlyError(e, "Couldn't save - please try again."), { danger: true });
-      }
-    })();
+    try {
+      await saveLink({ id: initial?.id, title, url, note, tagDisplayNames: finalTags });
+      Haptics.success();
+      onClose();
+    } catch (e) {
+      logError(e);
+      showSnackbar(friendlyError(e, "Couldn't save - please try again."), { danger: true });
+    }
   };
 
   return (

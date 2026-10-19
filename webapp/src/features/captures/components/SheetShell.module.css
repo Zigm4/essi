@@ -96,3 +96,9 @@
   display: flex;
   flex-direction: column;
 }
+
+/* Children keep their natural height so a long note scrolls the body instead
+   of the card shrinking and clipping its last lines. */
+.body > * {
+  flex-shrink: 0;
+}

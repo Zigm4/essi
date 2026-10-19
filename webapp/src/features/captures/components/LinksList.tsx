@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { logError } from '../../../core/logging';
 import { useCapturesStore } from '../capturesStore';
-import { filterLinks } from '../logic';
+import { filterLinks, liveTagSelection } from '../logic';
 import type { LinkModel } from '../models';
 import { loadLinks, loadTags } from '../queries';
 import { deleteLink } from '../repository';
@@ -24,7 +24,8 @@ export function LinksList() {
   const toggleTag = useCapturesStore((s) => s.toggleLinksTag);
 
   const all = links.data ?? [];
-  const filtered = filterLinks(all, search, selectedTags);
+  const activeTags = liveTagSelection(selectedTags, tags.data);
+  const filtered = filterLinks(all, search, activeTags);
 
   return (
     <>
@@ -36,7 +37,7 @@ export function LinksList() {
         search={search}
         onSearchChange={setSearch}
         allTags={tags.data ?? []}
-        selectedTagIds={selectedTags}
+        selectedTagIds={activeTags}
         onToggleTag={toggleTag}
         isEmpty={filtered.length === 0}
         hasQuery={search !== ''}

@@ -5,12 +5,15 @@
  * the schema-driven fields renderer, a favorite toggle and a share action.
  */
 
-import { useState, type CSSProperties, type ReactElement } from 'react';
+import { useEffect, useState, type CSSProperties, type ReactElement } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Haptics } from '../../../../core/haptics';
 import { friendlyError } from '../../../../core/errorText';
+import { launchExternal } from '../../../../core/externalLink';
 import { logError } from '../../../../core/logging';
 import { showSnackbar } from '../../../../core/snackbar';
+import { useUnsavedChangesGuard } from '../../../../core/useUnsavedChangesGuard';
+import { ConfirmDialog } from '../../../captures/components/ConfirmDialog';
 import { FavoriteKind } from '../../../../data/db';
 import { NeonButton } from '../../../../design-system/components/NeonButton';
 import { IconClose, IconOpenInNew } from '../../../../design-system/icons';
@@ -33,6 +36,14 @@ interface ZoneSheetProps {
 
 export function ZoneSheet({ mapId, doc, zone, theme, onClose }: ZoneSheetProps) {
   const navigate = useNavigate();
+  // An unsaved note: tapping the map, Close, Cancel or Back asks before dropping it.
+  const [pinDirty, setPinDirty] = useState(false);
+  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+  const guard = (action: () => void): void => {
+    if (pinDirty) setPendingAction(() => action);
+    else action();
+  };
+  useUnsavedChangesGuard(pinDirty, () => setPendingAction(() => onClose));
   const accent = colorCss(theme.accent);
   // Neutral, always-readable surface: the zone's own (often muddy) palette is
   // used only for accents (badge, region chip, pin, top hairline) - never the
@@ -49,7 +60,7 @@ export function ZoneSheet({ mapId, doc, zone, theme, onClose }: ZoneSheetProps) 
         type="button"
         className={styles.catcher}
         aria-label="Close zone details"
-        onClick={onClose}
+        onClick={() => guard(onClose)}
       />
       <section className={styles.sheet} style={surfaceStyle} role="dialog" aria-label={zone.name}>
         <span className={styles.handle} style={{ background: colorAlpha(theme.label, 0.25) }} />
@@ -85,14 +96,14 @@ export function ZoneSheet({ mapId, doc, zone, theme, onClose }: ZoneSheetProps) 
             title="Close"
             aria-label="Close"
             style={{ color: colorAlpha(theme.label, 0.7) }}
-            onClick={onClose}
+            onClick={() => guard(onClose)}
           >
             <IconClose size={22} />
           </button>
         </div>
 
         <div className={styles.body}>
-          <PinSection mapId={mapId} zoneId={zone.id} theme={theme} />
+          <PinSection mapId={mapId} zoneId={zone.id} theme={theme} onDirtyChange={setPinDirty} guard={guard} />
           <ZoneFields
             schema={doc.fieldsSchema}
             fields={zone.fields}
@@ -101,6 +112,22 @@ export function ZoneSheet({ mapId, doc, zone, theme, onClose }: ZoneSheetProps) 
           />
         </div>
       </section>
+      {pendingAction !== null && (
+        <ConfirmDialog
+          title="Discard changes?"
+          message="Your note for this zone isn't saved."
+          cancelLabel="Keep editing"
+          confirmLabel="Discard"
+          danger
+          onCancel={() => setPendingAction(null)}
+          onConfirm={() => {
+            const action = pendingAction;
+            setPendingAction(null);
+            setPinDirty(false);
+            action();
+          }}
+        />
+      )}
     </>
   );
 }
@@ -111,10 +138,14 @@ function PinSection({
   mapId,
   zoneId,
   theme,
+  onDirtyChange,
+  guard,
 }: {
   mapId: string;
   zoneId: string;
   theme: MapTheme;
+  onDirtyChange: (dirty: boolean) => void;
+  guard: (action: () => void) => void;
 }) {
   const pin = useLiveQuery(() => getPin(mapId, zoneId), [mapId, zoneId]);
   const note = pin.status === 'ready' && pin.data !== undefined ? pin.data.note : '';
@@ -124,6 +155,11 @@ function PinSection({
 
   const accent = colorCss(theme.accent);
   const hasNote = note.trim().length > 0;
+  const dirty = editing && draft.trim() !== note.trim();
+
+  useEffect(() => {
+    onDirtyChange(dirty);
+  }, [dirty, onDirtyChange]);
 
   const startEdit = (): void => {
     setDraft(note);
@@ -146,7 +182,6 @@ function PinSection({
   };
 
   if (editing) {
-    const dirty = draft.trim() !== note.trim();
     return (
       <div className={styles.pinEditor} style={{ borderColor: colorAlpha(theme.accent, 0.5) }}>
         <textarea
@@ -159,7 +194,7 @@ function PinSection({
           onChange={(e) => setDraft(e.target.value)}
         />
         <div className={styles.pinActions}>
-          <button type="button" className={styles.pinCancel} onClick={() => setEditing(false)}>
+          <button type="button" className={styles.pinCancel} onClick={() => guard(() => setEditing(false))}>
             Cancel
           </button>
           <button
@@ -360,7 +395,7 @@ function openLink(url: string, navigate: (to: string) => void): void {
     return;
   }
   if (/^https?:\/\//i.test(trimmed) || /^mailto:/i.test(trimmed)) {
-    window.open(trimmed, '_blank', 'noopener');
+    launchExternal(trimmed);
   }
 }
 

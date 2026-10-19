@@ -43,19 +43,18 @@ export function NoteEditorSheet({
   const dirty =
     title !== initialTitle || body !== initialBody || !sameTags(tags, initialTags);
 
-  const onSave = () => {
+  // Returns the save so SheetShell can lock Save until it settles (no double save).
+  const onSave = async () => {
     // F38: commit any half-typed tag token before saving.
     const finalTags = tagInputRef.current?.commitPending() ?? tags;
-    void (async () => {
-      try {
-        await saveNote({ id: initial?.id, title, body, tagDisplayNames: finalTags });
-        Haptics.success();
-        onClose();
-      } catch (e) {
-        logError(e);
-        showSnackbar(friendlyError(e, "Couldn't save - please try again."), { danger: true });
-      }
-    })();
+    try {
+      await saveNote({ id: initial?.id, title, body, tagDisplayNames: finalTags });
+      Haptics.success();
+      onClose();
+    } catch (e) {
+      logError(e);
+      showSnackbar(friendlyError(e, "Couldn't save - please try again."), { danger: true });
+    }
   };
 
   return (

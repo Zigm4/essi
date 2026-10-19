@@ -1,7 +1,8 @@
-import { useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Haptics } from '../../core/haptics';
 import { friendlyError } from '../../core/errorText';
 import { showSnackbar } from '../../core/snackbar';
+import { useUnsavedChangesGuard } from '../../core/useUnsavedChangesGuard';
 import { GlassCard } from '../../design-system/components/GlassCard';
 import { SectionHeader } from '../../design-system/components/SectionHeader';
 import { IconExpandMore, IconShield, IconShieldMoon, IconTag } from '../../design-system/icons';
@@ -269,6 +270,11 @@ function ShipEditorForm({
   const name = composedName(fields, catalog.modelByKey);
   const dirty = serialize(fields) !== baselineRef.current;
   const saveEnabled = name.trim().length > 0;
+  const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
+
+  // Back gesture / browser Back, reload and tab close don't drop unsaved input.
+  useUnsavedChangesGuard(dirty, () => setShowDiscard(true));
 
   // --- EVIL helpers ---------------------------------------------------------
 
@@ -340,8 +346,23 @@ function ShipEditorForm({
     else onClose();
   };
 
+  // Escape closes like Cancel (through the discard check), unless a dialog or picker is up.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape' || e.defaultPrevented) return;
+      if (showDiscard || showDelete || modelPickerOpen || locationPickerOpen || intro.open) return;
+      e.preventDefault();
+      attemptClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  });
+
   const onSave = async () => {
-    if (!saveEnabled) return;
+    // A double click must not save twice (a new ship would be created twice).
+    if (!saveEnabled || savingRef.current) return;
+    savingRef.current = true;
+    setSaving(true);
     const finalTags = tagHandleRef.current?.commitPending() ?? fieldsRef.current.tags;
     const f = fieldsRef.current;
     const currentEntry = f.modelKey != null ? catalog.modelByKey.get(f.modelKey) : undefined;
@@ -349,6 +370,13 @@ function ShipEditorForm({
       f.locationKey != null ? catalog.locationByKey.get(f.locationKey) : undefined;
     const supportsZone = currentLoc?.paramKind === 'zone';
     const supportsSpace = currentLoc?.paramKind === 'spaceCoordinate';
+    // A location the catalog doesn't list (catalog failed to load) hides its
+    // coordinate fields: keep the stored values instead of erasing them.
+    const keepStoredCoords =
+      f.locationKey != null &&
+      f.locationKey !== CUSTOM_LOCATION_KEY &&
+      currentLoc === undefined &&
+      f.locationKey === initial?.locationKey;
     const customModelVisible = f.modelKey == null || !hasPrefix(currentEntry);
 
     const roles = {} as Record<ShipRight, string | null>;
@@ -374,13 +402,23 @@ function ShipEditorForm({
             ? null
             : f.customLocationField.trim()
           : null,
-      locationZone: supportsZone ? parseIntOrNull(f.zoneField) : null,
-      locationSector: supportsSpace
-        ? f.sectorField.trim() === ''
-          ? null
-          : f.sectorField.trim()
-        : null,
-      locationSL: supportsSpace ? parseIntOrNull(f.slField) : null,
+      locationZone: keepStoredCoords
+        ? (initial?.locationZone ?? null)
+        : supportsZone
+          ? parseIntOrNull(f.zoneField)
+          : null,
+      locationSector: keepStoredCoords
+        ? (initial?.locationSector ?? null)
+        : supportsSpace
+          ? f.sectorField.trim() === ''
+            ? null
+            : f.sectorField.trim()
+          : null,
+      locationSL: keepStoredCoords
+        ? (initial?.locationSL ?? null)
+        : supportsSpace
+          ? parseIntOrNull(f.slField)
+          : null,
       hull: parseIntOrNull(f.hullField),
       roles,
       note: f.noteField,
@@ -393,6 +431,9 @@ function ShipEditorForm({
     } catch (err) {
       console.error('Failed to save ship:', err);
       showSnackbar(friendlyError(err, "Couldn't save - please try again."), { danger: true });
+    } finally {
+      savingRef.current = false;
+      setSaving(false);
     }
   };
 
@@ -451,8 +492,8 @@ function ShipEditorForm({
       trailing={
         <button
           type="button"
-          className={saveEnabled ? styles.editorSave : styles.editorSaveDisabled}
-          disabled={!saveEnabled}
+          className={saveEnabled && !saving ? styles.editorSave : styles.editorSaveDisabled}
+          disabled={!saveEnabled || saving}
           onClick={() => void onSave()}
         >
           Save

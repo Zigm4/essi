@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { logError } from '../../../core/logging';
 import { IconNotes } from '../../../design-system/icons';
 import { useCapturesStore } from '../capturesStore';
-import { filterNotes } from '../logic';
+import { filterNotes, liveTagSelection } from '../logic';
 import type { NoteModel } from '../models';
 import { loadNotes, loadTags } from '../queries';
 import { deleteNote } from '../repository';
@@ -24,7 +24,8 @@ export function NotesList() {
   const toggleTag = useCapturesStore((s) => s.toggleNotesTag);
 
   const all = notes.data ?? [];
-  const filtered = filterNotes(all, search, selectedTags);
+  const activeTags = liveTagSelection(selectedTags, tags.data);
+  const filtered = filterNotes(all, search, activeTags);
 
   return (
     <>
@@ -36,7 +37,7 @@ export function NotesList() {
         search={search}
         onSearchChange={setSearch}
         allTags={tags.data ?? []}
-        selectedTagIds={selectedTags}
+        selectedTagIds={activeTags}
         onToggleTag={toggleTag}
         isEmpty={filtered.length === 0}
         hasQuery={search !== ''}

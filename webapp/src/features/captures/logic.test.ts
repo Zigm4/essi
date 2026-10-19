@@ -10,8 +10,7 @@ import {
   isDiscordUrl,
   lastBackupLabel,
   removeTag,
-  shouldShowReminder,
-} from './logic';
+  shouldShowReminder, liveTagSelection } from './logic';
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -209,5 +208,18 @@ describe('isDiscordUrl', () => {
   it('is a case-sensitive substring test', () => {
     expect(isDiscordUrl('https://discord.com/x')).toBe(true);
     expect(isDiscordUrl('https://DISCORD.com/x')).toBe(false);
+  });
+});
+
+describe('liveTagSelection', () => {
+  const tags = [{ id: 'a' }, { id: 'b' }];
+  it('drops selected tags that no longer exist (deleted with their last note)', () => {
+    expect([...liveTagSelection(new Set(['a', 'gone']), tags)]).toEqual(['a']);
+    expect(liveTagSelection(new Set(['gone']), tags).size).toBe(0);
+  });
+  it('keeps the selection as is while tags are loading or when all exist', () => {
+    const sel = new Set(['a', 'b']);
+    expect(liveTagSelection(sel, tags)).toBe(sel);
+    expect(liveTagSelection(new Set(['gone']), undefined).has('gone')).toBe(true);
   });
 });
