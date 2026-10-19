@@ -68,8 +68,9 @@
   background: none;
   cursor: pointer;
   font-family: var(--font-sans);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
+  white-space: nowrap; /* four segments fit a 320px phone at this size */
   color: var(--text-secondary);
   transition: background-color 160ms var(--motion-subtle-ease);
 }
@@ -105,6 +106,43 @@
   background: none;
 }
 
+/* Can't match anything in this room / segment. */
+.depthChip:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.depthCount {
+  margin-left: 2px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+.filterStatus {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 28px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.resetBtn {
+  flex: none;
+  padding: 4px 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent-primary);
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
@@ -123,12 +161,36 @@
   font-size: 11px;
   font-weight: 600;
   padding: 0;
+  transition:
+    opacity 160ms var(--motion-subtle-ease),
+    box-shadow 160ms var(--motion-subtle-ease);
 }
 
 .cellReef {
   background: var(--bg-glass);
   border-color: var(--border-subtle);
   color: var(--text-dim);
+  --cell-color: var(--text-dim);
+}
+
+/* A filter is on: matching cells glow in their own color, the rest fade out in place. */
+.cellMatch {
+  position: relative; /* glow above the neighbours */
+  z-index: 1;
+  box-shadow:
+    0 0 0 1px var(--cell-color),
+    0 0 10px var(--cell-color);
+}
+
+.cellDimmed {
+  opacity: 0.15;
+  cursor: default;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cell {
+    transition: none;
+  }
 }
 
 .notFound {

@@ -30,6 +30,7 @@
   outline: none;
 }
 
+/* The whole top band drags; only the grip in its middle closes on a tap. */
 .handleRow {
   flex: none;
   display: flex;
@@ -44,6 +45,25 @@
   cursor: grabbing;
 }
 
+.grip {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 64px;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  cursor: inherit;
+}
+
+.grip:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: -2px;
+}
+
 .handle {
   width: 44px;
   height: 5px;
@@ -52,7 +72,7 @@
   transition: background 150ms ease;
 }
 
-.handleRow:hover .handle {
+.grip:hover .handle {
   background: var(--accent-primary);
 }
 

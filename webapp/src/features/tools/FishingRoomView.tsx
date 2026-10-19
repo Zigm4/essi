@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { useParams } from 'react-router-dom';
 import { withAlpha } from '../../design-system/color';
 import { BottomSheet } from './shared/BottomSheet';
@@ -8,8 +8,11 @@ import { ToolScaffold } from './shared/ToolScaffold';
 import { ZoneSummaryCard } from './fishing/ZoneSummaryCard';
 import {
   FISHING_DEPTHS,
+  depthCounts,
   depthFromName,
   filterZones,
+  isFiltering,
+  matchesFilter,
   type FishingRoom,
   type FishingSegment,
   type FishingZone,
@@ -20,8 +23,9 @@ import styles from './fishing/Fishing.module.css';
 const UNKNOWN_DEPTH_COLOR = '#4F6A87';
 const SEGMENTS: readonly { id: FishingSegment; label: string }[] = [
   { id: 'all', label: 'All' },
-  { id: 'known', label: 'Known' },
-  { id: 'unknown', label: 'Unknown' },
+  { id: 'depthKnown', label: 'Depth known' },
+  { id: 'toDiscover', label: 'To discover' },
+  { id: 'reefs', label: 'Reefs' },
 ];
 
 /** /tools/fishing/:roomId - a single fishing map room. */
@@ -57,7 +61,10 @@ function MultiRoom({ room, favSet }: { room: FishingRoom; favSet: Set<string> })
   const [depths, setDepths] = useState<Set<string>>(() => new Set());
   const [sheetZone, setSheetZone] = useState<FishingZone | null>(null);
 
-  const visible = filterZones(room.zones, segment, depths);
+  const filtering = isFiltering(segment, depths);
+  const counts = depthCounts(room.zones, segment);
+  const total = room.zones.length;
+  const matchCount = filterZones(room.zones, segment, depths).length;
 
   const toggleDepth = (name: string) => {
     setDepths((prev) => {
@@ -66,6 +73,10 @@ function MultiRoom({ room, favSet }: { room: FishingRoom; favSet: Set<string> })
       else next.add(name);
       return next;
     });
+  };
+  const resetFilters = () => {
+    setSegment('all');
+    setDepths(new Set());
   };
 
   return (
@@ -87,12 +98,15 @@ function MultiRoom({ room, favSet }: { room: FishingRoom; favSet: Set<string> })
       <div className={styles.depthRow}>
         {FISHING_DEPTHS.map((depth) => {
           const selected = depths.has(depth.name);
+          const count = counts.get(depth.name) ?? 0;
           return (
             <button
               key={depth.name}
               type="button"
               className={styles.depthChip}
               aria-pressed={selected}
+              // Nothing to match in this room / segment - unless selected, so it can be cleared.
+              disabled={count === 0 && !selected}
               onClick={() => toggleDepth(depth.name)}
               style={{
                 borderColor: depth.color,
@@ -100,36 +114,63 @@ function MultiRoom({ room, favSet }: { room: FishingRoom; favSet: Set<string> })
                 color: selected ? '#000' : depth.color,
               }}
             >
-              {depth.name}
+              {depth.name} <span className={styles.depthCount}>{count}</span>
             </button>
           );
         })}
       </div>
 
+      <div className={styles.filterStatus}>
+        <span aria-live="polite">
+          {!filtering
+            ? `${total} zones`
+            : matchCount === 0
+              ? 'No zones match these filters'
+              : `${matchCount} of ${total} zones match`}
+        </span>
+        {filtering && (
+          <button type="button" className={styles.resetBtn} onClick={resetFilters}>
+            Reset filters
+          </button>
+        )}
+      </div>
+
+      {/* Every cell keeps its place on the map: a filter dims the others instead of removing them. */}
       <div className={styles.grid}>
-        {visible.map((zone) => {
+        {room.zones.map((zone) => {
+          const match = matchesFilter(zone, segment, depths);
+          const stateClass = !filtering ? '' : match ? styles.cellMatch : styles.cellDimmed;
+          const interaction = match
+            ? { onClick: () => setSheetZone(zone) }
+            : { 'aria-disabled': true, tabIndex: -1 };
           if (!zone.accessible) {
             return (
               <button
                 key={zone.id}
                 type="button"
-                className={`${styles.cell} ${styles.cellReef}`}
+                className={`${styles.cell} ${styles.cellReef} ${stateClass}`}
                 aria-label={`Zone ${zone.id} (Reef)`}
-                onClick={() => setSheetZone(zone)}
+                {...interaction}
               >
                 ×
               </button>
             );
           }
           const color = depthFromName(zone.depth)?.color ?? UNKNOWN_DEPTH_COLOR;
+          const cellStyle = {
+            background: withAlpha(color, 0.55),
+            borderColor: color,
+            color: '#fff',
+            '--cell-color': color,
+          } as CSSProperties;
           return (
             <button
               key={zone.id}
               type="button"
-              className={styles.cell}
+              className={`${styles.cell} ${stateClass}`}
               aria-label={`Zone ${zone.id}`}
-              onClick={() => setSheetZone(zone)}
-              style={{ background: withAlpha(color, 0.55), borderColor: color, color: '#fff' }}
+              style={cellStyle}
+              {...interaction}
             >
               {zone.id}
             </button>

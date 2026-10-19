@@ -10,12 +10,14 @@ import { createPortal } from 'react-dom';
 import styles from './BottomSheet.module.css';
 
 /**
- * Modal bottom sheet (spec §1.4). The grab handle is a live control: drag it
- * down to dismiss, or tap it to close (the native mobile gesture) - scrim tap
- * and Escape also dismiss. The body scrolls internally with a safe-area bottom
- * inset so the last control never hides behind the phone's bottom bar. An
- * optional `footer` is pinned under the scrolling body (it carries the
- * safe-area inset instead), so nothing scrolls beneath it.
+ * Modal bottom sheet (spec §1.4). The grab handle is a live control: drag the
+ * top band down past a threshold to dismiss, or tap the handle itself to close
+ * (the native mobile gesture) - scrim tap and Escape also dismiss. Dismissal
+ * is deliberate: an upward, sideways, short or cancelled drag snaps back. The
+ * body scrolls internally with a safe-area bottom inset so the last control
+ * never hides behind the phone's bottom bar. An optional `footer` is pinned
+ * under the scrolling body (it carries the safe-area inset instead), so
+ * nothing scrolls beneath it.
  *
  * Focus: opening moves focus into the panel and makes the app behind it
  * `inert` (so Tab stays in the sheet); closing gives focus back to whatever
@@ -24,6 +26,28 @@ import styles from './BottomSheet.module.css';
 
 const DISMISS_THRESHOLD_PX = 110;
 const TAP_SLOP_PX = 6;
+
+type HandleGesture = 'tap' | 'dismiss' | 'snapBack';
+
+/**
+ * What a released handle gesture means, from its total travel (dy > 0 is
+ * down). Only a drag down past the threshold that is more vertical than
+ * sideways dismisses; a press that barely moved is a tap. Anything else (up,
+ * sideways, too short) snaps back.
+ */
+function classifyGesture(dx: number, dy: number): HandleGesture {
+  if (Math.abs(dx) < TAP_SLOP_PX && Math.abs(dy) < TAP_SLOP_PX) return 'tap';
+  if (dy > DISMISS_THRESHOLD_PX && Math.abs(dx) < dy) return 'dismiss';
+  return 'snapBack';
+}
+
+interface HandleDrag {
+  pointerId: number;
+  startX: number;
+  startY: number;
+  /** Pressed on the visible handle (only there does a tap close). */
+  onGrip: boolean;
+}
 
 /** Open sheets holding the app root inert (sheets can stack). */
 let inertHolds = 0;
@@ -59,8 +83,10 @@ export function BottomSheet({
   children: ReactNode;
 }) {
   const [dragY, setDragY] = useState(0);
-  const drag = useRef<{ startY: number; active: boolean }>({ startY: 0, active: false });
+  const [dragging, setDragging] = useState(false);
+  const drag = useRef<HandleDrag | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const gripRef = useRef<HTMLButtonElement>(null);
   const hasFooter = footer !== undefined && footer !== null && footer !== false;
 
   // Keyed on `open` only: callers pass inline `onClose`s, which must not re-run this.
@@ -70,6 +96,10 @@ export function BottomSheet({
     const release = holdAppInert();
     panelRef.current?.focus({ preventScroll: true });
     return () => {
+      // Drop a gesture cut short by Escape / scrim / the caller closing.
+      drag.current = null;
+      setDragging(false);
+      setDragY(0);
       release(); // first: an inert element can't take focus
       if (opener?.isConnected) opener.focus({ preventScroll: true });
     };
@@ -77,7 +107,6 @@ export function BottomSheet({
 
   useEffect(() => {
     if (!open) return;
-    setDragY(0);
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
@@ -87,28 +116,45 @@ export function BottomSheet({
 
   if (!open) return null;
 
+  // One pointer at a time; a second finger or a non-primary button is ignored.
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
-    drag.current = { startY: e.clientY, active: true };
+    if (drag.current !== null || e.button !== 0) return;
+    drag.current = {
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      onGrip: gripRef.current?.contains(e.target as Node) ?? false,
+    };
+    setDragging(true);
     e.currentTarget.setPointerCapture(e.pointerId);
   };
   const onPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
-    if (!drag.current.active) return;
-    setDragY(Math.max(0, e.clientY - drag.current.startY));
+    const d = drag.current;
+    if (d === null || e.pointerId !== d.pointerId) return;
+    setDragY(Math.max(0, e.clientY - d.startY));
   };
-  const onPointerEnd = () => {
-    if (!drag.current.active) return;
-    drag.current.active = false;
-    // A tap (barely moved) or a decisive drag-down both dismiss; a small partial
-    // drag snaps back.
-    if (dragY < TAP_SLOP_PX || dragY > DISMISS_THRESHOLD_PX) onClose();
-    else setDragY(0);
+  const endDrag = () => {
+    drag.current = null;
+    setDragging(false);
+    setDragY(0);
+  };
+  const onPointerUp = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const d = drag.current;
+    if (d === null || e.pointerId !== d.pointerId) return;
+    const gesture = classifyGesture(e.clientX - d.startX, e.clientY - d.startY);
+    endDrag();
+    if (gesture === 'dismiss' || (gesture === 'tap' && d.onGrip)) onClose();
+  };
+  // The browser took the pointer over (scroll, system gesture): never a dismiss.
+  const onPointerCancel = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (drag.current?.pointerId === e.pointerId) endDrag();
   };
 
   const sheetStyle: CSSProperties = {
     maxHeight: `${Math.round(heightFraction * 100)}dvh`,
     borderRadius: `${radius}px ${radius}px 0 0`,
     transform: dragY > 0 ? `translateY(${dragY}px)` : undefined,
-    transition: drag.current.active ? 'none' : undefined,
+    transition: dragging ? 'none' : undefined,
   };
 
   // Portal to <body> so the scrim/sheet escape any page-level stacking context
@@ -128,18 +174,24 @@ export function BottomSheet({
       >
         <div
           className={styles.handleRow}
-          role="button"
-          tabIndex={0}
-          aria-label="Drag down or tap to close"
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
-          onPointerUp={onPointerEnd}
-          onPointerCancel={onPointerEnd}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') onClose();
-          }}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerCancel}
         >
-          <span className={styles.handle} />
+          <button
+            ref={gripRef}
+            type="button"
+            className={styles.grip}
+            aria-label="Drag down or tap to close"
+            // Keyboard / assistive-tech activation (detail 0); pointer taps go
+            // through the gesture handling above.
+            onClick={(e) => {
+              if (e.detail === 0) onClose();
+            }}
+          >
+            <span className={styles.handle} />
+          </button>
         </div>
         <div className={hasFooter ? `${styles.body} ${styles.bodyWithFooter}` : styles.body}>{children}</div>
         {hasFooter && <div className={styles.footer}>{footer}</div>}

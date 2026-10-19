@@ -141,36 +141,74 @@ export function buildRooms(zones: FishingZone[]): FishingRoom[] {
   });
 }
 
-export type FishingSegment = 'all' | 'known' | 'unknown';
+/**
+ * Room filter segments, a partition of the room by what is known about a zone
+ * (web departure from §4.3, whose Known/Unknown keyed on the name while the
+ * depth chips' "Unknown" meant the depth): `depthKnown` = fishable with a real
+ * depth; `toDiscover` = fishable, depth not known yet; `reefs` = not fishable.
+ */
+export type FishingSegment = 'all' | 'depthKnown' | 'toDiscover' | 'reefs';
 
-/** Segmented filter semantics (§4.3). */
+/** Whether a zone has a real depth (not "Unknown", "None" or missing). */
+export function hasKnownDepth(zone: FishingZone): boolean {
+  const depth = depthFromName(zone.depth);
+  return depth !== null && depth.name !== 'Unknown';
+}
+
 export function passesSegment(zone: FishingZone, segment: FishingSegment): boolean {
   switch (segment) {
     case 'all':
       return true;
-    case 'known':
-      return zone.accessible && zone.name !== 'Unknown';
-    case 'unknown':
-      return zone.name === 'Unknown' && zone.accessible;
+    case 'depthKnown':
+      return zone.accessible && hasKnownDepth(zone);
+    case 'toDiscover':
+      return zone.accessible && !hasKnownDepth(zone);
+    case 'reefs':
+      return !zone.accessible;
   }
 }
 
 /**
- * Applies the segment + depth-chip filter. A non-empty depth selection keeps
+ * Segment + depth-chip filter for one zone. A non-empty depth selection keeps
  * only zones whose depth resolves to a selected FishingDepth; zones with
  * null/None depth never match a depth selection.
  */
+export function matchesFilter(
+  zone: FishingZone,
+  segment: FishingSegment,
+  selectedDepths: ReadonlySet<string>,
+): boolean {
+  if (!passesSegment(zone, segment)) return false;
+  if (selectedDepths.size > 0) {
+    const depth = depthFromName(zone.depth);
+    if (depth === null || !selectedDepths.has(depth.name)) return false;
+  }
+  return true;
+}
+
 export function filterZones(
   zones: FishingZone[],
   segment: FishingSegment,
   selectedDepths: ReadonlySet<string>,
 ): FishingZone[] {
-  return zones.filter((zone) => {
-    if (!passesSegment(zone, segment)) return false;
-    if (selectedDepths.size > 0) {
-      const depth = depthFromName(zone.depth);
-      if (depth === null || !selectedDepths.has(depth.name)) return false;
-    }
-    return true;
-  });
+  return zones.filter((zone) => matchesFilter(zone, segment, selectedDepths));
+}
+
+/** Whether the filter narrows anything (otherwise every zone matches). */
+export function isFiltering(segment: FishingSegment, selectedDepths: ReadonlySet<string>): boolean {
+  return segment !== 'all' || selectedDepths.size > 0;
+}
+
+/**
+ * Zones per depth chip within a segment, for every chip in legend order (0
+ * when none): a chip at 0 can't match anything there.
+ */
+export function depthCounts(zones: FishingZone[], segment: FishingSegment): Map<string, number> {
+  const counts = new Map(FISHING_DEPTHS.map((d) => [d.name, 0]));
+  for (const zone of zones) {
+    if (!passesSegment(zone, segment)) continue;
+    const depth = depthFromName(zone.depth);
+    if (depth !== null) counts.set(depth.name, counts.get(depth.name)! + 1);
+  }
+  return counts;
 }

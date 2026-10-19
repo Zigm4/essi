@@ -1,6 +1,8 @@
 /**
- * Mars Express schedule math (spec §5.1-5.2), ported exactly. The in-game train
- * loops the same route every hour, keyed on the wall-clock minute.
+ * Mars Express schedule math (spec §5.1-5.2). The in-game train loops the same
+ * route every hour, keyed on the wall-clock minute. One deliberate departure
+ * from the spec: an arrival is the start of a stay at a zone, not every minute
+ * the train spends there.
  */
 
 export interface TrainStop {
@@ -39,17 +41,19 @@ export function nameFor(zone: number, stops: TrainStop[]): string | null {
   return null;
 }
 
+function zoneMinutes(zone: number, stops: TrainStop[]): Set<number> {
+  return new Set(stops.filter((s) => s.zone === zone).map((s) => s.minute));
+}
+
 /**
- * Future minutes (of this or next hour) at which the train reaches `zone`.
- * Wraps to +60 when there is nothing left this hour. `N = arrivals[0] - now`
- * can exceed 59.
+ * Minutes (0-59, ascending) at which the train arrives at `zone`: the first
+ * minute of each stay, a stay being consecutive minutes at the zone (wrapping
+ * across the hour). A train parked at :49-56 arrives once, at :49 - the other
+ * minutes of the stay are not arrivals. A zone held all hour has none.
  */
-export function nextArrivals(zone: number, currentMinute: number, stops: TrainStop[]): number[] {
-  let future = stops.filter((s) => s.zone === zone && s.minute > currentMinute).map((s) => s.minute);
-  if (future.length === 0) {
-    future = stops.filter((s) => s.zone === zone).map((s) => s.minute + 60);
-  }
-  return future.sort((a, b) => a - b);
+export function arrivalMinutes(zone: number, stops: TrainStop[]): number[] {
+  const at = zoneMinutes(zone, stops);
+  return [...at].filter((m) => !at.has((m + 59) % 60)).sort((a, b) => a - b);
 }
 
 function startOfHour(now: Date): Date {
@@ -58,38 +62,56 @@ function startOfHour(now: Date): Date {
   return d;
 }
 
-/**
- * Next `count` absolute arrival instants strictly after `now` (§5.2). A zone
- * visited k minutes per hour yields k occurrences per hour. Arming exactly on
- * an arrival rolls to the next cycle.
- */
-export function nextOccurrences(
-  zone: number,
-  stops: TrainStop[],
-  count: number,
-  now: Date,
-): Date[] {
-  if (count <= 0) return [];
-  const minutes = [...new Set(stops.filter((s) => s.zone === zone).map((s) => s.minute))].sort(
-    (a, b) => a - b,
-  );
-  if (minutes.length === 0) return [];
+function startOfMinute(now: Date): Date {
+  const d = new Date(now.getTime());
+  d.setSeconds(0, 0);
+  return d;
+}
 
-  const result: Date[] = [];
-  let anchor = startOfHour(now);
-  let guard = 0;
-  while (result.length < count && guard <= count + 2) {
-    for (const m of minutes) {
-      const dt = new Date(anchor.getTime() + m * 60_000);
-      if (dt.getTime() > now.getTime()) {
-        result.push(dt);
-        if (result.length >= count) break;
+export interface ZoneTiming {
+  /** The train is at the zone right now. */
+  here: boolean;
+  /** While `here`: when it leaves (the end of its last minute there); null otherwise or if it never leaves. */
+  leavesAt: Date | null;
+  /** The next arrivals strictly after `now`, oldest first; a stay in progress is not one. */
+  arrivals: Date[];
+}
+
+/**
+ * Where the train stands relative to `zone` at `now` (§5.2/§5.4, by stays):
+ * whether it is there and until when, plus the next `count` arrival instants.
+ * While it is there, the arrivals are the ones after it leaves.
+ */
+export function zoneTiming(zone: number, stops: TrainStop[], now: Date, count: number): ZoneTiming {
+  const at = zoneMinutes(zone, stops);
+  const minute = now.getMinutes();
+  const here = at.has(minute);
+
+  let leavesAt: Date | null = null;
+  if (here) {
+    let stay = 1;
+    while (stay < 60 && at.has((minute + stay) % 60)) stay++;
+    if (stay < 60) leavesAt = new Date(startOfMinute(now).getTime() + stay * 60_000);
+  }
+
+  // The stay in progress began at or before the current minute, so "strictly
+  // after now" already skips it.
+  const starts = arrivalMinutes(zone, stops);
+  const arrivals: Date[] = [];
+  if (count > 0 && starts.length > 0) {
+    for (let anchor = startOfHour(now).getTime(); arrivals.length < count; anchor += 60 * 60_000) {
+      for (const m of starts) {
+        const dt = new Date(anchor + m * 60_000);
+        if (dt.getTime() > now.getTime() && arrivals.length < count) arrivals.push(dt);
       }
     }
-    anchor = new Date(anchor.getTime() + 60 * 60_000);
-    guard++;
   }
-  return result;
+  return { here, leavesAt, arrivals };
+}
+
+/** Whole minutes from `now` until `target`, rounded up (1 s left reads "1 min"). */
+export function minutesUntil(target: Date, now: Date): number {
+  return Math.max(0, Math.ceil((target.getTime() - now.getTime()) / 60_000));
 }
 
 export interface ScheduleEntry {

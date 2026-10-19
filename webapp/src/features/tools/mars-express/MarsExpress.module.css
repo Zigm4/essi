@@ -173,11 +173,23 @@
   color: var(--accent-primary);
 }
 
+.nextRow + .nextRow {
+  margin-top: 8px;
+}
+
 .nextCaption {
   font-family: var(--font-sans);
   font-size: 12px;
   font-weight: 500;
   color: var(--text-secondary);
+}
+
+/* Same "live" green as the LIVE overline. */
+.hereNow {
+  font-family: var(--font-sans);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--accent-success);
 }
 
 .nextMin {

@@ -1,14 +1,22 @@
 import { useEffect, useState } from 'react';
 import { BottomSheet } from '../shared/BottomSheet';
 import { IconSchedule, IconTram } from '../shared/toolIcons';
-import { nameFor, nextArrivals, nextOccurrences, type TrainStop } from './marsExpressService';
+import { minutesUntil, nameFor, zoneTiming, type TrainStop } from './marsExpressService';
 import styles from './MarsExpress.module.css';
 
 function pad2(n: number): string {
   return n.toString().padStart(2, '0');
 }
 
-/** Zone detail sheet: name, countdown and the next arrivals (spec §5.4, web-adapted - no alerts). */
+function clock(d: Date): string {
+  return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+}
+
+/**
+ * Zone detail sheet: name, countdown and the next arrivals (spec §5.4,
+ * web-adapted - no alerts). While the train is at the zone it says so, and
+ * the countdown is to the next arrival after it leaves.
+ */
 export function ZoneDetailSheet({
   zone,
   stops,
@@ -39,34 +47,38 @@ function ZoneDetailContent({ zone, stops }: { zone: number; stops: TrainStop[] }
     return () => clearInterval(id);
   }, []);
 
-  const arrivals = nextArrivals(zone, now.getMinutes(), stops);
-  const minutesUntil = arrivals.length > 0 ? arrivals[0]! - now.getMinutes() : null;
+  const { here, leavesAt, arrivals } = zoneTiming(zone, stops, now, 3);
+  const next = arrivals[0];
   const zoneName = nameFor(zone, stops) ?? 'Transit route';
-  const upcoming = nextOccurrences(zone, stops, 3, now);
 
   return (
     <div className={styles.sheetStack}>
       <div>
         <div className={styles.zoneOverline}>{`Zone ${zone}`}</div>
         <div className={styles.zoneHeadline}>{zoneName}</div>
-        {minutesUntil !== null && (
+        {here && (
           <div className={styles.nextRow}>
             <IconTram size={20} />
-            <span className={styles.nextCaption}>Next arrival in</span>
-            <span className={styles.nextMin}>{`${minutesUntil} min`}</span>
+            <span className={styles.hereNow}>Train here now</span>
+            {leavesAt !== null && <span className={styles.nextCaption}>{`until ${clock(leavesAt)}`}</span>}
+          </div>
+        )}
+        {next !== undefined && (
+          <div className={styles.nextRow}>
+            <IconTram size={20} />
+            <span className={styles.nextCaption}>{here ? 'Back in' : 'Next arrival in'}</span>
+            <span className={styles.nextMin}>{`${minutesUntil(next, now)} min`}</span>
           </div>
         )}
       </div>
 
-      {upcoming.length > 0 && (
+      {arrivals.length > 0 && (
         <div>
           <div className={styles.arrivalsHead}>
             <IconSchedule size={18} />
             <span className={styles.arrivalsHeadline}>Next arrivals</span>
           </div>
-          <div className={styles.arrivalsCaption}>
-            {upcoming.map((d) => `${pad2(d.getHours())}:${pad2(d.getMinutes())}`).join('  ·  ')}
-          </div>
+          <div className={styles.arrivalsCaption}>{arrivals.map(clock).join('  ·  ')}</div>
         </div>
       )}
     </div>
