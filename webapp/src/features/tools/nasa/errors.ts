@@ -178,6 +178,13 @@ export class TrackerAmbiguousError extends TrackerError {
   }
 }
 
+export class TrackerSunError extends TrackerError {
+  constructor() {
+    super('The Sun is the centre of the map: 0 SL, no sector.');
+    this.name = 'TrackerSunError';
+  }
+}
+
 export class TrackerCancelledError extends TrackerError {
   constructor() {
     super('Request cancelled.');

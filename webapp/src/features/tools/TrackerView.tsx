@@ -40,10 +40,23 @@ import {
   TrackerAmbiguousError,
   TrackerCancelledError,
   TrackerError,
+  TrackerSunError,
   TrackerUnparseableError,
   type TrackChoice,
 } from './nasa/errors';
-import type { TrackerResult } from './nasa/models';
+import { isMajorKind, type TrackKind, type TrackerResult } from './nasa/models';
+import {
+  describeMajorBody,
+  describeMajorBodyInline,
+  findMajorBody,
+  majorBodyFromId,
+  majorBodyId,
+  majorBodySuggestions,
+  majorBodySymbol,
+  trackDesignation,
+  trackSymbol,
+  type MajorBody,
+} from './nasa/majorBodies';
 import { KIND_EMOJI, type ObjectKind } from './nasa/sbdb';
 import { decodeTrackerEntry, saveTrackerHistory } from './nasa/history';
 import { toggleFavorite, useFavoriteSet } from './shared/favorites';
@@ -59,6 +72,10 @@ import styles from './nasa/ui/nasa.module.css';
  * SL distance. Accepts a prefill TrackTarget via router location state and
  * auto-tracks it once when an MPC id is provided. A shared link
  * (`?snap=…`) shows the shared position as-is, with a Refresh button.
+ *
+ * A planet or moon name (Europa, Titan, Lune…) is recognised as you type and
+ * tracked directly with its Horizons id; "search asteroids and comets
+ * instead" covers the asteroid that shares its name (52 Europa).
  */
 
 type TrackerPhase =
@@ -108,6 +125,8 @@ export function TrackerView() {
   const [lockedMpcID, setLockedMpcID] = useState<string | null>(null);
   const [catalog, setCatalog] = useState<readonly TrackedObject[]>([]);
   const [share, setShare] = useState<ShareContent | null>(null);
+  /** The typed name is a planet / moon, but the user wants the asteroid or comet of that name. */
+  const [smallBodyOnly, setSmallBodyOnly] = useState(false);
 
   const genRef = useRef(0);
   const abortRef = useRef<AbortController | null>(null);
@@ -167,6 +186,20 @@ export function TrackerView() {
     })();
   };
 
+  /** Puts a target back in the form (history, pin, link…). */
+  const prefill = (name: string, trackKind: TrackKind, mpcID: string | null) => {
+    setQuery(name);
+    if (isMajorKind(trackKind)) {
+      setLockedMpcID(null);
+      setSmallBodyOnly(false);
+    } else {
+      setKind(trackKind);
+      setLockedMpcID(mpcID);
+      // An asteroid named like a moon (52 Europa) stays an asteroid.
+      setSmallBodyOnly(findMajorBody(name) !== null);
+    }
+  };
+
   // A shared link wins; otherwise prefill + one-shot auto-track from
   // Discoveries / history / pin navigation. The router state is cleared once
   // used, so a reload or Back → Forward doesn't track again.
@@ -175,20 +208,16 @@ export function TrackerView() {
     const shared = trackerFromSnapshot(searchParams.get('snap'));
     if (shared !== null) {
       autoTrackedRef.current = true;
-      setQuery(shared.displayName);
-      setKind(shared.kind);
-      setLockedMpcID(shared.mpcID);
+      prefill(shared.displayName, shared.kind, shared.mpcID);
       setPhase({ kind: 'ready', result: shared, shared: true });
       return;
     }
     const state: unknown = location.state;
     if (!isTrackTarget(state)) return;
     navigate({ pathname: location.pathname, search: location.search }, { replace: true, state: null });
-    setQuery(state.name);
-    setKind(state.kind);
     const mpc =
       typeof state.mpcID === 'string' && state.mpcID.trim().length > 0 ? state.mpcID.trim() : null;
-    setLockedMpcID(mpc);
+    prefill(state.name, state.kind, mpc);
     if (mpc !== null) {
       autoTrackedRef.current = true;
       runTrack(state);
@@ -198,6 +227,7 @@ export function TrackerView() {
 
   const onQueryChange = (value: string) => {
     setQuery(value);
+    setSmallBodyOnly(false);
     const hit = findCatalogMatch(catalog, value);
     if (hit !== null) {
       setKind(hit.kind);
@@ -219,13 +249,33 @@ export function TrackerView() {
     setPhase({ kind: 'idle' });
   };
 
+  /** The planet / moon / Sun the typed name means, unless the user asked for small bodies. */
+  const major = useMemo(() => (smallBodyOnly ? null : findMajorBody(query)), [query, smallBodyOnly]);
+  const majorNamed = smallBodyOnly ? findMajorBody(query) : null;
+
+  const trackMajor = (body: MajorBody) => {
+    if (body.type === 'star') {
+      setPhase({ kind: 'errored', error: new TrackerSunError() });
+      return;
+    }
+    runTrack({ name: body.name, kind: body.type === 'moon' ? 'moon' : 'planet', mpcID: majorBodyId(body) });
+  };
+
   const trackFromInput = () => {
+    if (major !== null) {
+      trackMajor(major);
+      return;
+    }
     runTrack({ name: query, kind, mpcID: lockedMpcID ?? undefined });
   };
 
   const pins = useMemo(() => {
     return Array.from(favoriteIds)
-      .map((id) => resolvePin(catalog, id))
+      .map((id): { id: string; label: string; kind: TrackKind } => {
+        const body = majorBodyFromId(id);
+        if (body !== null) return { id, label: body.name, kind: body.type === 'moon' ? 'moon' : 'planet' };
+        return resolvePin(catalog, id);
+      })
       .sort((a, b) => a.label.toLowerCase().localeCompare(b.label.toLowerCase()));
   }, [favoriteIds, catalog]);
 
@@ -234,11 +284,14 @@ export function TrackerView() {
     return catalogSuggestions(catalog, kind, query);
   }, [catalog, kind, query, lockedMpcID]);
 
-  const trackPin = (pin: { id: string; label: string; kind: ObjectKind }) => {
+  const majorSuggestions = useMemo(
+    () => (lockedMpcID !== null || smallBodyOnly ? [] : majorBodySuggestions(query)),
+    [query, lockedMpcID, smallBodyOnly],
+  );
+
+  const trackPin = (pin: { id: string; label: string; kind: TrackKind }) => {
     Haptics.tap();
-    setQuery(pin.label);
-    setKind(pin.kind);
-    setLockedMpcID(pin.id);
+    prefill(pin.label, pin.kind, pin.id);
     runTrack({ name: pin.label, kind: pin.kind, mpcID: pin.id });
   };
 
@@ -263,9 +316,7 @@ export function TrackerView() {
 
   const trackChoice = (choice: TrackChoice) => {
     Haptics.tap();
-    setQuery(choice.label);
-    setKind(choice.kind);
-    setLockedMpcID(choice.mpcID);
+    prefill(choice.label, choice.kind, choice.mpcID);
     runTrack({ name: choice.label, kind: choice.kind, mpcID: choice.mpcID });
   };
 
@@ -291,15 +342,13 @@ export function TrackerView() {
       return (
         <GlassCard
           onTap={() => {
-            setQuery(result.displayName);
-            setKind(result.kind);
-            setLockedMpcID(result.mpcID);
+            prefill(result.displayName, result.kind, result.mpcID);
             close();
             runTrack({ name: result.displayName, kind: result.kind, mpcID: result.mpcID });
           }}
         >
           <div className={styles.rowCenter} style={{ gap: 12 }}>
-            <span style={{ fontSize: 22 }}>{KIND_EMOJI[result.kind]}</span>
+            <span style={{ fontSize: 22 }}>{trackSymbol(result)}</span>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div className={styles.headline}>{result.displayName}</div>
               <div className={styles.caption} style={{ marginTop: 2 }}>
@@ -369,7 +418,7 @@ export function TrackerView() {
           autoComplete="off"
           autoCorrect="off"
           spellCheck={false}
-          placeholder="Object name (e.g. Ceres, C/2025 N1)"
+          placeholder="Name (e.g. Ceres, Europa, C/2025 N1)"
           enterKeyHint="go"
           value={query}
           disabled={loading}
@@ -381,6 +430,47 @@ export function TrackerView() {
             }
           }}
         />
+
+        {major !== null && (
+          <div className={styles.bodyHint} role="status">
+            <span className={styles.bodyHintSymbol} aria-hidden="true">
+              {majorBodySymbol(major)}
+            </span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className={styles.body}>
+                <strong>{major.name}</strong> · {describeMajorBody(major)}
+              </div>
+              <div className={styles.caption} style={{ marginTop: 2 }}>
+                {major.type === 'star'
+                  ? 'The centre of the map: 0 SL, no sector.'
+                  : 'Tracked directly with JPL Horizons (its own position, not its planet’s).'}
+              </div>
+              {major.type !== 'star' && (
+                <button
+                  type="button"
+                  className={styles.linkBtn}
+                  disabled={loading}
+                  onClick={() => setSmallBodyOnly(true)}
+                >
+                  Search asteroids and comets named “{query.trim()}” instead
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+        {majorNamed !== null && (
+          <div className={styles.caption} style={{ marginTop: 8 }}>
+            Searching asteroids and comets only.{' '}
+            <button
+              type="button"
+              className={styles.linkBtn}
+              disabled={loading}
+              onClick={() => setSmallBodyOnly(false)}
+            >
+              Track {majorNamed.name} ({describeMajorBodyInline(majorNamed)}) instead
+            </button>
+          </div>
+        )}
 
         {pins.length > 0 && (
           <>
@@ -429,8 +519,23 @@ export function TrackerView() {
           </>
         )}
 
-        {suggestions.length > 0 && (
+        {(majorSuggestions.length > 0 || suggestions.length > 0) && (
           <div className={styles.chipWrap} style={{ marginTop: 8 }}>
+            {majorSuggestions.map((body) => (
+              <button
+                key={`jpl-${body.naif}`}
+                type="button"
+                className={styles.chip}
+                disabled={loading}
+                onClick={() => {
+                  Haptics.selection();
+                  onQueryChange(body.name);
+                }}
+              >
+                {majorBodySymbol(body)} {body.name}
+                {body.parent !== undefined && <span className={styles.chipNote}>{body.parent}</span>}
+              </button>
+            ))}
             {suggestions.map((entry) => (
               <button
                 key={entry.identifier}
@@ -453,7 +558,7 @@ export function TrackerView() {
             ]}
             value={kind}
             onChange={setKind}
-            disabled={loading || lockedMpcID !== null}
+            disabled={loading || lockedMpcID !== null || major !== null}
           />
         </div>
       </GlassCard>
@@ -606,11 +711,11 @@ function TrackResult({
       </div>
 
       <div className={styles.rowCenter} style={{ gap: 8, marginTop: 8 }}>
-        <span style={{ fontSize: 22 }}>{KIND_EMOJI[result.kind]}</span>
+        <span style={{ fontSize: 22 }}>{trackSymbol(result)}</span>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className={styles.headline}>{result.displayName}</div>
           <div className={styles.caption} style={{ marginTop: 2 }}>
-            MPC {result.mpcID} · {dMonthYear(result.timestamp)}
+            {trackDesignation(result)} · {dMonthYear(result.timestamp)}
           </div>
         </div>
       </div>

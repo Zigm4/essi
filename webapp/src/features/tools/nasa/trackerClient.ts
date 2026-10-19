@@ -15,7 +15,8 @@ import {
 } from './errors';
 import { HorizonsFormatError, parseHorizonsEphemeris } from './horizonsParser';
 import { jplRequest } from './jplClient';
-import type { TrackerResult } from './models';
+import { isMajorKind, type TrackKind, type TrackerResult } from './models';
+import { findMajorBody, majorBodyFromId, majorBodyId } from './majorBodies';
 import { extractSbdbPdes, type ObjectKind } from './sbdb';
 import { computeTrackerMetrics } from './sectorMath';
 
@@ -27,7 +28,8 @@ import { computeTrackerMetrics } from './sectorMath';
 
 export interface TrackTarget {
   name: string;
-  kind: ObjectKind;
+  kind: TrackKind;
+  /** MPC designation, or `jpl:<id>` for a planet / moon. */
   mpcID?: string;
 }
 
@@ -174,7 +176,7 @@ export type SbdbLookupFn = (query: string, kind?: ObjectKind) => Promise<string 
  * @throws TrackerMpcLookupError when no strategy resolves the target.
  */
 export async function resolveMPC(
-  target: TrackTarget,
+  target: TrackTarget & { kind: ObjectKind },
   catalog: readonly TrackedObject[],
   lookup: SbdbLookupFn,
 ): Promise<string> {
@@ -343,15 +345,29 @@ async function fetchVectorsForDay(
   return positions[0]!;
 }
 
-/** Full tracking pipeline: resolve → fetch. */
+/**
+ * Full tracking pipeline: resolve → fetch. A planet or moon skips the SBDB
+ * lookup and goes to Horizons with its own id (`'502'`, no ';' - the ';'
+ * would make it a small-body number).
+ */
 export async function track(
   base: string,
   target: TrackTarget,
   catalog: readonly TrackedObject[],
   signal?: AbortSignal,
 ): Promise<TrackerResult> {
-  const mpcID = await resolveMPC(target, catalog, makeSbdbLookup(base, signal));
-  const commandID = buildCommandID(mpcID, target.kind);
+  let mpcID: string;
+  let commandID: string;
+  if (isMajorKind(target.kind)) {
+    const body = majorBodyFromId(target.mpcID ?? '') ?? findMajorBody(target.name);
+    if (body === null || body.type === 'star') throw new TrackerMpcLookupError();
+    mpcID = majorBodyId(body);
+    commandID = String(body.naif);
+  } else {
+    const kind: ObjectKind = target.kind;
+    mpcID = await resolveMPC({ ...target, kind }, catalog, makeSbdbLookup(base, signal));
+    commandID = buildCommandID(mpcID, kind);
+  }
 
   for (const day of candidateDays()) {
     const sample = await fetchVectorsForDay(base, commandID, day, signal);

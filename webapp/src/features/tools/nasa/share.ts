@@ -22,7 +22,8 @@ import {
   type ShareContent,
 } from '../shared/shareActions';
 import { ymdLocal } from './discoveriesClient';
-import type { PlanetPosition, ScanMode, TrackerResult } from './models';
+import { describeMajorBodyInline, majorBodyFromId, trackDesignation, trackSymbol } from './majorBodies';
+import type { PlanetPosition, ScanMode, TrackKind, TrackerResult } from './models';
 import { PLANETS } from './planets';
 import {
   computeStatus,
@@ -71,10 +72,15 @@ function round(v: number, digits: number): number {
 
 const SIGN_OFF = '-# End of transmission · Scientific Directorate, East Shire Space Industries (ESSI)';
 
-const KIND_WORDS: Record<ObjectKind, { emoji: string; noun: string; plural: string }> = {
+const KIND_WORDS: Record<TrackKind, { emoji: string; noun: string; plural: string }> = {
   comet: { emoji: '☄️', noun: 'comet', plural: 'comets' },
   asteroid: { emoji: '🪨', noun: 'asteroid', plural: 'asteroids' },
+  moon: { emoji: '🌑', noun: 'moon', plural: 'moons' },
+  planet: { emoji: '🪐', noun: 'planet', plural: 'planets' },
 };
+
+const SNAP_KIND: Record<TrackKind, TrackerSnap['k']> = { asteroid: 'a', comet: 'c', moon: 'm', planet: 'p' };
+const KIND_FROM_SNAP: Record<string, TrackKind> = { a: 'asteroid', c: 'comet', m: 'moon', p: 'planet' };
 
 interface Transmission {
   /** e.g. "📡 ESSI · Priority transmission" (a Discord ### heading). */
@@ -116,7 +122,7 @@ export function transmission(t: Transmission): string {
 interface TrackerSnap {
   v: 1;
   n: string;
-  k: 'a' | 'c';
+  k: 'a' | 'c' | 'm' | 'p';
   m: string;
   t: number;
   s: number;
@@ -132,7 +138,7 @@ export function trackerSnapshotParam(r: TrackerResult): string {
   const snap: TrackerSnap = {
     v: 1,
     n: r.displayName,
-    k: r.kind === 'comet' ? 'c' : 'a',
+    k: SNAP_KIND[r.kind],
     m: r.mpcID,
     t: r.timestamp.getTime(),
     s: r.sector,
@@ -151,7 +157,11 @@ export function trackerFromSnapshot(param: string | null): TrackerResult | null 
   if (param === null || param.length === 0) return null;
   const o = decodeSnapshot(param) as Partial<TrackerSnap> | null;
   if (o === null || typeof o !== 'object' || o.v !== 1) return null;
-  if (typeof o.n !== 'string' || typeof o.m !== 'string' || (o.k !== 'a' && o.k !== 'c')) return null;
+  if (typeof o.n !== 'string' || typeof o.m !== 'string' || typeof o.k !== 'string') return null;
+  const kind = KIND_FROM_SNAP[o.k];
+  if (kind === undefined) return null;
+  // A planet / moon link must name a body ESSI knows (jpl:<id>).
+  if ((kind === 'moon' || kind === 'planet') && majorBodyFromId(o.m) === null) return null;
   const nums = [o.t, o.s, o.sl, o.slf, o.au, o.x, o.y, o.z];
   if (!nums.every(finite)) return null;
   const sector = o.s as number;
@@ -159,7 +169,7 @@ export function trackerFromSnapshot(param: string | null): TrackerResult | null 
   const slExact = o.sl as number;
   return {
     displayName: o.n.slice(0, 120),
-    kind: o.k === 'c' ? 'comet' : 'asteroid',
+    kind,
     mpcID: o.m.slice(0, 60),
     timestamp: new Date(o.t as number),
     sector,
@@ -175,17 +185,28 @@ export function trackerFromSnapshot(param: string | null): TrackerResult | null 
 
 export function trackerShare(r: TrackerResult): ShareContent {
   const link = appLink(`/tools/tracker?snap=${trackerSnapshotParam(r)}`);
-  const emoji = KIND_EMOJI[r.kind];
+  const emoji = trackSymbol(r);
   const words = KIND_WORDS[r.kind];
+  const body = majorBodyFromId(r.mpcID);
   const sl = `${r.slRounded.toFixed(3)} SL`;
   const date = dMonthYearHm(r.timestamp);
+  const name = escapeDiscord(r.displayName);
+  // "the moon 🌑 **Europa**, in orbit around Jupiter" / "the dwarf planet 🪐 **Pluto**".
+  const subject =
+    body === null
+      ? `the ${words.noun} ${words.emoji} **${name}**`
+      : `the ${body.type === 'dwarf planet' ? 'dwarf planet' : words.noun} ${words.emoji} **${name}**${
+          body.parent === undefined ? '' : `, in orbit around ${body.parent}`
+        }`;
   const discordText = transmission({
     header: '📡 ESSI · Priority transmission',
     division: 'Astrometry & Deep Space Surveillance Division',
-    intro: `Our long-range arrays have locked onto the ${words.noun} ${words.emoji} **${escapeDiscord(r.displayName)}**. Position fixed on **${date}**.`,
+    intro: `Our long-range arrays have locked onto ${subject}. Position fixed on **${date}**.`,
     body: [
       '**Telemetry**',
-      `- **Designation:** MPC ${escapeDiscord(r.mpcID)}`,
+      body === null
+        ? `- **Designation:** MPC ${escapeDiscord(r.mpcID)}`
+        : `- **Designation:** JPL Horizons ${body.naif} (${describeMajorBodyInline(body)})`,
       `- **Sector:** ${r.sector}`,
       `- **Distance:** ${sl}`,
       `- **Navigation flooring:** ${r.slFloor} SL`,
@@ -197,7 +218,7 @@ export function trackerShare(r: TrackerResult): ShareContent {
     link,
   });
   const blocks: CardBlock[] = [
-    { kind: 'hero', emoji, title: r.displayName, caption: `MPC ${r.mpcID}` },
+    { kind: 'hero', emoji, title: r.displayName, caption: trackDesignation(r) },
     { kind: 'space', height: 8 },
     { kind: 'kv', label: 'Sector', value: String(r.sector), valueColor: '#4FC3FF', large: true },
     { kind: 'kv', label: 'Distance', value: `${r.slRounded.toFixed(3)} SL`, valueColor: '#7AE3FF' },
@@ -216,7 +237,9 @@ export function trackerShare(r: TrackerResult): ShareContent {
   };
   return {
     title: `ESSI tracking report: ${r.displayName}`,
-    caption: `📡 ESSI tracking report · ${words.emoji} ${nameAndDesignation(r.displayName, r.mpcID)}\nSector ${r.sector} · ${sl} · navigate ${r.slFloor} SL · position on ${date}`,
+    caption: `📡 ESSI tracking report · ${words.emoji} ${
+      body === null ? nameAndDesignation(r.displayName, r.mpcID) : `${r.displayName} (${describeMajorBodyInline(body)})`
+    }\nSector ${r.sector} · ${sl} · navigate ${r.slFloor} SL · position on ${date}`,
     discordText,
     link,
     card,

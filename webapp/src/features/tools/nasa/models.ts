@@ -63,11 +63,19 @@ export function planetPositionFromJson(json: unknown): PlanetPosition {
   return position;
 }
 
+/** What the Tracker follows: a small body (via SBDB), or a planet / moon (majorBodies). */
+export type TrackKind = ObjectKind | 'planet' | 'moon';
+
+export function isMajorKind(kind: TrackKind): kind is 'planet' | 'moon' {
+  return kind === 'planet' || kind === 'moon';
+}
+
 /** A single body's live track (Object Tracker). */
 export interface TrackerResult {
+  /** MPC designation, or `jpl:<id>` for a planet / moon. */
   mpcID: string;
   displayName: string;
-  kind: ObjectKind;
+  kind: TrackKind;
   xAU: number;
   yAU: number;
   zAU: number;
@@ -102,7 +110,7 @@ export function trackerResultFromJson(json: unknown): TrackerResult {
   return {
     mpcID: typeof o.mpcID === 'string' ? o.mpcID : '',
     displayName: typeof o.displayName === 'string' ? o.displayName : '',
-    kind: o.kind === 'comet' ? 'comet' : 'asteroid',
+    kind: o.kind === 'comet' || o.kind === 'moon' || o.kind === 'planet' ? o.kind : 'asteroid',
     xAU: num(o.xAU),
     yAU: num(o.yAU),
     zAU: num(o.zAU),

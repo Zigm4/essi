@@ -65,6 +65,10 @@ const SECTIONS: { key: string; entries: FaqEntry[] }[] = [
         q: 'What does Tracker send to NASA?',
         a: 'When you tap "Track" in Tools / Tracker, ESSI makes 1 to 4 GET requests to JPL Horizons / SBDB, relayed through the Cloudflare proxy. Sent: object name or designation, plus a fixed instruction. No identifier of yours is added, and NASA sees the proxy\'s IP rather than yours. Stored: each successful track is saved to local history. You can delete entries any time.',
       },
+      {
+        q: 'Can the Tracker find planets and moons?',
+        a: 'Yes. Type a planet or a moon - Europa, Titan, the Moon (or Luna), Phobos, Triton… - and the Tracker recognises it (a note under the field says which body and which planet it orbits), then asks JPL Horizons for that body\'s own position. Every named moon of the solar system is known, by its English name, its catalogue number ("Jupiter II") and a few French names (Lune, Encelade, Japet…). A moon is not always where its planet is: the large ones stay within a fraction of an SL, but the outer moons orbit several SL away (up to about 15 SL around Neptune). Some asteroids share a moon\'s name (52 Europa, 85 Io): use "Search asteroids and comets named … instead" under the note to track the asteroid.',
+      },
     ],
   },
 ];

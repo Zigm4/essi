@@ -113,6 +113,30 @@ const SCAN: PlanetPosition[] = [
   },
 ];
 
+describe('tracker share for a moon', () => {
+  const EUROPA: TrackerResult = { ...TRACK, mpcID: 'jpl:502', displayName: 'Europa', kind: 'moon', sector: 5 };
+
+  it('names the moon and its planet', () => {
+    const share = trackerShare(EUROPA);
+    expect(share.discordText).toContain('locked onto the moon 🌑 **Europa**, in orbit around Jupiter.');
+    expect(share.discordText).toContain('- **Designation:** JPL Horizons 502 (moon of Jupiter)');
+    expect(share.caption).toContain('🌑 Europa (moon of Jupiter)');
+    expect(share.card.blocks[0]).toMatchObject({ kind: 'hero', emoji: '☾\uFE0E', caption: 'Moon of Jupiter · JPL 502' });
+  });
+
+  it('restores a moon from its link, and rejects an unknown body', () => {
+    const restored = trackerFromSnapshot(snapParam(trackerShare(EUROPA).link));
+    expect(restored).toMatchObject({ kind: 'moon', mpcID: 'jpl:502', displayName: 'Europa' });
+    const fake = decodeSnapshot(trackerSnapshotParam(EUROPA)) as Record<string, unknown>;
+    expect(trackerFromSnapshot(encodeSnapshot({ ...fake, m: 'jpl:4242' }))).toBeNull();
+  });
+
+  it('calls Pluto a dwarf planet', () => {
+    const share = trackerShare({ ...TRACK, mpcID: 'jpl:999', displayName: 'Pluto', kind: 'planet' });
+    expect(share.discordText).toContain('the dwarf planet 🪐 **Pluto**.');
+  });
+});
+
 describe('scan share', () => {
   const date = new Date(Date.UTC(2026, 9, 19, 14, 30));
 
