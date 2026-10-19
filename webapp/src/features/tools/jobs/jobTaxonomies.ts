@@ -26,16 +26,17 @@ interface FactionDef {
 /**
  * Factions by reputation key (`factionRep`, `factionRival`, and the stems of
  * the rival functions). The game's bot only shows codes; a name is listed only
- * where a source attests it. Names left null (PRQ, MSN, 55th, CO8, TFI, HEX,
- * RSA) are still to be confirmed with the game's developer - earlier labels
- * such as "Proquinox", "Mischen", "55 Imperials" or "Co8" were made up.
+ * where a source attests it: the game's texts, or the game's developer (PRQ,
+ * 55th, CO8, TFI, HEX, ZCP, Oct 2026). Names left null (MSN, RSA) are still to
+ * be confirmed - earlier labels such as "Proquinox", "Mischen", "55 Imperials"
+ * or "Z-Corp" were made up.
  */
 const FACTIONS: Record<string, FactionDef> = {
-  rep_55imp: { code: '55th', name: null, tint: '#FF7777' },
+  rep_55imp: { code: '55th', name: '55th Imperial Legion', tint: '#FF7777' },
   rep_chat: { code: 'CHT', name: 'Chattery', tint: '#B377FF' },
   rep_clst: { code: 'CLS', name: 'Celestyn', tint: '#E6E6FF' },
-  rep_co8: { code: 'CO8', name: null, tint: '#8B7BFF' },
-  rep_hex: { code: 'HEX', name: null, tint: '#FF77AA' },
+  rep_co8: { code: 'CO8', name: 'Cult of 8', tint: '#8B7BFF' },
+  rep_hex: { code: 'HEX', name: 'Helios Exploration Group', tint: '#FF77AA' },
   rep_king: { code: 'KING', name: 'King', tint: '#FFD15C' },
   rep_lycnx: { code: 'LYC', name: 'Lycanox', tint: '#9DDCFF' },
   rep_mrtn: { code: 'MRT', name: 'Martian', tint: '#FF7755' },
@@ -43,14 +44,14 @@ const FACTIONS: Record<string, FactionDef> = {
   rep_mschn: { code: 'MSN', name: null, tint: '#FF8844' },
   rep_oort: { code: 'ORT', name: 'Oortians', tint: '#AACCFF' },
   rep_pearl: { code: 'PRL', name: 'Pearl', tint: '#FFE9A8' },
-  rep_proq: { code: 'PRQ', name: null, tint: '#9C9C9C' },
+  rep_proq: { code: 'PRQ', name: 'Professor Q', tint: '#9C9C9C' },
   rep_qnxs: { code: 'QNX', name: 'Qnexus', tint: '#66E0DD' },
   rep_rsa: { code: 'RSA', name: null, tint: '#FF5577' },
   rep_rts: { code: 'RTS', name: 'Rustwind', tint: '#C58A4F' },
   rep_rvnts: { code: 'PRV', name: 'Revenants', tint: '#8B6FFF' },
-  rep_tfi: { code: 'TFI', name: null, tint: '#5FE8A0' },
+  rep_tfi: { code: 'TFI', name: 'Treasure Financials Inc', tint: '#5FE8A0' },
   rep_uurt: { code: 'URT', name: 'Uurtians', tint: '#3FBFA0' },
-  rep_zcorp: { code: 'ZCP', name: 'Z-Corp', tint: '#4FC3FF' },
+  rep_zcorp: { code: 'ZCP', name: 'Zibethicus Corporation', tint: '#4FC3FF' },
 };
 
 export interface FactionInfo extends Tinted {

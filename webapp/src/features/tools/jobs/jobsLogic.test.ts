@@ -140,10 +140,11 @@ describe('location labels', () => {
 describe('faction labels', () => {
   it('show the attested name, else the code', () => {
     expect(factionInfo('rep_rts')).toMatchObject({ code: 'RTS', name: 'Rustwind', label: 'Rustwind', fullLabel: 'Rustwind (RTS)' });
-    expect(factionInfo('rep_proq')).toMatchObject({ code: 'PRQ', name: null, label: 'PRQ', fullLabel: 'PRQ' });
-    expect(factionInfo('rep_mschn').label).toBe('MSN');
-    expect(factionInfo('rep_55imp').label).toBe('55th');
-    expect(factionInfo('rep_co8').label).toBe('CO8');
+    expect(factionInfo('rep_proq')).toMatchObject({ code: 'PRQ', name: 'Professor Q', label: 'Professor Q', fullLabel: 'Professor Q (PRQ)' });
+    expect(factionInfo('rep_mschn')).toMatchObject({ code: 'MSN', name: null, label: 'MSN', fullLabel: 'MSN' });
+    expect(factionInfo('rep_55imp').label).toBe('55th Imperial Legion');
+    expect(factionInfo('rep_co8').label).toBe('Cult of 8');
+    expect(factionInfo('rep_zcorp').fullLabel).toBe('Zibethicus Corporation (ZCP)');
     expect(factionInfo('rep_rvnts').fullLabel).toBe('Revenants (PRV)');
     expect(factionInfo('rep_uurt').label).toBe('Uurtians');
     expect(factionInfo('rep_unknown')).toMatchObject({ code: 'rep_unknown', label: 'rep_unknown' });
@@ -454,8 +455,8 @@ describe('activeFilterChips', () => {
   });
 
   it('names factions by attested name or code', () => {
-    const f: JobFilter = { ...pristineFilter(), factions: new Set(['rep_proq']), avoidRivals: new Set(['rep_55imp']) };
-    expect(activeFilterChips(f, places).map((c) => c.label)).toEqual(['PRQ', "Don't anger 55th"]);
+    const f: JobFilter = { ...pristineFilter(), factions: new Set(['rep_proq', 'rep_mschn']), avoidRivals: new Set(['rep_55imp']) };
+    expect(activeFilterChips(f, places).map((c) => c.label)).toEqual(['Professor Q', 'MSN', "Don't anger 55th Imperial Legion"]);
   });
 
   it('exposes pure removers', () => {
