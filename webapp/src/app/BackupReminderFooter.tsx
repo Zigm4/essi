@@ -1,29 +1,27 @@
 import { useState } from 'react';
-import { friendlyError } from '../core/errorText';
 import { Haptics } from '../core/haptics';
-import { showSnackbar } from '../core/snackbar';
-import { exportAndDownload } from '../data/exportImport';
 import { useSettingsStore } from '../data/settings';
 import { IconBackup } from '../features/captures/components/icons';
 import { shouldShowReminder, SNOOZE_DURATION_MS } from '../features/captures/logic';
 import { collectBackupStatus } from '../features/captures/queries';
 import { useLiveQuery } from '../features/captures/useLiveQuery';
 import { IconClose, IconUpload } from '../design-system/icons';
+import { runBackupExport } from './backupExport';
 import styles from './BackupReminderFooter.module.css';
 
 /**
  * App-wide "back up your data" footer. Shows on every main-app page (not boot /
  * onboarding) as soon as the user has ANY on-device data - a ship, a note, a
  * link, a map pin, a favourite, scan history… - that has never been exported
- * (or has changed since the last export). "Export" downloads the JSON and marks
- * the data backed up; the ✕ snoozes the reminder for 7 days. It sits in the
- * shell's flow above the bottom nav, so it never hides the end of a page.
+ * (or has changed since, deletions and imports included). "Export" saves the
+ * JSON and the reminder goes once the file is known to exist (see
+ * runBackupExport); the ✕ snoozes it for 7 days. It sits in the shell's flow
+ * above the bottom nav, so it never hides the end of a page.
  */
 export function BackupReminderFooter() {
   const statusResult = useLiveQuery(collectBackupStatus, []);
   const lastBackupAt = useSettingsStore((s) => s.lastBackupAt);
   const snoozedUntil = useSettingsStore((s) => s.backupReminderSnoozedUntil);
-  const markBackedUp = useSettingsStore((s) => s.markBackedUp);
   const snoozeBackupReminder = useSettingsStore((s) => s.snoozeBackupReminder);
   const [exporting, setExporting] = useState(false);
 
@@ -37,16 +35,7 @@ export function BackupReminderFooter() {
     if (exporting) return;
     Haptics.tap();
     setExporting(true);
-    void (async () => {
-      try {
-        await exportAndDownload();
-        markBackedUp(); // a completed web download counts as a backup
-      } catch (e) {
-        showSnackbar(friendlyError(e, 'Export failed. Please try again.'), { danger: true });
-      } finally {
-        setExporting(false);
-      }
-    })();
+    void runBackupExport().finally(() => setExporting(false));
   };
 
   const onDismiss = () => {

@@ -200,6 +200,60 @@ export interface BackupStatus {
   lastChangedAt: number | null;
 }
 
+/** What `backupStatusOf` reads: the user-data rows plus the local-change marker. */
+export interface BackupStatusInput {
+  notes: readonly { updatedAt: number }[];
+  links: readonly { updatedAt: number }[];
+  ships: readonly { updatedAt: number }[];
+  scanHistory: readonly { date: number }[];
+  trackerHistory: readonly { date: number }[];
+  discoveryHistory: readonly { date: number }[];
+  favorites: readonly { createdAt: number }[];
+  removedFavorites: readonly { removedAt: number }[];
+  jobStatus: readonly { status: string; updatedAt: number }[];
+  mapPins: readonly { updatedAt: number }[];
+  /** Bumped by every user-data write, deletions and imports included; null before the first. */
+  localChangeAt: number | null;
+}
+
+/**
+ * `hasData` counts real data only: tombstones (removed favorites, jobs reset to
+ * 'todo') are not data. `lastChangedAt` is the newest of every row timestamp,
+ * tombstones included, and the local-change marker - rows alone can't see a
+ * deletion or an import of rows older than the last backup.
+ */
+export function backupStatusOf(input: BackupStatusInput): BackupStatus {
+  const liveJobs = input.jobStatus.filter((j) => j.status !== 'todo');
+  const hasData =
+    input.notes.length +
+      input.links.length +
+      input.ships.length +
+      input.scanHistory.length +
+      input.trackerHistory.length +
+      input.discoveryHistory.length +
+      input.favorites.length +
+      liveJobs.length +
+      input.mapPins.length >
+    0;
+
+  let lastChangedAt: number | null = input.localChangeAt;
+  const track = (value: number): void => {
+    if (lastChangedAt === null || value > lastChangedAt) lastChangedAt = value;
+  };
+  for (const n of input.notes) track(n.updatedAt);
+  for (const l of input.links) track(l.updatedAt);
+  for (const s of input.ships) track(s.updatedAt);
+  for (const h of input.scanHistory) track(h.date);
+  for (const h of input.trackerHistory) track(h.date);
+  for (const h of input.discoveryHistory) track(h.date);
+  for (const f of input.favorites) track(f.createdAt);
+  for (const f of input.removedFavorites) track(f.removedAt);
+  for (const j of input.jobStatus) track(j.updatedAt);
+  for (const p of input.mapPins) track(p.updatedAt);
+
+  return { hasData, lastChangedAt };
+}
+
 export interface ReminderInputs {
   status: BackupStatus;
   lastBackupAt: number | null;

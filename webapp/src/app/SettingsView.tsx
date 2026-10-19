@@ -1,13 +1,12 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FormatException } from '../core/errors';
-import { friendlyError } from '../core/errorText';
 import { formatBytes } from '../core/formatBytes';
 import { Haptics } from '../core/haptics';
 import { logError } from '../core/logging';
 import { showSnackbar } from '../core/snackbar';
 import { db } from '../data/db';
-import { describeImportSummary, exportAndDownload, importFromUserPick } from '../data/exportImport';
+import { describeImportSummary, importFromUserPick } from '../data/exportImport';
 import { useSettingsStore } from '../data/settings';
 import { resetToBuiltInMaps } from '../features/knowledge/maps/data/seedImporter';
 import { GlassCard } from '../design-system/components/GlassCard';
@@ -26,6 +25,7 @@ import {
   IconSparkle,
   IconUpload,
 } from '../design-system/icons';
+import { runBackupExport } from './backupExport';
 import styles from './SettingsView.module.css';
 
 function ToggleRow({
@@ -119,11 +119,8 @@ export function SettingsView() {
     if (exporting) return;
     setExporting(true);
     try {
-      await exportAndDownload();
-      // Web download = synthetic success (never a dismissed share sheet).
-      settings.markBackedUp();
-    } catch (e) {
-      showSnackbar(friendlyError(e, 'Export failed. Please try again.'), { danger: true });
+      // Marks backed up only once the file is known to exist (cancel = nothing).
+      await runBackupExport();
     } finally {
       setExporting(false);
     }

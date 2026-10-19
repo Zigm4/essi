@@ -11,6 +11,8 @@ export interface SnackbarOptions {
   action?: SnackbarAction;
   /** Stays until dismissed or replaced instead of auto-dismissing. */
   persistent?: boolean;
+  /** Auto-dismiss delay when not persistent; the host default (4 s) otherwise. */
+  durationMs?: number;
 }
 
 interface SnackbarState {
@@ -18,6 +20,7 @@ interface SnackbarState {
   danger: boolean;
   action: SnackbarAction | null;
   persistent: boolean;
+  durationMs: number | null;
   /** Bumps on every show so an identical message still re-triggers the toast. */
   key: number;
   show: (message: string, options?: SnackbarOptions) => void;
@@ -29,6 +32,7 @@ export const useSnackbarStore = create<SnackbarState>((set) => ({
   danger: false,
   action: null,
   persistent: false,
+  durationMs: null,
   key: 0,
   show: (message, options) =>
     set((s) => ({
@@ -36,6 +40,7 @@ export const useSnackbarStore = create<SnackbarState>((set) => ({
       danger: options?.danger ?? false,
       action: options?.action ?? null,
       persistent: options?.persistent ?? false,
+      durationMs: options?.durationMs ?? null,
       key: s.key + 1,
     })),
   dismiss: () => set({ message: null }),

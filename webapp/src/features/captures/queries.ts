@@ -1,7 +1,8 @@
-import { db } from '../../data/db';
+import { db, type UnderdeckDb } from '../../data/db';
+import { readLocalChangeAt } from '../../data/localChanges';
 import type { LinkModel, NoteModel, TagModel } from './models';
 import { toLinkModel, toNoteModel, toTagModel } from './models';
-import type { BackupStatus } from './logic';
+import { backupStatusOf, type BackupStatus } from './logic';
 
 /**
  * Read-side queries for Captures. Each function reads only from Dexie tables so
@@ -56,48 +57,50 @@ export async function loadLinks(): Promise<LinkModel[]> {
 }
 
 /**
- * Cheap aggregate over the 9 tables that hold user data (spec §17): whether any
- * data exists at all, and the most recent change timestamp across all of them.
+ * Aggregate over the tables that hold user data (spec §17) plus the durable
+ * local-change marker: whether any data exists at all, and the most recent
+ * change (see backupStatusOf). The marker is not reactive, but the writes that
+ * bump it touch these tables (tag and join rows change with their note, link
+ * or ship), so the live query re-runs and reads it.
  */
-export async function collectBackupStatus(): Promise<BackupStatus> {
-  const [notes, links, ships, scan, tracker, discovery, favorites, jobStatus, mapPins] =
-    await Promise.all([
-      db.notes.toArray(),
-      db.links.toArray(),
-      db.ships.toArray(),
-      db.scanHistory.toArray(),
-      db.trackerHistory.toArray(),
-      db.discoveryHistory.toArray(),
-      db.favorites.toArray(),
-      db.jobStatus.toArray(),
-      db.mapPins.toArray(),
-    ]);
-
-  const hasData =
-    notes.length +
-      links.length +
-      ships.length +
-      scan.length +
-      tracker.length +
-      discovery.length +
-      favorites.length +
-      jobStatus.length +
-      mapPins.length >
-    0;
-
-  let lastChangedAt: number | null = null;
-  const track = (value: number): void => {
-    if (lastChangedAt === null || value > lastChangedAt) lastChangedAt = value;
-  };
-  for (const n of notes) track(n.updatedAt);
-  for (const l of links) track(l.updatedAt);
-  for (const s of ships) track(s.updatedAt);
-  for (const h of scan) track(h.date);
-  for (const h of tracker) track(h.date);
-  for (const h of discovery) track(h.date);
-  for (const f of favorites) track(f.createdAt);
-  for (const j of jobStatus) track(j.updatedAt);
-  for (const p of mapPins) track(p.updatedAt);
-
-  return { hasData, lastChangedAt };
+export async function collectBackupStatus(
+  database: UnderdeckDb = db,
+  localChangeAt: () => number | null = readLocalChangeAt,
+): Promise<BackupStatus> {
+  const [
+    notes,
+    links,
+    ships,
+    scanHistory,
+    trackerHistory,
+    discoveryHistory,
+    favorites,
+    removedFavorites,
+    jobStatus,
+    mapPins,
+  ] = await Promise.all([
+    database.notes.toArray(),
+    database.links.toArray(),
+    database.ships.toArray(),
+    database.scanHistory.toArray(),
+    database.trackerHistory.toArray(),
+    database.discoveryHistory.toArray(),
+    database.favorites.toArray(),
+    database.removedFavorites.toArray(),
+    database.jobStatus.toArray(),
+    database.mapPins.toArray(),
+  ]);
+  return backupStatusOf({
+    notes,
+    links,
+    ships,
+    scanHistory,
+    trackerHistory,
+    discoveryHistory,
+    favorites,
+    removedFavorites,
+    jobStatus,
+    mapPins,
+    localChangeAt: localChangeAt(),
+  });
 }

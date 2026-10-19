@@ -554,6 +554,12 @@ the whole row to 45% opacity and is inert.
     see §16). On success where the share was not dismissed, records "backed up now"
     (`markBackedUp()` — refreshes the backup-reminder timer). On error: snackbar with
     `friendlyError(e, fallback: 'Export failed. Please try again.')`.
+  - **Web** (shared with the reminder's Export button, `runBackupExport`): save dialog where
+    available, else the share sheet on touch devices, else a download (data-layer §4.2).
+    Saved → snackbar `Backup saved.`; shared → `Backup shared.`; closing the dialog or sheet →
+    nothing marked, no snackbar. A plain download is not proof: snackbar `Did the backup file
+    save?` with action `Yes, saved` (20 s); only that tap calls `markBackedUp(snapshot time)`,
+    otherwise the reminder stays.
   - Native detail (iPad share-sheet anchoring): the row captures its on-screen rect at tap
     time and passes it as the share origin. **Web: drop.**
 - **Action row "Import…"** (icon `download`). Opens the import file picker flow; on success
@@ -940,7 +946,7 @@ silently; keep the setting UI either way or hide it behind capability detection.
 
 | Feature | Where used (this area) | Flutter impl | Web equivalent |
 |---|---|---|---|
-| Share sheet (JSON export) | Settings › Export | temp file + OS share sheet, stable filename `underdeck-export.json` | **Already ported in-repo:** Blob + object URL + hidden `<a download>` click; return a synthetic "success" result so the caller still calls `markBackedUp()` |
+| Share sheet (JSON export) | Settings › Export | temp file + OS share sheet, stable filename `underdeck-export.json` | `showSaveFilePicker` → touch share sheet with the file → `<a download>` (URL revoked after 60 s); only a written/shared file, or the user's "Yes, saved" after a download, calls `markBackedUp()` (§8.3) |
 | Share sheet (PNG share cards) | (other areas) | temp PNG + share sheet with text | Blob download; drop the accompanying text |
 | Documents auto-backup + pruning | Settings › Auto-backup toggle; root controller | writes `<Documents>/backups/<file>`, prunes to newest N by filename prefix | **Unsupported on web — hide the toggle and never subscribe the controller** (the io code throws if reached) |
 | File picker (import JSON) | Settings › Import | file_selector | `<input type="file" accept="application/json">` |

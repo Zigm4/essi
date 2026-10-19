@@ -18,8 +18,13 @@ export async function listAllPins(): Promise<MapPinRow[]> {
   return rows.sort((a, b) => b.updatedAt - a.updatedAt);
 }
 
+/** The zone's note; the most recently edited one should a duplicate slip through. */
 export async function getPin(mapId: string, zoneId: string): Promise<MapPinRow | undefined> {
-  return db.mapPins.where('[mapId+zoneId]').equals([mapId, zoneId]).first();
+  const rows = await db.mapPins.where('[mapId+zoneId]').equals([mapId, zoneId]).toArray();
+  return rows.reduce<MapPinRow | undefined>(
+    (newest, row) => (newest === undefined || row.updatedAt > newest.updatedAt ? row : newest),
+    undefined,
+  );
 }
 
 export async function countPinsForMap(mapId: string): Promise<number> {
@@ -30,29 +35,31 @@ export async function countPinsForMap(mapId: string): Promise<number> {
  * Upsert a pin. A trimmed-empty note deletes any existing pin; otherwise a new
  * pin is created (uuid v4, createdAt=updatedAt=now) or the existing one is
  * updated in place. Note is capped at the import cap so round-trips never
- * truncate.
+ * truncate. One transaction, so two quick saves can't both create a pin.
  */
 export async function savePin(mapId: string, zoneId: string, note: string): Promise<void> {
   const trimmed = note.trim();
-  const existing = await getPin(mapId, zoneId);
-  if (trimmed.length === 0) {
-    if (existing !== undefined) await db.mapPins.delete(existing.id);
-    return;
-  }
-  const capped = trimmed.slice(0, MAX_PIN_NOTE_LENGTH);
-  const now = Date.now();
-  if (existing !== undefined) {
-    await db.mapPins.update(existing.id, { note: capped, updatedAt: now });
-  } else {
-    await db.mapPins.put({
-      id: newUuid(),
-      mapId,
-      zoneId,
-      note: capped,
-      createdAt: now,
-      updatedAt: now,
-    });
-  }
+  await db.transaction('rw', db.mapPins, async () => {
+    const existing = await getPin(mapId, zoneId);
+    if (trimmed.length === 0) {
+      if (existing !== undefined) await db.mapPins.delete(existing.id);
+      return;
+    }
+    const capped = trimmed.slice(0, MAX_PIN_NOTE_LENGTH);
+    const now = Date.now();
+    if (existing !== undefined) {
+      await db.mapPins.update(existing.id, { note: capped, updatedAt: now });
+    } else {
+      await db.mapPins.put({
+        id: newUuid(),
+        mapId,
+        zoneId,
+        note: capped,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+  });
 }
 
 export async function deletePin(id: string): Promise<void> {

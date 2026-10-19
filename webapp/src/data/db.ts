@@ -1,4 +1,5 @@
 import Dexie, { type Table } from 'dexie';
+import { localChangesMiddleware, markLocalChange } from './localChanges';
 
 /**
  * IndexedDB database `underdeck` - faithful mirror of the Drift/SQLite schema
@@ -109,9 +110,23 @@ export interface FavoriteRow {
   createdAt: number;
 }
 
+/**
+ * Tombstone of an un-starred favorite: an older backup that still has the star
+ * must not bring it back on import. Never coexists with a `favorites` row for
+ * the same key (starring again deletes it).
+ */
+export interface RemovedFavoriteRow {
+  entityType: string;
+  entityId: string;
+  removedAt: number;
+}
+
 export type JobStatusValue = 'todo' | 'in_progress' | 'done';
 
-/** A job with no row is implicitly 'todo'. */
+/**
+ * A job with no row, or with a 'todo' row, is 'todo'. Resetting a job keeps a
+ * dated 'todo' row (never a delete) so newer-wins on import can see the reset.
+ */
 export interface JobStatusRow {
   jobId: string;
   status: JobStatusValue;
@@ -153,6 +168,50 @@ export interface MapBlobRow {
 /** Every history list query is ORDER BY date DESC LIMIT 100. */
 export const HISTORY_LIMIT = 100;
 
+/**
+ * Tables holding user data - what the JSON export carries. Writes to these bump
+ * the local-change marker (backup reminder); the map pack index and blob cache
+ * are rebuildable and deliberately left out.
+ */
+export const USER_DATA_TABLES: ReadonlySet<string> = new Set([
+  'notes',
+  'links',
+  'tags',
+  'noteTags',
+  'linkTags',
+  'shipTags',
+  'ships',
+  'scanHistory',
+  'trackerHistory',
+  'discoveryHistory',
+  'favorites',
+  'removedFavorites',
+  'jobStatus',
+  'mapPins',
+]);
+
+/**
+ * Ids of the pins to drop so each (mapId, zoneId) keeps one: the most recently
+ * updated (ties: the first seen). Older imports could create duplicates.
+ */
+export function duplicatePinIds(rows: readonly MapPinRow[]): string[] {
+  const keep = new Map<string, MapPinRow>();
+  const drop: string[] = [];
+  for (const row of rows) {
+    const zone = `${row.mapId}\u0000${row.zoneId}`;
+    const kept = keep.get(zone);
+    if (kept === undefined) {
+      keep.set(zone, row);
+    } else if (row.updatedAt > kept.updatedAt) {
+      drop.push(kept.id);
+      keep.set(zone, row);
+    } else {
+      drop.push(row.id);
+    }
+  }
+  return drop;
+}
+
 export class UnderdeckDb extends Dexie {
   notes!: Table<NoteRow, string>;
   links!: Table<LinkRow, string>;
@@ -165,6 +224,7 @@ export class UnderdeckDb extends Dexie {
   trackerHistory!: Table<HistoryRow, string>;
   discoveryHistory!: Table<HistoryRow, string>;
   favorites!: Table<FavoriteRow, [string, string]>;
+  removedFavorites!: Table<RemovedFavoriteRow, [string, string]>;
   jobStatus!: Table<JobStatusRow, string>;
   mapPacks!: Table<MapPackRow, string>;
   mapPackFiles!: Table<MapPackFileRow, [string, string]>;
@@ -191,6 +251,16 @@ export class UnderdeckDb extends Dexie {
       mapPins: 'id, [mapId+zoneId], updatedAt',
       mapBlobs: 'sha256',
     });
+    // v2: favorite tombstones; collapse the duplicate zone notes older
+    // imports could create (newest wins, as the import now does).
+    this.version(2)
+      .stores({ removedFavorites: '[entityType+entityId]' })
+      .upgrade(async (tx) => {
+        const pins = tx.table<MapPinRow, string>('mapPins');
+        const drop = duplicatePinIds(await pins.toArray());
+        if (drop.length > 0) await pins.bulkDelete(drop);
+      });
+    this.use(localChangesMiddleware(USER_DATA_TABLES, () => markLocalChange()));
   }
 }
 
@@ -220,6 +290,30 @@ export async function deleteShipCascade(database: UnderdeckDb, shipId: string): 
   await database.transaction('rw', database.ships, database.shipTags, async () => {
     await database.shipTags.where('shipId').equals(shipId).delete();
     await database.ships.delete(shipId);
+  });
+}
+
+/**
+ * Stars or un-stars (entityType, entityId) and returns the new state (true =
+ * starred). Un-starring leaves a dated tombstone so importing an older backup
+ * can't bring the star back; starring again removes it.
+ */
+export async function toggleFavoriteRow(
+  database: UnderdeckDb,
+  entityType: string,
+  entityId: string,
+): Promise<boolean> {
+  const key: [string, string] = [entityType, entityId];
+  return database.transaction('rw', database.favorites, database.removedFavorites, async () => {
+    const now = Date.now();
+    if ((await database.favorites.get(key)) !== undefined) {
+      await database.favorites.delete(key);
+      await database.removedFavorites.put({ entityType, entityId, removedAt: now });
+      return false;
+    }
+    await database.removedFavorites.delete(key);
+    await database.favorites.put({ entityType, entityId, createdAt: now });
+    return true;
   });
 }
 

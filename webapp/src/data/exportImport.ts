@@ -12,6 +12,7 @@ import {
   type MapPinRow,
   type NoteRow,
   type NoteTagRow,
+  type RemovedFavoriteRow,
   type ShipRow,
   type ShipTagRow,
   type TagRow,
@@ -21,12 +22,17 @@ import {
 /**
  * JSON export/import - format-compatible with the mobile app
  * (data-layer spec §4, formatVersion 1). Audit fixes honored:
- * - E1: a download is a synthetic success; callers decide when to markBackedUp.
+ * - E1: only a written or shared file counts as a backup; a plain download is
+ *   reported as such and the caller asks the user before markBackedUp.
  * - E5: an unparseable date on the newer-wins path falls back to epoch 0
  *   (must LOSE), while createdAt on the insert path falls back to now.
  * Known mobile quirks fixed here (flagged in the spec's open questions):
  * - favorites import whitelist includes 'map' and 'map_zone';
  * - jobStatus rows are guarded per-row instead of failing the whole file.
+ * Web additions (still formatVersion 1, ignored by older importers):
+ * - `removedFavorites` tombstones, and 'todo' jobStatus rows for resets, so an
+ *   older backup can't undo a removal;
+ * - mapPins merge per (mapId, zoneId): one note per zone, newest wins.
  */
 
 const INVALID_FILE_MESSAGE = "This file isn't a valid ESSI export";
@@ -120,6 +126,7 @@ export interface ExportData {
   trackerHistory: HistoryRow[];
   discoveryHistory: HistoryRow[];
   favorites: FavoriteRow[];
+  removedFavorites: RemovedFavoriteRow[];
   jobStatus: JobStatusRow[];
   mapPins: MapPinRow[];
 }
@@ -203,6 +210,11 @@ export function buildExportObject(data: ExportData, exportedAt: Date = new Date(
         entityId: f.entityId,
         createdAt: iso(f.createdAt),
       })),
+      removedFavorites: data.removedFavorites.map((f) => ({
+        entityType: f.entityType,
+        entityId: f.entityId,
+        removedAt: iso(f.removedAt),
+      })),
       jobStatus: data.jobStatus.map((j) => ({
         jobId: j.jobId,
         status: j.status,
@@ -233,10 +245,37 @@ export async function collectExportData(database: UnderdeckDb = db): Promise<Exp
     trackerHistory: await database.trackerHistory.toArray(),
     discoveryHistory: await database.discoveryHistory.toArray(),
     favorites: await database.favorites.toArray(),
+    removedFavorites: await database.removedFavorites.toArray(),
     jobStatus: await database.jobStatus.toArray(),
     mapPins: await database.mapPins.toArray(),
   };
 }
+
+// ---------------------------------------------------------------------------
+// Saving the export file
+
+/**
+ * How an export ended. `saved` (the save dialog wrote the file) and `shared`
+ * (the share sheet took it) are real evidence of a backup; `downloaded` is not -
+ * the browser may ask where to save, or block it. `snapshotAt` is when the data
+ * was read: pass it to markBackedUp so a change made while the user deals with
+ * the dialog still counts as not backed up.
+ */
+export type ExportOutcome =
+  | { kind: 'saved' | 'shared' | 'downloaded'; snapshotAt: number }
+  | { kind: 'cancelled' };
+
+/** The browser's ways to hand over the file, best evidence first (injectable for tests). */
+export interface SaveTargets {
+  /** Save dialog (File System Access). Rejects with AbortError on cancel; resolves to the writer. */
+  pickSaveFile: ((fileName: string) => Promise<(text: string) => Promise<void>>) | null;
+  /** OS share sheet with the file. Resolves once shared, rejects with AbortError on cancel. */
+  shareFile: ((fileName: string, json: string) => Promise<void>) | null;
+  download: (json: string, fileName: string) => void;
+}
+
+/** Revoking the object URL right after click() can kill a prompted or slow download. */
+const DOWNLOAD_URL_LIFETIME_MS = 60_000;
 
 /** Browser download: Blob → object URL → hidden anchor click (spec §8.3). */
 export function downloadJson(json: string, fileName: string = EXPORT_FILE_NAME): void {
@@ -249,16 +288,105 @@ export function downloadJson(json: string, fileName: string = EXPORT_FILE_NAME):
   document.body.appendChild(a);
   a.click();
   a.remove();
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), DOWNLOAD_URL_LIFETIME_MS);
+}
+
+interface SaveFilePickerHost {
+  showSaveFilePicker?: (options: {
+    suggestedName?: string;
+    types?: { description?: string; accept: Record<string, string[]> }[];
+  }) => Promise<FileSystemFileHandle>;
 }
 
 /**
- * Full export as a browser download. Returns after the download is handed to
- * the browser - a synthetic success; the caller then calls markBackedUp().
+ * True when the OS share sheet takes a JSON file on a touch device (iOS offers
+ * "Save to Files"). Desktop share menus have no save target, so a download
+ * serves better there.
  */
-export async function exportAndDownload(database: UnderdeckDb = db): Promise<void> {
-  const json = JSON.stringify(buildExportObject(await collectExportData(database)));
-  downloadJson(json);
+function canShareJsonFile(fileName: string): boolean {
+  if (typeof navigator === 'undefined' || typeof navigator.canShare !== 'function') return false;
+  if (typeof matchMedia !== 'function' || !matchMedia('(pointer: coarse)').matches) return false;
+  try {
+    const probe = new File(['{}'], fileName, { type: 'application/json' });
+    return navigator.canShare({ files: [probe] });
+  } catch {
+    return false;
+  }
+}
+
+export function browserSaveTargets(): SaveTargets {
+  const host = window as SaveFilePickerHost;
+  const showSaveFilePicker = host.showSaveFilePicker?.bind(window);
+  return {
+    pickSaveFile:
+      showSaveFilePicker === undefined
+        ? null
+        : async (fileName) => {
+            const handle = await showSaveFilePicker({
+              suggestedName: fileName,
+              types: [{ description: 'ESSI backup', accept: { 'application/json': ['.json'] } }],
+            });
+            return async (text) => {
+              // Written to a swap file that close() commits: a failure leaves no half file.
+              const writable = await handle.createWritable();
+              await writable.write(text);
+              await writable.close();
+            };
+          },
+    shareFile: canShareJsonFile(EXPORT_FILE_NAME)
+      ? (fileName, json) =>
+          navigator.share({ files: [new File([json], fileName, { type: 'application/json' })] })
+      : null,
+    download: downloadJson,
+  };
+}
+
+function isAbortError(e: unknown): boolean {
+  return typeof e === 'object' && e !== null && (e as { name?: unknown }).name === 'AbortError';
+}
+
+/**
+ * Full export. Prefers the save dialog (opened first, while the tap still
+ * counts as a user gesture), then the share sheet, then a plain download.
+ * Closing the dialog or sheet resolves `cancelled` and never throws; a dialog
+ * or sheet the browser refuses falls through to the next way.
+ */
+export async function exportBackup(
+  database: UnderdeckDb = db,
+  targets: SaveTargets = browserSaveTargets(),
+): Promise<ExportOutcome> {
+  let snapshotAt = 0;
+  const produce = async (): Promise<string> => {
+    snapshotAt = Date.now();
+    return JSON.stringify(buildExportObject(await collectExportData(database), new Date(snapshotAt)));
+  };
+
+  if (targets.pickSaveFile !== null) {
+    let write: ((text: string) => Promise<void>) | null = null;
+    try {
+      write = await targets.pickSaveFile(EXPORT_FILE_NAME);
+    } catch (e) {
+      if (isAbortError(e)) return { kind: 'cancelled' };
+      logError(e, 'data export: save dialog unavailable, trying the next way');
+    }
+    if (write !== null) {
+      await write(await produce());
+      return { kind: 'saved', snapshotAt };
+    }
+  }
+
+  const json = await produce();
+  if (targets.shareFile !== null) {
+    try {
+      await targets.shareFile(EXPORT_FILE_NAME, json);
+      return { kind: 'shared', snapshotAt };
+    } catch (e) {
+      if (isAbortError(e)) return { kind: 'cancelled' };
+      logError(e, 'data export: share sheet failed, downloading instead');
+    }
+  }
+  targets.download(json, EXPORT_FILE_NAME);
+  return { kind: 'downloaded', snapshotAt };
 }
 
 // ---------------------------------------------------------------------------
@@ -287,14 +415,25 @@ export interface ImportStore {
   putDiscovery: (row: HistoryRow) => Promise<void>;
   getFavorite: (entityType: string, entityId: string) => Promise<FavoriteRow | undefined>;
   putFavorite: (row: FavoriteRow) => Promise<void>;
+  deleteFavorite: (entityType: string, entityId: string) => Promise<void>;
+  getRemovedFavorite: (entityType: string, entityId: string) => Promise<RemovedFavoriteRow | undefined>;
+  putRemovedFavorite: (row: RemovedFavoriteRow) => Promise<void>;
+  deleteRemovedFavorite: (entityType: string, entityId: string) => Promise<void>;
   getJobStatus: (jobId: string) => Promise<JobStatusRow | undefined>;
   putJobStatus: (row: JobStatusRow) => Promise<void>;
   getMapPin: (id: string) => Promise<MapPinRow | undefined>;
+  /** Every pin of one zone (normally at most one). */
+  mapPinsForZone: (mapId: string, zoneId: string) => Promise<MapPinRow[]>;
   putMapPin: (row: MapPinRow) => Promise<void>;
+  deleteMapPin: (id: string) => Promise<void>;
 }
 
 export function dexieImportStore(database: UnderdeckDb = db): ImportStore {
   return {
+    // The scope must be an async function: only then does Dexie carry the
+    // transaction across the merge's native awaits. A plain arrow loses it at
+    // the first one - every later write then commits on its own and the import
+    // ends in PrematureCommitError after a partial write.
     transaction: (fn) =>
       database.transaction(
         'rw',
@@ -310,10 +449,11 @@ export function dexieImportStore(database: UnderdeckDb = db): ImportStore {
           database.trackerHistory,
           database.discoveryHistory,
           database.favorites,
+          database.removedFavorites,
           database.jobStatus,
           database.mapPins,
         ],
-        fn,
+        async () => fn(),
       ),
     tagByName: (name) => database.tags.where('name').equals(name).first(),
     tagById: (id) => database.tags.get(id),
@@ -361,13 +501,28 @@ export function dexieImportStore(database: UnderdeckDb = db): ImportStore {
     putFavorite: async (row) => {
       await database.favorites.put(row);
     },
+    deleteFavorite: async (entityType, entityId) => {
+      await database.favorites.delete([entityType, entityId]);
+    },
+    getRemovedFavorite: (entityType, entityId) => database.removedFavorites.get([entityType, entityId]),
+    putRemovedFavorite: async (row) => {
+      await database.removedFavorites.put(row);
+    },
+    deleteRemovedFavorite: async (entityType, entityId) => {
+      await database.removedFavorites.delete([entityType, entityId]);
+    },
     getJobStatus: (jobId) => database.jobStatus.get(jobId),
     putJobStatus: async (row) => {
       await database.jobStatus.put(row);
     },
     getMapPin: (id) => database.mapPins.get(id),
+    mapPinsForZone: (mapId, zoneId) =>
+      database.mapPins.where('[mapId+zoneId]').equals([mapId, zoneId]).toArray(),
     putMapPin: async (row) => {
       await database.mapPins.put(row);
+    },
+    deleteMapPin: async (id) => {
+      await database.mapPins.delete(id);
     },
   };
 }
@@ -768,20 +923,34 @@ async function runImport(data: Record<string, unknown>, store: ImportStore): Pro
   );
 
   // -- favorites -------------------------------------------------------------
+  const favoriteKey = (raw: Record<string, unknown>): [string, string] | null => {
+    const entityType = str(raw['entityType']);
+    const entityId = str(raw['entityId']);
+    if (entityType === undefined || !VALID_FAVORITE_KINDS.has(entityType)) return null;
+    if (
+      entityId === undefined ||
+      entityId.length === 0 ||
+      entityId.length > MAX_FAVORITE_ENTITY_ID_LENGTH
+    ) {
+      return null;
+    }
+    return [entityType, entityId];
+  };
+
   for (const raw of sectionArray(data, 'favorites')) {
     try {
       if (!isRecord(raw)) throw new TypeError('favorite row is not an object');
-      const entityType = str(raw['entityType']);
-      const entityId = str(raw['entityId']);
-      if (entityType === undefined || !VALID_FAVORITE_KINDS.has(entityType)) continue;
-      if (
-        entityId === undefined ||
-        entityId.length === 0 ||
-        entityId.length > MAX_FAVORITE_ENTITY_ID_LENGTH
-      ) {
-        continue;
-      }
+      const key = favoriteKey(raw);
+      if (key === null) continue;
+      const [entityType, entityId] = key;
       if ((await store.getFavorite(entityType, entityId)) !== undefined) continue;
+      // Un-starred here after this star was made: the removal wins (an
+      // unreadable date counts as epoch 0, so it loses as well).
+      const removed = await store.getRemovedFavorite(entityType, entityId);
+      if (removed !== undefined) {
+        if (!(parseUpdatedAtMs(raw['createdAt']) > removed.removedAt)) continue;
+        await store.deleteRemovedFavorite(entityType, entityId);
+      }
       await store.putFavorite({
         entityType,
         entityId,
@@ -793,7 +962,32 @@ async function runImport(data: Record<string, unknown>, store: ImportStore): Pro
     }
   }
 
+  // Tombstones: a removal newer than the local star un-stars it (counted). It
+  // is then kept, so a later import of an older file can't re-star either.
+  for (const raw of sectionArray(data, 'removedFavorites')) {
+    try {
+      if (!isRecord(raw)) throw new TypeError('removed favorite row is not an object');
+      const key = favoriteKey(raw);
+      if (key === null) continue;
+      const [entityType, entityId] = key;
+      const removedAt = parseUpdatedAtMs(raw['removedAt']);
+      if (removedAt === 0) continue;
+      const live = await store.getFavorite(entityType, entityId);
+      if (live !== undefined) {
+        if (!(removedAt > live.createdAt)) continue;
+        await store.deleteFavorite(entityType, entityId);
+        summary.favorites += 1;
+      }
+      const existing = await store.getRemovedFavorite(entityType, entityId);
+      if (existing !== undefined && !(removedAt > existing.removedAt)) continue;
+      await store.putRemovedFavorite({ entityType, entityId, removedAt });
+    } catch (e) {
+      logError(e, 'data import: skipped malformed removed favorite row');
+    }
+  }
+
   // -- jobStatus (per-row guarded - deliberate fix over the mobile importer) --
+  // A 'todo' row is a dated reset: newer-wins lets it undo an older 'done'.
   for (const raw of sectionArray(data, 'jobStatus')) {
     try {
       if (!isRecord(raw)) throw new TypeError('job status row is not an object');
@@ -805,13 +999,14 @@ async function runImport(data: Record<string, unknown>, store: ImportStore): Pro
       const existing = await store.getJobStatus(jobId);
       if (existing !== undefined && !(updatedAt > existing.updatedAt)) continue;
       await store.putJobStatus({ jobId, status: status as JobStatusValue, updatedAt });
-      summary.jobStatus += 1;
+      // Resetting a job that is already 'todo' here changes nothing visible.
+      if (!(status === 'todo' && (existing?.status ?? 'todo') === 'todo')) summary.jobStatus += 1;
     } catch (e) {
       logError(e, 'data import: skipped malformed job status row');
     }
   }
 
-  // -- mapPins ---------------------------------------------------------------
+  // -- mapPins (one note per zone: newest wins, whatever the ids) -------------
   for (const raw of sectionArray(data, 'mapPins')) {
     try {
       if (!isRecord(raw)) throw new TypeError('map pin row is not an object');
@@ -824,13 +1019,19 @@ async function runImport(data: Record<string, unknown>, store: ImportStore): Pro
       const note = (str(raw['note']) ?? '').slice(0, MAX_MAP_PIN_NOTE_LENGTH);
       const updatedAt = parseUpdatedAtMs(raw['updatedAt']);
       const existing = await store.getMapPin(id);
-      if (existing !== undefined && !(updatedAt > existing.updatedAt)) continue;
+      // Another device's note on the same zone has its own id: it competes too.
+      const zonePins = await store.mapPinsForZone(mapId, zoneId);
+      const rivals = existing === undefined ? zonePins : [existing, ...zonePins];
+      if (rivals.some((p) => !(updatedAt > p.updatedAt))) continue;
+      for (const p of zonePins) {
+        if (p.id !== id) await store.deleteMapPin(p.id);
+      }
       await store.putMapPin({
         id,
         mapId,
         zoneId,
         note,
-        createdAt: parseCreatedAtMs(raw['createdAt']),
+        createdAt: existing?.createdAt ?? parseCreatedAtMs(raw['createdAt']),
         updatedAt,
       });
       summary.mapPins += 1;

@@ -1,5 +1,5 @@
 import { liveQuery, type Observable } from 'dexie';
-import { db, type FavoriteKindValue } from '../../data/db';
+import { db, toggleFavoriteRow, type FavoriteKindValue } from '../../data/db';
 
 /**
  * Generic star / pin / bookmark store shared across the whole app
@@ -38,18 +38,10 @@ export const favoritesRepository = {
   },
 
   /**
-   * Delete the row if present, else insert it (createdAt = now).
-   * Returns the new favorite state (`true` = now favorited).
+   * Delete the row if present (leaving a dated tombstone), else insert it
+   * (createdAt = now). Returns the new favorite state (`true` = now favorited).
    */
-  async toggle(kind: FavoriteKindValue, id: string): Promise<boolean> {
-    return db.transaction('rw', db.favorites, async () => {
-      const existing = await db.favorites.get([kind, id]);
-      if (existing !== undefined) {
-        await db.favorites.delete([kind, id]);
-        return false;
-      }
-      await db.favorites.put({ entityType: kind, entityId: id, createdAt: Date.now() });
-      return true;
-    });
+  toggle(kind: FavoriteKindValue, id: string): Promise<boolean> {
+    return toggleFavoriteRow(db, kind, id);
   },
 };

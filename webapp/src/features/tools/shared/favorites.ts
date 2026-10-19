@@ -1,6 +1,6 @@
 import { liveQuery } from 'dexie';
 import { useEffect, useState } from 'react';
-import { db, type FavoriteKindValue } from '../../../data/db';
+import { db, toggleFavoriteRow, type FavoriteKindValue } from '../../../data/db';
 
 /**
  * Reactive membership set of favorite entity-ids for one kind (`job`,
@@ -22,13 +22,10 @@ export function useFavoriteSet(kind: FavoriteKindValue): Set<string> {
   return ids;
 }
 
-/** Toggles a favorite row for (kind, id). Throws on DB failure (caller toasts). */
+/**
+ * Toggles a favorite row for (kind, id); un-starring leaves a tombstone (see
+ * toggleFavoriteRow). Throws on DB failure (caller toasts).
+ */
 export async function toggleFavorite(kind: FavoriteKindValue, id: string): Promise<void> {
-  const key: [string, string] = [kind, id];
-  const existing = await db.favorites.get(key);
-  if (existing !== undefined) {
-    await db.favorites.delete(key);
-  } else {
-    await db.favorites.add({ entityType: kind, entityId: id, createdAt: Date.now() });
-  }
+  await toggleFavoriteRow(db, kind, id);
 }

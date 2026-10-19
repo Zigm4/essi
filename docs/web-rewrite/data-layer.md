@@ -173,6 +173,8 @@ Composite PK `(entityType, entityId)` — an entity is favorited at most once.
 
 Repository behavior: `toggle(kind, id)` — delete if present, else `insertOrReplace` with `createdAt = now`; returns new boolean state. `watchIds(kind)` → live `Set<String>`; `watchIsFavorite(kind, id)` → live bool.
 
+**Web:** un-starring also writes a tombstone `{entityType, entityId, removedAt}` to the `removedFavorites` store (starring again deletes it; a key is never in both), so an import of an older backup can't bring the star back (§4.5). Readers of `favorites` are unaffected.
+
 #### `job_status` (class `JobStatus`) — schema v3
 | column | type | null | notes |
 |---|---|---|---|
@@ -180,6 +182,8 @@ Repository behavior: `toggle(kind, id)` — delete if present, else `insertOrRep
 | status | TEXT | no | one of `'todo'`, `'in_progress'`, `'done'` |
 | updatedAt | DATETIME | no | |
 A job with no row is implicitly `'todo'`.
+
+**Web:** resetting a job to Not done keeps a dated `'todo'` row (`updatedAt = now`) instead of deleting it, so newer-wins on import sees the reset (§4.5). Every reader treats a `'todo'` row like no row (the live status map leaves them out). A job that has no row stays rowless.
 
 #### `map_packs` (class `MapPacks`) — schema v4
 Index over installed dynamic-map content packs (blob bytes live in the blob store).
@@ -218,6 +222,7 @@ Personal per-zone notes on dynamic maps. Purely local user content (not part of 
 - `savePin(mapId, zoneId, note)`: trims the note; **empty/whitespace note = delete** the existing pin (a blank pin is never persisted). Insert sets `createdAt = updatedAt = now`; update only writes `note` + `updatedAt = now`.
 - `watchForMap(mapId)` and `watchAll()` order by `updatedAt DESC` (newest-edited first).
 - `watchPinnedZoneIds(mapId)` → live `Set<String>` of zoneIds for pin badges.
+- **Web:** `savePin` runs in one transaction and `getPin` returns the most recently updated row, so a stray duplicate can't hide the current note. The one-per-zone invariant also holds across import (§4.5); IndexedDB v2 collapses duplicates older imports created (newest wins).
 
 #### `map_zone_fts` — FTS5 virtual table (raw SQL, not in drift's table list)
 ```sql
@@ -347,6 +352,7 @@ Top-level:
 - Every DateTime is serialized `**.toUtc().toIso8601String()`.
 - `payloadJson` is the raw stored JSON **string** (double-encoded inside the export).
 - `favorites`, `jobStatus`, `mapPins` are **additive** arrays; old importers ignore unknown keys, old files simply lack them (treated as empty). `formatVersion` stays 1.
+- **Web addition (same rule):** `"removedFavorites": [ { "entityType", "entityId", "removedAt" } ]` carries favorite tombstones, and `jobStatus` may hold `'todo'` rows (resets). Older importers ignore the section and store `'todo'` as "not done".
 - Ship map field order (for byte-compat, not required): id, name, modelKey, customModelLabel, registered, locationKey, customLocation, locationZone, locationSector, locationSL, hull, pilotName, gunnerName, cartographerName, prospectorName, signallerName, technicianName, sentryName, fabricatorName, medicName, quartermasterName, chefName, alchemistName, note, createdAt, updatedAt.
 
 ### 4.2 Export file paths / names
@@ -355,7 +361,7 @@ Top-level:
 - **Documents auto-backup** (`exportToDocuments`): writes `<Documents>/backups/underdeck-backup-<stamp>.json` then prunes to the newest `keep` files (default `BackupReminder.autoBackupKeep = 3`), matching prefix `underdeck-backup-`. Pruning = list files, sort by path descending (timestamped names sort lexically → newest first), delete everything after index `keep` (best-effort; deletion failures ignored).
 - **Timestamp stamp** (`_stamp()`): `DateTime.now().toIso8601String()` with `:` and `.` → `-`, truncated to 19 chars (`YYYY-MM-DDTHH-MM-SS`), then `-<milliseconds, 3 digits>-<per-run sequence in base36, 4 digits zero-padded>`. Example: `2026-07-11T14-03-59-042-0001`. The monotonic per-run sequence guarantees two backups in the same millisecond get distinct, still lexically-ordered names (E10).
 
-Web equivalent: share export → browser download of the JSON (already implemented in `file_saver_web.dart`: Blob → `URL.createObjectURL` → hidden `<a download>` click → revoke). Return a synthetic success so the "mark backed up" contract still fires. Documents auto-backup → **drop** (Settings toggle hidden on web).
+Web equivalent (audit E1 — only evidence counts as a backup), in order: (1) `showSaveFilePicker` save dialog (Chromium desktop) — `saved` once the file is written, AbortError = cancelled; (2) on touch devices whose share sheet accepts a JSON file (`navigator.canShare({files})`, e.g. iOS "Save to Files") — `shared` when `navigator.share` resolves, AbortError = cancelled; (3) otherwise a plain download (Blob → object URL → hidden `<a download>` click; the URL is revoked after 60 s, not right after `click()`) — `downloaded`, which is **not** proof. The data is read after the dialog closes; `lastBackupAt` is set to that read time (the file's `exportedAt`). Documents auto-backup → **drop** (Settings toggle hidden on web).
 
 ### 4.3 Import — file picking
 
@@ -375,6 +381,8 @@ XTypeGroup(label: 'JSON', extensions: ['json'],
 5. Any `TypeError` during record casting inside the import → the invalid-file message.
 
 ### 4.5 Import — merge rules (the whole import runs in ONE DB transaction)
+
+Web: the Dexie transaction scope must be an `async` function so the transaction survives the merge's native awaits; a plain arrow lost it at the first await, wrote rows in implicit transactions and failed with PrematureCommitError ("Import failed" after a partial write).
 
 Two tolerant date parsers:
 - `parseDate(v)` (used for `createdAt` on INSERT): `DateTime.tryParse` if string, else **`DateTime.now()`** fallback — a malformed date never aborts the file.
@@ -414,15 +422,22 @@ Per-section rules:
 - Whitelist `entityType` against `{job, kb_article, fishing_zone, tracked_object}` — note: `map` and `map_zone` are **NOT** in the import whitelist (they post-date it; likely an oversight — flag as an open question).
 - `entityId` must be non-null, non-empty, and ≤ **256** chars (`maxEntityIdLength`).
 - Existing `(entityType, entityId)` → skip (idempotent; original createdAt kept). Else insertOrIgnore, counted.
+- **Web:** a local tombstone wins unless the imported `createdAt` is strictly after its `removedAt` (unreadable date = epoch, loses); when the star wins, the tombstone is deleted.
+
+**removedFavorites** (web only; same whitelist and id checks; unreadable `removedAt` → skip):
+- A local star older than `removedAt` is deleted (counted under favorites); a newer local star wins and the row is dropped.
+- Otherwise stored as a tombstone, newer `removedAt` wins; not counted (nothing visible changes).
 
 **jobStatus** (NOT wrapped per-row — a malformed row here would throw a TypeError, caught by the envelope handler → whole import fails with the invalid-file message; replicate or improve):
 - `jobId` non-null/non-empty; `status` whitelisted against `{'todo','in_progress','done'}` else skip.
 - Newer-wins on `updatedAt` (strictly after) — a stale imported row never regresses a locally-advanced job. Write mode: insertOrReplace. Counted on every accepted write.
+- **Web:** a `'todo'` row is a dated reset and takes part in newer-wins like any status; it is written but not counted when the job is already todo locally.
 
 **mapPins** (per-row try/catch, log `data import: skipped malformed map pin row`):
 - `id` non-empty and ≤ **128** chars (`maxMapPinIdLength`); `mapId`, `zoneId` non-null/non-empty.
 - `note` defaults `''`; **truncated to 20000 chars** (`maxMapPinNoteLength`).
 - Newer-wins on `updatedAt` (strictly after). insertOrReplace, counted.
+- **Web:** one note per `(mapId, zoneId)`: the row competes with the same id **and** every local pin of that zone (another device's note has another id). It is written only when strictly newer than all of them; the losing zone pins are deleted and an existing row keeps its `createdAt`. A file with several notes for one zone keeps the newest.
 
 ### 4.6 `ImportSummary`
 
@@ -458,6 +473,8 @@ Constants:
 - `autoBackupKeep = 3` — auto-backup files kept in Documents.
 
 `BackupStatus { bool hasData; DateTime? lastChangedAt; }` — computed by `DataExportService.backupStatus()` using cheap `COUNT(*)`/`MAX(ts)` aggregates over: notes.updatedAt, links.updatedAt, ships.updatedAt, scanHistory.date, trackerHistory.date, discoveryHistory.date, favorites.createdAt, jobStatus.updatedAt, mapPins.updatedAt. `hasData` = total count > 0; `lastChangedAt` = max timestamp across all (null when empty).
+
+**Web:** row timestamps can't see deletions (job reset, star removed, note/ship/pin deleted, history cleared) nor an import of rows older than the last backup. A Dexie DBCore middleware on every user-data store (not `mapPacks`/`mapPackFiles`/`mapBlobs`) bumps the localStorage marker `underdeck.settings.lastLocalChangeAt` (epoch ms, monotonic) after each successful write, delete or clear, imports included. `lastChangedAt` = max(row timestamps incl. tombstones, marker). `hasData` ignores tombstones (`'todo'` rows, `removedFavorites`). Pure logic: `backupStatusOf` (captures/logic.ts).
 
 `daysSinceBackup({now, lastBackupAt})` → whole days, `null` if never backed up, clamped ≥ 0 (backwards clock → 0).
 
@@ -621,7 +638,7 @@ Each facade uses Dart conditional exports: `export 'x_io.dart' if (dart.library.
 ### 8.3 `file_saver.dart` — three functions
 - `shareJsonExport({json, fileName, sharePositionOrigin}) → ShareResult`
   - io: write to `<temp>/<fileName>` (stable name, overwritten), OS share sheet, mimeType `application/json`, no prefilled text.
-  - web: browser download (Blob → object URL → hidden anchor with `download=fileName` → click → remove → revokeObjectURL); returns synthetic success (`ShareResult('web-download', success)`) so "mark backed up" fires. `sharePositionOrigin` ignored.
+  - web: browser download (Blob → object URL → hidden anchor with `download=fileName` → click → remove → revokeObjectURL); returns synthetic success (`ShareResult('web-download', success)`) so "mark backed up" fires. `sharePositionOrigin` ignored. **React app: superseded** — see §4.2 (save dialog / share sheet / download that the user confirms).
 - `sharePngBytes({bytes, fileName, text, sharePositionOrigin})`
   - io: temp PNG + share sheet with `text`.
   - web: browser download of the PNG; the share `text` is dropped (no equivalent).
@@ -680,7 +697,7 @@ React: same function keyed on fetch/AbortError/HTTP status.
 
 ## 10. Proposed IndexedDB schema (web)
 
-Database `underdeck`, version 1 (bump for future migrations):
+Database `underdeck`, Dexie version 2 (v1 + `removedFavorites`; its upgrade collapses duplicate `mapPins` per zone, newest wins):
 
 | object store | keyPath | indexes | mirrors |
 |---|---|---|---|
@@ -695,6 +712,7 @@ Database `underdeck`, version 1 (bump for future migrations):
 | `trackerHistory` | `id` | `date` | TrackerHistory |
 | `discoveryHistory` | `id` | `date` | DiscoveryHistory |
 | `favorites` | `[entityType, entityId]` | `entityType` | Favorites |
+| `removedFavorites` | `[entityType, entityId]` | — | favorite tombstones (web only, v2) |
 | `jobStatus` | `jobId` | — | JobStatus |
 | `mapPacks` | `contentVersion` | `state` | MapPacks |
 | `mapPackFiles` | `[contentVersion, logicalPath]` | `sha256` | MapPackFiles |
@@ -709,7 +727,7 @@ Notes:
 - FTS: see §2.3 (`map_zone_fts`) — use an in-memory search index rebuilt on install.
 - `tableUpdates()`-equivalent for auto-backup is unnecessary (feature dropped), but the same pub/sub can drive the backup-status invalidation.
 
-localStorage keys: identical names to §6. Booleans as `'true'|'false'`, dates as stringified epoch-ms, `trainAlert.zones` unnecessary (feature dropped).
+localStorage keys: identical names to §6. Booleans as `'true'|'false'`, dates as stringified epoch-ms, `trainAlert.zones` unnecessary (feature dropped). Web-only: `underdeck.settings.lastLocalChangeAt` (local-change marker, §5.1).
 
 ---
 
@@ -766,6 +784,7 @@ Included here because it is persistence; the maps UI belongs to the knowledge ar
 - Import summary parts: see §4.6.
 - Import generic failure: `Import failed`
 - Export failure fallback: `Export failed. Please try again.`
+- Export result (web): `Backup saved.` / `Backup shared.` / after a plain download `Did the backup file save?` with action `Yes, saved`
 - Share-image failure: `Couldn't create the share image — try again`
 - Backup banner: `Back up your data` / `Everything lives on this device only — {never backed up|backed up today|last backup yesterday|last backup N days ago}. Export a copy so an uninstall can't wipe it.` / buttons `Export now`, `Exporting…`, `Later` / a11y `Dismiss backup reminder`
 - Settings Data card: header `Data`, blurb `Backup or move your data between devices using a JSON file.`, rows `Export…`, `Import…`, toggle `Auto-backup` — `After you make a batch of changes, quietly save a timestamped safety copy inside the app and keep the latest few. For a file you control, use Export above to share the JSON somewhere durable.`
