@@ -9,35 +9,43 @@ import { paintLabelScrim } from './paintOps';
 
 const LINE_HEIGHT = 1.05;
 
-function wrapTwoLines(
-  ctx: CanvasRenderingContext2D,
-  text: string,
-  maxWidth: number,
-): string[] {
-  if (ctx.measureText(text).width <= maxWidth) return [text];
-  const words = text.split(/\s+/);
-  const lines: string[] = [];
-  let current = '';
-  for (const word of words) {
-    const candidate = current.length === 0 ? word : `${current} ${word}`;
-    if (ctx.measureText(candidate).width <= maxWidth || current.length === 0) {
-      current = candidate;
-    } else {
-      lines.push(current);
-      current = word;
-      if (lines.length === 1) break;
-    }
+/** What the wrapping needs from a canvas context (lets tests pass a fake). */
+type TextMeasurer = Pick<CanvasRenderingContext2D, 'measureText'>;
+
+/** `text` cut to fit `maxWidth` with a trailing `…`, or `text` itself when it fits. */
+function ellipsize(ctx: TextMeasurer, text: string, maxWidth: number): string {
+  if (ctx.measureText(text).width <= maxWidth) return text;
+  // Binary search for the longest prefix that fits with its ellipsis (a cell
+  // name is painted every frame, so this stays O(log n) measures).
+  let lo = 1;
+  let hi = text.length - 1;
+  while (lo < hi) {
+    const mid = Math.ceil((lo + hi) / 2);
+    if (ctx.measureText(`${text.slice(0, mid).trimEnd()}…`).width <= maxWidth) lo = mid;
+    else hi = mid - 1;
   }
-  if (lines.length < 2) lines.push(current);
-  // Ellipsize the last line if still too wide.
-  let last = lines[lines.length - 1];
-  if (ctx.measureText(last).width > maxWidth) {
-    while (last.length > 1 && ctx.measureText(`${last}…`).width > maxWidth) {
-      last = last.slice(0, -1);
-    }
-    lines[lines.length - 1] = `${last}…`;
+  return `${text.slice(0, lo).trimEnd()}…`;
+}
+
+/**
+ * Wrap `text` onto at most two lines of `maxWidth`: the first line takes as
+ * many whole words as fit, the second takes ALL the rest. Whatever doesn't fit
+ * is cut with `…`, so a label is never shortened without showing it. A lone
+ * word wider than a line is ellipsized on its own line.
+ */
+export function wrapTwoLines(ctx: TextMeasurer, text: string, maxWidth: number): string[] {
+  const words = text.split(/\s+/).filter((w) => w.length > 0);
+  if (words.length === 0) return [];
+  const whole = words.join(' ');
+  if (ctx.measureText(whole).width <= maxWidth) return [whole];
+  let first = words[0];
+  let next = 1;
+  while (next < words.length && ctx.measureText(`${first} ${words[next]}`).width <= maxWidth) {
+    first = `${first} ${words[next]}`;
+    next += 1;
   }
-  return lines.slice(0, 2);
+  if (next === words.length) return [ellipsize(ctx, first, maxWidth)]; // one over-wide word
+  return [ellipsize(ctx, first, maxWidth), ellipsize(ctx, words.slice(next).join(' '), maxWidth)];
 }
 
 /** Draw a centered label (scrim + glyphs) at (cx, cy). */

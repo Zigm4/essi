@@ -92,6 +92,21 @@ function clamp(v: number, lo: number, hi: number): number {
   return v < lo ? lo : v > hi ? hi : v;
 }
 
+/** The flat background decoded from one source blob (§13.6). */
+interface BackgroundState {
+  /** Another blob gets a fresh state; a decode finishing for a replaced state is dropped. */
+  readonly source: Blob | null;
+  bitmap: ImageBitmap | null;
+  width: number;
+  decoding: boolean;
+  /** A decode of this blob failed: keep the theme fill, don't retry on every paint. */
+  failed: boolean;
+}
+
+function backgroundFor(source: Blob | null): BackgroundState {
+  return { source, bitmap: null, width: 0, decoding: false, failed: false };
+}
+
 export function MapCanvas({
   doc,
   mode,
@@ -140,11 +155,7 @@ export function MapCanvas({
   bgBlobRef.current = backgroundBlob;
 
   // --- Background decode (monotonic, single-in-flight) -----------------------
-  const bgRef = useRef<{ bitmap: ImageBitmap | null; width: number; decoding: boolean }>({
-    bitmap: null,
-    width: 0,
-    decoding: false,
-  });
+  const bgRef = useRef<BackgroundState>(backgroundFor(null));
 
   // --- Animation bookkeeping --------------------------------------------------
   const rafRef = useRef<number | null>(null);
@@ -227,14 +238,34 @@ export function MapCanvas({
   };
 
   // --- Drawing ----------------------------------------------------------------
-  const requestBackground = (targetWidth: number): void => {
-    const bg = bgRef.current;
+  /** The decode state of the current blob; a new blob drops the old bitmap. */
+  const currentBackground = (): BackgroundState => {
     const blob = bgBlobRef.current;
-    if (blob === null || bg.decoding) return;
+    if (bgRef.current.source !== blob) {
+      bgRef.current.bitmap?.close();
+      bgRef.current = backgroundFor(blob);
+    }
+    return bgRef.current;
+  };
+
+  /**
+   * Decode the flat background at `targetWidth` if the current bitmap is
+   * narrower (§13.6). Called from every flat paint, so the first paint and any
+   * zoom that needs a sharper image start a decode; the finished decode
+   * repaints. Never loops: one decode in flight, width only ever grows.
+   */
+  const requestBackground = (targetWidth: number): void => {
+    const bg = currentBackground();
+    const blob = bg.source;
+    if (blob === null || bg.decoding || bg.failed) return;
     if (bg.bitmap !== null && bg.width >= targetWidth) return;
     bg.decoding = true;
     void createImageBitmap(blob, { resizeWidth: targetWidth, resizeQuality: 'medium' })
       .then((bmp) => {
+        if (bgRef.current !== bg) {
+          bmp.close(); // the blob changed (or the canvas unmounted) meanwhile
+          return;
+        }
         bg.bitmap?.close();
         bg.bitmap = bmp;
         bg.width = targetWidth;
@@ -243,6 +274,7 @@ export function MapCanvas({
       })
       .catch((err: unknown) => {
         bg.decoding = false;
+        bg.failed = true;
         logError(err); // decode failure → flat theme fill remains (§13.6)
       });
   };
@@ -292,6 +324,9 @@ export function MapCanvas({
     }
 
     if (m === 'flat' && r.flat !== null) {
+      // Flat maps never run the rAF loop: each paint asks for the decode the
+      // current zoom needs (a no-op once the bitmap is wide enough).
+      requestBackground(backgroundDecodeWidth(r.flat.render.canvasSize.width, scale));
       drawFlat(ctx, r.flat.render, scale, sel, dim);
     }
   };
@@ -392,10 +427,6 @@ export function MapCanvas({
       dirtyRef.current = true;
     } else {
       lastTsRef.current = null;
-    }
-
-    if (s.mode === 'flat') {
-      requestBackground(backgroundDecodeWidth(canvasSize().w, viewRef.current.scale));
     }
 
     if (dirtyRef.current) {
@@ -639,8 +670,6 @@ export function MapCanvas({
   // Re-init transform whenever the mode changes (globe⇄grid, or new doc).
   useEffect(() => {
     initializedRef.current = false;
-    bgRef.current.bitmap?.close();
-    bgRef.current = { bitmap: null, width: 0, decoding: false };
     if (sizeRef.current.w > 0) {
       setInitialTransform();
       initializedRef.current = true;
@@ -655,10 +684,9 @@ export function MapCanvas({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId, dimmed]);
 
-  // Reset the background decode when the source blob changes.
+  // A new source blob: free the old bitmap now, and (flat) start its decode.
   useEffect(() => {
-    bgRef.current.bitmap?.close();
-    bgRef.current = { bitmap: null, width: 0, decoding: false };
+    currentBackground();
     markDirty();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [backgroundBlob]);
@@ -696,6 +724,7 @@ export function MapCanvas({
     return () => {
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
       bgRef.current.bitmap?.close();
+      bgRef.current = backgroundFor(null); // a decode still in flight is dropped
     };
   }, []);
 

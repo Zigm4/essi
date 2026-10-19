@@ -684,6 +684,15 @@ FutureProvider.autoDispose.family, keyed by the query string. Blank query → `[
 
 The federated global search (outside this area) also consumes `mapZoneSearchProvider` and opens hits via `/knowledge/maps/{id}?zone={zoneId}`.
 
+### 11.5 Web: zone numbers (`data/search.ts`)
+
+The number painted on the grid and in the zone sheet (`cellNum`) is searchable, unpadded (Mars names pad `Zone 055`; Io's numbered cells all have real names):
+
+- Each row also carries `cellNum`; `String(cellNum)` is indexed as a token weighted like the name, so it takes part in the normal AND / last-term-prefix matching (`55` → 55, 550…559).
+- `parseZoneNumber(query)` reads a query that names a number — `35`, `035`, `#35`, `z35`, `zone 35` (`/^(?:z|zone\s*|#)?0*(\d{1,5})$/i`) → 35. The zone with that exact number is listed **first**, even when its name doesn't match the text; then the text matches by score.
+- Equal scores are ordered by name with a numeric collation (`Zone 9` before `Zone 10`).
+- The global search uses the same `parseZoneNumber` to list that number's zone of every map first (in map order).
+
 ---
 
 ## 12. Views
@@ -915,6 +924,8 @@ backgroundDecodeWidth(canvasWidth, scale):
 
 The stateful layer re-decodes when the live scale demands a *higher* width — **monotonic** (never steps back down, so panning at high zoom doesn't thrash the decoder), single decode in flight, disposes the old image. Decode failure → logged, flat theme fill remains. Web: `createImageBitmap(blob, {resizeWidth: target, resizeQuality: 'medium'})`.
 
+Web (`MapCanvas`): the canvas paints synchronously and only the globe spin runs a `requestAnimationFrame` loop, so every **flat paint** requests the decode its current scale needs (a no-op once the bitmap is wide enough): the first paint starts the initial decode, a zoom that needs more pixels starts a sharper one, and a finished decode repaints. The decode state belongs to its source blob: a new blob starts over, a decode finishing for a replaced blob (or after unmount) is closed and dropped, and a failed decode is not retried for that blob.
+
 ---
 
 ## 14. Globe viewer
@@ -1093,7 +1104,7 @@ Canvas size = `cols×96 × rows×64`. Cells built for every zone with a valid in
 
 - `explored = zone.themeOverride != null`.
 - `numPainter` (if `cellNum != null`): text `'{cellNum}'`, size 10, height 1.1, w600, color `theme.label` α 0.55, 1 line, maxWidth `96−8`, family = base theme font.
-- `namePainter` (if name non-empty and NOT `^Zone\s+\d+$`): size 13, color `theme.label`, 2 lines ellipsis, maxWidth `96−12`.
+- `namePainter` (if name non-empty and NOT `^Zone\s+\d+$`): size 13, color `theme.label`, 2 lines ellipsis, maxWidth `96−12`. Web: the shared `wrapTwoLines` (`render/labels.ts`, also used by the flat/globe labels) puts as many whole words as fit on line 1 and **all the rest** on line 2, cut with `…` when it doesn't fit — a name is never shortened without an ellipsis (`Bosphorus / Trade Hub`, `Rustwind / Generator…`).
 
 Painters:
 
@@ -1108,7 +1119,7 @@ Web (`drawGridTable`) differences:
 - The selection is painted **inside** the table pass, after the tiles and before the railway/texts, so the selected cell's name and number stay on their scrim and legible. The selected cell's texts are never faded.
 - Cell numbers are drawn in `theme.label` at full opacity; on a tile (or the selection) they sit on a small scrim chip (`background` @ 0.72), like the names, since a tile can be as light as the label (Io). Bare cells are already dark.
 
-Viewport: identical config to flat (`minScale = fit`, `maxScale = max(8, fit)`, boundaryMargin `max(vw,vh)`, fit-centered initial transform). Deep-linked cell: `scale = clamp(max(nameLodScale·1.1, fit), fit, max(8, fit))` centered on the cell (frame it name-readable). Tap: `col = floor(x/96)`, `row = floor(y/64)` (clamped); id from `zoneIdByCell[row*cols+col]`; hit → haptic + select; miss → clear. Selected cell opens the shared `ZoneSheet`.
+Viewport: identical config to flat (`minScale = fit`, `maxScale = max(8, fit)`, boundaryMargin `max(vw,vh)`, fit-centered initial transform). Deep-linked cell: `scale = clamp(max(nameLodScale·1.1, fit), fit, max(8, fit))` centered on the cell (frame it name-readable). Tap: `col = floor(x/96)`, `row = floor(y/64)` (clamped); id from `zoneIdByCell[row*cols+col]`; hit → haptic + select; miss → clear. Selected cell opens the shared `ZoneSheet`. Web (`gridHitTest`): the canvas covers the whole screen, not just the table, so a tap **outside** the table (`x < 0`, `y < 0`, `x ≥ cols×96`, `y ≥ rows×64`) hits nothing and clears the selection like an empty cell — it is never clamped onto an edge cell.
 
 ---
 

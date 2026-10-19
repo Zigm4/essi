@@ -6,6 +6,7 @@
 
 import { sanitizeTheme, zoneTheme, colorAlpha, type MapTheme } from '../model/theme';
 import type { MapDocument } from '../model/types';
+import { wrapTwoLines } from './labels';
 import { paintLabelScrim, paintPolygonZone } from './paintOps';
 
 export const GRID_CELL_WIDTH = 96;
@@ -106,31 +107,11 @@ function drawName(ctx: CanvasRenderingContext2D, cell: GridCell): void {
   ctx.font = `600 ${NAME_FONT_SIZE}px "${cell.theme.fontFamily}", sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  const maxWidth = GRID_CELL_WIDTH - 12;
-  // Wrap to <= 2 lines.
-  const words = cell.name.split(/\s+/);
-  const lines: string[] = [];
-  let cur = '';
-  for (const w of words) {
-    const cand = cur.length === 0 ? w : `${cur} ${w}`;
-    if (ctx.measureText(cand).width <= maxWidth || cur.length === 0) cur = cand;
-    else {
-      lines.push(cur);
-      cur = w;
-      if (lines.length === 1) break;
-    }
-  }
-  if (lines.length < 2) lines.push(cur);
-  let last = lines[lines.length - 1];
-  if (ctx.measureText(last).width > maxWidth) {
-    while (last.length > 1 && ctx.measureText(`${last}…`).width > maxWidth) last = last.slice(0, -1);
-    lines[lines.length - 1] = `${last}…`;
-  }
-  const clipped = lines.slice(0, 2);
+  const lines = wrapTwoLines(ctx, cell.name, GRID_CELL_WIDTH - 12);
   const lineH = NAME_FONT_SIZE * 1.05;
-  const blockH = clipped.length * lineH;
+  const blockH = lines.length * lineH;
   let blockW = 0;
-  for (const l of clipped) blockW = Math.max(blockW, ctx.measureText(l).width);
+  for (const l of lines) blockW = Math.max(blockW, ctx.measureText(l).width);
   const padX = NAME_FONT_SIZE * 0.35;
   const padY = NAME_FONT_SIZE * 0.2;
   paintLabelScrim(
@@ -144,7 +125,7 @@ function drawName(ctx: CanvasRenderingContext2D, cell: GridCell): void {
   );
   ctx.fillStyle = colorAlpha(cell.theme.label, 1);
   const startY = cy - blockH / 2 + lineH / 2;
-  clipped.forEach((l, i) => ctx.fillText(l, cx, startY + i * lineH));
+  lines.forEach((l, i) => ctx.fillText(l, cx, startY + i * lineH));
 }
 
 /**
@@ -373,8 +354,16 @@ export function drawGridSelection(
   paintPolygonZone(ctx, rectPath(cell.rect), cell.theme, 2.5, true);
 }
 
+/**
+ * Zone of the cell under `point` (canvas px). A point outside the table (the
+ * empty margin around it, which the web canvas also covers) hits nothing, like
+ * an empty cell: it is never snapped onto an edge cell.
+ */
 export function gridHitTest(render: GridRender, point: { x: number; y: number }): string | null {
-  const col = Math.max(0, Math.min(render.cols - 1, Math.floor(point.x / GRID_CELL_WIDTH)));
-  const row = Math.max(0, Math.min(render.rows - 1, Math.floor(point.y / GRID_CELL_HEIGHT)));
+  if (!(point.x >= 0 && point.y >= 0 && point.x < render.canvasWidth && point.y < render.canvasHeight)) {
+    return null; // also rejects NaN
+  }
+  const col = Math.min(render.cols - 1, Math.floor(point.x / GRID_CELL_WIDTH));
+  const row = Math.min(render.rows - 1, Math.floor(point.y / GRID_CELL_HEIGHT));
   return render.zoneIdByCell[row * render.cols + col];
 }

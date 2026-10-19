@@ -1,7 +1,7 @@
 import { db } from '../../data/db';
 import { loadKBData, type KBData } from '../knowledge/data/kbLoader';
 import { loadDocument, loadInstalledManifest } from '../knowledge/maps/data/repository';
-import { buildSearchIndex, searchZones, type MapSearchIndex } from '../knowledge/maps/data/search';
+import { buildSearchIndex, parseZoneNumber, searchZones, type MapSearchIndex } from '../knowledge/maps/data/search';
 import type { MapDescriptor, MapDocument, MapZone } from '../knowledge/maps/model/types';
 import { parseJobsJson, type Job } from '../tools/jobs/jobModel';
 import { buildPlaces } from '../tools/jobs/jobPlaces';
@@ -105,9 +105,6 @@ export function buildZoneCorpus(maps: readonly { descriptor: MapDescriptor; doc:
   return { index, zones, byNumber };
 }
 
-/** `35`, `035`, `#35`, `z35`, `zone 35` → 35. */
-const ZONE_NUMBER_RE = /^(?:z|zone\s*|#)?0*(\d{1,5})$/i;
-
 /**
  * 1. Map zones: a zone-number query lists that number's zones first (every
  * map), then the in-map full-text search (name + searchable fields, relevance
@@ -128,8 +125,8 @@ export function zoneHits(corpus: ZoneCorpus, query: string): GlobalSearchHit[] {
       target: { kind: 'route', location: zoneLocation(entry.mapId, entry.zoneId) },
     });
   };
-  const number = ZONE_NUMBER_RE.exec(query.trim());
-  if (number !== null) for (const entry of corpus.byNumber.get(Number(number[1])) ?? []) add(entry);
+  const number = parseZoneNumber(query);
+  if (number !== null) for (const entry of corpus.byNumber.get(number) ?? []) add(entry);
   for (const hit of searchZones(corpus.index, query, corpus.index.entries.length)) {
     const entry = corpus.zones.get(zoneKey(hit.mapId, hit.zoneId));
     if (entry !== undefined) add(entry);

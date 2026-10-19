@@ -3,6 +3,8 @@
  * this is an in-memory reimplementation that preserves the required semantics:
  * diacritic-insensitive tokenization, implicit AND across terms, a trailing
  * prefix match on the LAST term, relevance ordering and a default limit of 50.
+ * Web addition: the zone number shown on the grid (`cellNum`) is searchable,
+ * and a query naming a number (`35`, `#35`, `zone 35`) lists that zone first.
  */
 
 import { SUPPORTED_MAP_SCHEMA_VERSION } from '../model/limits';
@@ -13,6 +15,8 @@ export interface ZoneFtsRow {
   readonly mapId: string;
   readonly name: string;
   readonly fieldsText: string;
+  /** The number painted on the grid and in the zone sheet, if any. */
+  readonly cellNum: number | null;
 }
 
 function stringifyValue(v: unknown): string {
@@ -34,7 +38,13 @@ export function buildZoneFtsRows(doc: MapDocument): ZoneFtsRow[] {
       const s = stringifyValue(zone.fields[key]);
       if (s.length > 0) parts.push(s);
     }
-    return { zoneId: zone.id, mapId: doc.id, name: zone.name, fieldsText: parts.join(' ') };
+    return {
+      zoneId: zone.id,
+      mapId: doc.id,
+      name: zone.name,
+      fieldsText: parts.join(' '),
+      cellNum: zone.cellNum,
+    };
   });
 }
 
@@ -61,12 +71,26 @@ function tokenize(text: string): string[] {
     .filter((t) => t.length > 0);
 }
 
+/** `35`, `035`, `#35`, `z35`, `zone 35` → 35. */
+const ZONE_NUMBER_RE = /^(?:z|zone\s*|#)?0*(\d{1,5})$/i;
+
+/** The zone number a query names (`35`, `035`, `#35`, `z35`, `zone 35`), or null. */
+export function parseZoneNumber(query: string): number | null {
+  const match = ZONE_NUMBER_RE.exec(query.trim());
+  return match === null ? null : Number(match[1]);
+}
+
+/** Name order for equal scores: case-insensitive, `Zone 9` before `Zone 10`. */
+const NAME_ORDER = new Intl.Collator(undefined, { numeric: true, sensitivity: 'accent' });
+
 interface IndexEntry extends ZoneFtsRow {
   readonly mapTitle: string;
   readonly mapIcon: MapIcon;
   readonly order: number;
   readonly nameTokens: readonly string[];
   readonly fieldTokens: readonly string[];
+  /** `String(cellNum)` (unpadded, as painted), or none. */
+  readonly numberTokens: readonly string[];
 }
 
 export interface MapSearchIndex {
@@ -98,6 +122,7 @@ export function buildSearchIndex(
         order: descriptor.order,
         nameTokens: tokenize(row.name),
         fieldTokens: tokenize(row.fieldsText),
+        numberTokens: row.cellNum !== null ? [String(row.cellNum)] : [],
       });
     }
   }
@@ -119,6 +144,7 @@ function scoreEntry(entry: IndexEntry, terms: string[]): number | null {
       }
     };
     consider(entry.nameTokens, 2); // name matches weigh more (bm25-ish)
+    consider(entry.numberTokens, 2); // the cell number reads as part of the name
     consider(entry.fieldTokens, 1);
     if (best === 0) return null; // AND: every term must match
     score += best;
@@ -126,17 +152,26 @@ function scoreEntry(entry: IndexEntry, terms: string[]): number | null {
   return score;
 }
 
+/**
+ * Zones matching `query`, best first. The zone whose number the query names
+ * (`35`, `035`, `#35`, `z35`, `zone 35`) comes first even when its name doesn't
+ * match (Io's numbered cells all have names; Mars pads `Zone 035`); then the
+ * text matches, number prefixes included (`35` → 350…359).
+ */
 export function searchZones(index: MapSearchIndex, query: string, limit = 50): SearchHit[] {
   const terms = tokenize(query);
   if (terms.length === 0) return [];
-  const scored: { entry: IndexEntry; score: number }[] = [];
+  const number = parseZoneNumber(query);
+  const scored: { entry: IndexEntry; exact: boolean; score: number }[] = [];
   for (const entry of index.entries) {
+    const exact = number !== null && entry.cellNum === number;
     const s = scoreEntry(entry, terms);
-    if (s !== null) scored.push({ entry, score: s });
+    if (exact || s !== null) scored.push({ entry, exact, score: s ?? 0 });
   }
   scored.sort((a, b) => {
+    if (a.exact !== b.exact) return a.exact ? -1 : 1;
     if (b.score !== a.score) return b.score - a.score;
-    return a.entry.name.toLowerCase().localeCompare(b.entry.name.toLowerCase());
+    return NAME_ORDER.compare(a.entry.name, b.entry.name);
   });
   return scored.slice(0, limit).map(({ entry }) => ({
     mapId: entry.mapId,
