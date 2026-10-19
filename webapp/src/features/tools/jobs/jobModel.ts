@@ -64,6 +64,39 @@ export interface Job {
   harmedFaction: string | null;
   /** Second faction that ALSO GAINS reputation (`rivalFunction` = `add…Amt`), else null. */
   alsoGainsFaction: string | null;
+  /**
+   * What `requiredSkill` / `requiredSkillAmt` actually mean (see skillUse):
+   * a real minimum, a skill the job trains, or a resource it takes.
+   */
+  skillRequirement: { skill: string; min: number } | null;
+  /** Beginner "[gain STRENGTH]" jobs: the skill they train (amount 0 in the data), and by how much. */
+  trainsSkill: { skill: string; gain: number | null } | null;
+  /** A resource the job takes (50 coin to teleport, 100 oil to deliver…). */
+  entryCost: { resource: string; amount: number } | null;
+}
+
+/** `requiredSkill` keys that are resources the player spends, not skills. */
+export const COST_RESOURCES: ReadonlySet<string> = new Set(['carryCoin', 'stamina', 'oil', 'wood', 'unobtainium']);
+
+/**
+ * Splits the data's single skill field into what it means (checked on the
+ * 371 jobs, Oct 2026): amount 0 is the skill a Beginner job TRAINS (all 24
+ * say "[gain X]" and end with "(STR + 0.001)"), a resource key is a COST
+ * ("costing 50 coin", "[removes oil]"), anything else is a real minimum.
+ */
+export function skillUse(
+  skill: string | null,
+  amount: number,
+  onComplete: string,
+): Pick<Job, 'skillRequirement' | 'trainsSkill' | 'entryCost'> {
+  const none = { skillRequirement: null, trainsSkill: null, entryCost: null };
+  if (skill === null) return none;
+  if (COST_RESOURCES.has(skill)) return { ...none, entryCost: { resource: skill, amount } };
+  if (amount <= 0) {
+    const gain = /\([A-Z]{2,4}\s*\+\s*(\d+(?:\.\d+)?)\)/.exec(onComplete);
+    return { ...none, trainsSkill: { skill, gain: gain === null ? null : Number(gain[1]) } };
+  }
+  return { ...none, skillRequirement: { skill, min: amount } };
 }
 
 /** `"{astnum} · z{zone}"`, e.g. `355 · z35`. */
@@ -207,15 +240,18 @@ export function parseJob(entry: unknown): Job | null {
   const factionRival = asNullableString(obj.factionRival);
   const rivalFunction = asNullableString(obj.rivalFunction);
   const description = asString(obj.description, '');
+  const onComplete = asString(obj.onComplete, '');
   const effect = secondFactionEffect(rivalFunction, factionRival);
+  const requiredSkill = asNullableString(obj.requiredSkill);
+  const requiredSkillAmt = asNumber(obj.requiredSkillAmt, 0);
 
   return {
     id: obj.id,
     factionRep: asNullableString(obj.factionRep),
     factionRival,
     requiredRep: asNumber(obj.requiredRep, 0),
-    requiredSkill: asNullableString(obj.requiredSkill),
-    requiredSkillAmt: asNumber(obj.requiredSkillAmt, 0),
+    requiredSkill,
+    requiredSkillAmt,
     requiredTag: asNullableString(obj.requiredTag),
     typeRaw,
     type,
@@ -230,13 +266,14 @@ export function parseJob(entry: unknown): Job | null {
     capacity,
     ship: asNullableString(obj.ship),
     description,
-    onComplete: asString(obj.onComplete, ''),
+    onComplete,
     mapRef: parseMapRef(obj.mapRef),
     requiredAsset: parseAsset(obj, description),
     isCargoJob: capacity > 0,
     isOnSite: sameLocation(pickupLocation, dropoffLocation),
     harmedFaction: effect.harmed,
     alsoGainsFaction: effect.gains,
+    ...skillUse(requiredSkill, requiredSkillAmt, onComplete),
   };
 }
 

@@ -52,7 +52,8 @@ describe('computeFacetOptions', () => {
       'rep_rvnts',
       'rep_uurt',
     ]);
-    expect(options.skills.length).toBe(17);
+    // 12 real skills: the 5 resources (coin, stamina, oil, wood, unobtainium) are costs.
+    expect(options.skills.length).toBe(12);
     expect(options.shires).toEqual(['DownSquire', 'EastSquire', 'NorthSquire', 'SouthSquire', 'UpSquire', 'WestSquire']);
     expect(options.categories).toEqual(['beginner', 'skill-gain', 'standard', 'expansion', 'event', 'unknown']);
     expect(options.rewards).toContain('coin');
@@ -74,8 +75,9 @@ describe('computeFacetCounts at rest', () => {
     expect(countOf(counts.places, 'ast:355')).toBe(55);
     expect(countOf(counts.places, 'zone:506:55')).toBe(6);
     expect(counts.skillAny).toBe(371);
-    expect(countOf(counts.skills, NONE)).toBe(187);
-    expect(countOf(counts.skills, 'stealth')).toBe(27);
+    // No minimum skill: 187 with no skill field + 24 Beginner jobs that only train one + 12 costs.
+    expect(countOf(counts.skills, NONE)).toBe(223);
+    expect(countOf(counts.skills, 'stealth')).toBe(21); // 27 minus the 6 that train it
     expect(countOf(counts.shires, NONE)).toBe(196);
     expect(countOf(counts.shires, 'NorthSquire')).toBe(222);
     expect(countOf(counts.shires, 'SouthSquire')).toBe(200);

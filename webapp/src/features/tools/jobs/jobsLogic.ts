@@ -273,10 +273,17 @@ export const CRITERION = {
   statuses: 1 << 11,
 } as const;
 
-/** No reputation, no skill, no shire, no equipment. */
+/**
+ * No reputation, no minimum skill, no shire, no equipment and no cost. A skill
+ * the job only trains (Beginner "[gain X]" jobs) is not a prerequisite.
+ */
 export function hasNoPrerequisite(job: Job): boolean {
   return (
-    job.requiredRep === 0 && job.requiredSkill === null && job.requiredTag === null && job.requiredAsset === null
+    job.requiredRep === 0 &&
+    job.skillRequirement === null &&
+    job.entryCost === null &&
+    job.requiredTag === null &&
+    job.requiredAsset === null
   );
 }
 
@@ -302,7 +309,8 @@ export function compileFilter(filter: JobFilter, ctx: JobContext): (job: Job) =>
     if (filter.place !== null && (place === null || !placeContains(place, job.pickupLocation))) failed |= CRITERION.place;
     if (categories.size > 0 && !categories.has(jobCategory(job.type))) failed |= CRITERION.categories;
     if (rewards.size > 0 && !rewards.has(job.reward)) failed |= CRITERION.rewards;
-    if (skill !== null && job.requiredSkill !== (skill === NONE ? null : skill)) failed |= CRITERION.skill;
+    // Only a real minimum counts: a trained skill or a cost isn't "needed".
+    if (skill !== null && (job.skillRequirement?.skill ?? null) !== (skill === NONE ? null : skill)) failed |= CRITERION.skill;
     if (shire !== null && job.requiredTag !== null && (shire === NONE || job.requiredTag !== shire)) failed |= CRITERION.shire;
     if (filter.noRepOnly && job.requiredRep !== 0) failed |= CRITERION.noRep;
     if (avoidRivals.size > 0 && job.harmedFaction !== null && avoidRivals.has(job.harmedFaction)) failed |= CRITERION.avoidRivals;

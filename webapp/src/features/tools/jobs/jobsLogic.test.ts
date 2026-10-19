@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import type { JobStatusValue } from '../../../data/db';
-import { canonicalReward, coordsLabel, locationLabel, parseJob, parseJobsJson, secondFactionEffect, type Job } from './jobModel';
+import { canonicalReward, coordsLabel, locationLabel, parseJob, parseJobsJson, secondFactionEffect, type Job, skillUse } from './jobModel';
 import { buildPlaces } from './jobPlaces';
 import {
   activeFilterChips,
@@ -228,8 +228,9 @@ describe('predicate - sections', () => {
 
   it('skill: any / no skill needed / exact', () => {
     expect(count({ skill: null })).toBe(371);
-    expect(count({ skill: NONE })).toBe(187);
-    expect(count({ skill: 'stealth' })).toBe(27);
+    // A skill a Beginner job trains (amount 0) or a cost isn't "needed".
+    expect(count({ skill: NONE })).toBe(223);
+    expect(count({ skill: 'stealth' })).toBe(21);
   });
 
   it('shire: a shire keeps the open-to-all jobs plus its own; NONE keeps open-to-all only', () => {
@@ -465,5 +466,38 @@ describe('activeFilterChips', () => {
     expect([...afterRemove.factions]).toEqual(['rep_hex']);
     expect(afterRemove.noRepOnly).toBe(true);
     expect([...f.factions]).toEqual(['rep_mschf', 'rep_hex']); // untouched
+  });
+});
+
+describe('skillUse', () => {
+  it('splits the skill field into requirement, training and cost', () => {
+    expect(skillUse('strength', 0, 'you feel a small surge of strength (STR + 0.001).')).toEqual({
+      skillRequirement: null,
+      trainsSkill: { skill: 'strength', gain: 0.001 },
+      entryCost: null,
+    });
+    expect(skillUse('knowledge', 1, '')).toEqual({
+      skillRequirement: { skill: 'knowledge', min: 1 },
+      trainsSkill: null,
+      entryCost: null,
+    });
+    expect(skillUse('oil', 100, '')).toEqual({
+      skillRequirement: null,
+      trainsSkill: null,
+      entryCost: { resource: 'oil', amount: 100 },
+    });
+    expect(skillUse(null, 0, '')).toEqual({ skillRequirement: null, trainsSkill: null, entryCost: null });
+  });
+
+  it('matches the data: 24 trained, 12 costs, the rest real minimums', () => {
+    expect(jobs.filter((j) => j.trainsSkill !== null)).toHaveLength(24);
+    expect(jobs.filter((j) => j.trainsSkill !== null).every((j) => j.trainsSkill!.gain === 0.001)).toBe(true);
+    expect(jobs.filter((j) => j.entryCost !== null)).toHaveLength(12);
+    expect(jobs.filter((j) => j.skillRequirement !== null)).toHaveLength(148);
+  });
+
+  it('no longer hides Beginner jobs from "No prerequisites" because of the skill they train', () => {
+    const beginner = jobs.find((j) => j.id === 35511202)!;
+    expect(hasNoPrerequisite({ ...beginner, requiredTag: null })).toBe(true);
   });
 });

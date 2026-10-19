@@ -12,7 +12,7 @@ import { copyToClipboard } from '../shared/share';
 import { ShareSheet } from '../shared/ShareSheet';
 import type { ShareContent } from '../shared/shareActions';
 import { IconGppBad, IconIosShare } from '../shared/toolIcons';
-import { bonusFactText, equipmentText, repText, skillText } from './jobFacts';
+import { bonusFactText, costText, equipmentText, repText, skillText, trainsText } from './jobFacts';
 import type { Job } from './jobModel';
 import { jobShare } from './jobShare';
 import { locationDisplayLabel } from './jobPlaces';
@@ -162,6 +162,8 @@ function JobDetailContent({
         )}
         <FactRow label="Required tag" value={job.requiredTag !== null ? tagLabel(job.requiredTag) : '-'} />
         <FactRow label="Required skill" value={skillText(job)} />
+        {trainsText(job) !== null && <FactRow label="Trains" value={trainsText(job)!} tint={ACCENT_SUCCESS} />}
+        {costText(job) !== null && <FactRow label="Cost" value={costText(job)!} tint={ACCENT_WARN} />}
         <FactRow label="Required reputation" value={repText(job)} />
         {equipment !== null && <FactRow label="Equipment" value={equipment} tint={ACCENT_WARN} />}
         <FactRow label="Risk" value={String(job.risk)} />

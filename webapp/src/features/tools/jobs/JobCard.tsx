@@ -16,6 +16,7 @@ import {
 } from '../shared/toolIcons';
 import type { Job } from './jobModel';
 import { locationDisplayLabel } from './jobPlaces';
+import { costText } from './jobFacts';
 import { factionInfo, rewardInfo, skillLabel, skillTint, tagLabel } from './jobTaxonomies';
 import styles from './Jobs.module.css';
 
@@ -142,15 +143,25 @@ export const JobCard = memo(function JobCard({
       {teaser.length > 0 && <div className={styles.teaser}>{teaser}</div>}
 
       <div className={styles.statsWrap}>
-        {job.requiredSkill !== null && (
+        {job.skillRequirement !== null && (
           <Stat
             icon={<IconBolt size={12} />}
-            tint={skillTint(job.requiredSkill)}
-            label={
-              job.requiredSkillAmt > 0
-                ? `${skillLabel(job.requiredSkill)} ≥${job.requiredSkillAmt}`
-                : skillLabel(job.requiredSkill)
-            }
+            tint={skillTint(job.skillRequirement.skill)}
+            label={`${skillLabel(job.skillRequirement.skill)} ≥${job.skillRequirement.min}`}
+          />
+        )}
+        {job.trainsSkill !== null && (
+          <Stat
+            icon={<IconBolt size={12} />}
+            tint={skillTint(job.trainsSkill.skill)}
+            label={`trains ${skillLabel(job.trainsSkill.skill)}`}
+          />
+        )}
+        {job.entryCost !== null && (
+          <Stat
+            icon={<IconBolt size={12} />}
+            tint={skillTint(job.entryCost.resource)}
+            label={`costs ${costText(job)}`}
           />
         )}
         {job.requiredRep > 0 && (

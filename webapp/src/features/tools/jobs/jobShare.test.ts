@@ -46,7 +46,7 @@ describe('jobShare', () => {
   });
 
   it('lists the requirements, or says there are none', () => {
-    const needs = jobs.find((j) => j.requiredSkillAmt > 0)!;
+    const needs = jobs.find((j) => j.skillRequirement !== null)!;
     expect(jobShare(needs).discordText).toMatch(/- \*\*Requirements:\*\* .*≥/);
     const free = jobs.find(
       (j) => j.requiredTag === null && j.requiredSkill === null && j.requiredRep <= 0 && j.requiredAsset === null,
@@ -62,6 +62,19 @@ describe('jobShare', () => {
         expect(share.card.blocks.some((b) => b.kind === 'paragraph')).toBe(true);
       }
     }
+  });
+});
+
+describe('trained skills and costs', () => {
+  it('shows what a Beginner job trains instead of a requirement', () => {
+    const text = jobShare(byId(35511202)).discordText;
+    expect(text).toContain('- **Requirements:** tag North Squire\n');
+    expect(text).toContain('- **Trains:** Strength (+0.001)');
+  });
+
+  it('shows a resource as a cost', () => {
+    expect(jobShare(byId(30100701)).discordText).toContain('- **Requirements:** costs 100 oil');
+    expect(jobShare(byId(50605501)).discordText).toContain('costs 50 coin');
   });
 });
 

@@ -56,7 +56,7 @@ export function computeFacetOptions(jobs: readonly Job[]): JobsFacetOptions {
     factions: distinct(jobs, (j) => j.factionRep),
     categories: JOB_CATEGORIES.map((c) => c.key).filter((key) => presentCategories.has(key)),
     rewards: distinct(jobs, (j) => j.reward),
-    skills: distinct(jobs, (j) => j.requiredSkill),
+    skills: distinct(jobs, (j) => j.skillRequirement?.skill ?? null),
     shires: distinct(jobs, (j) => j.requiredTag),
     rivals: distinct(jobs, (j) => j.harmedFaction),
     places: buildPlaces(jobs),
@@ -159,7 +159,7 @@ export function computeFacetCounts(jobs: readonly Job[], filter: JobFilter, ctx:
     }
     if (passesBut(failed, CRITERION.skill)) {
       skillAny++;
-      bump(skills, job.requiredSkill ?? NONE);
+      bump(skills, job.skillRequirement?.skill ?? NONE);
     }
     if (passesBut(failed, CRITERION.shire)) {
       shireAny++;

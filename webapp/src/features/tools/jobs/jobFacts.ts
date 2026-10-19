@@ -9,10 +9,24 @@ export function bonusFactText(bonus: number): string {
   return bonus > 0 ? `+${bonus}` : `${bonus}`;
 }
 
+/** `Knowledge ≥1` - a real minimum only (a trained skill or a cost isn't one); `-` when none. */
 export function skillText(job: Job): string {
-  if (job.requiredSkill === null) return '-';
-  const skill = skillLabel(job.requiredSkill);
-  return job.requiredSkillAmt > 0 ? `${skill} ≥${job.requiredSkillAmt}` : skill;
+  const req = job.skillRequirement;
+  return req === null ? '-' : `${skillLabel(req.skill)} ≥${req.min}`;
+}
+
+/** `Strength (+0.001)` - what a Beginner job trains, or null. */
+export function trainsText(job: Job): string | null {
+  const t = job.trainsSkill;
+  if (t === null) return null;
+  return t.gain === null ? skillLabel(t.skill) : `${skillLabel(t.skill)} (+${t.gain})`;
+}
+
+/** `50 coin`, `100 oil` - the resource a job takes, or null. */
+export function costText(job: Job): string | null {
+  const c = job.entryCost;
+  if (c === null) return null;
+  return `${c.amount} ${c.resource === 'carryCoin' ? 'coin' : c.resource}`;
 }
 
 /** `5 with Rustwind (RTS)` - the reputation applies to the faction giving the job; `-` when none is needed. */

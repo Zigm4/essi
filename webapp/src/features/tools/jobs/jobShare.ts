@@ -12,7 +12,7 @@ import { stripMarkdown } from '../shared/markdown';
 import { appLink, DISCORD_MAX, escapeDiscord, type ShareContent } from '../shared/shareActions';
 import type { CardBlock, CardSpec } from '../shared/shareCard';
 import { transmission } from '../shared/transmission';
-import { bonusFactText, equipmentText, repText, skillText } from './jobFacts';
+import { bonusFactText, costText, equipmentText, repText, skillText, trainsText } from './jobFacts';
 import { coordsLabel, type Job, type JobLocation } from './jobModel';
 import { locationDisplayLabel, locationName } from './jobPlaces';
 import type { JobFilter } from './jobsLogic';
@@ -56,10 +56,12 @@ function truncate(text: string, max: number): string {
 function requirementParts(job: Job): string[] {
   const parts: string[] = [];
   if (job.requiredTag !== null) parts.push(`tag ${tagLabel(job.requiredTag)}`);
-  if (job.requiredSkill !== null) parts.push(skillText(job));
+  if (job.skillRequirement !== null) parts.push(skillText(job));
   if (job.requiredRep > 0) parts.push(`rep ${repText(job)}`);
   const equipment = equipmentText(job);
   if (equipment !== null) parts.push(equipment);
+  const cost = costText(job);
+  if (cost !== null) parts.push(`costs ${cost}`);
   return parts;
 }
 
@@ -93,6 +95,7 @@ export function jobShare(job: Job): ShareContent {
     ...(gains !== null ? [`- **Also gains rep:** ${gains.fullLabel}`] : []),
     ...(harmed !== null ? [`- **Loses rep:** ⚠️ ${harmed.fullLabel}`] : []),
     `- **Requirements:** ${requirements.length === 0 ? 'none' : requirements.join(' · ')}`,
+    ...(trainsText(job) !== null ? [`- **Trains:** ${trainsText(job)}`] : []),
     `- **Risk:** ${job.risk}`,
     ...(cargo !== null ? [`- **Cargo:** ${cargo}`] : []),
   ];
@@ -126,11 +129,15 @@ export function jobShare(job: Job): ShareContent {
   if (requirements.length === 0) blocks.push({ kind: 'kv', label: 'Requirements', value: 'none' });
   else {
     if (job.requiredTag !== null) blocks.push({ kind: 'kv', label: 'Tag', value: tagLabel(job.requiredTag) });
-    if (job.requiredSkill !== null) blocks.push({ kind: 'kv', label: 'Skill', value: skillText(job) });
+    if (job.skillRequirement !== null) blocks.push({ kind: 'kv', label: 'Skill', value: skillText(job) });
     if (job.requiredRep > 0) blocks.push({ kind: 'kv', label: 'Reputation needed', value: repText(job) });
     const equipment = equipmentText(job);
     if (equipment !== null) blocks.push({ kind: 'kv', label: 'Equipment', value: equipment });
+    const cost = costText(job);
+    if (cost !== null) blocks.push({ kind: 'kv', label: 'Cost', value: cost, valueColor: '#FFB347' });
   }
+  const trains = trainsText(job);
+  if (trains !== null) blocks.push({ kind: 'kv', label: 'Trains', value: trains, valueColor: '#5FE8A0' });
   blocks.push({ kind: 'kv', label: 'Risk', value: String(job.risk) });
   if (cargo !== null) blocks.push({ kind: 'kv', label: 'Cargo', value: cargo });
   blocks.push({ kind: 'space', height: 6 }, { kind: 'divider' });
