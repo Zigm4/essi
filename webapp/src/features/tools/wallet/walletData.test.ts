@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
   capResults,
+  normalizeQuery,
   parseWallets,
   search,
   walletStats,
@@ -47,6 +48,18 @@ describe('search', () => {
     expect(search('bobby', SAMPLE).ownerHits.map((o) => o.display_name)).toEqual(['Bob']);
   });
 
+  it('ignores a leading "@", the form the results show handles in', () => {
+    expect(search('@bobby', SAMPLE).ownerHits.map((o) => o.display_name)).toEqual(['Bob']);
+    expect(search('  @@Bobby ', SAMPLE).ownerHits.map((o) => o.display_name)).toEqual(['Bob']);
+    expect(search('@', SAMPLE)).toEqual({ ownerHits: [], walletHits: [] });
+  });
+
+  it('finds a shipped owner by "@handle" as well as by the bare handle', () => {
+    const bare = search('cruzified999', owners).ownerHits;
+    expect(bare).toHaveLength(1);
+    expect(search('@cruzified999', owners).ownerHits).toEqual(bare);
+  });
+
   it('matches wallets and dedupes hits whose owner is already an owner hit', () => {
     // "aaaaa" matches Alice's wallet AND Carol's wallet. Also query hits no owner
     // names, so both remain wallet hits.
@@ -67,6 +80,15 @@ describe('search', () => {
     expect(r.ownerHits).toHaveLength(1);
     // the wallet hit for the same owner is removed by dedup
     expect(r.walletHits).toHaveLength(0);
+  });
+});
+
+describe('normalizeQuery', () => {
+  it('trims, lower-cases and drops leading "@" signs only', () => {
+    expect(normalizeQuery('  @Alice ')).toBe('alice');
+    expect(normalizeQuery('@ alice')).toBe('alice');
+    expect(normalizeQuery('a@b')).toBe('a@b');
+    expect(normalizeQuery('@')).toBe('');
   });
 });
 

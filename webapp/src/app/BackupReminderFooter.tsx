@@ -16,7 +16,8 @@ import styles from './BackupReminderFooter.module.css';
  * onboarding) as soon as the user has ANY on-device data - a ship, a note, a
  * link, a map pin, a favourite, scan history… - that has never been exported
  * (or has changed since the last export). "Export" downloads the JSON and marks
- * the data backed up; the ✕ snoozes the reminder for 7 days.
+ * the data backed up; the ✕ snoozes the reminder for 7 days. It sits in the
+ * shell's flow above the bottom nav, so it never hides the end of a page.
  */
 export function BackupReminderFooter() {
   const statusResult = useLiveQuery(collectBackupStatus, []);
@@ -61,7 +62,8 @@ export function BackupReminderFooter() {
       <div className={styles.text}>
         <span className={styles.title}>Back up your data</span>
         <span className={styles.sub}>
-          It lives only on this device. Export a copy so an uninstall can&apos;t wipe it.
+          It lives only on this device.
+          <span className={styles.subMore}> Export a copy so an uninstall can&apos;t wipe it.</span>
         </span>
       </div>
       <button
@@ -70,7 +72,9 @@ export function BackupReminderFooter() {
         disabled={exporting}
         onClick={onExport}
       >
-        <IconUpload size={15} />
+        <span className={styles.exportIcon}>
+          <IconUpload size={15} />
+        </span>
         {exporting ? 'Exporting' : 'Export'}
       </button>
       <button

@@ -12,6 +12,7 @@ import { loadCatalog } from './shared/catalog';
 import { shareOrCopy } from './shared/share';
 import {
   capResults,
+  normalizeQuery,
   ownerId,
   parseWallets,
   search,
@@ -79,7 +80,7 @@ export function WalletLookupView() {
               />
             </GlassCard>
 
-            {trimmed.length === 0 ? (
+            {normalizeQuery(query).length === 0 ? (
               <GlassCard>
                 <SectionHeader title="Database overview" icon={<IconBarChart size={18} />} />
                 <div style={{ marginTop: 8 }}>

@@ -35,6 +35,7 @@ import { PickerSheet, type PickerGroup } from './PickerSheet';
 import { TagInputField, type TagInputHandle } from './TagInputField';
 import { EvilShipIntro } from './EvilShipIntro';
 import { ConfirmDialog } from './ConfirmDialog';
+import { namesAfterModelSwitch } from './modelSwitch';
 import styles from './hangar.module.css';
 
 const EVIL_SEEN_KEY = 'underdeck.hangar.evilIntroSeen';
@@ -315,18 +316,11 @@ function ShipEditorForm({
       return;
     }
 
-    const f = fieldsRef.current;
-    const newPrefix = newEntry != null && hasPrefix(newEntry) ? (newEntry.prefix ?? '') : null;
-    if (newPrefix != null) {
-      set({ modelKey: newKey, suffixField: extractSuffix(f.nameField.trim(), newPrefix) });
-    } else {
-      const promote = f.suffixField.trim() !== '' && f.nameField.trim() === '';
-      set({
-        modelKey: newKey,
-        nameField: promote ? f.suffixField.trim() : f.nameField,
-        suffixField: '',
-      });
-    }
+    // The call-sign number is kept across prefixes (MMCS-42 → SOLT-42).
+    set({
+      modelKey: newKey,
+      ...namesAfterModelSwitch(fieldsRef.current, newKey, catalog.modelByKey),
+    });
     setEvilPlayed(false);
   };
 

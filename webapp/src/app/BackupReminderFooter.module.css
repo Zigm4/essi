@@ -1,31 +1,27 @@
 .footer {
-  position: fixed;
-  left: 12px;
-  right: 12px;
-  bottom: calc(94px + env(safe-area-inset-bottom));
-  margin: 0 auto;
+  /* In the shell's flow (AppShell.module.css), between the page and the bottom
+     nav: it takes its own row instead of floating over the end of every page
+     and the back-to-top button. Kept to two short lines to spare the page. */
+  grid-row: 2;
+  width: calc(100% - 24px);
   max-width: 560px;
-  /* Below modal scrims (z 40) so an open sheet/dialog covers it, not vice versa. */
-  z-index: 30;
+  margin: 0 auto 8px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
+  gap: 10px;
+  padding: 8px 8px 8px 12px;
   border-radius: 14px;
   background: linear-gradient(to bottom right, #10203a, #0a1424);
   border: 1px solid var(--border-glow);
-  box-shadow:
-    0 12px 34px rgba(0, 0, 0, 0.6),
-    0 6px 20px -6px rgba(79, 195, 255, 0.2);
+  box-shadow: 0 6px 20px -6px rgba(79, 195, 255, 0.2);
 }
 
-/* Desktop: no bottom nav - sit above the sidebar rail, in the content region. */
+/* Desktop: no bottom nav - under the content, beside the sidebar rail. */
 @media (min-width: 900px) {
   .footer {
-    left: 240px;
-    right: 24px;
-    bottom: 24px;
-    max-width: 520px;
+    grid-column: 2;
+    width: calc(100% - 48px);
+    margin-bottom: 16px;
   }
 }
 
@@ -33,6 +29,18 @@
   flex: none;
   display: flex;
   color: var(--accent-primary);
+}
+
+.exportIcon {
+  display: inline-flex;
+}
+
+/* Small phones: drop the decorative icons so the text keeps two lines. */
+@media (max-width: 359px) {
+  .icon,
+  .exportIcon {
+    display: none;
+  }
 }
 
 .text {
@@ -45,8 +53,9 @@
 
 .title {
   font-family: var(--font-sans);
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 600;
+  line-height: 1.3;
   color: var(--text-primary);
 }
 
@@ -57,12 +66,23 @@
   color: var(--text-secondary);
 }
 
+/* The why, on desktop only: phones keep the strip to two lines. */
+.subMore {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .subMore {
+    display: inline;
+  }
+}
+
 .export {
   flex: none;
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 8px 14px;
+  padding: 8px 12px;
   border-radius: 10px;
   border: none;
   cursor: pointer;

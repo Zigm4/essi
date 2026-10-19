@@ -23,8 +23,10 @@ export function AppShell() {
           <Outlet />
         </ErrorBoundary>
       </div>
-      <BottomNav />
+      {/* Before the nav in the DOM so keyboard focus follows the visual order
+          (the CSS grid puts it in the row above the nav). */}
       <BackupReminderFooter />
+      <BottomNav />
     </div>
   );
 }

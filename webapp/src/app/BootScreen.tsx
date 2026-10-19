@@ -5,6 +5,7 @@ import { BootTerminalText } from '../design-system/components/BootTerminalText';
 import { useReducedMotion } from '../design-system/reducedMotion';
 import { useSettingsStore } from '../data/settings';
 import { BootEmblem } from './BootEmblem';
+import { bootMode, storedFastBootChoice } from './bootMode';
 import styles from './BootScreen.module.css';
 
 /** Boot lines - exact copy, typed in order (app-shell spec §5.2). */
@@ -25,19 +26,33 @@ const HOLD_AFTER_TEXT_MS = 1600;
 const EXIT_FADE_MS = 550;
 const FAST_BOOT_FADE_MS = 180;
 
-/** Cyberpunk console boot splash (/boot). Tap anywhere skips immediately. */
+/**
+ * Cyberpunk console boot splash (/boot). The full intro plays on the first
+ * launch (or every launch with Fast boot turned off); otherwise the splash
+ * fades straight out. Tap anywhere skips immediately.
+ */
 export function BootScreen() {
   const navigate = useNavigate();
-  const fastBoot = useSettingsStore((s) => s.fastBoot);
   const reduced = useReducedMotion();
+  // Decided once per launch: storing the default on exit must not change this boot.
+  const [fast] = useState(
+    () =>
+      bootMode({
+        fastBootChoice: storedFastBootChoice(),
+        onboardingSeen: useSettingsStore.getState().onboardingSeen,
+      }) === 'fast',
+  );
   const [exiting, setExiting] = useState(false);
   const [textDone, setTextDone] = useState(false);
   const exitStartedRef = useRef(false);
-  const fadeMs = fastBoot ? FAST_BOOT_FADE_MS : EXIT_FADE_MS;
+  const fadeMs = fast || reduced ? FAST_BOOT_FADE_MS : EXIT_FADE_MS;
 
   const beginExit = useCallback(() => {
     if (exitStartedRef.current) return;
     exitStartedRef.current = true;
+    // Intro seen or skipped: with no choice made yet, store the default (on) so later
+    // launches are fast and Settings shows it.
+    if (storedFastBootChoice() === null) useSettingsStore.getState().setFastBoot(true);
     setExiting(true);
     setTimeout(() => {
       const seen = useSettingsStore.getState().onboardingSeen;
@@ -47,8 +62,8 @@ export function BootScreen() {
 
   // Fast boot: begin exit on the first frame with the shorter fade.
   useEffect(() => {
-    if (fastBoot) beginExit();
-  }, [fastBoot, beginExit]);
+    if (fast) beginExit();
+  }, [fast, beginExit]);
 
   // Text finished → hold 1600ms → exit.
   useEffect(() => {
@@ -85,9 +100,8 @@ export function BootScreen() {
             </div>
             <BootTerminalText lines={BOOT_LINES} onComplete={() => setTextDone(true)} />
           </div>
-          <div className={`${styles.hint} ${textDone ? styles.hintVisible : ''}`}>
-            tap to continue
-          </div>
+          {/* Shown from the start: the intro continues on its own, a tap only skips it. */}
+          <div className={styles.hint}>tap to skip</div>
         </div>
       </AppBackground>
     </div>

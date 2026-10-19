@@ -48,13 +48,21 @@ export function parseWallets(raw: unknown): WalletOwner[] {
 }
 
 /**
+ * Trimmed, lower-cased search text. A leading "@" is dropped: handles are shown
+ * as "@handle" (Discord mention style) but stored without it.
+ */
+export function normalizeQuery(query: string): string {
+  return query.trim().replace(/^@+/, '').trim().toLowerCase();
+}
+
+/**
  * `search(query)` (§6.2). Empty query → no results (the overview is shown
  * instead). ownerHits = display_name OR discord_username substring match;
  * walletHits = every (wallet, owner) pair whose wallet contains q, minus pairs
  * whose owner is already an owner hit.
  */
 export function search(query: string, owners: WalletOwner[]): WalletSearchResult {
-  const q = query.trim().toLowerCase();
+  const q = normalizeQuery(query);
   if (q.length === 0) return { ownerHits: [], walletHits: [] };
 
   const ownerHits: WalletOwner[] = [];

@@ -21,6 +21,7 @@ import {
   IconPending,
 } from './shared/toolIcons';
 import { CenteredError, CenteredSpinner } from './shared/Status';
+import { cleanIdInput } from './shared/idInput';
 import { ToolScaffold } from './shared/ToolScaffold';
 import { loadCatalog } from './shared/catalog';
 import {
@@ -69,7 +70,8 @@ export function FoeDecoderView() {
   const valid = isValidId(input);
 
   const onChange = (raw: string) => {
-    const sanitized = raw.replace(/\D/g, '').slice(0, 10);
+    // Clean, then limit: no native maxLength, which would cut a pasted "#123 456…" first.
+    const sanitized = cleanIdInput(raw, 10);
     setInput(sanitized);
     setReport(null);
     setError(null);
@@ -109,7 +111,6 @@ export function FoeDecoderView() {
                 autoComplete="off"
                 autoCorrect="off"
                 spellCheck={false}
-                maxLength={10}
                 placeholder="e.g. 3241501042"
                 value={input}
                 style={{

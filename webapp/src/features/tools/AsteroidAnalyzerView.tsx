@@ -14,6 +14,7 @@ import {
 } from '../../design-system/icons';
 import { IconAttachMoney, IconCancel, IconChecklist, IconMoneyOff } from './shared/toolIcons';
 import { CenteredError, CenteredSpinner } from './shared/Status';
+import { cleanIdInput } from './shared/idInput';
 import { ToolScaffold } from './shared/ToolScaffold';
 import { loadCatalog } from './shared/catalog';
 import {
@@ -60,7 +61,8 @@ export function AsteroidAnalyzerView() {
   const valid = isValidId(input);
 
   const onChange = (raw: string) => {
-    const sanitized = raw.replace(/\D/g, '').slice(0, 9);
+    // Clean, then limit: no native maxLength, which would cut a pasted "#123 456…" first.
+    const sanitized = cleanIdInput(raw, 9);
     setInput(sanitized);
     setReport(null);
     setError(null);
@@ -100,7 +102,6 @@ export function AsteroidAnalyzerView() {
                 autoComplete="off"
                 autoCorrect="off"
                 spellCheck={false}
-                maxLength={9}
                 placeholder="e.g. 195016321"
                 value={input}
                 style={{

@@ -1,12 +1,15 @@
+/* Rows: the page, the backup reminder (when shown), the bottom nav. The
+   reminder takes its own row, so a page ends above it instead of under it. */
 .shell {
   height: 100dvh;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto auto;
   background: var(--bg-deepest);
 }
 
 .content {
-  flex: 1;
+  grid-row: 1;
   min-height: 0;
   width: 100%;
   /* Mobile-first: a single phone-width column, bottom capsule below. */
@@ -14,13 +17,20 @@
   margin: 0 auto;
 }
 
-/* Desktop: sidebar rail on the left, content filling the rest. */
+/* Desktop: sidebar rail on the left, content (and reminder) filling the rest. */
 @media (min-width: 900px) {
   .shell {
-    flex-direction: row;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+
+  /* The SideNav rail spans both rows. */
+  .shell > :first-child {
+    grid-row: 1 / -1;
   }
 
   .content {
+    grid-column: 2;
     max-width: 1160px;
     margin: 0 auto;
     padding: 0 24px;
