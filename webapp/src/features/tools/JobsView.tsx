@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -7,7 +8,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
 } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { AppBackground } from '../../design-system/components/AppBackground';
 import { BannerAction, TransmissionHeader } from '../../design-system/components/TransmissionHeader';
 import { withAlpha } from '../../design-system/color';
@@ -31,12 +32,11 @@ import { JobCard } from './jobs/JobCard';
 import { JobsFilterSheet } from './jobs/JobsFilterSheet';
 import { JobDetailSheet } from './jobs/JobDetailSheet';
 import { AboutDatasetSheet } from './jobs/AboutDatasetSheet';
-import { computeFacetOptions, sanitizeFilter, type JobsFacetOptions } from './jobs/jobsFacets';
+import { computeFacetOptions } from './jobs/jobsFacets';
 import {
   activeFilterChips,
   activeSectionCount,
   countMatching,
-  filtersEqual,
   hasAnyCriteria,
   JOB_SORTS,
   sortLabel,
@@ -46,8 +46,8 @@ import {
   type JobSort,
 } from './jobs/jobsLogic';
 import { useJobsFilterStore } from './jobs/jobsStore';
-import { decodeJobsSearch, encodeJobsSearch } from './jobs/jobsUrl';
 import { useJobs } from './jobs/useJobs';
+import { useJobsUrlSync } from './jobs/useJobsUrlSync';
 import styles from './jobs/Jobs.module.css';
 
 const ACCENT_WARN = '#FFB347';
@@ -67,37 +67,6 @@ function chipStyle(tint: string, active: boolean): CSSProperties {
     : {};
 }
 
-/**
- * Keeps the filter and the route's query string in step (spec §3.3). A query
- * string we did not write ourselves (first mount, a pasted link) wins for the
- * shareable fields; every later filter change is mirrored back with a
- * `replace` navigation, so no history entry is ever added. Waits for the data
- * so unknown values (and stale stored ones) are dropped first.
- */
-function useJobsUrlSync(options: JobsFacetOptions | null, filter: JobFilter, setFilter: (f: JobFilter) => void) {
-  const navigate = useNavigate();
-  const { pathname, search } = useLocation();
-  const synced = useRef<string | null>(null);
-
-  useEffect(() => {
-    if (options === null) return;
-    if (search !== synced.current) {
-      synced.current = search;
-      const shared = decodeJobsSearch(search, options);
-      const next = sanitizeFilter(shared === null ? filter : { ...filter, ...shared }, options);
-      if (!filtersEqual(next, filter)) {
-        setFilter(next);
-        return; // the store update re-runs this effect, which then writes the canonical URL
-      }
-    }
-    const wanted = encodeJobsSearch(filter);
-    if (wanted !== search) {
-      synced.current = wanted;
-      navigate({ pathname, search: wanted }, { replace: true });
-    }
-  }, [options, filter, search, pathname, navigate, setFilter]);
-}
-
 /** /tools/jobs - search 371 jobs by faction, place, category, reward, requirements (spec §3.3). */
 export function JobsView() {
   const navigate = useNavigate();
@@ -115,7 +84,10 @@ export function JobsView() {
   const [detailId, setDetailId] = useState<number | null>(null);
 
   const options = useMemo(() => (jobs === null ? null : computeFacetOptions(jobs)), [jobs]);
-  const ctx = useMemo<JobContext>(() => ({ starred, statusMap }), [starred, statusMap]);
+  const ctx = useMemo<JobContext>(
+    () => ({ starred, statusMap, zoneNames: options?.places.zoneNames }),
+    [starred, statusMap, options],
+  );
   const visible = useMemo(() => (jobs === null ? [] : visibleJobs(jobs, filter, ctx)), [jobs, filter, ctx]);
   const noPrereqCount = useMemo(
     () => (jobs === null ? 0 : countMatching(jobs, { ...filter, noPrereqOnly: true }, ctx)),
@@ -128,6 +100,26 @@ export function JobsView() {
   const detailJob = detailId === null || jobs === null ? null : jobs.find((j) => j.id === detailId) ?? null;
 
   const statusOf = (id: number): JobStatusValue => statusMap.get(String(id)) ?? 'todo';
+
+  // Removing the focused active chip unmounts it: keep keyboard focus in the row
+  // (the chip that took its place, else the Filters button).
+  const filtersBtnRef = useRef<HTMLButtonElement>(null);
+  const activeRowRef = useRef<HTMLDivElement>(null);
+  const refocusChipAt = useRef<number | null>(null);
+  useLayoutEffect(() => {
+    const at = refocusChipAt.current;
+    if (at === null) return;
+    refocusChipAt.current = null;
+    const remaining = activeRowRef.current?.querySelectorAll<HTMLButtonElement>('button') ?? [];
+    (remaining[Math.min(at, remaining.length - 1)] ?? filtersBtnRef.current)?.focus();
+  });
+
+  // A shared link opened in a fresh tab has no in-app history to go back to.
+  const goBack = () => {
+    const idx = (window.history.state as { idx?: number } | null)?.idx ?? 0;
+    if (idx > 0) navigate(-1);
+    else navigate('/tools');
+  };
 
   return (
     <ScrollOffsetContext.Provider value={storeRef.current}>
@@ -144,7 +136,7 @@ export function JobsView() {
             />
 
             <div className={styles.searchRow}>
-              <button type="button" className={styles.backBtn} aria-label="Back" onClick={() => navigate(-1)}>
+              <button type="button" className={styles.backBtn} aria-label="Back" onClick={goBack}>
                 <IconArrowBack size={20} />
               </button>
               <div className={styles.searchField}>
@@ -175,13 +167,14 @@ export function JobsView() {
               </div>
 
               <button
+                ref={filtersBtnRef}
                 type="button"
                 className={`${styles.filtersBtn} ${badge > 0 ? styles.filtersBtnActive : ''}`}
                 aria-label={badge > 0 ? `Filters, ${badge} active` : 'Filters'}
                 onClick={() => setFilterOpen(true)}
               >
                 <IconTune size={16} />
-                Filters
+                <span className={styles.filtersLabel}>Filters</span>
                 {badge > 0 && (
                   <span className={styles.filtersBadge} aria-hidden="true">
                     {badge}
@@ -192,6 +185,7 @@ export function JobsView() {
               <SortMenu value={filter.sort} onChange={(sort) => patch({ sort })} />
             </div>
 
+            {/* No prerequisites sits second so it is on screen at 375px; the cut-off status chip signals the row scrolls. */}
             <div className={`${styles.chipScroll} ${styles.quickRow}`}>
               <QuickChip
                 label="Starred"
@@ -199,6 +193,14 @@ export function JobsView() {
                 tint={ACCENT_WARN}
                 active={filter.starredOnly}
                 onClick={() => patch({ starredOnly: !filter.starredOnly })}
+              />
+              <QuickChip
+                label="No prerequisites"
+                icon={<IconPublic size={13} />}
+                tint={ACCENT_SUCCESS}
+                active={filter.noPrereqOnly}
+                count={jobs === null ? undefined : noPrereqCount}
+                onClick={() => patch({ noPrereqOnly: !filter.noPrereqOnly })}
               />
               <QuickChip
                 label="To do"
@@ -221,26 +223,21 @@ export function JobsView() {
                 active={filter.statuses.has('done')}
                 onClick={() => patch({ statuses: toggleSet(filter.statuses, 'done') })}
               />
-              <QuickChip
-                label="No prerequisites"
-                icon={<IconPublic size={13} />}
-                tint={ACCENT_SUCCESS}
-                active={filter.noPrereqOnly}
-                count={jobs === null ? undefined : noPrereqCount}
-                onClick={() => patch({ noPrereqOnly: !filter.noPrereqOnly })}
-              />
             </div>
 
             {chips.length > 0 && (
-              <div className={`${styles.chipScroll} ${styles.activeRow}`}>
-                {chips.map((chip) => (
+              <div ref={activeRowRef} className={`${styles.chipScroll} ${styles.activeRow}`}>
+                {chips.map((chip, i) => (
                   <button
                     key={chip.id}
                     type="button"
                     className={styles.activeChip}
                     style={{ background: withAlpha(chip.tint, 0.18), borderColor: withAlpha(chip.tint, 0.7), color: chip.tint }}
                     aria-label={`Remove filter: ${chip.label}`}
-                    onClick={() => setFilter(chip.remove(filter))}
+                    onClick={(e) => {
+                      if (document.activeElement === e.currentTarget) refocusChipAt.current = i;
+                      setFilter(chip.remove(filter));
+                    }}
                   >
                     {chip.label}
                     <IconClose size={12} />
@@ -249,6 +246,11 @@ export function JobsView() {
               </div>
             )}
           </div>
+
+          {/* Announces the result count after a quick filter, chip removal or search (always mounted). */}
+          <span className={styles.srOnly} role="status">
+            {jobs === null ? '' : `${visible.length} job${visible.length === 1 ? '' : 's'}`}
+          </span>
 
           <div
             className={styles.list}
@@ -271,7 +273,7 @@ export function JobsView() {
                       job={job}
                       status={statusOf(job.id)}
                       starred={starred.has(String(job.id))}
-                      onOpen={() => setDetailId(job.id)}
+                      onOpen={setDetailId}
                     />
                   </div>
                 ))}

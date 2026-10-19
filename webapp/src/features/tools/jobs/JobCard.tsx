@@ -1,4 +1,4 @@
-import type { CSSProperties, KeyboardEvent, ReactNode } from 'react';
+import { memo, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
 import type { JobStatusValue } from '../../../data/db';
 import { withAlpha } from '../../../design-system/color';
 import { IconCheckCircle, IconWarningAmber } from '../../../design-system/icons';
@@ -14,7 +14,7 @@ import {
   IconShieldOutlined,
 } from '../shared/toolIcons';
 import { locationLabel, type Job } from './jobModel';
-import { factionInfo, rewardInfo, skillTint, tagLabel } from './jobTaxonomies';
+import { factionInfo, rewardInfo, skillLabel, skillTint, tagLabel } from './jobTaxonomies';
 import styles from './Jobs.module.css';
 
 const ACCENT_DANGER = '#FF5577';
@@ -50,8 +50,8 @@ function Stat({ icon, tint, label }: { icon: ReactNode; tint: string; label: str
   );
 }
 
-/** Job list card (spec §3.4). */
-export function JobCard({
+/** Job list card (spec §3.4). Memoised: typing in the search re-renders the list, not every card. */
+export const JobCard = memo(function JobCard({
   job,
   status,
   starred,
@@ -60,7 +60,8 @@ export function JobCard({
   job: Job;
   status: JobStatusValue;
   starred: boolean;
-  onOpen: () => void;
+  /** Receives the job id, so the list can pass one stable callback. */
+  onOpen: (id: number) => void;
 }) {
   const ally = job.factionRep !== null ? factionInfo(job.factionRep) : null;
   const rival = job.factionRival !== null ? factionInfo(job.factionRival) : null;
@@ -70,7 +71,7 @@ export function JobCard({
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      onOpen();
+      onOpen(job.id);
     }
   };
 
@@ -80,7 +81,7 @@ export function JobCard({
       role="button"
       tabIndex={0}
       aria-label={`Job ${job.id}`}
-      onClick={onOpen}
+      onClick={() => onOpen(job.id)}
       onKeyDown={onKeyDown}
     >
       <div className={styles.badgeRow}>
@@ -134,8 +135,8 @@ export function JobCard({
             tint={skillTint(job.requiredSkill)}
             label={
               job.requiredSkillAmt > 0
-                ? `${job.requiredSkill} ≥${job.requiredSkillAmt}`
-                : job.requiredSkill
+                ? `${skillLabel(job.requiredSkill)} ≥${job.requiredSkillAmt}`
+                : skillLabel(job.requiredSkill)
             }
           />
         )}
@@ -171,4 +172,4 @@ export function JobCard({
       </div>
     </div>
   );
-}
+});

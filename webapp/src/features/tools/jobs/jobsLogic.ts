@@ -7,13 +7,14 @@
 
 import type { JobStatusValue } from '../../../data/db';
 import type { Job } from './jobModel';
-import { ASTNUM_LABELS, parsePlaceKey, placeContains, placeLabel, type PlacesIndex } from './jobPlaces';
+import { ASTNUM_LABELS, parsePlaceKey, placeContains, placeLabel, zoneKey, type PlacesIndex } from './jobPlaces';
 import {
   ACCENT_SUCCESS,
   categoryLabel,
   factionInfo,
   jobCategory,
   rewardInfo,
+  skillLabel,
   skillTint,
   tagLabel,
 } from './jobTaxonomies';
@@ -181,15 +182,24 @@ export function parseQuery(query: string): string[] {
     .filter((word) => word.length > 0);
 }
 
-const haystacks = new WeakMap<Job, string>();
+/** Haystacks per zone-name table (a dataset's), then per job. */
+const haystackCaches = new WeakMap<object, WeakMap<Job, string>>();
+const NO_ZONE_NAMES = {};
 
 /**
  * Everything a search word may match, lowercased: texts, ID, raw type,
  * category, faction (ally + rival), reward, skill, shire, and the pickup /
- * dropoff names (+ the astro name when known). Cached per job.
+ * dropoff names (+ the astro name when known, + the name the place picker
+ * gives the zone when `zoneNames` is passed - a job filed under "Docking Port"
+ * is found by that name even if its own reads "Docking Bay"). Cached per job.
  */
-export function jobHaystack(job: Job): string {
-  const cached = haystacks.get(job);
+export function jobHaystack(job: Job, zoneNames?: ReadonlyMap<string, string>): string {
+  let cache = haystackCaches.get(zoneNames ?? NO_ZONE_NAMES);
+  if (cache === undefined) {
+    cache = new WeakMap();
+    haystackCaches.set(zoneNames ?? NO_ZONE_NAMES, cache);
+  }
+  const cached = cache.get(job);
   if (cached !== undefined) return cached;
   const parts = [
     job.description,
@@ -201,24 +211,28 @@ export function jobHaystack(job: Job): string {
   ];
   if (job.factionRep !== null) parts.push(factionInfo(job.factionRep).label);
   if (job.factionRival !== null) parts.push(factionInfo(job.factionRival).label);
-  if (job.requiredSkill !== null) parts.push(job.requiredSkill);
+  if (job.requiredSkill !== null) parts.push(job.requiredSkill, skillLabel(job.requiredSkill));
   if (job.requiredTag !== null) parts.push(tagLabel(job.requiredTag));
   for (const loc of [job.pickupLocation, job.dropoffLocation]) {
     if (loc.name !== null) parts.push(loc.name);
+    const canonical = zoneNames?.get(zoneKey(loc.astnum, loc.zone));
+    if (canonical !== undefined && canonical !== loc.name) parts.push(canonical);
     const astro = ASTNUM_LABELS[loc.astnum];
     if (astro !== undefined) parts.push(astro);
   }
   const haystack = parts.join('\n').toLowerCase();
-  haystacks.set(job, haystack);
+  cache.set(job, haystack);
   return haystack;
 }
 
 // --- The predicate ------------------------------------------------------------
 
-/** External per-job state read by the companion filters (favorites + progress). */
+/** External per-job state read by the companion filters (favorites + progress), plus the dataset's zone names for the search. */
 export interface JobContext {
   starred: ReadonlySet<string>;
   statusMap: ReadonlyMap<string, JobStatusValue>;
+  /** `PlacesIndex.zoneNames` - lets the search match the names the place picker shows. */
+  zoneNames?: ReadonlyMap<string, string>;
 }
 
 export const EMPTY_CONTEXT: JobContext = { starred: new Set(), statusMap: new Map() };
@@ -257,7 +271,7 @@ export function compileFilter(filter: JobFilter, ctx: JobContext): (job: Job) =>
   return (job) => {
     let failed = 0;
     if (words.length > 0) {
-      const haystack = jobHaystack(job);
+      const haystack = jobHaystack(job, ctx.zoneNames);
       if (!words.every((w) => haystack.includes(w))) failed |= CRITERION.query;
     }
     if (factions.size > 0 && (job.factionRep === null || !factions.has(job.factionRep))) failed |= CRITERION.factions;
@@ -351,7 +365,7 @@ export function activeFilterChips(filter: JobFilter, places: PlacesIndex | null)
   if (filter.skill !== null) {
     chips.push({
       id: 'skill',
-      label: filter.skill === NONE ? 'No skill needed' : `Skill: ${filter.skill}`,
+      label: filter.skill === NONE ? 'No skill needed' : `Skill: ${skillLabel(filter.skill)}`,
       tint: filter.skill === NONE ? ACCENT_SECONDARY : skillTint(filter.skill),
       remove: (f) => ({ ...f, skill: null }),
     });

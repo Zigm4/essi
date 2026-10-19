@@ -16,10 +16,28 @@ import styles from './BottomSheet.module.css';
  * inset so the last control never hides behind the phone's bottom bar. An
  * optional `footer` is pinned under the scrolling body (it carries the
  * safe-area inset instead), so nothing scrolls beneath it.
+ *
+ * Focus: opening moves focus into the panel and makes the app behind it
+ * `inert` (so Tab stays in the sheet); closing gives focus back to whatever
+ * had it before.
  */
 
 const DISMISS_THRESHOLD_PX = 110;
 const TAP_SLOP_PX = 6;
+
+/** Open sheets holding the app root inert (sheets can stack). */
+let inertHolds = 0;
+
+function holdAppInert(): () => void {
+  const root = document.getElementById('root');
+  if (root === null) return () => {};
+  inertHolds++;
+  root.setAttribute('inert', '');
+  return () => {
+    inertHolds--;
+    if (inertHolds === 0) root.removeAttribute('inert');
+  };
+}
 
 export function BottomSheet({
   open,
@@ -42,6 +60,20 @@ export function BottomSheet({
 }) {
   const [dragY, setDragY] = useState(0);
   const drag = useRef<{ startY: number; active: boolean }>({ startY: 0, active: false });
+  const panelRef = useRef<HTMLDivElement>(null);
+  const hasFooter = footer !== undefined && footer !== null && footer !== false;
+
+  // Keyed on `open` only: callers pass inline `onClose`s, which must not re-run this.
+  useEffect(() => {
+    if (!open) return;
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const release = holdAppInert();
+    panelRef.current?.focus({ preventScroll: true });
+    return () => {
+      release(); // first: an inert element can't take focus
+      if (opener?.isConnected) opener.focus({ preventScroll: true });
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -85,7 +117,15 @@ export function BottomSheet({
   return createPortal(
     <>
       <button type="button" className={styles.scrim} aria-label="Close" onClick={onClose} />
-      <div className={styles.sheet} role="dialog" aria-modal="true" aria-label={ariaLabel} style={sheetStyle}>
+      <div
+        ref={panelRef}
+        className={styles.sheet}
+        role="dialog"
+        aria-modal="true"
+        aria-label={ariaLabel}
+        tabIndex={-1}
+        style={sheetStyle}
+      >
         <div
           className={styles.handleRow}
           role="button"
@@ -101,10 +141,8 @@ export function BottomSheet({
         >
           <span className={styles.handle} />
         </div>
-        <div className={footer === undefined ? styles.body : `${styles.body} ${styles.bodyWithFooter}`}>
-          {children}
-        </div>
-        {footer !== undefined && <div className={styles.footer}>{footer}</div>}
+        <div className={hasFooter ? `${styles.body} ${styles.bodyWithFooter}` : styles.body}>{children}</div>
+        {hasFooter && <div className={styles.footer}>{footer}</div>}
       </div>
     </>,
     document.body,

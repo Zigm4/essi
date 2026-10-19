@@ -5,7 +5,7 @@ import { BottomSheet } from '../shared/BottomSheet';
 import type { Job } from './jobModel';
 import { computeFacetCounts, countOf, rankByCount, type JobsFacetOptions } from './jobsFacets';
 import { activeSectionCount, NONE, resetSheetSections, type JobContext, type JobFilter } from './jobsLogic';
-import { categoryLabel, factionInfo, rewardInfo, tagLabel } from './jobTaxonomies';
+import { categoryLabel, factionInfo, rewardInfo, skillLabel, tagLabel } from './jobTaxonomies';
 import styles from './Jobs.module.css';
 
 const ACCENT_PRIMARY = '#4FC3FF';
@@ -92,14 +92,15 @@ function FoldingChips({
   return (
     <div className={styles.chipWrap}>
       {shown.map(renderChip)}
-      {hidden > 0 && (
-        <button type="button" className={styles.moreChip} aria-expanded={false} onClick={() => setExpanded(true)}>
-          {`+${hidden} more`}
-        </button>
-      )}
-      {expanded && keys.length > COLLAPSED_CHIPS && (
-        <button type="button" className={styles.moreChip} aria-expanded={true} onClick={() => setExpanded(false)}>
-          Show less
+      {/* One toggle that stays mounted, so keyboard focus survives the unfold. */}
+      {keys.length > COLLAPSED_CHIPS && (hidden > 0 || expanded) && (
+        <button
+          type="button"
+          className={styles.moreChip}
+          aria-expanded={expanded}
+          onClick={() => setExpanded((v) => !v)}
+        >
+          {expanded ? 'Show less' : `+${hidden} more`}
         </button>
       )}
     </div>
@@ -110,12 +111,15 @@ function Select({
   id,
   value,
   onChange,
+  labelledBy,
   describedBy,
   children,
 }: {
   id: string;
   value: string;
   onChange: (value: string) => void;
+  /** For a select named by a section heading rather than a <label>. */
+  labelledBy?: string;
   describedBy?: string;
   children: ReactNode;
 }) {
@@ -125,6 +129,7 @@ function Select({
         id={id}
         className={styles.select}
         value={value}
+        aria-labelledby={labelledBy}
         aria-describedby={describedBy}
         onChange={(e) => onChange(e.target.value)}
       >
@@ -198,6 +203,7 @@ function FilterSheetDialog({
   const ids = {
     faction: `${uid}-faction`,
     place: `${uid}-place`,
+    placeHeading: `${uid}-place-heading`,
     category: `${uid}-category`,
     reward: `${uid}-reward`,
     requirements: `${uid}-requirements`,
@@ -214,7 +220,7 @@ function FilterSheetDialog({
   const factionKeys = rankByCount(options.factions, counts.factions, factionLabel);
   const rewardKeys = rankByCount(options.rewards, counts.rewards, rewardLabel);
   const rivalKeys = rankByCount(options.rivals, counts.avoidRivals, factionLabel);
-  const skillKeys = rankByCount(options.skills, counts.skills, (k) => k);
+  const skillKeys = rankByCount(options.skills, counts.skills, skillLabel);
   const shireKeys = rankByCount(options.shires, counts.shires, tagLabel);
   const astros = [...options.places.astros].sort(
     (a, b) => countOf(counts.places, b.key) - countOf(counts.places, a.key) || b.total - a.total || a.astnum - b.astnum,
@@ -271,13 +277,14 @@ function FilterSheetDialog({
         </section>
 
         {/* 2. Pickup place */}
-        <section className={styles.section}>
-          <div className={styles.sectionHead}>
-            <label htmlFor={ids.place} className={styles.sectionHeading}>
-              Pickup place
-            </label>
-          </div>
-          <Select id={ids.place} value={draft.place ?? ''} onChange={(v) => patch({ place: v === '' ? null : v })}>
+        <section className={styles.section} aria-labelledby={ids.placeHeading}>
+          <SectionHead id={ids.placeHeading} title="Pickup place" />
+          <Select
+            id={ids.place}
+            value={draft.place ?? ''}
+            labelledBy={ids.placeHeading}
+            onChange={(v) => patch({ place: v === '' ? null : v })}
+          >
             <option value="">{`Any place (${counts.placeAny})`}</option>
             {astros.map((astro) => {
               const zones = [...astro.zones].sort(
@@ -358,7 +365,7 @@ function FilterSheetDialog({
                   const n = countOf(counts.skills, key);
                   return (
                     <option key={key} value={key} disabled={optionDisabled(n, key, draft.skill)}>
-                      {`${key} (${n})`}
+                      {`${skillLabel(key)} (${n})`}
                     </option>
                   );
                 })}

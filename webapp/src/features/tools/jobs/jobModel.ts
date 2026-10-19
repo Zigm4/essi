@@ -48,8 +48,6 @@ export interface Job {
   // Derived flags (§3.1).
   isCargoJob: boolean;
   isOnSite: boolean;
-  hasRival: boolean;
-  isPlaceholderType: boolean;
 }
 
 /** `"{astnum} · z{zone}"`, e.g. `355 · z35`. */
@@ -171,8 +169,6 @@ export function parseJob(entry: unknown): Job | null {
     mapRef: parseMapRef(obj.mapRef),
     isCargoJob: capacity > 0,
     isOnSite: sameLocation(pickupLocation, dropoffLocation),
-    hasRival: factionRival !== null,
-    isPlaceholderType: type === '???',
   };
 }
 

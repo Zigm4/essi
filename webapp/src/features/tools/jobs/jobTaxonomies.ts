@@ -88,6 +88,16 @@ export function skillTint(key: string): string {
   return SKILL_TINTS[key] ?? ACCENT_SECONDARY;
 }
 
+/** Skill keys that don't read as words once capitalised. */
+const SKILL_LABELS: Record<string, string> = {
+  carryCoin: 'Carry coin',
+};
+
+/** Human label for a `requiredSkill` key: `Carry coin`, else the key capitalised (`Stealth`). */
+export function skillLabel(key: string): string {
+  return SKILL_LABELS[key] ?? (key.length > 0 ? key[0]!.toUpperCase() + key.slice(1) : key);
+}
+
 /** Rewards (canonical key → label + tint). Unknown → key uppercased, textSecondary. */
 const REWARD_INFO: Record<string, Tinted> = {
   coin: { label: 'Coin', tint: '#FFD15C' },
@@ -175,7 +185,7 @@ for (const [bucket, members] of Object.entries(BUCKET_MEMBERS)) {
 }
 
 /** The bucket for a lowercased type; anything unmapped → `Other`. */
-export function typeBucket(type: string): string {
+function typeBucket(type: string): string {
   return TYPE_TO_BUCKET[type] ?? 'Other';
 }
 

@@ -110,6 +110,8 @@ JobStatus { jobId: text PK, status: text ('in_progress'|'done'), updatedAt: date
 ```
 A job with no row is implicitly `todo`; setting a job back to `todo` **deletes** the row. Reads are reactive (drift `watch()`) — in React, any shared store (zustand/jotai/context) persisted to localStorage works.
 
+**Jobs filter** (§3.3): `essi.jobs.filter.v2` — the jobs filter minus the search (JSON, `v: 2`).
+
 **SharedPreferences keys** (train alerts, see §5.6):
 - `trainAlert.zones` — JSON array of armed-zone entries.
 - `trainAlert.armed` — legacy single-zone format, migrated then removed.
@@ -178,8 +180,6 @@ A job with no row is implicitly `todo`; setting a job back to `todo` **deletes**
 Derived flags:
 - `isCargoJob` = `capacity > 0` (28 jobs)
 - `isOnSite` = pickup == dropoff (same astnum+zone) (1 job)
-- `hasRival` = `factionRival != null` (325 jobs)
-- `isPlaceholderType` = `type == '???'` (8 jobs)
 
 **Reward canonicalisation** (`Job._canonicalReward(raw, rewardFunction)`): first map by `rewardFunction`:
 
@@ -283,7 +283,7 @@ Lookup covers both lists; an unknown key renders the raw key with a default tint
 
 **Tags** (`requiredTag` → label): `NorthSquire→North Squire`, `EastSquire→East Squire`, `WestSquire→West Squire`, `SouthSquire→South Squire`, `UpSquire→Up Squire`, `DownSquire→Down Squire`, `VERIFIED→Verified`. (Data actually contains only the six *Squire values; `VERIFIED` is defined but unused.)
 
-**Skills** (key → tint): strength `#FF7755`, stealth `#8B6FFF`, knowledge `#4FC3FF`, fortitude `#FFB347`, panache `#FF77AA`, tech `#7AE3FF`, astro `#B377FF`, singing `#FFE9A8`, medicine `#5FE8A0`, magic `#E6E6FF`, leadership `#FFD15C`, corrupt `#FF5577`, carryCoin `#FFD15C`, stamina `#C58A4F`, wood `#8B6F47`, unobtainium `#B377FF`, oil `#3F4F6F`. Unknown skill → `accentSecondary`.
+**Skills** (key → tint): strength `#FF7755`, stealth `#8B6FFF`, knowledge `#4FC3FF`, fortitude `#FFB347`, panache `#FF77AA`, tech `#7AE3FF`, astro `#B377FF`, singing `#FFE9A8`, medicine `#5FE8A0`, magic `#E6E6FF`, leadership `#FFD15C`, corrupt `#FF5577`, carryCoin `#FFD15C`, stamina `#C58A4F`, wood `#8B6F47`, unobtainium `#B377FF`, oil `#3F4F6F`. Unknown skill → `accentSecondary`. Displayed via `skillLabel`: the key capitalised (`Stealth`), except `carryCoin` → `Carry coin`.
 
 **Rewards** (canonical key → label, tint): coin `Coin #FFD15C`, rocks `Rocks #8AA4C2`, scrap `Scrap #C58A4F`, titanium `Titanium #9DDCFF`, energy `Energy #5FE8A0`, mala `Mala #B377FF`, wackos `Wackos #FF77AA`, data `Map Data #4FC3FF`, oil `Oil #3F4F6F`, krypton `Krypton #AACCFF`, star_tar `Star Tar #8B6FFF`, stimnx `Stimnx #FF5577`, supplies `Supplies #7AE3FF`, wolfram `Wolfram #9C9C9C`, unobtainium `Unobtainium #B377FF`, aurum `Aurum #FFE9A8`. Unknown key → label = key uppercased, tint = `textSecondary`.
 
@@ -304,34 +304,34 @@ Layout, top to bottom (all inside `AppBackground`, page bg `bgDeepest`, zero-hei
 
 1. **TransmissionHeader** — label `ESSI · Job Allocation Desk` (rendered uppercase). Trailing action: an `info_outline` icon (18px, `accentPrimary`) that opens the "About this dataset" sheet (§3.8).
 2. **Search row** — padding LTRB (8, 8, 12, 4):
-   - Back button: `arrow_back_ios_new` 20px `accentPrimary`, min 36×36, pops the route.
-   - **Search field** (expands): container height 40, `bgGlass` fill, radius 14, 1px `borderSubtle`. Leading `search` icon 18 `accentPrimary`. Placeholder: `Search jobs, factions, places, #ID` (caption style 12px); accessible name `Search jobs`. Input text 13px body. When non-empty, trailing `close` icon 16 `textDim` clears it. **No debounce** — filter state updates on every keystroke. Matching rules in §3.7.
-   - **Filters button**: pill (padding 12×9, radius 14, min height 38). Idle: `bgGlass` fill, `borderSubtle` border, `tune` icon 16 + label `Filters` mono 11/700, both `textSecondary`. When ≥1 sheet section is active: fill `accentPrimary`@18%, border `accentPrimary`@70%, icon/label `accentPrimary`, plus a count badge — solid `accentPrimary` rounded pill (radius 10, padding 6×1) with the count in mono 10/800 colored `bgDeepest`. The badge counts **active sheet sections** (0–6, see `activeSectionCount` §3.7) — never the search or the quick filters. Opens the filter sheet (§3.5).
+   - Back button: `arrow_back_ios_new` 20px `accentPrimary`, min 36×36, pops the route — or goes to `/tools` when the view is the first in-app history entry (a shared link opened in a fresh tab).
+   - **Search field** (expands): container height 40, `bgGlass` fill, radius 14, 1px `borderSubtle`. Leading `search` icon 18 `accentPrimary`. Placeholder: `Search jobs, factions, places, #ID` (caption style 12px); accessible name `Search jobs`. Input text 13px body. When non-empty, trailing `close` icon 16 `textDim` (36×36 target) clears it. **No debounce** — the list updates on every keystroke (only the URL write waits, see below). Matching rules in §3.7.
+   - **Filters button**: pill (padding 12×9, radius 14, min height 38). Idle: `bgGlass` fill, `borderSubtle` border, `tune` icon 16 + label `Filters` mono 11/700, both `textSecondary`. When ≥1 sheet section is active: fill `accentPrimary`@18%, border `accentPrimary`@70%, icon/label `accentPrimary`, plus a count badge — solid `accentPrimary` rounded pill (radius 10, padding 6×1) with the count in mono 10/800 colored `bgDeepest`. The badge counts **active sheet sections** (0–6, see `activeSectionCount` §3.7) — never the search or the quick filters. Below 400px viewport width the `Filters` text is hidden (icon + badge only; the accessible name stays `Filters` / `Filters, {n} active`) so the search field keeps room for its placeholder. Opens the filter sheet (§3.5).
    - **Sort button**: square-ish pill (padding 10×9, radius 14, min height 38, `bgGlass`, `borderSubtle`) with `sort` icon 18 `accentPrimary`; accessible name `Sort: {label}`, `aria-haspopup="menu"`, `aria-expanded`. Opens a popup menu (background `bgElevated`, `role="menu"`) listing the 6 sort options as `role="menuitemradio"` items with `aria-checked`; the current one is tinted `accentPrimary`, others `textPrimary`. On open, focus moves to the checked item; ArrowUp/ArrowDown/Home/End move focus; Escape closes it and returns focus to the button; a tap outside closes it. Tooltip "Sort".
-3. **Quick-filter chips row** — horizontal scroll, height 44, padding (12, 4, 12, 0). Five toggle chips (`aria-pressed`, min height 36; pill radius 999, padding 10×6, 13px icon + mono 11/700 label; idle `bgGlass`+`borderSubtle`+`textSecondary`; active: tint@18% fill, tint@70% border, tint-colored icon+label):
+3. **Quick-filter chips row** — horizontal scroll (no scrollbar; the row's right edge fades out over 24px so a cut-off chip reads as "more to scroll", and the row pads its end by the same 24px), height 44, padding (12, 4, 24, 0). Five toggle chips (`aria-pressed`, min height 36; pill radius 999, padding 10×6, 13px icon + mono 11/700 label; idle `bgGlass`+`borderSubtle`+`textSecondary`; active: tint@18% fill, tint@70% border, tint-colored icon+label), in this order — No prerequisites comes second so it is on screen at 375px:
    - `Starred` — icon `star_rounded`, tint `accentWarn` → toggles `starredOnly`
+   - `No prerequisites {n}` — icon `public`, tint `accentSuccess` → toggles `noPrereqOnly`. `{n}` is its contextual count (the list size if it were switched on, given everything else; 21 at rest); accessible name `No prerequisites, {n} jobs`.
    - `To do` — icon `radio_button_unchecked`, tint `accentSecondary` → toggles `todo` in `statuses`
    - `In progress` — icon `pending_outlined`, tint `accentWarn` → toggles `in_progress`
    - `Done` — icon `check_circle_outline`, tint `accentSuccess` → toggles `done`
-   - `No prerequisites {n}` — icon `public`, tint `accentSuccess` → toggles `noPrereqOnly`. `{n}` is its contextual count (the list size if it were switched on, given everything else; 21 at rest); accessible name `No prerequisites, {n} jobs`.
    Statuses are multi-select (OR).
-4. **Active-filter chips row** — horizontal scroll, height 44 (hidden entirely when no removable chips), 6px gaps, horizontal padding 12. One removable chip per active **sheet** criterion (search and quick filters have their own controls), in sheet order (chip pill min height 36: tint@18% fill, tint@70% border, label mono 11/600 in tint + trailing `close` 12px; accessible name `Remove filter: {label}`). Tapping a chip removes that criterion:
+4. **Active-filter chips row** — horizontal scroll with the same right-edge fade, height 44 (hidden entirely when no removable chips), 6px gaps, padding 0 24 0 12. One removable chip per active **sheet** criterion (search and quick filters have their own controls), in sheet order (chip pill min height 36: tint@18% fill, tint@70% border, label mono 11/600 in tint + trailing `close` 12px; accessible name `Remove filter: {label}`). Tapping a chip removes that criterion; when the chip had keyboard focus, focus moves to the chip that takes its place (else the Filters button):
    - per faction: `{faction label}` (faction tint)
    - pickup place: `From: {place}` (accentPrimary) — `Luna · 301` for a whole astro, `{zone name}, {astro label}` for a zone (§3.5)
    - per category: `{category label}` (accentPrimary)
    - per reward: `Reward: {label}` (reward tint)
-   - skill: `Skill: {skill}` (skill tint) or `No skill needed` (accentSecondary)
+   - skill: `Skill: {skill label}` (skill tint) or `No skill needed` (accentSecondary)
    - shire: `Shire: {label}` or `Open to all only` (accentSuccess)
    - `No reputation needed` (accentSecondary)
    - per avoided rival: `Don't anger {faction label}` (faction tint)
-5. **Result list** — padding (12, 4, 12, 32), 8px separators. First row is a summary line (mono 11 `textDim`, 4px horizontal padding): `"{n} job{s} · sorted by {sortLabel}"` e.g. `142 jobs · sorted by Risk ↓`. `{n}` comes from the same predicate as the sheet's `Show N jobs` button (§3.7), so the two always agree. Then one `JobCard` per job (§3.4). Tapping a card opens the detail sheet (§3.6).
+5. **Result list** — padding (12, 4, 12, 32), 8px separators. First row is a summary line (mono 11 `textDim`, 4px horizontal padding): `"{n} job{s} · sorted by {sortLabel}"` e.g. `142 jobs · sorted by Risk ↓`. `{n}` comes from the same predicate as the sheet's `Show N jobs` button (§3.7), so the two always agree. An always-mounted visually hidden `role="status"` region repeats `{n} job{s}` so screen readers hear the result of a quick filter, a chip removal or a search. Then one `JobCard` per job (§3.4). Tapping a card opens the detail sheet (§3.6).
 6. **Empty state** (replaces the list): centered `search_off` icon 48 `accentWarn`; headline `No jobs match these filters.` when anything narrows the list (sheet, quick filters or search), else `No jobs.`; in the former case, caption `Loosen the criteria or reset everything.` + tonal button `Clear all filters & search` — the escape hatch: it clears the sheet sections, the quick filters (Starred, statuses, No prerequisites) **and** the search; only the sort is kept.
 
 **State, persistence and sharing.**
 - The filter lives in an app-lifetime store (not reset on navigation away/back). The search text field is bound to the stored query.
 - **localStorage** (`jobsPersist.ts`): the whole filter except the search is saved under `essi.jobs.filter.v2` on every change (JSON, sets as arrays, plus a `v: 2` marker) and read when the store is created. Every read/write is wrapped in try/catch. Reading is defensive: a payload without `v: 2` (any older format) or unparseable JSON yields the pristine filter; inside a v2 payload each field falls back to its pristine value on its own (non-array sets, non-string members, unknown statuses or sorts, malformed place keys), and unknown fields are ignored.
 - **Shareable URL** (`jobsUrl.ts`): the six sheet sections, the search and the sort are mirrored in the hash route's query string with short names — `f` (factions), `cat`, `p` (place), `r` (rewards), `sk`, `sh`, `norep=1`, `avoid`, `q`, `sort` — e.g. `#/tools/jobs?f=rep_mschf,rep_pearl&cat=beginner&p=ast:355&r=coin&sk=stealth&sh=EastSquire&norep=1&avoid=rep_mrtn&q=text&sort=bonusDesc`. Lists are comma-separated and sorted; values go through `URLSearchParams` (`,` and `:` are left readable); defaults are omitted. Favorites, statuses and No prerequisites never go into the URL (they depend on the viewer's own progress).
-- Sync (`JobsView`), once the data is loaded: when the route carries a query string the view did not write itself (first mount, or a link pasted while the view is open) and it contains at least one jobs parameter, the URL wins for all the shareable fields — the ones it leaves out take their pristine value, so a link reproduces exactly what was shared — while starred/statuses/No prerequisites keep their stored value. Values absent from the data (unknown faction, category, place, skill, shire, rival, sort) are dropped silently; the same clean-up runs on the stored filter. After that, every filter change rewrites the query string with `navigate(…, { replace: true })` — never a new history entry — and the view only re-reads the URL when it changes from outside, so there is no loop.
+- Sync (`JobsView`), once the data is loaded: when the route carries a query string the view did not write itself (first mount, or a link pasted while the view is open) and it contains at least one jobs parameter, the URL wins for all the shareable fields — the ones it leaves out take their pristine value, so a link reproduces exactly what was shared — while starred/statuses/No prerequisites keep their stored value. Values absent from the data (unknown faction, category, place, skill, shire, rival, sort) are dropped silently; the same clean-up runs on the stored filter. After that, every filter change rewrites the query string with `navigate(…, { replace: true })` — never a new history entry. A change to the search alone is written once typing pauses for 300 ms (one history write and one extra list render per pause, not per keystroke; it also keeps long typing under the browsers' ~100-calls-per-10-s history-API limit — a write that still throws is skipped, the URL just lags). The hook (`useJobsUrlSync.ts`) re-reads the URL only after a navigation it did not make itself (first mount, a pasted link, a hand-edited hash: any non-`REPLACE` navigation). Its own `replace` writes are never read back: the router commits them in a transition, so a render can still see the previous URL, and decoding that would undo the latest change.
 
 ### 3.4 Job card (`JobCard`)
 
@@ -353,26 +353,26 @@ GlassCard. Contents top-to-bottom:
 
 ### 3.5 Filter sheet (`JobsFilterSheet`)
 
-Modal bottom sheet (`BottomSheet`, max height 95% of the viewport, container `bgElevated`, top radius 22) titled `Filters`. It fits in about 1.2 screens at 375×812. Structure:
+Modal bottom sheet (`BottomSheet`, max height 95% of the viewport, container `bgElevated`, top radius 22) titled `Filters`. It fits in about 1.3 screens at 375×812. Structure:
 
 - Drag handle (tap or drag down to close).
 - Header row (padding 0×16): `Filters` headline (h2); right-aligned text button `Reset` in `accentDanger` (disabled, `textDim`, when no sheet section is set). Reset clears **only the six sheet sections of the draft** — never the search, the quick filters (Starred, statuses, No prerequisites) or the sort.
 - Scrollable body (padding 8 16 16). Each section has a heading: title uppercased, mono 11/700/ls 1.4 `accentPrimary`, optional hint in caption 11 `textDim` on the same line, 8px below, 14px between sections. Sections in exact order:
 
 1. **FACTION** — hint `Who gives the job`. Chips = the distinct `factionRep` values in the data (15), multi-select (OR).
-2. **PICKUP PLACE** — a native `<select>` (restyled: height 40, radius 12, `bgGlass`, `borderSubtle`, chevron `accentPrimary`, `color-scheme: dark`; the OS picker stays native) whose `<label>` is the section heading. Options: `Any place ({n})`, then one `<optgroup>` per astro labelled with its astro label, containing `All of {astro label} ({n})` followed by its zones `{zone name} ({n})`. Astros and zones are ordered by contextual count, descending (ties: total pickups, then astnum / zone name). Places come from `jobPlaces.ts`, computed once per dataset from the pickup locations:
+2. **PICKUP PLACE** — a native `<select>` (restyled: height 40, radius 12, `bgGlass`, `borderSubtle`, chevron `accentPrimary`, `color-scheme: dark`, text 16px so iOS Safari doesn't zoom on tap; the OS picker stays native) named by the section heading (`<h3>`, `aria-labelledby` on the section and the select). Options: `Any place ({n})`, then one `<optgroup>` per astro labelled with its astro label, containing `All of {astro label} ({n})` followed by its zones `{zone name} ({n})`. Astros and zones are ordered by contextual count, descending (ties: total pickups, then astnum / zone name). Places come from `jobPlaces.ts`, computed once per dataset from the pickup locations:
    - a zone (`astnum`, `zone`) is named by its most frequent non-null pickup name (ties → alphabetical), else `Zone {zone}`; when two zones of one astro end up with the same name, ` · z{zone}` is appended (astro 355 has six "Northshire" zones);
    - an astro label always carries its number: `{name} · {astnum}` when `ASTNUM_LABELS` knows it (only names attested in the data: 100 Mercury, 200 Venus, 301 Luna, 400 Mars, 401 Phobos, 501 Io, 600 Saturn — the table is meant to be extended by the owner), else `Astro {astnum}`.
    Values are place keys: `ast:{astnum}` (any zone of that astro) or `zone:{astnum}:{zone}`; they filter on `pickupLocation`.
 3. **CATEGORY** — six chips in this fixed order (only categories present in the data): `Beginner`, `Skill gain`, `Standard`, `Expansion`, `Event`, `Unknown`, multi-select (OR). Category = the type bucket of §3.2 folded into stable keys: Beginner → `beginner`, Skill gain → `skill-gain`, Regular **and** Other → `standard`, Expansion → `expansion`, Event → `event`, Unknown (`???`) → `unknown`. Shipped counts: 24 / 113 / 188 / 33 / 5 / 8.
 4. **REWARD** — chips = the distinct canonical rewards in the data, labels/tints per taxonomy, multi-select (OR).
-5. **REQUIREMENTS** — two labelled `<select>`s side by side:
-   - `Skill`: `Any ({n})`, `No skill needed ({n})` (requiredSkill null), then each skill present in the data `{skill} ({n})`, ordered by count.
+5. **REQUIREMENTS** — two labelled `<select>`s side by side (stacked below 420px viewport width, where two 16px selects would truncate their counts):
+   - `Skill`: `Any ({n})`, `No skill needed ({n})` (requiredSkill null), then each skill present in the data `{skill label} ({n})`, ordered by count. Skill label = `skillLabel` (§3.2).
    - `Shire`: `Any ({n})`, `Open to all only ({n})` (requiredTag null only), then each shire present `{North Squire…} ({n})`, ordered by count. Help text below (also the select's `aria-describedby`): `Shows jobs open to everyone plus that shire's jobs.` — picking a shire keeps the open-to-all jobs **and** that shire's jobs.
    - then a `No reputation needed {n}` chip (requiredRep = 0).
 6. **DON'T ANGER** — hint `Hide jobs that hurt these factions`. Chips = the distinct `factionRival` values in the data (12); each picked faction **excludes** the jobs whose rival it is. The chip count reads `−{n}`: the jobs that faction hides given everything else.
 
-Chips (multi-select sections): buttons with `aria-pressed`, min height 36, pill radius 999, padding 11×6; unselected `bgGlass` fill + `borderSubtle`, label mono 11/600 `textSecondary`; selected tint@18% fill, tint@80% border, tint label. The count follows the label in mono 10 `textDim`; the accessible name spells it out (`Mischief, 72 jobs`, `Pearl, adds 69 jobs`, `Martian, hides 50 jobs`). Faction, Reward and Don't anger chips are ordered by count desc (ties: label) and show the first 8 plus a dashed `+N more` chip that unfolds the rest (`Show less` folds it back); picked values — and values picked when the sheet opened — always stay visible. Category keeps its fixed order. A section with a single possible value renders normally.
+Chips (multi-select sections): buttons with `aria-pressed`, min height 36, pill radius 999, padding 11×6; unselected `bgGlass` fill + `borderSubtle`, label mono 11/600 `textSecondary`; selected tint@18% fill, tint@80% border, tint label. The count follows the label in mono 10 `textDim`; the accessible name spells it out (`Mischief, 72 jobs`, `Pearl, adds 69 jobs`, `Martian, hides 50 jobs`). Faction, Reward and Don't anger chips are ordered by count desc (ties: label) and show the first 8 plus a dashed `+N more` chip that unfolds the rest and then reads `Show less` (one toggle button with `aria-expanded`, so keyboard focus stays on it); picked values — and values picked when the sheet opened — always stay visible. Category keeps its fixed order. A section with a single possible value renders normally.
 
 **Contextual counts** (`jobsFacets.ts`, recomputed per draft, memoised): every count is computed with the exact list predicate (§3.7), including the search, the quick filters and favorites/statuses, so a count is always what the list will show:
 - multi-select sections (Faction, Category, Reward): the jobs passing every *other* criterion that carry the value. When the section has no pick, that is the list size once the value is picked; when it already has a pick, an unpicked value's count is shown as `+{n}` — the jobs picking it adds.
@@ -384,7 +384,7 @@ Chips (multi-select sections): buttons with `aria-pressed`, min height 36, pill 
 
 The sheet edits a **draft** copy, taken from the current filter each time it opens; nothing applies to the list until `Show {n} jobs`. Any other dismissal (scrim tap, Escape, the drag handle) discards the draft.
 
-`BottomSheet` contract: the optional `footer` prop is rendered outside the scrolling body with padding `12px 16px calc(12px + env(safe-area-inset-bottom))`, `bgElevated` and a 1px `borderSubtle` top border; when a footer is present the body drops its own `20px + safe-area` bottom padding. Sheets without a footer are unchanged.
+`BottomSheet` contract: the optional `footer` prop is rendered outside the scrolling body with padding `12px 16px calc(12px + env(safe-area-inset-bottom))`, `bgElevated` and a 1px `borderSubtle` top border; when a footer is present (not `undefined`, `null` or `false`) the body drops its own `20px + safe-area` bottom padding. Sheets without a footer are unchanged. Every sheet moves focus to its panel when it opens, marks the app root (`#root`) `inert` while open (so Tab stays inside the sheet, which is portalled to `<body>`), and gives focus back to the element that had it when it closes.
 
 ### 3.6 Job detail sheet (`JobDetailSheet`)
 
@@ -436,7 +436,7 @@ Modal bottom sheet 0.78 / 0.4 / 0.95, `bgElevated`, top radius 22, padding (16, 
 ```
 
 **The predicate** — `compileFilter(filter, { starred, statusMap })` returns, per job, the bitmask of failed criteria (0 = listed). It is the only predicate: the list (`visibleJobs`), the summary line, the sheet's `Show N jobs` and every contextual count (§3.5) use it. All criteria are ANDed; values inside a multi-select section are ORed:
-1. Search: the query is trimmed, lowercased and split on whitespace; a leading `#` is dropped from each word. Every word must occur in the job's haystack = `description`, `onComplete`, `id`, `typeRaw`, category label, allied and rival faction labels, reward label, `requiredSkill`, tag label, the pickup and dropoff names, and the astro name of either when `ASTNUM_LABELS` knows it — all lowercased (cached per job). So `#35511202` and `35511202` find job 35511202, `mischief` finds the Mischief jobs, `queens quarry` the jobs going to Queens Quarry.
+1. Search: the query is trimmed, lowercased and split on whitespace; a leading `#` is dropped from each word. Every word must occur in the job's haystack = `description`, `onComplete`, `id`, `typeRaw`, category label, allied and rival faction labels, reward label, `requiredSkill` (key and label), tag label, the pickup and dropoff names, the astro name of either when `ASTNUM_LABELS` knows it, and the name the place picker gives each zone (`PlacesIndex.zoneNames`, passed in the predicate context — a job whose own pickup reads "Docking Bay" is found by "docking port", the name it is listed under) — all lowercased (cached per job and dataset). So `#35511202` and `35511202` find job 35511202, `mischief` finds the Mischief jobs, `queens quarry` the jobs going to Queens Quarry.
 2. `factions` non-empty → `factionRep` non-null and in the set.
 3. `place` set → the pickup location is on that astro (`ast:`) or in that zone (`zone:`); a malformed key matches nothing.
 4. `categories` non-empty → `jobCategory(type)` in the set.
@@ -999,25 +999,25 @@ No share/favorite on this screen. Analyze blurs the input. Haptics: success on a
 | Screen | Loading | Error | Empty |
 |---|---|---|---|
 | Jobs | centered spinner (repo), inner spinner for list | centered "Couldn't load jobs." in accentDanger | §3.3 empty state (filtered vs unfiltered) |
-| Filter sheet | opens only after data loads (counts precomputed) | n/a | footer shows `0 results` |
+| Filter sheet | opens only after data loads (counts recomputed per draft, memoised) | n/a | footer shows `Show 0 jobs` |
 | Fishing rooms/room | spinner | "Couldn't load the fishing data." | `Room not found` for bad roomId; grid can be empty after filters (renders nothing) |
 | Mars Express | spinner | "Couldn't load the schedule." | LIVE card shows `Idle` when no stop matches the minute (never happens with shipped data) |
 | Wallet | spinner | "Couldn't load wallet data." | blank query → overview card; no hits → `No matches` card |
 | Asteroid | spinner (tables) | "Couldn't load the asteroid tables." | n/a (input-driven) |
 
-No pull-to-refresh anywhere in this area; all data is static. No request cancellation (no network). No debounce on any search input.
+No pull-to-refresh anywhere in this area; all data is static. No request cancellation (no network). No debounce on any search input (the jobs search only delays its URL write, §3.3).
 
 ---
 
 ## 9. Open questions / porting notes
 
 1. **Duplicate job id**: `jobs.json` has 371 entries but only 370 unique ids — id `30107301` appears twice. Favorites/status key on the stringified id, so both duplicates share stars/status; React list keys must not assume uniqueness.
-2. **Filter-sheet live count vs list count**: the sheet's footer count ignores the starred/status companion filters, so after Apply the visible list can be smaller than the promised count when quick-filters are active. Reproduced behavior — confirm whether to fix.
-3. **Bonus slider granularity**: 50 divisions over −2740…500 gives non-integer steps (64.8). Labels round to integers. Decide whether to keep divisions or use step=1 on web.
+2. ~~**Filter-sheet live count vs list count**~~ — resolved: one predicate (incl. favorites/statuses) drives the list, the footer and every count (§3.7).
+3. ~~Bonus slider granularity~~ — moot: the sheet has no sliders any more.
 4. **`mapRef` cross-links** (jobs + fishing zones) point at the dynamic-maps area via `underdeck://map/{mapId}?zone={zoneId}` — dormant in shipped data but the "View on map" button must exist; coordinate the URL scheme with the maps-area spec.
 5. **Mars Express web notifications**: no server ⇒ no push; see §5.9 for the recommended tab-open-only design. Decide how much of the slot/budget machinery to keep.
 6. **wallets.json GDPR exposure** on a public static site (§6.5) — needs an owner decision before launch.
 7. **Wallet share card `+N more`** arithmetic only counts hidden owners (likely a bug) — reproduce or fix.
 8. **Fishing `isMapRoom`** is parsed but unused by the UI; retain in the type for parity.
-9. **Job filter state lifetime**: in-memory for the app session (survives route changes, lost on reload). Decide whether to persist to URL params/localStorage on web.
+9. ~~**Job filter state lifetime**~~ — resolved: persisted in localStorage (`essi.jobs.filter.v2`) and mirrored in the URL query string (§3.3).
 10. The jobs "about" sheet references the **in-app Contact form** and **project Discord** — those live in the menu area; link targets needed from that spec.

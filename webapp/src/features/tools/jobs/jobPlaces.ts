@@ -86,6 +86,8 @@ export interface PlacesIndex {
   astros: PlaceAstro[];
   /** Every valid place key → its human label (`Luna · 301`, `Docking Port, Astro 506`). */
   labels: ReadonlyMap<string, string>;
+  /** Zone key → the name the picker shows for it (no ` · z{zone}` suffix) - searchable (jobsLogic). */
+  zoneNames: ReadonlyMap<string, string>;
 }
 
 /** Most frequent name; ties → alphabetical (plain code-point order, stable). */
@@ -122,6 +124,7 @@ export function buildPlaces(jobs: readonly Job[]): PlacesIndex {
 
   const astros: PlaceAstro[] = [];
   const labels = new Map<string, string>();
+  const zoneNames = new Map<string, string>();
   for (const [astnum, astro] of byAstro) {
     const label = astroLabel(astnum);
     const zones: PlaceZone[] = [...astro.zones].map(([zone, z]) => ({
@@ -131,6 +134,7 @@ export function buildPlaces(jobs: readonly Job[]): PlacesIndex {
       name: mostFrequentName(z.names) ?? `Zone ${zone}`,
       total: z.total,
     }));
+    for (const z of zones) zoneNames.set(z.key, z.name);
     // Several zones of one astro can share a name (355: six "Northshire"s) -
     // the zone number tells them apart.
     const seen = new Map<string, number>();
@@ -144,7 +148,7 @@ export function buildPlaces(jobs: readonly Job[]): PlacesIndex {
     for (const z of zones) labels.set(z.key, `${z.name}, ${label}`);
   }
   astros.sort((a, b) => b.total - a.total || a.astnum - b.astnum);
-  return { astros, labels };
+  return { astros, labels, zoneNames };
 }
 
 /** Human label for a place key; falls back to the parsed coordinates. */

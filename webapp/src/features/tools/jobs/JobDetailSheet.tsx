@@ -11,7 +11,7 @@ import { Markdown } from '../shared/markdown';
 import { copyToClipboard, shareOrCopy } from '../shared/share';
 import { IconIosShare } from '../shared/toolIcons';
 import { coordsLabel, locationLabel, type Job } from './jobModel';
-import { factionInfo, rewardInfo, tagLabel } from './jobTaxonomies';
+import { factionInfo, rewardInfo, skillLabel, tagLabel } from './jobTaxonomies';
 import styles from './Jobs.module.css';
 
 const TEXT_SECONDARY = '#8AA4C2';
@@ -32,7 +32,8 @@ function bonusFactText(bonus: number): string {
 
 function skillText(job: Job): string {
   if (job.requiredSkill === null) return '-';
-  return job.requiredSkillAmt > 0 ? `${job.requiredSkill} ≥${job.requiredSkillAmt}` : job.requiredSkill;
+  const skill = skillLabel(job.requiredSkill);
+  return job.requiredSkillAmt > 0 ? `${skill} ≥${job.requiredSkillAmt}` : skill;
 }
 
 function FactRow({ label, value, tint }: { label: string; value: string; tint?: string }) {

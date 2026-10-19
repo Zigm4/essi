@@ -25,6 +25,11 @@
   animation: sheetIn 240ms var(--motion-card-ease);
 }
 
+/* Focus lands on the panel itself when it opens (programmatic, no ring needed). */
+.sheet:focus {
+  outline: none;
+}
+
 .handleRow {
   flex: none;
   display: flex;

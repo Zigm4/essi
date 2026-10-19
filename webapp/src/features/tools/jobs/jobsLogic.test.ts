@@ -25,7 +25,7 @@ import {
   type JobContext,
   type JobFilter,
 } from './jobsLogic';
-import { categoryLabel, jobCategory, JOB_CATEGORIES } from './jobTaxonomies';
+import { categoryLabel, jobCategory, JOB_CATEGORIES, skillLabel } from './jobTaxonomies';
 
 const jobs = parseJobsJson(
   JSON.parse(
@@ -71,8 +71,7 @@ describe('parseJobsJson', () => {
     expect(first.type).toBe('beginner');
     expect(first.reward).toBe('rocks');
     expect(first.isCargoJob).toBe(false);
-    expect(first.hasRival).toBe(false);
-    expect(first.isPlaceholderType).toBe(false);
+    expect(first.isOnSite).toBe(false);
   });
 
   it('canonicalises rewards by function then by raw fixups', () => {
@@ -90,6 +89,13 @@ describe('location labels', () => {
     expect(coordsLabel({ astnum: 355, zone: 35, name: null })).toBe('355 · z35');
     expect(locationLabel({ astnum: 355, zone: 35, name: 'Northshire' })).toBe('Northshire (355 · z35)');
     expect(locationLabel({ astnum: 355, zone: 35, name: null })).toBe('355 · z35');
+  });
+});
+
+describe('skill labels', () => {
+  it('capitalises keys and spells out carryCoin', () => {
+    expect(skillLabel('stealth')).toBe('Stealth');
+    expect(skillLabel('carryCoin')).toBe('Carry coin');
   });
 });
 
@@ -237,6 +243,19 @@ describe('search', () => {
     expect(count({ query: 'beginner' })).toBeGreaterThanOrEqual(24);
     expect(count({ query: 'titanium' })).toBeGreaterThanOrEqual(4);
     expect(count({ query: 'north squire' })).toBeGreaterThanOrEqual(26);
+    expect(count({ query: 'carry coin' })).toBeGreaterThanOrEqual(7);
+  });
+
+  it("matches the name the place picker gives a job's zone (with the dataset's zone names)", () => {
+    const ctx: JobContext = { ...EMPTY_CONTEXT, zoneNames: buildPlaces(jobs).zoneNames };
+    const found = (query: string) =>
+      new Set(visibleJobs(jobs, { ...pristineFilter(), query }, ctx).map((j) => j.id));
+    expect(jobById(50605703).pickupLocation.name).toBe('Docking Bay'); // filed under "Docking Port"
+    expect(found('docking port').has(50605703)).toBe(true);
+    expect(jobById(35511201).pickupLocation.name).toBe('Upshire'); // filed under "Northshire" (z56)
+    expect(found('northshire').has(35511201)).toBe(true);
+    // Without the table only the job's own names match.
+    expect(ids({ query: 'docking port' })).not.toContain(50605703);
   });
 });
 
@@ -328,7 +347,7 @@ describe('activeFilterChips', () => {
       'From: Docking Port, Astro 506',
       'Skill gain',
       'Reward: Map Data',
-      'Skill: stealth',
+      'Skill: Stealth',
       'Shire: North Squire',
       'No reputation needed',
       "Don't anger Martian",

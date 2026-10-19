@@ -81,8 +81,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 24px;
-  min-height: 24px;
+  min-width: 36px;
+  min-height: 36px;
+  margin-right: -6px; /* the larger target keeps the icon where it was */
   padding: 0;
   background: none;
   border: none;
@@ -111,6 +112,13 @@
   background: rgba(79, 195, 255, 0.18);
   border-color: rgba(79, 195, 255, 0.7);
   color: var(--accent-primary);
+}
+
+/* Below ~400px the button shrinks to icon + badge (its aria-label keeps the name), so the search keeps room for its hint. */
+@media (max-width: 400px) {
+  .filtersLabel {
+    display: none;
+  }
 }
 
 .filtersBadge {
@@ -192,6 +200,10 @@
   gap: 6px;
   overflow-x: auto;
   scrollbar-width: none;
+  /* No scrollbar: a fade on the right edge says the row scrolls. The rows pad
+     their right end by the fade width so the last chip stays readable. */
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
 }
 
 .chipScroll::-webkit-scrollbar {
@@ -200,7 +212,7 @@
 
 .quickRow {
   height: 44px;
-  padding: 4px 12px 0;
+  padding: 4px 24px 0 12px;
 }
 
 .quickChip {
@@ -229,7 +241,7 @@
 
 .activeRow {
   height: 44px;
-  padding: 0 12px;
+  padding: 0 24px 0 12px;
 }
 
 .activeChip {
@@ -607,7 +619,7 @@
   color-scheme: dark;
   cursor: pointer;
   font-family: var(--font-sans);
-  font-size: 13px;
+  font-size: 16px; /* below 16px iOS Safari zooms the page when the select is tapped */
   font-weight: 500;
   text-overflow: ellipsis;
 }
@@ -640,6 +652,13 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
+}
+
+/* Side by side, a 16px select is too narrow for "No skill needed (n)" on a phone. */
+@media (max-width: 420px) {
+  .fieldRow {
+    grid-template-columns: 1fr;
+  }
 }
 
 .field {
