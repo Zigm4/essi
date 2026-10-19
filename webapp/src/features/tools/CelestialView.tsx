@@ -32,6 +32,7 @@ import { dMonthYear } from './nasa/ui/format';
 import {
   expectedSeconds,
   isWideWindow,
+  parseYmdInRange,
   searchDiscoveries,
   windowDays,
   ymdLocal,
@@ -43,7 +44,7 @@ import {
   KIND_EMOJI,
   statusEmoji,
   statusExplanation,
-  statusLabel,
+  statusLabelOf,
   trackingPeriodDays,
   type DiscoveredObject,
   type DiscoveryStatus,
@@ -111,11 +112,6 @@ function defaultStart(): Date {
   return d;
 }
 
-function parseYmd(value: string): Date | null {
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-  if (m === null) return null;
-  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
-}
 
 function kindPlural(kind: ObjectKind): string {
   return kind === 'comet' ? 'comets' : 'asteroids';
@@ -151,6 +147,11 @@ function DateChip({
   disabled: boolean;
   onChange: (d: Date) => void;
 }) {
+  const ymd = ymdLocal(value);
+  // What the field shows while typing: a year typed digit by digit passes
+  // through 0002, 0020, 0202… which must not become the search date.
+  const [draft, setDraft] = useState(ymd);
+  useEffect(() => setDraft(ymd), [ymd]);
   return (
     <label className={`${styles.dateChip} ${disabled ? styles.dateChipDisabled : ''}`}>
       <span>{dMonthYear(value)}</span>
@@ -158,7 +159,7 @@ function DateChip({
       <input
         type="date"
         className={styles.dateInputOverlay}
-        value={ymdLocal(value)}
+        value={draft}
         min={min}
         max={max}
         disabled={disabled}
@@ -167,9 +168,12 @@ function DateChip({
           e.currentTarget.showPicker?.();
         }}
         onChange={(e) => {
-          const d = parseYmd(e.target.value);
+          setDraft(e.target.value);
+          const d = parseYmdInRange(e.target.value, min, max);
           if (d !== null) onChange(d);
         }}
+        // An unfinished or out-of-range entry goes back to the last valid date.
+        onBlur={() => setDraft(ymd)}
       />
     </label>
   );
@@ -460,7 +464,7 @@ export function CelestialView() {
           </div>
 
           <div className={styles.windowChip} style={{ marginTop: 8 }}>
-            {ymdLocal(startDate)} → {ymdLocal(endDate)} · {days} {days === 1 ? 'day' : 'days'} (UTC)
+            {ymdLocal(startDate)} → {ymdLocal(endDate)} · {days} {days === 1 ? 'day' : 'days'}
           </div>
 
           <div className={styles.hintRow} style={{ marginTop: 8 }}>
@@ -745,7 +749,7 @@ function DiscoveryDetail({
               <span style={{ fontSize: 28 }}>{statusEmoji(status)}</span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontFamily: 'var(--font-sans)', fontSize: 13, fontWeight: 600, color: statusColor(status) }}>
-                  {statusLabel(status)}
+                  {statusLabelOf(object)}
                 </div>
                 <div className={styles.caption} style={{ marginTop: 4 }}>
                   {statusExplanation(object)}

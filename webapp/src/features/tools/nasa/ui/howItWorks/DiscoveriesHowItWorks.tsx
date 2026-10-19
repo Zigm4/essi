@@ -100,7 +100,7 @@ export function DiscoveriesHowItWorks() {
         <ParamRow
           name="limit"
           value="1000 or 50000"
-          note="1000 is plenty for any 30-day window. 50000 is used as a safety upper bound when fetching the full pre-1900 catalog without a date filter."
+          note="1000 covers a comet window easily, but a busy month of asteroids can exceed it (3041 first observed between 17 Sep and 17 Oct 2026): the results then say they are truncated, narrow the dates. 50000 is the upper bound when fetching the full pre-1900 catalog without a date filter."
         />
       </HiwCard>
 
@@ -202,14 +202,9 @@ export function DiscoveriesHowItWorks() {
           rule="tracking_days < 3, where tracking_days = last_obs − first_obs. The orbit is poorly constrained; future positions are uncertain."
         />
         <StatusRow icon="🟢" title="Within normal parameters" rule="Default. None of the above triggers." />
-        <StatusRow
-          icon="❓"
-          title="Unclassified"
-          rule="Either first_obs or last_obs is missing or unparseable. Status cannot be computed."
-        />
         <P>
           {
-            'This computation is 100 percent local. SBDB does not return a status field; the 4 buckets are an ESSI/bot convention to give a quick visual read.'
+            'This computation is 100 percent local. SBDB does not return a status field; these buckets are an ESSI/bot convention to give a quick visual read. A missing first or last observation date counts as a short tracking window.'
           }
         </P>
       </HiwCard>
@@ -228,7 +223,7 @@ export function DiscoveriesHowItWorks() {
           labelWidth={120}
         />
         <P>
-          {'Cost: bigger response (a few MB instead of a few KB), longer wait. Benefit: no rows quietly missing.'}
+          {'Cost: bigger response (a few MB instead of a few KB), longer wait. Benefit: the old rows the date filter skips are kept. Limit: for asteroids the catalog is far larger than 50 000 rows, so a window that ends after 1900 is cut, and the results say so.'}
         </P>
       </HiwCard>
 

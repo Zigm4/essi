@@ -27,7 +27,7 @@ import {
   IconStopCircle,
 } from './nasa/ui/toolIcons';
 import { TrackerHowItWorks } from './nasa/ui/howItWorks/TrackerHowItWorks';
-import { dMonthYear, dMonthYearHm } from './nasa/ui/format';
+import { dMonthYearHm } from './nasa/ui/format';
 import {
   catalogSuggestions,
   findCatalogMatch,
@@ -715,7 +715,7 @@ function TrackResult({
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className={styles.headline}>{result.displayName}</div>
           <div className={styles.caption} style={{ marginTop: 2 }}>
-            {trackDesignation(result)} · {dMonthYear(result.timestamp)}
+            {trackDesignation(result)} · {dMonthYearHm(result.timestamp)}
           </div>
         </div>
       </div>

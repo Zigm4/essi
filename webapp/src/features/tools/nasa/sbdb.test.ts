@@ -10,6 +10,7 @@ import {
   statusExplanation,
   trackingPeriodDays,
   type DiscoveredObject,
+  statusLabelOf,
 } from './sbdb';
 
 // The exact excerpt from tools-live spec §5.4.
@@ -213,5 +214,26 @@ describe('DiscoveredObject JSON round-trip', () => {
     };
     const restored = discoveredObjectFromJson(discoveredObjectToJson(o));
     expect(restored).toEqual(o);
+  });
+});
+
+describe('statusLabelOf', () => {
+  const base = {
+    designation: '2026 AB',
+    fullName: '2026 AB',
+    firstObs: '2020-01-01',
+    lastObs: '2026-01-01',
+    isHazardous: false,
+    kind: 'asteroid' as const,
+  };
+
+  it('names the real reason for a caution', () => {
+    expect(statusLabelOf({ ...base, diameterMeters: 500 })).toBe('Large body (over 140 m)');
+    expect(statusLabelOf({ ...base, lastObs: '2020-01-02' })).toBe('Short tracking window');
+  });
+
+  it('covers hazardous and normal objects', () => {
+    expect(statusLabelOf({ ...base, isHazardous: true })).toBe('Potentially hazardous');
+    expect(statusLabelOf(base)).toBe('Within normal parameters');
   });
 });

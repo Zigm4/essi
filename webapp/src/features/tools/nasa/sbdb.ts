@@ -184,6 +184,19 @@ export function statusLabel(status: DiscoveryStatus): string {
   }
 }
 
+/**
+ * The status label with its actual reason: `caution` covers both a short
+ * tracking window and a large asteroid, which statusLabel can't tell apart
+ * (it said "Short tracking window" for a 500 m asteroid tracked for years).
+ * Same order as statusExplanation.
+ */
+export function statusLabelOf(o: DiscoveredObject): string {
+  if (o.isHazardous) return 'Potentially hazardous';
+  if ((trackingPeriodDays(o) ?? 0) < 3) return 'Short tracking window';
+  if (o.kind === 'asteroid' && (o.diameterMeters ?? 0) > 140) return 'Large body (over 140 m)';
+  return 'Within normal parameters';
+}
+
 export function statusEmoji(status: DiscoveryStatus): string {
   switch (status) {
     case 'ok':

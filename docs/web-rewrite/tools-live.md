@@ -299,7 +299,7 @@ OUT_UNITS='KM-S'
 START_TIME='YYYY-MM-DD HH:mm'   // now, UTC
 STOP_TIME='YYYY-MM-DD HH:mm'    // now + 1 hour, UTC
 STEP_SIZE='1h'
-QUANTITIES='1'
+VEC_TABLE='1'                   // position only (web, Oct 2026: replaces QUANTITIES='1', which VECTORS ignores; ~half the size)
 ```
 
 Timeouts: 30 s send/receive per call. Response type: plain text. Non-200 → `ScanHttpError(status)`.
@@ -430,7 +430,7 @@ Full-screen dialog. App bar: transparent, leading text-button **"Close"** (pops)
    - **Kind pills** — fully-rounded segmented control (container: `bgGlass`, radius 999, 1px borderSubtle, 3px padding; each option expands, vertical padding 9; selected: fill accentPrimary @ 18%, radius 999, 1px border accentPrimary @ 70%, box-shadow accentPrimary @ 20% blur 12; 180 ms animated transition; label JetBrainsMono 12/700 letter-spacing 1, selected `accentPrimary` else `textSecondary`). Labels: **"Comets"**, **"Asteroids"**. Disabled while searching. Selection haptic.
    - 12px; **Start date row**: label **"Start"** (caption, weight 600, letter-spacing 0.4, fixed width 56) …spacer… date chip (fill accentPrimary @ 10%, radius 14, 1px border accentPrimary @ 55%, padding 12×8; text `d MMM yyyy` in body/600 `accentPrimary` + 6px + `expand_more` icon 16px accentPrimary). 50% opacity + disabled while searching. Opens a date picker.
    - 8px; **End date row**: label **"End"**, same chip.
-   - 8px; **window summary chip**: full-width container, fill accentSecondary @ 8%, radius 8, border 0.7px accentSecondary @ 35%, padding 8×6; text `"{yyyy-MM-dd} → {yyyy-MM-dd} · {N} day(s) (UTC)"` JetBrainsMono 11/500 `accentSecondary` ("1 day" singular).
+   - 8px; **window summary chip**: full-width container, fill accentSecondary @ 8%, radius 8, border 0.7px accentSecondary @ 35%, padding 8×6; text `"{yyyy-MM-dd} → {yyyy-MM-dd} · {N} day(s)"` (web: "(UTC)" dropped; N counts both ends) JetBrainsMono 11/500 `accentSecondary` ("1 day" singular).
    - 8px; **latency hint** row: icon 14px (`timer_outlined` if asteroid or wide window, else `schedule`), tint `accentWarn` if asteroid else `accentPrimary`; then column:
      - `"Estimated time: {lo} to {hi} seconds"` JetBrainsMono 11/500, same tint.
      - 2px; caption:
@@ -470,10 +470,12 @@ interface CelestialState {
   errorMessage: string | null;
   timedOut: boolean;             // true only for the offline/timeout error (drives icon + hint)
 }
-windowDays = floor((endDate - startDate) in days)
-expectedSeconds:  comet & windowDays<11 → 1–4 s;  comet otherwise → 4–20 s;
-                  asteroid & windowDays<11 → 5–30 s;  asteroid & windowDays<31 → 20–60 s;  asteroid else → 30–90 s
-isWideWindow: asteroid → windowDays > 10;  comet → windowDays > 30
+windowDays = calendar days from startDate to endDate, both included (web, Oct 2026; was floor(end - start), which said "0 days" for one day and lost a day over a DST change)
+expectedSeconds:  comet & windowDays<12 → 1–4 s;  comet otherwise → 4–20 s;
+                  asteroid & windowDays<12 → 5–30 s;  asteroid & windowDays<32 → 20–60 s;  asteroid else → 30–90 s
+isWideWindow: asteroid → windowDays > 11;  comet → windowDays > 31
+(thresholds shifted by one with the inclusive count: same bands as before)
+Date fields (web): a typed date only applies once it is a complete date within [1800-01-01, today]; a year being typed digit by digit (0002, 0020…) is ignored instead of becoming 1902, 1920…
 ```
 
 `search()` flow: cancel in-flight; set `isSearching = true`, clear error/timeout/truncated (keep old results visible); call the client; **save to history on success (even for 0 results)**; only the newest request may write state (identity check — a superseded request's error must not clobber the newer search's state); on success set results + truncated, `isSearching = false`, haptic success (or warning haptic if 0 results). On `CelestialCancelledError`: just `isSearching = false`, keep prior results, no error. On other CelestialError: `results = null`, `errorMessage = e.message`, `timedOut = (e is offline)`, warning haptic. Unknown exception → `errorMessage = "Unexpected error."`
@@ -556,7 +558,7 @@ else                                            → ok       (🟢)
 
 (The enum also has `unknown` (❓) — displayed in share cards / labels but the getter above never returns it in current code; missing obs dates yield `days=0 → caution`. Keep behavior identical.)
 
-Status labels (detail sheet + share card): ok **"Within normal parameters"**, caution **"Short tracking window"**, danger **"Potentially hazardous"**, unknown **"Unclassified"**.
+Status labels (detail sheet + share card): ok **"Within normal parameters"**, caution **"Short tracking window"** or **"Large body (over 140 m)"** (web: the actual reason, `statusLabelOf`), danger **"Potentially hazardous"**. (`unknown` / "Unclassified" is never produced: missing dates count as a short tracking window.)
 
 Status explanation (detail sheet, evaluated in THIS order — note it differs from the status order):
 
@@ -714,12 +716,13 @@ MAKE_EPHEM='YES'
 EPHEM_TYPE='VECTORS'
 CENTER='500@10'
 OUT_UNITS='KM-S'
-START_TIME='YYYY-MM-DD'          // the candidate day
-STOP_TIME='YYYY-MM-DD'           // candidate + 1 day
-STEP_SIZE='1d'
+START_TIME='YYYY-MM-DD HH:mm'    // web: now (UTC, to the minute); retries: yesterday / tomorrow 'YYYY-MM-DD'
+STOP_TIME='YYYY-MM-DD HH:mm'     // now + 1 hour; retries: candidate + 1 day
+STEP_SIZE='1h'                   // retries: '1d'
+VEC_TABLE='1'                    // position only
 ```
 
-(Note: no QUANTITIES param here, and format is **json**.) 30 s timeouts. Parse JSON envelope; take the `result` string (the same plain-text ephemeris format as Scan). Empty/missing `result` → try the next candidate. Parse with the shared parser (4.7): a payload without `$$SOE` → `TrackerApiMessageError(preview)` (**not** a retry); zero positions → next candidate.
+(Web, Oct 2026: the first attempt is the position now, not today at 00:00 UTC - that was up to a day old and showed the previous date west of UTC. Format is **json**. A planet or moon skips the MPC resolution and is sent with its Horizons id, e.g. `'502'` for Europa - see `nasa/majorBodies.ts`.) 30 s timeouts. Parse JSON envelope; take the `result` string (the same plain-text ephemeris format as Scan). Empty/missing `result` → try the next candidate. Parse with the shared parser (4.7): a payload without `$$SOE` → `TrackerApiMessageError(preview)` (**not** a retry); zero positions → next candidate.
 
 If a position is found, compute:
 
@@ -865,7 +868,7 @@ ParamRows:
 - `START_TIME` = `'YYYY-MM-DD HH:mm'` — UTC. Light mode uses now.
 - `STOP_TIME` = `'YYYY-MM-DD HH:mm'` — UTC. Light mode uses now + 1h.
 - `STEP_SIZE` = `'1h', '1d', '1m'…` — Sampling interval. Smaller = more rows in the response. Pick big enough that the response stays in the low thousands of lines.
-- `QUANTITIES` = `'1'` — Only ask for the X/Y/Z vector. Cuts response size by about 70 percent.
+- `VEC_TABLE` = `'1'` — Position only (X, Y, Z): no velocity or light-time lines. Roughly halves the response. (Replaces `QUANTITIES='1'`, which has no effect on VECTORS.)
 
 **Sample request** (icon `terminal`) — caption "Mercury, position right now:" then CodeBlock:
 ```
@@ -879,7 +882,7 @@ GET https://ssd.jpl.nasa.gov/api/horizons.api
   &START_TIME='2026-05-04 12:00'
   &STOP_TIME='2026-05-04 13:00'
   &STEP_SIZE='1h'
-  &QUANTITIES='1'
+  &VEC_TABLE='1'
 ```
 
 **Response shape** (icon `description`)
@@ -928,7 +931,8 @@ sector = ((raw + 12) % 12) + 1   // 1…12
 > Step is sized so each broad response stays in the low thousands of lines. A 30-year window stepped at 1 hour would be 260,000 rows.
 
 WindowRows:
-- Mercury / Venus / Earth / Mars — Coarse `60 d, 1h step` · Refine `±12 h, 1m step`
+- Mercury / Venus / Earth — Coarse `60 d, 1h step` · Refine `±12 h, 1m step`
+- Mars — Coarse `90 d, 2h step` · Refine `±12 h, 1m step` (web, Oct 2026: Mars stays up to ~69 days in a sector near aphelion, so 60 days missed the next change; a Full row with no change found now reads "No sector change within N days")
 - Jupiter — `540 d, 12h step` · `±18 h, 5m step`
 - Saturn — `4 y, 1d step` · `±2 d, 30m step`
 - Uranus — `10 y, 2d step` · `±3 d, 1h step`
@@ -962,7 +966,7 @@ curl "https://ssd.jpl.nasa.gov/api/horizons.api\
 &START_TIME=%272026-05-04%2012:00%27\
 &STOP_TIME=%272026-05-04%2013:00%27\
 &STEP_SIZE=%271h%27\
-&QUANTITIES=%271%27"
+&VEC_TABLE=%271%27"
 ```
 > Look for the X = and Y = values between $$SOE and $$EOE, then apply the two formulas in the Math section. That is the entire pipeline.
 
@@ -1054,7 +1058,6 @@ StatusRows:
 - 🟡 **Caution: large asteroid** — kind = asteroid AND diameter > 140 m. Large enough to matter on impact, even if not currently flagged hazardous.
 - 🟡 **Caution: short tracking** — tracking_days < 3, where tracking_days = last_obs − first_obs. The orbit is poorly constrained; future positions are uncertain.
 - 🟢 **Within normal parameters** — Default. None of the above triggers.
-- ❓ **Unclassified** — Either first_obs or last_obs is missing or unparseable. Status cannot be computed.
 
 > This computation is 100 percent local. SBDB does not return a status field; the 4 buckets are an Underdeck/bot convention to give a quick visual read.
 
@@ -1109,7 +1112,7 @@ curl -G "https://ssd-api.jpl.nasa.gov/sbdb_query.api" \
 
 StepRows:
 - **1 · Resolve** — Turn the user's input ('Halley', 'Ceres', '2020 AB1', '433') into a canonical MPC designation. Up to one GET, often zero.
-- **2 · Fetch** — Ask JPL Horizons for the body's heliocentric vector today. Up to three GETs (today → yesterday → tomorrow) until one returns data.
+- **2 · Fetch** — Ask JPL Horizons for the body's heliocentric vector right now, to the minute. Up to three GETs (now → yesterday → tomorrow) until one returns data.
 
 **Endpoints** (icon `link`) — KvRows (120):
 - SBDB single-body — `https://ssd-api.jpl.nasa.gov/sbdb.api`

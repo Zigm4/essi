@@ -24,13 +24,11 @@ const SAMPLE_REQUEST = `GET https://ssd.jpl.nasa.gov/api/horizons.api
   &START_TIME='2026-05-04 12:00'
   &STOP_TIME='2026-05-04 13:00'
   &STEP_SIZE='1h'
-  &QUANTITIES='1'`;
+  &VEC_TABLE='1'`;
 
 export const HORIZONS_EXCERPT = `$$SOE
 2461164.500000000 = A.D. 2026-May-04 00:00:00.0000 TDB
  X =-3.012345678901234E+07 Y = 4.567890123456789E+07 Z = 1.234567890123456E+06
- VX=-5.123456789012345E+01 VY=-2.345678901234567E+01 VZ= 3.456789012345678E+00
- LT= 1.234567890123456E+02 RG= 5.678901234567890E+07 RR= 1.234567890123456E+01
 $$EOE`;
 
 const DISTANCE_MATH = `distance_km    = sqrt(x*x + y*y)
@@ -52,7 +50,7 @@ const CURL = `curl "https://ssd.jpl.nasa.gov/api/horizons.api\\
 &START_TIME=%272026-05-04%2012:00%27\\
 &STOP_TIME=%272026-05-04%2013:00%27\\
 &STEP_SIZE=%271h%27\\
-&QUANTITIES=%271%27"`;
+&VEC_TABLE=%271%27"`;
 
 export function ScanHowItWorks() {
   return (
@@ -110,7 +108,7 @@ export function ScanHowItWorks() {
         <ParamRow
           name="CENTER"
           value="'500@10'"
-          note="Origin of the coordinate system. 500 is the standard geocentric body code; @10 redirects to the Sun's barycenter, giving heliocentric output."
+          note="Origin of the coordinate system: 500@10 is the centre of the Sun (body 10), so the output is heliocentric."
         />
         <ParamRow name="START_TIME" value="'YYYY-MM-DD HH:mm'" note="UTC. Light mode uses now." />
         <ParamRow name="STOP_TIME" value="'YYYY-MM-DD HH:mm'" note="UTC. Light mode uses now + 1h." />
@@ -119,7 +117,11 @@ export function ScanHowItWorks() {
           value="'1h', '1d', '1m'…"
           note="Sampling interval. Smaller = more rows in the response. Pick big enough that the response stays in the low thousands of lines."
         />
-        <ParamRow name="QUANTITIES" value="'1'" note="Only ask for the X/Y/Z vector. Cuts response size by about 70 percent." />
+        <ParamRow
+          name="VEC_TABLE"
+          value="'1'"
+          note="Position only (X, Y, Z): no velocity or light-time lines. Roughly halves the response."
+        />
       </HiwCard>
 
       <HiwCard icon={<IconTerminal size={18} />} title="Sample request">
@@ -150,7 +152,7 @@ export function ScanHowItWorks() {
       <HiwCard icon={<IconSearch size={18} />} title="Parsing">
         <P>
           {
-            "The parser is naive on purpose. Walk the lines: when one contains 'A.D.' grab the date, when the next starts with 'X =' grab the vector, repeat. No regex, no XML, no JSON."
+            "The parser is simple on purpose. Walk the lines: when one contains 'A.D.' read the date, when the next starts with 'X =' read the vector, repeat. Two small regular expressions, no XML, no JSON."
           }
         </P>
         <P>Date format used to decode the timestamp:</P>
@@ -191,7 +193,8 @@ export function ScanHowItWorks() {
             'Step is sized so each broad response stays in the low thousands of lines. A 30-year window stepped at 1 hour would be 260,000 rows.'
           }
         </P>
-        <WindowRow planet="Mercury / Venus / Earth / Mars" broad="60 d, 1h step" refine="±12 h, 1m step" />
+        <WindowRow planet="Mercury / Venus / Earth" broad="60 d, 1h step" refine="±12 h, 1m step" />
+        <WindowRow planet="Mars" broad="90 d, 2h step" refine="±12 h, 1m step" />
         <WindowRow planet="Jupiter" broad="540 d, 12h step" refine="±18 h, 5m step" />
         <WindowRow planet="Saturn" broad="4 y, 1d step" refine="±2 d, 30m step" />
         <WindowRow planet="Uranus" broad="10 y, 2d step" refine="±3 d, 1h step" />

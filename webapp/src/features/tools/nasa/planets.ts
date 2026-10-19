@@ -38,6 +38,14 @@ const DEFAULT_WINDOW: FullWindow = {
   precisionStep: '1m',
 };
 
+/** "90 days", "4 years" - how far ahead Full mode looks for this planet's next sector change. */
+export function searchSpanText(spec: PlanetSpec): string {
+  const days = spec.window.broadDays;
+  if (days < 365) return `${days} days`;
+  const years = Math.round(days / 365);
+  return years === 1 ? '1 year' : `${years} years`;
+}
+
 export const PLANETS: readonly PlanetSpec[] = [
   {
     name: 'Mercury',
@@ -69,7 +77,10 @@ export const PLANETS: readonly PlanetSpec[] = [
     emoji: '♂',
     hasRing: false,
     glyph: { diameter: 14, light: '#E8745A', dark: '#8C2E1A', scan: '#FFB0A0' },
-    window: DEFAULT_WINDOW,
+    // Mars stays up to ~69 days in one sector near aphelion (measured on
+    // Horizons vectors 2026-2029): 60 days missed the next change. 90 days at
+    // a 2 h step is also a smaller response than 60 days at 1 h.
+    window: { broadDays: 90, broadStep: '2h', precisionHalfWindowHours: 12, precisionStep: '1m' },
   },
   {
     name: 'Jupiter',

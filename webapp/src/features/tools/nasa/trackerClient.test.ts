@@ -3,6 +3,7 @@ import type { TrackedObject } from './catalog';
 import { TrackerMpcLookupError } from './errors';
 import {
   buildCommandID,
+  candidateWindows,
   parseHorizonsIndexSearch,
   resolveMPC,
   sbdbChoices,
@@ -218,6 +219,17 @@ describe('sbdbChoices', () => {
     expect(sbdbChoices(HALLEY, 'comet')).toEqual([{ label: '1P/Halley', mpcID: '1P', kind: 'comet' }]);
     expect(sbdbChoices(HALLEY, 'asteroid')).toEqual([
       { label: '2688 Halley (1982 HG1)', mpcID: '2688', kind: 'asteroid' },
+    ]);
+  });
+});
+
+describe('candidateWindows', () => {
+  it('asks for the position now, then yesterday and tomorrow', () => {
+    const now = new Date(Date.UTC(2026, 9, 19, 10, 15, 42));
+    expect(candidateWindows(now)).toEqual([
+      { start: '2026-10-19 10:15', stop: '2026-10-19 11:15', step: '1h' },
+      { start: '2026-10-18', stop: '2026-10-19', step: '1d' },
+      { start: '2026-10-20', stop: '2026-10-21', step: '1d' },
     ]);
   });
 });

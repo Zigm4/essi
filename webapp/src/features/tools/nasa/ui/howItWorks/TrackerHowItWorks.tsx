@@ -70,9 +70,10 @@ const CURL_FETCH = `curl "https://ssd.jpl.nasa.gov/api/horizons.api\\
 &MAKE_EPHEM=%27YES%27\\
 &EPHEM_TYPE=%27VECTORS%27\\
 &CENTER=%27500@10%27\\
-&START_TIME=%272026-05-04%27\\
-&STOP_TIME=%272026-05-05%27\\
-&STEP_SIZE=%271d%27"`;
+&START_TIME=%272026-05-04%2012:00%27\\
+&STOP_TIME=%272026-05-04%2013:00%27\\
+&STEP_SIZE=%271h%27\\
+&VEC_TABLE=%271%27"`;
 
 export function TrackerHowItWorks() {
   return (
@@ -82,12 +83,12 @@ export function TrackerHowItWorks() {
       <HiwCard icon={<IconSearch size={18} />} title="Overview">
         <P>
           {
-            'Tracker takes one celestial body (Ceres, Halley, 2020 AB1, …) and returns its current heliocentric position: an X/Y/Z vector in AU, a sector from 1 to 12, and a distance in SL with three precision flavors (exact, rounded, floored).'
+            'Tracker takes one celestial body (Ceres, Halley, 2020 AB1, or a planet or moon such as Europa, …) and returns its heliocentric position right now: an X/Y/Z vector in AU, a sector from 1 to 12, and a distance in SL with three precision flavors (exact, rounded, floored).'
           }
         </P>
         <P>
           {
-            'Each Track tap fires up to five GET requests across two NASA endpoints. No background work, no caching: every Track is a fresh round-trip.'
+            'Each Track tap fires up to five GET requests across two NASA endpoints. No background work. The proxy may answer a request it saw moments ago from its cache (5 minutes for Horizons, a day for SBDB lookups); otherwise every Track is a fresh round-trip.'
           }
         </P>
       </HiwCard>
@@ -101,12 +102,12 @@ export function TrackerHowItWorks() {
         <StepRow
           number="1"
           title="Resolve"
-          body="Turn the user's input ('Halley', 'Ceres', '2020 AB1', '433') into a canonical MPC designation. Up to one GET, often zero."
+          body="Turn the user's input ('Halley', 'Ceres', '2020 AB1', '433') into a canonical MPC designation. Up to two GETs, often zero. A planet or moon (Europa, Titan, the Moon…) skips this step: it has its own Horizons id."
         />
         <StepRow
           number="2"
           title="Fetch"
-          body="Ask JPL Horizons for the body's heliocentric vector today. Up to three GETs (today → yesterday → tomorrow) until one returns data."
+          body="Ask JPL Horizons for the body's heliocentric vector right now, to the minute. Up to three GETs (now → yesterday → tomorrow) until one returns data."
         />
       </HiwCard>
 
@@ -137,7 +138,7 @@ export function TrackerHowItWorks() {
         <TierRow
           tier="1"
           title="Curated catalog"
-          body="15 well-known bodies (Ceres, Vesta, Halley-class comets, recent ATLAS comets) are bundled in the app. Match by case-insensitive name. Zero network."
+          body="15 well-known bodies (the largest main-belt asteroids such as Ceres and Vesta, and recent bright comets such as C/2023 A3 Tsuchinshan-ATLAS) are bundled in the app. Match by case-insensitive name. Zero network."
         />
         <TierRow
           tier="2"
@@ -147,7 +148,7 @@ export function TrackerHowItWorks() {
         <TierRow
           tier="3"
           title="SBDB sstr lookup"
-          body="GET sbdb.api?sstr=<input>. Returns a single match (object.pdes) or an ambiguous list (list[].pdes, take the first). HTTP errors are silently treated as 'not found' so the next tier kicks in."
+          body="GET sbdb.api?sstr=<input>. Returns a single match (object.des) or an ambiguous list (list[].pdes): ESSI keeps the entries of the chosen kind and asks you to pick when several remain. A 404 means 'not found' and the next tier runs; other HTTP errors stop with a message."
         />
         <TierRow
           tier="4"
@@ -199,15 +200,16 @@ export function TrackerHowItWorks() {
         <ParamRow
           name="CENTER"
           value="'500@10'"
-          note="Heliocentric origin. 500 is geocentric; @10 redirects to the Sun's barycenter."
+          note="Heliocentric origin: 500@10 is the centre of the Sun (body 10)."
         />
         <ParamRow
           name="START_TIME"
-          value="'YYYY-MM-DD'"
-          note="UTC. The retry candidate (today, then yesterday, then tomorrow)."
+          value="'YYYY-MM-DD HH:MM'"
+          note="UTC, the current minute. If Horizons has no position then, yesterday and tomorrow at 00:00 UTC."
         />
-        <ParamRow name="STOP_TIME" value="start + 1 day" note="A 1-day window with a 1-day step yields exactly one row." />
-        <ParamRow name="STEP_SIZE" value="'1d'" note="One sample, no waste." />
+        <ParamRow name="STOP_TIME" value="start + 1 hour" note="With a 1-hour step: the first row is the position now." />
+        <ParamRow name="STEP_SIZE" value="'1h'" note="('1d' for the yesterday / tomorrow retries.)" />
+        <ParamRow name="VEC_TABLE" value="'1'" note="Position only, no velocity or light-time lines." />
       </HiwCard>
 
       <HiwCard icon={<IconWarningAmber size={18} />} title="Three undocumented quirks">
@@ -255,9 +257,9 @@ export function TrackerHowItWorks() {
             'Some bodies (recently observed comets, freshly discovered asteroids) have ephemeris coverage that does not extend to the current UTC day. Rather than fail, Tracker tries the surrounding days.'
           }
         </P>
-        <KvRow label="Attempt 1" value="today (UTC start of day)" labelWidth={120} />
-        <KvRow label="Attempt 2" value="today minus 1 day" labelWidth={120} />
-        <KvRow label="Attempt 3" value="today plus 1 day" labelWidth={120} />
+        <KvRow label="Attempt 1" value="now (UTC, to the minute)" labelWidth={120} />
+        <KvRow label="Attempt 2" value="yesterday, 00:00 UTC" labelWidth={120} />
+        <KvRow label="Attempt 3" value="tomorrow, 00:00 UTC" labelWidth={120} />
         <P>
           {
             "First attempt that returns a parseable position wins. If all three are empty, the result is .noEphemerisData and the user gets 'No ephemeris data available for that object right now'."
@@ -317,7 +319,7 @@ export function TrackerHowItWorks() {
         </P>
         <Lead>Step 1, resolve the pdes:</Lead>
         <CodeBlock text={CURL_RESOLVE} />
-        <Lead>Step 2, fetch the vector for today:</Lead>
+        <Lead>Step 2, fetch the vector for now:</Lead>
         <CodeBlock text={CURL_FETCH} />
         <P>
           {

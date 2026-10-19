@@ -24,13 +24,14 @@ import {
 import { ymdLocal } from './discoveriesClient';
 import { describeMajorBodyInline, majorBodyFromId, trackDesignation, trackSymbol } from './majorBodies';
 import type { PlanetPosition, ScanMode, TrackKind, TrackerResult } from './models';
-import { PLANETS } from './planets';
+import { PLANETS, searchSpanText } from './planets';
 import {
   computeStatus,
   displayNameOf,
   KIND_EMOJI,
   statusEmoji,
   statusExplanation,
+  statusLabelOf,
   trackingPeriodDays,
   type DiscoveredObject,
   type ObjectKind,
@@ -321,10 +322,13 @@ export function scanShare(date: Date, mode: ScanMode, snapshots: readonly Planet
     body: [
       '**Planetary positions**',
       ...snapshots.map((p) => {
+        const spec = PLANETS.find((x) => x.name === p.name);
         const next =
-          p.nextChange === undefined
-            ? ''
-            : ` · next: sector ${p.nextChange.toSector} on ${dMonthYear(p.nextChange.date)}`;
+          p.nextChange !== undefined
+            ? ` · next: sector ${p.nextChange.toSector} on ${dMonthYear(p.nextChange.date)}`
+            : mode === 'full' && spec !== undefined
+              ? ` · no change within ${searchSpanText(spec)}`
+              : '';
         return `- ${p.emoji} **${p.name}** · Sector **${p.sector}** · ${p.distanceSL} SL${next}`;
       }),
     ],
@@ -339,7 +343,9 @@ export function scanShare(date: Date, mode: ScanMode, snapshots: readonly Planet
       kind: 'planet',
       name: p.name,
       glyph: { light: spec.glyph.light, dark: spec.glyph.dark, hasRing: spec.hasRing },
-      line: nextChangeText(p) ?? dMonthYearHm(p.timestamp),
+      line:
+        nextChangeText(p) ??
+        (mode === 'full' ? `No change within ${searchSpanText(spec)}` : dMonthYearHm(p.timestamp)),
       lineColor: p.nextChange === undefined ? '#6E8AAB' : '#FFB347',
       sector: p.sector,
       sl: `${p.distanceSL} SL`,
@@ -502,17 +508,6 @@ function objectFacts(o: DiscoveredObject): [string, string][] {
   return facts;
 }
 
-/**
- * Short status for the card and caption. statusLabel says "Short tracking
- * window" for a large asteroid too; this follows statusExplanation's reasons.
- */
-function shortStatus(o: DiscoveredObject): string {
-  if (o.isHazardous) return 'Potentially hazardous';
-  if ((trackingPeriodDays(o) ?? 0) < 3) return 'Short tracking window';
-  if (o.kind === 'asteroid' && (o.diameterMeters ?? 0) > 140) return 'Large body (over 140 m)';
-  return 'Within normal parameters';
-}
-
 const DISCORD_FACT_LABELS: Record<string, string> = {
   'First obs.': 'First observed',
   'Last obs.': 'Last observed',
@@ -550,7 +545,7 @@ export function discoveryObjectShare(o: DiscoveredObject, q: DiscoveriesQuery): 
     blocks: [
       { kind: 'hero', emoji: KIND_EMOJI[o.kind], title: name, caption: `MPC ${o.designation}` },
       { kind: 'divider' },
-      { kind: 'status', emoji: statusEmoji(status), text: shortStatus(o), color: '#E8F4FF' },
+      { kind: 'status', emoji: statusEmoji(status), text: statusLabelOf(o), color: '#E8F4FF' },
       ...facts.map(([label, value]): CardBlock => ({ kind: 'kv', label, value })),
       { kind: 'space', height: 6 },
       { kind: 'divider' },
@@ -559,7 +554,7 @@ export function discoveryObjectShare(o: DiscoveredObject, q: DiscoveriesQuery): 
   };
   return {
     title: `ESSI discovery report: ${name}`,
-    caption: `🔭 ESSI discovery report · ${words.emoji} ${nameAndDesignation(name, o.designation)}\n${statusEmoji(status)} ${shortStatus(o)}`,
+    caption: `🔭 ESSI discovery report · ${words.emoji} ${nameAndDesignation(name, o.designation)}\n${statusEmoji(status)} ${statusLabelOf(o)}`,
     discordText,
     link,
     card,

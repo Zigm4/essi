@@ -31,7 +31,7 @@ import {
 } from './nasa/ui/toolIcons';
 import { ScanHowItWorks } from './nasa/ui/howItWorks/ScanHowItWorks';
 import { dMonthHm, dMonthYear, dMonthYearHm, dMonthYearHms, hms } from './nasa/ui/format';
-import { PLANETS, type PlanetSpec } from './nasa/planets';
+import { PLANETS, searchSpanText, type PlanetSpec } from './nasa/planets';
 import { fetchFull, fetchLight, INTER_REQUEST_DELAY_MS } from './nasa/scanClient';
 import { ScanCancelledError, ScanError, ScanOfflineError, ScanUnparseableError } from './nasa/errors';
 import type { PlanetPosition, ScanMode } from './nasa/models';
@@ -79,7 +79,11 @@ function abortableSleep(ms: number, signal: AbortSignal): Promise<void> {
   });
 }
 
-function statusLine(status: PlanetRowStatus): { text: string; color: string } {
+function statusLine(
+  status: PlanetRowStatus,
+  planet: PlanetSpec,
+  full: boolean,
+): { text: string; color: string } {
   if (status.kind === 'pending') return { text: 'pending', color: 'var(--text-dim)' };
   if (status.kind === 'errored') return { text: status.error.message, color: 'var(--accent-danger)' };
   const pos = status.position;
@@ -98,6 +102,8 @@ function statusLine(status: PlanetRowStatus): { text: string; color: string } {
           : 'var(--accent-danger)';
     return { text: `→ sector ${pos.nextChange.toSector} on ${dateStr}`, color };
   }
+  // Full mode searched and found nothing: say so, or the row reads like Light mode.
+  if (full) return { text: `No sector change within ${searchSpanText(planet)}`, color: 'var(--text-dim)' };
   return { text: hms(pos.timestamp), color: 'var(--text-dim)' };
 }
 
@@ -105,14 +111,17 @@ function PlanetResultRow({
   planet,
   index,
   status,
+  full,
   staticGlyph = false,
 }: {
   planet: PlanetSpec;
   index: number;
   status: PlanetRowStatus;
+  /** Rows of a Full scan (no next change found ≠ Light). */
+  full: boolean;
   staticGlyph?: boolean;
 }) {
-  const line = statusLine(status);
+  const line = statusLine(status, planet, full);
   return (
     <div className={styles.planetRow} style={{ opacity: status.kind === 'pending' ? 0.55 : 1 }}>
       <PlanetGlyph glyph={planet.glyph} hasRing={planet.hasRing} index={index} staticGlyph={staticGlyph} />
@@ -148,7 +157,7 @@ function PlanetResultRow({
 }
 
 /** A read-only stack of OK planet rows (share/history detail). */
-function SnapshotRows({ snapshots }: { snapshots: PlanetPosition[] }) {
+function SnapshotRows({ snapshots, mode }: { snapshots: PlanetPosition[]; mode: ScanMode }) {
   return (
     <>
       {snapshots.map((snapshot, i) => {
@@ -162,6 +171,7 @@ function SnapshotRows({ snapshots }: { snapshots: PlanetPosition[] }) {
               planet={spec}
               index={index}
               status={{ kind: 'ok', position: snapshot }}
+              full={mode === 'full'}
               staticGlyph
             />
           </div>
@@ -190,6 +200,8 @@ export function SystemScanView() {
   const [isScanning, setIsScanning] = useState(false);
   const [progress, setProgress] = useState(0);
   const [rows, setRows] = useState<PlanetRowStatus[]>(pendingRows);
+  /** The mode of the scan shown in the rows (the Mode control may have changed since). */
+  const [rowsMode, setRowsMode] = useState<ScanMode>('light');
   const [lastScannedAt, setLastScannedAt] = useState<Date | null>(null);
   const [detail, setDetail] = useState<{ date: Date; entry: ScanEntry } | null>(null);
   /** The last completed scan (what Share sends). */
@@ -270,6 +282,7 @@ export function SystemScanView() {
       setSearchParams({}, { replace: true });
     }
     setLastScan(null);
+    setRowsMode(scanMode);
     setRows(pendingRows());
     setProgress(0);
     setIsScanning(true);
@@ -492,12 +505,12 @@ export function SystemScanView() {
           </div>
           <div style={{ marginTop: 12 }}>
             {shared !== null ? (
-              <SnapshotRows snapshots={shared.snapshots} />
+              <SnapshotRows snapshots={shared.snapshots} mode={shared.mode} />
             ) : (
               PLANETS.map((planet, i) => (
                 <div key={planet.name}>
                   {i > 0 && <Divider alpha={0.3} margin="2px 0" />}
-                  <PlanetResultRow planet={planet} index={i} status={rows[i]!} />
+                  <PlanetResultRow planet={planet} index={i} status={rows[i]!} full={rowsMode === 'full'} />
                 </div>
               ))
             )}
@@ -569,7 +582,7 @@ function ScanDetail({
               <GlassCard>
                 <SectionHeader title="Snapshot" icon={<IconPublic size={18} />} />
                 <div style={{ marginTop: 12 }}>
-                  <SnapshotRows snapshots={entry.snapshots} />
+                  <SnapshotRows snapshots={entry.snapshots} mode={entry.mode} />
                 </div>
               </GlassCard>
             </div>

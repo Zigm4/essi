@@ -23,7 +23,7 @@ import { computeTrackerMetrics } from './sectorMath';
 /**
  * Object Tracker pipeline (tools-live spec §6.6): resolve a canonical MPC
  * designation (4 tiers, network only at tier 3), then fetch Horizons vectors
- * for today → yesterday → tomorrow until one returns a position.
+ * for now → yesterday → tomorrow until one returns a position.
  */
 
 export interface TrackTarget {
@@ -262,14 +262,36 @@ function fmtDay(d: Date): string {
 }
 
 const MS_PER_DAY = 86_400_000;
+const MS_PER_HOUR = 3_600_000;
 
-function candidateDays(): Date[] {
-  const now = new Date();
-  const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+function fmtMinute(d: Date): string {
+  return `${fmtDay(d)} ${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())}`;
+}
+
+interface VectorWindow {
+  start: string;
+  stop: string;
+  step: string;
+}
+
+/**
+ * The position right now (to the minute), then yesterday's and tomorrow's at
+ * 00:00 UTC for a body whose ephemeris doesn't cover now. It used to be today
+ * at 00:00 UTC, shown as today - up to a day old, and the previous day west of
+ * UTC.
+ */
+export function candidateWindows(now: Date = new Date()): VectorWindow[] {
+  const minute = new Date(Math.floor(now.getTime() / 60_000) * 60_000);
+  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const day = (t: number): VectorWindow => ({
+    start: fmtDay(new Date(t)),
+    stop: fmtDay(new Date(t + MS_PER_DAY)),
+    step: '1d',
+  });
   return [
-    today,
-    new Date(today.getTime() - MS_PER_DAY),
-    new Date(today.getTime() + MS_PER_DAY),
+    { start: fmtMinute(minute), stop: fmtMinute(new Date(minute.getTime() + MS_PER_HOUR)), step: '1h' },
+    day(today - MS_PER_DAY),
+    day(today + MS_PER_DAY),
   ];
 }
 
@@ -282,14 +304,13 @@ function mapTrackerNetworkError(e: unknown): never {
   throw new TrackerUnparseableError();
 }
 
-/** Returns the first position for a candidate day, or null to try the next day. */
-async function fetchVectorsForDay(
+/** Returns the first position in a candidate window, or null to try the next one. */
+async function fetchVectors(
   base: string,
   commandID: string,
-  day: Date,
+  window: VectorWindow,
   signal: AbortSignal | undefined,
 ): Promise<{ x: number; y: number; z: number; date: Date } | null> {
-  const stop = new Date(day.getTime() + MS_PER_DAY);
   const params: Record<string, string> = {
     format: 'json',
     COMMAND: `'${commandID}'`,
@@ -298,9 +319,11 @@ async function fetchVectorsForDay(
     EPHEM_TYPE: "'VECTORS'",
     CENTER: "'500@10'",
     OUT_UNITS: "'KM-S'",
-    START_TIME: `'${fmtDay(day)}'`,
-    STOP_TIME: `'${fmtDay(stop)}'`,
-    STEP_SIZE: "'1d'",
+    START_TIME: `'${window.start}'`,
+    STOP_TIME: `'${window.stop}'`,
+    STEP_SIZE: `'${window.step}'`,
+    // Position only (no velocity / light-time lines).
+    VEC_TABLE: "'1'",
   };
   let status: number;
   let body: string;
@@ -369,8 +392,8 @@ export async function track(
     commandID = buildCommandID(mpcID, kind);
   }
 
-  for (const day of candidateDays()) {
-    const sample = await fetchVectorsForDay(base, commandID, day, signal);
+  for (const window of candidateWindows()) {
+    const sample = await fetchVectors(base, commandID, window, signal);
     if (sample !== null) {
       const m = computeTrackerMetrics(sample.x, sample.y, sample.z);
       return {

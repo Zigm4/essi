@@ -68,7 +68,8 @@ async function fetchPositions(
     START_TIME: `'${fmtMinute(window.start)}'`,
     STOP_TIME: `'${fmtMinute(window.stop)}'`,
     STEP_SIZE: `'${window.step}'`,
-    QUANTITIES: "'1'",
+    // Position only (no velocity / light-time lines): about half the size.
+    VEC_TABLE: "'1'",
   };
   let status: number;
   let body: string;
