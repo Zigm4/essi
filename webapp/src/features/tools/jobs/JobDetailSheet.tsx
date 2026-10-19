@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from 'react';
+import { useState, type CSSProperties, type ReactNode } from 'react';
 import { GlassCard } from '../../../design-system/components/GlassCard';
 import { NeonButton } from '../../../design-system/components/NeonButton';
 import { withAlpha } from '../../../design-system/color';
@@ -8,11 +8,15 @@ import { BottomSheet } from '../shared/BottomSheet';
 import { FavoriteButton } from '../shared/FavoriteButton';
 import { setJobStatus } from '../shared/jobStatus';
 import { Markdown } from '../shared/markdown';
-import { copyToClipboard, shareOrCopy } from '../shared/share';
+import { copyToClipboard } from '../shared/share';
+import { ShareSheet } from '../shared/ShareSheet';
+import type { ShareContent } from '../shared/shareActions';
 import { IconGppBad, IconIosShare } from '../shared/toolIcons';
-import { coordsLabel, type Job } from './jobModel';
+import { bonusFactText, equipmentText, repText, skillText } from './jobFacts';
+import type { Job } from './jobModel';
+import { jobShare } from './jobShare';
 import { locationDisplayLabel } from './jobPlaces';
-import { factionInfo, rewardInfo, skillLabel, tagLabel } from './jobTaxonomies';
+import { factionInfo, rewardInfo, tagLabel } from './jobTaxonomies';
 import styles from './Jobs.module.css';
 
 const TEXT_SECONDARY = '#8AA4C2';
@@ -24,34 +28,6 @@ const STATUS_SEGMENTS: readonly { value: JobStatusValue; label: string; tint: st
   { value: 'in_progress', label: 'In progress', tint: ACCENT_WARN },
   { value: 'done', label: 'Done', tint: ACCENT_SUCCESS },
 ];
-
-/** `amount unknown` (bonus 0), `+{n}` (positive), `{n}` (negative). */
-function bonusFactText(bonus: number): string {
-  if (bonus === 0) return 'amount unknown';
-  return bonus > 0 ? `+${bonus}` : `${bonus}`;
-}
-
-function skillText(job: Job): string {
-  if (job.requiredSkill === null) return '-';
-  const skill = skillLabel(job.requiredSkill);
-  return job.requiredSkillAmt > 0 ? `${skill} ≥${job.requiredSkillAmt}` : skill;
-}
-
-/** `5 with Rustwind (RTS)` - the reputation applies to the faction giving the job; `-` when none is needed. */
-function repText(job: Job): string {
-  if (job.requiredRep <= 0) return '-';
-  return job.factionRep === null
-    ? String(job.requiredRep)
-    : `${job.requiredRep} with ${factionInfo(job.factionRep).fullLabel}`;
-}
-
-/** `up.tech #874023 · Space Camera required`. */
-function equipmentText(job: Job): string | null {
-  const asset = job.requiredAsset;
-  if (asset === null) return null;
-  const ref = [asset.template, asset.id === null ? null : `#${asset.id}`].filter((p) => p !== null).join(' ');
-  return asset.note === null ? ref : `${ref} · ${asset.note}`;
-}
 
 function FactRow({ label, value, tint, icon }: { label: string; value: string; tint?: string; icon?: ReactNode }) {
   const style: CSSProperties = tint !== undefined ? { color: tint } : {};
@@ -114,19 +90,9 @@ function JobDetailContent({
     void copyToClipboard(String(job.id), `Copied #${job.id}`);
   };
 
-  const onShare = () => {
-    const lines = [
-      `ESSI job #${job.id} - ${job.typeRaw}`,
-      ally !== null ? `Allied: ${ally.fullLabel}` : null,
-      gains !== null ? `Also gains: ${gains.fullLabel}` : null,
-      harmed !== null ? `Loses rep: ${harmed.fullLabel}` : null,
-      `Reward: ${reward.label} · ${bonusFactText(job.bonus)}`,
-      `Risk: ${job.risk}`,
-      `Pickup: ${coordsLabel(job.pickupLocation)}`,
-      `Dropoff: ${coordsLabel(job.dropoffLocation)}`,
-    ].filter((l): l is string => l !== null);
-    void shareOrCopy(`ESSI job #${job.id}`, lines.join('\n'));
-  };
+  const [share, setShare] = useState<ShareContent | null>(null);
+  // Discord message, image or link (jobShare) - the same sheet as the NASA tools.
+  const onShare = () => setShare(jobShare(job));
 
   const onStatus = (next: JobStatusValue) => {
     void setJobStatus(String(job.id), next);
@@ -236,6 +202,8 @@ function JobDetailContent({
           <Markdown text={job.onComplete} />
         </GlassCard>
       )}
+
+      <ShareSheet content={share} onClose={() => setShare(null)} />
 
       {showDataWarn && (
         <div className={styles.dataWarn}>

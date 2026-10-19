@@ -8,6 +8,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
 } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useBack } from '../../core/useBack';
 import { AppBackground } from '../../design-system/components/AppBackground';
 import { BannerAction, TransmissionHeader } from '../../design-system/components/TransmissionHeader';
@@ -27,7 +28,10 @@ import type { JobStatusValue } from '../../data/db';
 import { CenteredError, CenteredSpinner } from './shared/Status';
 import { useFavoriteSet } from './shared/favorites';
 import { useJobStatusMap } from './shared/jobStatus';
-import { IconPending, IconRadioUnchecked, IconSort, IconStarFilled } from './shared/toolIcons';
+import { IconIosShare, IconPending, IconRadioUnchecked, IconSort, IconStarFilled } from './shared/toolIcons';
+import { ShareSheet } from './shared/ShareSheet';
+import type { ShareContent } from './shared/shareActions';
+import { jobIdFromSearch, jobsListShare } from './jobs/jobShare';
 import { JobCard } from './jobs/JobCard';
 import { JobsFilterSheet } from './jobs/JobsFilterSheet';
 import { JobDetailSheet } from './jobs/JobDetailSheet';
@@ -81,6 +85,13 @@ export function JobsView() {
   const [filterOpen, setFilterOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [detailId, setDetailId] = useState<number | null>(null);
+  const [share, setShare] = useState<ShareContent | null>(null);
+
+  // A shared job link (`?job=<id>`) opens that job's sheet once the data is in.
+  // The URL sync then rewrites the query without it, so Back doesn't reopen it.
+  const location = useLocation();
+  const [linkedJobId] = useState(() => jobIdFromSearch(location.search));
+  const linkedOpenedRef = useRef(false);
 
   const options = useMemo(() => (jobs === null ? null : computeFacetOptions(jobs)), [jobs]);
   const ctx = useMemo<JobContext>(
@@ -99,6 +110,16 @@ export function JobsView() {
   const detailJob = detailId === null || jobs === null ? null : jobs.find((j) => j.id === detailId) ?? null;
 
   const statusOf = (id: number): JobStatusValue => statusMap.get(String(id)) ?? 'todo';
+
+  useEffect(() => {
+    if (linkedOpenedRef.current || linkedJobId === null || jobs === null) return;
+    linkedOpenedRef.current = true;
+    if (jobs.some((j) => j.id === linkedJobId)) setDetailId(linkedJobId);
+  }, [jobs, linkedJobId]);
+
+  const shareBoard = () => {
+    setShare(jobsListShare(visible, filter, chips.map((c) => c.label)));
+  };
 
   // Removing the focused active chip unmounts it: keep keyboard focus in the row
   // (the chip that took its place, else the Filters button).
@@ -124,9 +145,16 @@ export function JobsView() {
             <TransmissionHeader
               label="ESSI · Job Allocation Desk"
               actions={
-                <BannerAction label="About this dataset" onTap={() => setAboutOpen(true)}>
-                  <IconInfoOutline size={18} />
-                </BannerAction>
+                <>
+                  {jobs !== null && (
+                    <BannerAction label="Share these jobs" onTap={shareBoard}>
+                      <IconIosShare size={18} />
+                    </BannerAction>
+                  )}
+                  <BannerAction label="About this dataset" onTap={() => setAboutOpen(true)}>
+                    <IconInfoOutline size={18} />
+                  </BannerAction>
+                </>
               }
             />
 
@@ -301,6 +329,7 @@ export function JobsView() {
       />
 
       <AboutDatasetSheet open={aboutOpen} onClose={() => setAboutOpen(false)} />
+      <ShareSheet content={share} onClose={() => setShare(null)} />
     </ScrollOffsetContext.Provider>
   );
 }

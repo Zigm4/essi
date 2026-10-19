@@ -56,8 +56,9 @@ export interface GlobalSearchHit {
 }
 
 /**
- * Where a hit leads. A job opens the Jobs tool searching `#<id>` (its URL `q`
- * is read on arrival), a wallet hit opens Wallet Lookup on its own query.
+ * Where a hit leads. A job opens the Jobs tool searching `#<id>` with that
+ * job's sheet open (`q` and `job` are read on arrival), a wallet hit opens
+ * Wallet Lookup on its own query.
  */
 export function targetLocation(target: GlobalSearchTarget): string {
   switch (target.kind) {
@@ -66,7 +67,8 @@ export function targetLocation(target: GlobalSearchTarget): string {
     case 'wallet':
       return `/tools/wallet?q=${encodeURIComponent(target.query)}`;
     case 'job':
-      return `/tools/jobs?q=${encodeURIComponent(`#${target.jobId}`)}`;
+      // The list filtered to it, and its sheet open even if a Starred / progress filter hides it.
+      return `/tools/jobs?q=${encodeURIComponent(`#${target.jobId}`)}&job=${encodeURIComponent(target.jobId)}`;
   }
 }
 

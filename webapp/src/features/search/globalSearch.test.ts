@@ -96,7 +96,7 @@ describe('targetLocation', () => {
   });
 
   it('a job opens the Jobs tool searching #<id>', () => {
-    expect(targetLocation({ kind: 'job', jobId: '35511202' })).toBe('/tools/jobs?q=%2335511202');
+    expect(targetLocation({ kind: 'job', jobId: '35511202' })).toBe('/tools/jobs?q=%2335511202&job=35511202');
   });
 
   it('a wallet hit opens Wallet Lookup on its query', () => {

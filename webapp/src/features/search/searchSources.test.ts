@@ -43,7 +43,7 @@ describe('jobHits (real jobs.json)', () => {
       expect(hits).toHaveLength(1);
       expect(hits[0]!.title).toBe('Job #35511202 · Professor Q');
       expect(hits[0]!.subtitle).toMatch(/^PRQ BEGINNER STR \[gain STRENGTH\]: Break rocks/);
-      expect(targetLocation(hits[0]!.target)).toBe('/tools/jobs?q=%2335511202');
+      expect(targetLocation(hits[0]!.target)).toBe('/tools/jobs?q=%2335511202&job=35511202');
     }
   });
 

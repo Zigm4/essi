@@ -14,13 +14,8 @@
  */
 
 import type { CardBlock, CardSpec } from '../shared/shareCard';
-import {
-  appLink,
-  discordMaskedLink,
-  DISCORD_MAX,
-  escapeDiscord,
-  type ShareContent,
-} from '../shared/shareActions';
+import { appLink, DISCORD_MAX, escapeDiscord, type ShareContent } from '../shared/shareActions';
+import { transmission } from '../shared/transmission';
 import { ymdLocal } from './discoveriesClient';
 import { describeMajorBodyInline, majorBodyFromId, trackDesignation, trackSymbol } from './majorBodies';
 import type { PlanetPosition, ScanMode, TrackKind, TrackerResult } from './models';
@@ -69,9 +64,7 @@ function round(v: number, digits: number): number {
   return Math.round(v * f) / f;
 }
 
-// --- Discord transmission ----------------------------------------------------
-
-const SIGN_OFF = '-# End of transmission · Scientific Directorate, East Shire Space Industries (ESSI)';
+// --- Discord wording -------------------------------------------------------
 
 const KIND_WORDS: Record<TrackKind, { emoji: string; noun: string; plural: string }> = {
   comet: { emoji: '☄️', noun: 'comet', plural: 'comets' },
@@ -83,39 +76,9 @@ const KIND_WORDS: Record<TrackKind, { emoji: string; noun: string; plural: strin
 const SNAP_KIND: Record<TrackKind, TrackerSnap['k']> = { asteroid: 'a', comet: 'c', moon: 'm', planet: 'p' };
 const KIND_FROM_SNAP: Record<string, TrackKind> = { a: 'asteroid', c: 'comet', m: 'moon', p: 'planet' };
 
-interface Transmission {
-  /** e.g. "📡 ESSI · Priority transmission" (a Discord ### heading). */
-  header: string;
-  /** Small text under the header, e.g. "Astrometry & Deep Space Surveillance Division". */
-  division: string;
-  intro: string;
-  /** The data: a bold title line, then "- " list lines. */
-  body: string[];
-  /** Lines after the data (advice, legend). */
-  after?: string[];
-  linkLabel: string;
-  link: string;
-}
-
 /** "Gatlas (MPC C/2024 G3)", or just the name when it already is the designation. */
 function nameAndDesignation(name: string, designation: string): string {
   return name.toLowerCase().includes(designation.toLowerCase()) ? name : `${name} (MPC ${designation})`;
-}
-
-export function transmission(t: Transmission): string {
-  return [
-    `### ${t.header}`,
-    `-# ${t.division}`,
-    '',
-    t.intro,
-    '',
-    ...t.body,
-    '',
-    ...(t.after ?? []),
-    `🔗 ${discordMaskedLink(t.linkLabel, t.link)}`,
-    '',
-    SIGN_OFF,
-  ].join('\n');
 }
 
 // --- Tracker -----------------------------------------------------------------

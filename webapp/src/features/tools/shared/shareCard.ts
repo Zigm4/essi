@@ -22,6 +22,11 @@ export type CardBlock =
   | { kind: 'kv'; label: string; value: string; valueColor?: string; large?: boolean }
   | { kind: 'status'; emoji: string; text: string; color: string }
   | { kind: 'caption'; text: string; color?: string }
+  /**
+   * Wrapped body text (a job description). `lines` is filled in by
+   * renderCardPng with the real font; until then the height is estimated.
+   */
+  | { kind: 'paragraph'; text: string; maxLines?: number; color?: string; lines?: readonly string[] }
   | { kind: 'listRow'; emoji: string; text: string; trailing: string }
   | {
       kind: 'planet';
@@ -60,11 +65,23 @@ export function blockHeight(block: CardBlock): number {
       return 32;
     case 'caption':
       return 20;
+    case 'paragraph':
+      return PARAGRAPH_PAD + PARAGRAPH_LINE * (block.lines?.length ?? estimateLines(block));
     case 'listRow':
       return 22;
     case 'planet':
       return 46;
   }
+}
+
+const PARAGRAPH_LINE = 17;
+const PARAGRAPH_PAD = 8;
+const PARAGRAPH_MAX_LINES = 6;
+const PARAGRAPH_FONT_SIZE = 13;
+
+/** Rough line count before layout (~52 characters per line at 13 px). */
+function estimateLines(block: { text: string; maxLines?: number }): number {
+  return Math.max(1, Math.min(block.maxLines ?? PARAGRAPH_MAX_LINES, Math.ceil(block.text.length / 52)));
 }
 
 const HEADER_HEIGHT = 34; // title + subtitle
@@ -141,6 +158,45 @@ function fit(ctx: Ctx, text: string, maxWidth: number): string {
   return `${cut.trimEnd()}…`;
 }
 
+/**
+ * Greedy word wrap into at most `maxLines` lines of `maxWidth`; when text is
+ * left over, the last line ends with "…" (nothing is dropped silently).
+ */
+export function wrapLines(
+  ctx: Pick<CanvasRenderingContext2D, 'measureText'>,
+  text: string,
+  maxWidth: number,
+  maxLines: number,
+): string[] {
+  const words = text.split(/\s+/).filter((w) => w.length > 0);
+  const lines: string[] = [];
+  let current = '';
+  let i = 0;
+  for (; i < words.length; i++) {
+    const candidate = current.length === 0 ? words[i]! : `${current} ${words[i]}`;
+    if (ctx.measureText(candidate).width <= maxWidth || current.length === 0) {
+      current = candidate;
+      continue;
+    }
+    lines.push(current);
+    current = words[i]!;
+    if (lines.length === maxLines) break;
+  }
+  if (lines.length < maxLines && current.length > 0) {
+    lines.push(current);
+    current = '';
+    i = words.length;
+  }
+  const leftover = i < words.length;
+  const last = lines.length - 1;
+  if (last >= 0 && (leftover || ctx.measureText(lines[last]!).width > maxWidth)) {
+    let cut = lines[last]!;
+    while (cut.length > 1 && ctx.measureText(`${cut}…`).width > maxWidth) cut = cut.slice(0, -1);
+    lines[last] = `${cut.trimEnd()}…`;
+  }
+  return lines;
+}
+
 function drawPlanet(ctx: Ctx, cx: number, cy: number, glyph: PlanetGlyphSpec): void {
   const r = 11;
   const gradient = ctx.createRadialGradient(cx - r * 0.35, cy - r * 0.35, r * 0.1, cx, cy, r);
@@ -195,10 +251,12 @@ function drawBlock(ctx: Ctx, block: CardBlock, y: number, p: Palette): void {
       setFont(ctx, `13px ${SANS}`);
       ctx.fillStyle = p.text2;
       ctx.fillText(block.label, left, y + (block.large === true ? 23 : 16));
+      // The value takes whatever the label leaves (a place name needs the room).
+      const valueWidth = width - ctx.measureText(block.label).width - 14;
       setFont(ctx, `600 ${block.large === true ? 22 : 13}px ${MONO}`);
       ctx.fillStyle = block.valueColor ?? p.text;
       ctx.textAlign = 'right';
-      ctx.fillText(fit(ctx, block.value, width * 0.62), right, y + (block.large === true ? 25 : 16));
+      ctx.fillText(fit(ctx, block.value, valueWidth), right, y + (block.large === true ? 25 : 16));
       ctx.textAlign = 'left';
       return;
     }
@@ -215,6 +273,14 @@ function drawBlock(ctx: Ctx, block: CardBlock, y: number, p: Palette): void {
       setFont(ctx, `12px ${SANS}`);
       ctx.fillStyle = block.color ?? p.dim;
       ctx.fillText(fit(ctx, block.text, width), left, y + 14);
+      return;
+    }
+    case 'paragraph': {
+      setFont(ctx, `${PARAGRAPH_FONT_SIZE}px ${SANS}`);
+      ctx.fillStyle = block.color ?? p.text;
+      (block.lines ?? [block.text]).forEach((line, i) => {
+        ctx.fillText(line, left, y + 13 + i * PARAGRAPH_LINE);
+      });
       return;
     }
     case 'listRow': {
@@ -262,14 +328,24 @@ function drawBlock(ctx: Ctx, block: CardBlock, y: number, p: Palette): void {
  * Draws the card and returns it as a PNG blob.
  * @throws when the browser has no 2D canvas.
  */
-export async function renderCardPng(spec: CardSpec): Promise<Blob> {
+export async function renderCardPng(input: CardSpec): Promise<Blob> {
   await fontsReady();
-  const height = measureCard(spec);
   const canvas = document.createElement('canvas');
   canvas.width = CARD_WIDTH * CARD_SCALE;
-  canvas.height = height * CARD_SCALE;
   const ctx = canvas.getContext('2d') as Ctx | null;
   if (ctx === null) throw new Error('No 2D canvas');
+  // Wrap paragraphs with the real font first: their line count sets the height.
+  setFont(ctx, `${PARAGRAPH_FONT_SIZE}px ${SANS}`);
+  const spec: CardSpec = {
+    ...input,
+    blocks: input.blocks.map((b) =>
+      b.kind === 'paragraph'
+        ? { ...b, lines: wrapLines(ctx, b.text, CARD_WIDTH - PAD * 2, b.maxLines ?? PARAGRAPH_MAX_LINES) }
+        : b,
+    ),
+  };
+  const height = measureCard(spec);
+  canvas.height = height * CARD_SCALE; // also resets the context state
   ctx.scale(CARD_SCALE, CARD_SCALE);
   const p = palette();
 
