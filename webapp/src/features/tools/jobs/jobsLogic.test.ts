@@ -338,9 +338,14 @@ describe('search', () => {
     const ctx: JobContext = { ...EMPTY_CONTEXT, zoneNames: buildPlaces(jobs).zoneNames };
     const found = (query: string) =>
       new Set(visibleJobs(jobs, { ...pristineFilter(), query }, ctx).map((j) => j.id));
-    expect(jobById(35511201).pickupLocation.name).toBe('Upshire'); // filed under "Northshire" (z56)
-    expect(found('northshire').has(35511201)).toBe(true);
-    expect(ids({ query: 'northshire' })).not.toContain(35511201);
+    const renamed: JobContext = { ...ctx, zoneNames: new Map([...ctx.zoneNames!, ['zone:355:56', 'Ratville Square']]) };
+    const foundRenamed = (query: string) =>
+      new Set(visibleJobs(jobs, { ...pristineFilter(), query }, renamed).map((j) => j.id));
+    expect(foundRenamed('ratville').has(35511201)).toBe(true); // the picker's name for its zone
+    expect(ids({ query: 'ratville' })).not.toContain(35511201);
+    // The shire squares are named by the owner's table, so "Upshire" finds 35511201 and "Northshire" no longer does.
+    expect(found('upshire').has(35511201)).toBe(true);
+    expect(found('northshire').has(35511201)).toBe(false);
   });
 });
 

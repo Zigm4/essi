@@ -39,7 +39,8 @@ describe('astro labels', () => {
     expect(astroLabel(506)).toBe('Jupiter Station · 506');
     expect(astroLabel(355)).toBe('Ratropia · 355');
     expect(astroLabel(174310223)).toBe('Oort Station · 174310223');
-    expect(astroLabel(206)).toBe('Astro 206');
+    expect(astroLabel(206)).toBe('Venus Station · 206');
+    expect(astroLabel(466)).toBe('Astro 466');
   });
 });
 
@@ -78,18 +79,27 @@ describe('buildPlaces', () => {
     expect(tie.astros[0]!.zones[0]!.name).toBe('Alpha');
   });
 
-  it('disambiguates zones of one astro that share a name', () => {
-    expect(zoneOf(355, 35).name).toBe('Northshire · z35');
-    expect(zoneOf(355, 56).name).toBe('Northshire · z56');
+  it('names the six shire squares, which the data files all under "Northshire"', () => {
+    expect(zoneOf(355, 35).name).toBe('Northshire');
+    expect(zoneOf(355, 56).name).toBe('Upshire');
+    expect(zoneOf(355, 67).name).toBe('Westshire');
+    expect(zoneOf(355, 70).name).toBe('Eastshire');
+    expect(zoneOf(355, 78).name).toBe('Downshire');
+    expect(zoneOf(355, 90).name).toBe('Southshire');
     expect(zoneOf(355, 55).name).toBe('Area55 North');
+  });
+
+  it('disambiguates zones of one astro that share a name', () => {
+    const twins = buildPlaces([pickupJob(9, 1, 'Twin'), pickupJob(9, 2, 'Twin')]);
+    expect(twins.astros[0]!.zones.map((z) => z.name).sort()).toEqual(['Twin · z1', 'Twin · z2']);
   });
 
   it('labels place keys for chips', () => {
     expect(placeLabel(places, 'ast:301')).toBe('Luna · 301');
     expect(placeLabel(places, 'zone:506:55')).toBe('Jupiter Station · Docking Port');
-    expect(placeLabel(places, 'zone:206:55')).toBe('Astro 206 · Docking Port');
+    expect(placeLabel(places, 'zone:206:55')).toBe('Venus Station · Docking Port');
     expect(placeLabel(places, 'zone:301:0')).toBe('Luna Space'); // already names the astro
-    expect(placeLabel(places, 'zone:355:35')).toBe('Ratropia · Northshire · z35');
+    expect(placeLabel(places, 'zone:355:35')).toBe('Ratropia · Northshire');
     expect(placeLabel(places, 'zone:1:2')).toBe('Astro 1 · Zone 2');
     expect(placeLabel(null, 'zone:355:68')).toBe('Ratropia · Town Hall');
     expect(placeLabel(null, 'ast:400')).toBe('Mars · 400');

@@ -24,6 +24,7 @@ export const ASTNUM_LABELS: Readonly<Record<number, string>> = {
   106: 'Mercury Station',
   // Venus system (2xx)
   200: 'Venus',
+  206: 'Venus Station', // named by the bot on Discord ("Venus Orbital Research Station")
   // Earth system (3xx)
   300: 'Earth Orbit',
   301: 'Luna',
@@ -82,6 +83,14 @@ export const ZONE_LABELS: Readonly<Record<number, Readonly<Record<number, string
     7: 'Luna Mesa Mart / Moonhowl Mesa (Endymion)',
   },
   355: {
+    // The six shire squares, as the bot names them on Discord. The dev list
+    // comments all of them "Northshire"; their required tags agree with these.
+    35: 'Northshire',
+    56: 'Upshire',
+    67: 'Westshire',
+    70: 'Eastshire',
+    78: 'Downshire',
+    90: 'Southshire',
     54: 'Imperious Falls',
     55: 'Area55 North',
     62: 'Vault of Webs',
@@ -235,7 +244,7 @@ export function buildPlaces(jobs: readonly Job[]): PlacesIndex {
       total: z.total,
     }));
     for (const z of zones) zoneNames.set(z.key, z.name);
-    // Several zones of one astro can share a name (355: six "Northshire"s) -
+    // Several zones of one astro can share a name (when the data names them alike) -
     // the zone number tells them apart.
     const seen = new Map<string, number>();
     for (const z of zones) seen.set(z.name, (seen.get(z.name) ?? 0) + 1);

@@ -199,8 +199,9 @@ const NO_ZONE_NAMES = {};
  * category, the factions (giver + the one that also gains or loses - code and
  * name), reward, skill, shire, equipment, and the pickup / dropoff names (+ the
  * owner's zone and astro names, + the name the place picker gives the zone
- * when `zoneNames` is passed - a job filed under "Northshire" is found by that
- * name even if its own reads "Upshire"). Cached per job.
+ * when `zoneNames` is passed - a job is found by the picker's name for its
+ * zone even if its own name differs, e.g. "Moonclaw Mountains (Lycanox)" vs
+ * "(Moretus)"). Cached per job.
  */
 export function jobHaystack(job: Job, zoneNames?: ReadonlyMap<string, string>): string {
   let cache = haystackCaches.get(zoneNames ?? NO_ZONE_NAMES);
