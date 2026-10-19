@@ -50,10 +50,10 @@ const PAGES: OnboardingPage[] = [
     channel: 'ESSI//PRIVACY',
     icon: <IconShieldMoon size={22} />,
     title: 'Privacy promise',
-    body: 'ESSI has no backend operated by us and ships no telemetry or analytics SDK. Your data stays on your device.\n\nMost outbound network is opt-in (a Discord invite, System Scan, Discoveries, Tracker). Interactive maps are the exception: they download content from GitHub (Pages/Fastly + jsDelivr) at most once a day, on by default - you can switch that off in Settings. You own your data: back it up or move devices with a plain JSON export.',
+    body: 'ESSI has no backend operated by us and ships no telemetry or analytics SDK. Your data stays on your device.\n\nNetwork features are opt-in (a Discord invite, System Scan, Discoveries, Tracker). The interactive maps are built into the app, so they work offline too. You own your data: back it up or move devices with a plain JSON export.',
     bullets: [
       'No backend. No telemetry. No ads.',
-      'Maps fetch from GitHub by default - toggle in Settings › Maps.',
+      'Interactive maps are built in - nothing to download.',
       'Full JSON export & import lives in Settings › Data.',
     ],
   },

@@ -53,6 +53,12 @@ export interface SphereMarker {
   readonly kind: 'medical' | 'rustwind';
   readonly centroid: GeoPoint;
 }
+/** A grid zone with no body of its own (no override, no geometry). */
+export interface SpherePlainCell {
+  readonly zoneId: string;
+  readonly ring: readonly GeoPoint[];
+  readonly centroid: GeoPoint;
+}
 /** One dashed railway segment (between two cell centres) on the globe. */
 export interface SphereEdge {
   readonly zoneId: string;
@@ -112,6 +118,8 @@ export interface SphereRender {
   readonly graticule: readonly (readonly GeoPoint[])[] | null;
   readonly markers: readonly SphereMarker[];
   readonly railEdges: readonly SphereEdge[];
+  /** Bodiless grid cells, painted only when they match an active filter. */
+  readonly plainCells: readonly SpherePlainCell[];
 }
 
 function buildGraticule(grid: MapGrid): GeoPoint[][] {
@@ -182,11 +190,13 @@ export function buildSphereRender(doc: MapDocument): SphereRender {
       graticule: null,
       markers: [],
       railEdges: [],
+      plainCells: [],
     };
   }
 
   // Grid documents.
   const gridZoneIdByCell: (string | null)[] = new Array(grid.cols * grid.rows).fill(null);
+  const plainCells: SpherePlainCell[] = [];
   for (const zone of doc.zones) {
     const pos = zone.gridPos;
     if (pos !== null) {
@@ -198,6 +208,13 @@ export function buildSphereRender(doc: MapDocument): SphereRender {
       geom !== null && (geom.kind === 'sphericalPolygon' || geom.kind === 'sphericalCap');
     const labelWorthy = isLabelWorthyGridZone(zone);
     const hasBody = explicit || (pos !== null && zone.themeOverride !== null);
+    if (!hasBody && pos !== null) {
+      plainCells.push({
+        zoneId: zone.id,
+        ring: gridCellRing(grid, pos.col, pos.row),
+        centroid: cellCenter(grid, pos.col, pos.row),
+      });
+    }
     if (!hasBody && !labelWorthy) continue; // graticule shows its cell
 
     let rings: (readonly GeoPoint[])[] = [];
@@ -238,6 +255,7 @@ export function buildSphereRender(doc: MapDocument): SphereRender {
     graticule: buildGraticule(grid),
     markers,
     railEdges,
+    plainCells,
   };
 }
 
@@ -313,14 +331,14 @@ function css(c: MapColor): string {
   return colorAlpha(c, 1);
 }
 
-/** Project a ring to a Path2D with back-hemisphere limb clamping. */
+/** Project rings to a Path2D (or append to `path`) with back-hemisphere limb clamping. */
 function projectRingsPath(
   rings: readonly (readonly GeoPoint[])[],
   q: Quat,
   R: number,
   C: ScreenPoint,
+  path: Path2D = new Path2D(),
 ): Path2D {
-  const path = new Path2D();
   for (const ring of rings) {
     ring.forEach((g, i) => {
       const v = rotate(q, worldVec(g));
@@ -491,6 +509,20 @@ export function drawGlobe(
     if (isDim) ctx.globalAlpha = 0.3;
     paintPolygonZone(ctx, path, item.theme, strokeW, false);
     if (isDim) ctx.globalAlpha = 1;
+  }
+
+  // 5b. Filter matches with no body (plain grid cells) would stay invisible:
+  //     paint them as base-theme cells, batched into one path.
+  if (hideDimmed) {
+    const matches = new Path2D();
+    let any = false;
+    for (const cell of render.plainCells) {
+      if (dimmed.has(cell.zoneId) || cell.zoneId === selectedId) continue;
+      if (rotate(q, worldVec(cell.centroid)).z < 0) continue; // back-hemisphere cull
+      projectRingsPath([cell.ring], q, R, C, matches);
+      any = true;
+    }
+    if (any) paintPolygonZone(ctx, matches, theme, strokeW, false);
   }
 
   // 6. Selected zone on top (never dimmed).

@@ -9,7 +9,8 @@
 import { db, type MapPackFileRow } from '../../../../data/db';
 import { validateDocument, validateManifest } from './parse';
 import { hashBytes, writeTrustedBlob } from './blobStore';
-import { getSeedImportedVersion, setSeedImportedVersion } from './prefs';
+import { clearAllContent } from './repository';
+import { getSeedImportedVersion, resetSeedImportGuard, setSeedImportedVersion } from './prefs';
 
 export const kMapSeedTag = 'seed';
 
@@ -178,4 +179,15 @@ export async function ensureSeedImported(): Promise<SeedImportResult> {
     // The guard is NOT set on failure, so a retry re-runs the import.
     return { kind: 'failed', error, diskFull: isQuotaExceeded(error) };
   }
+}
+
+/**
+ * Settings › Interactive maps › Reset: drop the stored maps and import the
+ * built-in set again. Zone notes (`mapPins`) and favorites are other tables
+ * and are kept. Throws only if clearing fails; the import itself never throws.
+ */
+export async function resetToBuiltInMaps(): Promise<SeedImportResult> {
+  await clearAllContent();
+  resetSeedImportGuard();
+  return ensureSeedImported();
 }

@@ -9,8 +9,8 @@ const PRIVACY_BULLETS = [
   'Free forever. No ads, no IAP.',
   'No telemetry. No analytics SDK.',
   'No backend operated by us. Data stays on your device.',
-  'Most outbound network is opt-in (Discord invite, System Scan, Discoveries, Tracker).',
-  'Interactive maps download from GitHub (Pages/Fastly + jsDelivr), at most once a day. On by default - turn it off in Settings › Interactive maps.',
+  'Network features are opt-in (Discord invite, System Scan, Discoveries, Tracker).',
+  'Interactive maps are built into the app and work offline. Nothing is downloaded for them.',
 ];
 
 const OFL_FONTS = [

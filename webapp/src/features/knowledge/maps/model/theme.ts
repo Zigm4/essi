@@ -65,7 +65,6 @@ export const THEME_DEFAULTS: MapTheme = {
 const DEFAULT_STROKE = hex('#4FC3FF');
 const DEFAULT_SELECTED = hex('#7AE3FF');
 const WHITE = hex('#E8F4FF');
-const NEAR_BLACK = hex('#03060B');
 const PURE_WHITE = hex('#FFFFFF');
 const PURE_BLACK = hex('#000000');
 
@@ -116,9 +115,40 @@ export function deltaL(a: MapColor, b: MapColor): number {
 // --- Tuning constants (§7.4) ------------------------------------------------
 
 const MAX_SURFACE_LUMINANCE = 0.22;
-const LABEL_MIN_CONTRAST = 4.5;
+export const LABEL_MIN_CONTRAST = 4.5;
 const STROKE_MIN_CONTRAST = 3.0;
 const MIN_SELECTION_DELTA_L = 0.06;
+
+/** Opacity of the background scrim painted under every label (paintOps). */
+export const LABEL_SCRIM_ALPHA = 0.72;
+
+/** `fg` at `alpha` over an opaque `bg`, blended in sRGB like the canvas. */
+export function compositeOver(fg: MapColor, alpha: number, bg: MapColor): MapColor {
+  return {
+    r: Math.round(fg.r * alpha + bg.r * (1 - alpha)),
+    g: Math.round(fg.g * alpha + bg.g * (1 - alpha)),
+    b: Math.round(fg.b * alpha + bg.b * (1 - alpha)),
+    a: 1,
+  };
+}
+
+/**
+ * The lightest colour the label scrim can take: the scrim over a white
+ * backdrop (bright fills, the flat map image). Labels are light, so this is
+ * their worst case.
+ */
+export function lightestLabelScrim(background: MapColor): MapColor {
+  return compositeOver(background, LABEL_SCRIM_ALPHA, PURE_WHITE);
+}
+
+/** A label is legible when it is lighter than any scrim and clears 4.5:1. */
+function labelLegible(label: MapColor, background: MapColor): boolean {
+  const scrim = lightestLabelScrim(background);
+  return (
+    relLuminance(label) > relLuminance(scrim) &&
+    contrastRatio(label, scrim) >= LABEL_MIN_CONTRAST
+  );
+}
 
 function pushLuminance(fill: MapColor, minDelta: number): MapColor {
   const target = relLuminance(fill) < 0.5 ? PURE_WHITE : PURE_BLACK;
@@ -131,11 +161,13 @@ function pushLuminance(fill: MapColor, minDelta: number): MapColor {
 
 /** Idempotent theme sanitizer (§7.4). */
 export function sanitizeTheme(theme: MapTheme): MapTheme {
-  // 1. Dark-guard.
-  const background =
+  // 1. Dark-guard. The background also tints the label scrim, so it must stay
+  //    dark enough for a white label to clear 4.5:1 on it.
+  let background =
     relLuminance(theme.background) > MAX_SURFACE_LUMINANCE
       ? THEME_DEFAULTS.background
       : theme.background;
+  if (!labelLegible(PURE_WHITE, background)) background = THEME_DEFAULTS.background;
   const surface =
     relLuminance(theme.surface) > MAX_SURFACE_LUMINANCE ? THEME_DEFAULTS.surface : theme.surface;
 
@@ -157,13 +189,13 @@ export function sanitizeTheme(theme: MapTheme): MapTheme {
     }
   }
 
-  // 5. Label contrast against all of [surface, zoneFill, selectedFill].
-  const surfaces = [surface, theme.zoneFill, zoneSelectedFill];
-  const worst = (label: MapColor): number =>
-    Math.min(...surfaces.map((s) => contrastRatio(label, s)));
+  // 5. Label contrast. Labels are always painted on the background scrim, never
+  //    straight on a fill, so they are checked against the scrim at its
+  //    lightest. A light fill must not flip them to near-black (it vanishes
+  //    on the dark scrim).
   let label = theme.label;
-  if (worst(label) < LABEL_MIN_CONTRAST) {
-    label = worst(WHITE) >= worst(NEAR_BLACK) ? WHITE : NEAR_BLACK;
+  if (!labelLegible(label, background)) {
+    label = labelLegible(WHITE, background) ? WHITE : PURE_WHITE;
   }
 
   return {

@@ -3,6 +3,9 @@
  * (maps spec §10). All render-time reads come from the local blob store;
  * never the network. `checkForUpdate` never throws (failures → CheckFailed).
  *
+ * The web app ships its maps built in (seedImporter): `checkForUpdate` and
+ * `install` are currently unused - nothing in the app calls the network here.
+ *
  * Web note: there is no separate SQLite FTS5 table - the zone search index is
  * rebuilt in-memory from the installed docs at load (see data/search.ts), so
  * install/clear only manage `mapPacks` + `mapPackFiles` + the blob store.
@@ -119,7 +122,7 @@ export async function mapAssetSha(mapId: string, kind: string): Promise<string |
   return assetShaForKind(descriptor, kind);
 }
 
-// --- Update check (§10.1) ---------------------------------------------------
+// --- Update check (§10.1) - currently unused (maps are built in) -----------
 
 export async function checkForUpdate(args: {
   networkEnabled: boolean;
@@ -167,7 +170,7 @@ export async function checkForUpdate(args: {
   }
 }
 
-// --- Install (§10.2) --------------------------------------------------------
+// --- Install (§10.2) - currently unused (maps are built in) ----------------
 
 async function ensureBlobBytes(
   ref: { path: string; sha256: string; bytes: number },
@@ -255,7 +258,7 @@ export async function install(
   await gcBlobs(keep);
 }
 
-// --- Clear (§10.4) ----------------------------------------------------------
+// --- Clear (§10.4) - used by Settings › Reset (resetToBuiltInMaps) ----------
 
 export async function clearAllContent(): Promise<void> {
   await db.transaction('rw', db.mapPackFiles, db.mapPacks, async () => {

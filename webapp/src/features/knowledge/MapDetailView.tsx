@@ -386,7 +386,7 @@ function computeView(state: DetailState, gridMode: boolean): ViewKind {
         icon: 'map',
         title: 'Map not found',
         message:
-          'This map is no longer available. It may have been removed in a content update. Go back to the gallery to see current maps.',
+          'This map is no longer available. It may have been removed in an app update. Go back to the gallery to see current maps.',
       };
     case 'draft':
       return {
@@ -394,7 +394,7 @@ function computeView(state: DetailState, gridMode: boolean): ViewKind {
         icon: 'draft',
         title: 'Draft map',
         message:
-          'This map is still a draft and is not available to open yet. It will unlock in a future content update.',
+          'This map is still a draft and is not available to open yet. It will unlock in a future version of ESSI.',
       };
     case 'ready': {
       const doc = state.doc;

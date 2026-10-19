@@ -63,7 +63,7 @@ export function ZoneSheet({ mapId, doc, zone, theme, onClose }: ZoneSheetProps) 
         onClick={() => guard(onClose)}
       />
       <section className={styles.sheet} style={surfaceStyle} role="dialog" aria-label={zone.name}>
-        <span className={styles.handle} style={{ background: colorAlpha(theme.label, 0.25) }} />
+        <span className={styles.handle} />
         <div className={styles.header}>
           {zone.cellNum !== null && (
             <span
@@ -92,10 +92,9 @@ export function ZoneSheet({ mapId, doc, zone, theme, onClose }: ZoneSheetProps) 
           </button>
           <button
             type="button"
-            className={styles.iconBtn}
+            className={`${styles.iconBtn} ${styles.closeBtn}`}
             title="Close"
             aria-label="Close"
-            style={{ color: colorAlpha(theme.label, 0.7) }}
             onClick={() => guard(onClose)}
           >
             <IconClose size={22} />

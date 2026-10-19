@@ -147,13 +147,30 @@ function drawName(ctx: CanvasRenderingContext2D, cell: GridCell): void {
   clipped.forEach((l, i) => ctx.fillText(l, cx, startY + i * lineH));
 }
 
-/** Table layer: fills, grid lines, cell numbers and (LOD-gated) names. */
+/**
+ * Table layer: fills, selection, grid lines, cell numbers and (LOD-gated)
+ * names. With a filter active (`filterActive`), the matching cells get a tile
+ * even when uncharted, so a match never stays a bare lattice cell. The
+ * selection is painted under the texts so the selected name stays legible.
+ */
 export function drawGridTable(
   ctx: CanvasRenderingContext2D,
   render: GridRender,
-  opts: { scale: number; dimmed: ReadonlySet<string> },
+  opts: {
+    scale: number;
+    dimmed: ReadonlySet<string>;
+    filterActive?: boolean;
+    selectedId?: string | null;
+  },
 ): void {
   ctx.clearRect(0, 0, render.canvasWidth, render.canvasHeight);
+  const filterActive = opts.filterActive ?? false;
+  const selectedId = opts.selectedId ?? null;
+  const tiled = (cell: GridCell): boolean =>
+    cell.explored || (filterActive && !opts.dimmed.has(cell.zoneId));
+  // The selected cell is never faded.
+  const dimmed = (cell: GridCell): boolean =>
+    opts.dimmed.has(cell.zoneId) && cell.zoneId !== selectedId;
 
   // Faint base grid so empty (uncharted) cells still read as a lattice.
   const baseGrid = new Path2D();
@@ -177,7 +194,7 @@ export function drawGridTable(
   const INSET = 2;
   const RADIUS = 4;
   for (const cell of render.cells) {
-    if (!cell.explored) continue; // uncharted cells stay as bare lattice
+    if (!tiled(cell)) continue; // uncharted cells stay as bare lattice
     const dim = opts.dimmed.has(cell.zoneId);
     const alpha = dim ? 0.62 * DIM_ALPHA : 0.62;
     const x = cell.rect.x + INSET;
@@ -205,6 +222,11 @@ export function drawGridTable(
     ctx.stroke();
   }
 
+  const selected = render.cells.find((c) => c.zoneId === selectedId);
+  if (selected !== undefined) {
+    paintPolygonZone(ctx, rectPath(selected.rect), selected.theme, 2.5, true);
+  }
+
   drawRailway(ctx, render, opts.dimmed);
 
   // Texts. Dimmed cells drawn through one shared 30% layer.
@@ -214,19 +236,26 @@ export function drawGridTable(
       ctx.font = `600 ${NUM_FONT_SIZE}px "${cell.theme.fontFamily}", sans-serif`;
       ctx.textAlign = 'left';
       ctx.textBaseline = 'top';
-      ctx.fillStyle = colorAlpha(cell.theme.label, 0.55);
+      // On a tile (or the selection) the number sits on the label scrim like
+      // the names: the fill can be as light as the label (Io). Bare cells are
+      // already dark.
+      if (tiled(cell) || cell === selected) {
+        const w = ctx.measureText(cell.cellNum).width;
+        paintLabelScrim(ctx, cell.theme, cell.rect.x + 2, cell.rect.y + 2, w + 4, NUM_FONT_SIZE + 2, 3);
+      }
+      ctx.fillStyle = colorAlpha(cell.theme.label, 1);
       ctx.fillText(cell.cellNum, cell.rect.x + 4, cell.rect.y + 3);
     }
     if (showNames) drawName(ctx, cell);
   };
   for (const cell of render.cells) {
-    if (!opts.dimmed.has(cell.zoneId)) drawCellText(cell);
+    if (!dimmed(cell)) drawCellText(cell);
   }
-  const anyDim = render.cells.some((c) => opts.dimmed.has(c.zoneId));
+  const anyDim = render.cells.some(dimmed);
   if (anyDim) {
     ctx.globalAlpha = DIM_ALPHA;
     for (const cell of render.cells) {
-      if (opts.dimmed.has(cell.zoneId)) drawCellText(cell);
+      if (dimmed(cell)) drawCellText(cell);
     }
     ctx.globalAlpha = 1;
   }

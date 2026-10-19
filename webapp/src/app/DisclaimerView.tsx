@@ -57,11 +57,9 @@ export function DisclaimerView() {
       <GlassCard>
         <SectionHeader title="Map content & updates" icon={<IconPublic size={18} />} />
         <div className={styles.body}>
-          Interactive maps are downloaded from GitHub - GitHub Pages (fronted by Fastly) for the
-          version pointer and jsDelivr (with raw.githubusercontent.com as a fallback) for the
-          files - at most once a day, and verified by SHA-256 before use. A built-in sample map
-          ships with the app so maps work offline. Downloads are on by default and can be turned
-          off, or cleared, in Settings › Interactive maps.
+          Interactive maps are built into the app and work offline. ESSI does not download map
+          content: new or updated maps arrive with app updates. If a map stops opening, Settings ›
+          Interactive maps › Reset sets them up again.
         </div>
       </GlassCard>
 

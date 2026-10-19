@@ -5,7 +5,7 @@
  * strokes still render (just un-blurred).
  */
 
-import { colorAlpha, type MapTheme } from '../model/theme';
+import { colorAlpha, LABEL_SCRIM_ALPHA, type MapTheme } from '../model/theme';
 
 export interface Pt {
   readonly x: number;
@@ -90,7 +90,7 @@ export function paintMarkerZone(
   ctx.fill();
 }
 
-/** The engine-guaranteed legibility scrim (theme.background @ 0.72). */
+/** The engine-guaranteed legibility scrim (theme.background @ LABEL_SCRIM_ALPHA). */
 export function paintLabelScrim(
   ctx: CanvasRenderingContext2D,
   theme: MapTheme,
@@ -103,6 +103,6 @@ export function paintLabelScrim(
   ctx.beginPath();
   const r = Math.min(radius, w / 2, h / 2);
   ctx.roundRect(x, y, w, h, r);
-  ctx.fillStyle = colorAlpha(theme.background, 0.72);
+  ctx.fillStyle = colorAlpha(theme.background, LABEL_SCRIM_ALPHA);
   ctx.fill();
 }

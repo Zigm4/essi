@@ -47,6 +47,8 @@
   border-radius: 2px;
   margin: 10px 0 12px;
   flex: none;
+  /* App tokens, not the map label: the sheet is always --bg-card. */
+  background: var(--text-dim);
 }
 
 .header {
@@ -97,6 +99,10 @@
   border: none;
   padding: 0;
   cursor: pointer;
+}
+
+.closeBtn {
+  color: var(--text-secondary);
 }
 
 .body {

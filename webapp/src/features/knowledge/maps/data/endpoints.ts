@@ -1,4 +1,5 @@
 /** Content-delivery endpoints (maps spec §4.1). All hosts send CORS `*`. */
+// Currently unused: the maps are built into the app (see seedImporter.ts).
 
 export const kMapsContentRepo = 'underpunks55/underdeck-content';
 export const kMapsContentBase = 'https://underpunks55.github.io/underdeck-content';

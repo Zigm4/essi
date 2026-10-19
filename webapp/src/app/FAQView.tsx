@@ -43,7 +43,7 @@ const SECTIONS: { key: string; entries: FaqEntry[] }[] = [
     entries: [
       {
         q: 'Does the app need internet?',
-        a: 'Not for normal use. Notes, links, ships, the knowledge base, the Job Allocation Desk, the Asteroid Analyzer, the Bounty Decoder, the Fishing Map, the Mars Express schedule and the Wallet Lookup all work fully offline (see "How do I use ESSI offline?"). Three tools are opt-in and do talk to a network: System Scan, Discoveries, and Tracker. They call NASA APIs (JPL Horizons and SBDB) through a small proxy (see "How do the NASA tools reach JPL?"). Nothing happens unless you tap their action button. Interactive maps are the one feature that reaches out on its own: they download map content from GitHub (see the next question). Tapping the Discord invite link in the Menu also opens the network, but only at the moment you tap it.',
+        a: 'Not for normal use. Notes, links, ships, the knowledge base and its interactive maps, the Job Allocation Desk, the Asteroid Analyzer, the Bounty Decoder, the Fishing Map, the Mars Express schedule and the Wallet Lookup all work fully offline (see "How do I use ESSI offline?"). Three tools are opt-in and do talk to a network: System Scan, Discoveries, and Tracker. They call NASA APIs (JPL Horizons and SBDB) through a small proxy (see "How do the NASA tools reach JPL?"). Nothing happens unless you tap their action button. Tapping the Discord invite link in the Menu also opens the network, but only at the moment you tap it.',
       },
       {
         q: 'How do I use ESSI offline?',
@@ -55,7 +55,7 @@ const SECTIONS: { key: string; entries: FaqEntry[] }[] = [
       },
       {
         q: 'Where do interactive maps come from?',
-        a: 'Map content (the map list, each map, and its images) is hosted on GitHub and delivered over a multi-CDN path: GitHub Pages (fronted by Fastly) for the small "which version is current" pointer, and jsDelivr - with raw.githubusercontent.com as a fallback - for the actual files. Downloads are on by default and happen at most once every 24 hours; every file is checked against a SHA-256 hash before it is stored. Nothing about you is sent - these are plain GET requests, so your IP address is visible to those CDNs, and that is all. A built-in sample map ships inside the app so maps work offline on first launch. You can turn downloads off entirely in Settings › Interactive maps, and clear anything already downloaded there too.',
+        a: "They are built into ESSI. The first time you open Knowledge, the maps that ship with the app are set up in your browser's local storage, and from then on they work offline. ESSI never downloads maps on its own: new or updated maps arrive with a new version of the app. If a map stops opening, Settings › Interactive maps › Reset sets the built-in maps up again; your zone notes are kept.",
       },
       {
         q: 'What does System Scan send to NASA?',

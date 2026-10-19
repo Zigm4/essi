@@ -1,4 +1,6 @@
 /**
+ * Currently unused: the maps are built into the app (see seedImporter.ts).
+ *
  * Byte-capped streaming fetcher with ETag/If-None-Match, bounded retry and
  * jsDelivr→raw fallback (maps spec §4.2). `fetch` + `ReadableStream` reader,
  * aborting past the cap via `AbortController`. GitHub Pages/raw/jsDelivr all

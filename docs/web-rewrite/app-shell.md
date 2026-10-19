@@ -474,15 +474,17 @@ Bullets:
 > Underdeck has no backend operated by us and ships no telemetry or analytics SDK. Your data
 > stays on your device.
 >
-> Most outbound network is opt-in (a Discord invite, System Scan, Discoveries, Tracker).
-> Interactive maps are the exception: they download content from GitHub (Pages/Fastly +
-> jsDelivr) at most once a day, on by default — you can switch that off in Settings. You own
-> your data: back it up or move devices with a plain JSON export.
+> Network features are opt-in (a Discord invite, System Scan, Discoveries, Tracker). The
+> interactive maps are built into the app, so they work offline too. You own your data: back
+> it up or move devices with a plain JSON export.
 
 Bullets:
 - No backend. No telemetry. No ads.
-- Maps fetch from GitHub by default — toggle in Settings › Maps.
+- Interactive maps are built in — nothing to download.
 - Full JSON export & import lives in Settings › Data.
+
+(Web: the maps are built in only — owner decision; the original "maps download from GitHub"
+copy was removed everywhere.)
 
 ---
 
@@ -567,30 +569,29 @@ the whole row to 45% opacity and is inert.
 
 ### 8.4 Card "INTERACTIVE MAPS" (icon `map`)
 
-- Toggle **"Download interactive maps"** — subtitle "Fetch new and updated maps from GitHub
-  (Pages/Fastly + jsDelivr), at most once a day. Off keeps only what is already on your
-  device." Bound to `mapsNetworkEnabled` (**default ON** — owner's decision; this is the
-  user's off-switch).
-- Toggle **"Auto-update maps"** — subtitle "Automatically check for newer map content in the
-  background. Turn off to update only when you choose." Bound to `mapsAutoUpdate`
-  (default ON). **Disabled (dimmed 45%) while "Download interactive maps" is off.**
-- Info line **"Installed version: <value>"** — value in JetBrainsMono, `#7AE3FF`; shows
-  `none` when no version is installed. (6px gap below.)
-- Management row **"Downloaded maps: <size>"** (same label/value styling; value shows `…`
-  while the async size computes) with a trailing **"Clear"** button: rounded-8 outline
-  button, 1px border `accentDanger @ 50%`, padding 12 h / 8 v, label `body` colored
-  `accentDanger`; accessibility label "Clear downloaded maps".
+Web: the maps are built into the app (owner decision) — there are **no download or
+auto-update toggles** (the `mapsNetworkEnabled` / `mapsAutoUpdate` store keys are kept but
+nothing reads them).
+
+- Caption: **"The maps are built into ESSI and work offline. New maps come with app updates;
+  nothing is downloaded on its own."**
+- Info line **"Maps version: <value>"** — value in JetBrainsMono, `#7AE3FF`; shows `none`
+  when no version is installed.
+- Management row **"Storage used: <size>"** (same label/value styling; value shows `…`
+  while the async size computes) with a trailing **"Reset"** button: rounded-8 outline
+  button, 1px border `borderGlow`, padding 12 h / 8 v, label `body` colored `accentPrimary`
+  (**"Resetting…"**, disabled, while it runs); accessibility label "Reset interactive maps".
   - Size formatting: `<=0` → `none`; else divide by 1024 through `B, KB, MB, GB`; show 1
     decimal when the value is `<10` and unit > B, otherwise 0 decimals. E.g. `3.4 MB`,
     `12 MB`, `812 KB`, `540 B`.
-  - Clear flow: confirmation dialog (background `bgElevated`) — title **"Clear downloaded
-    maps?"** (`headline`), body **"This frees up space by removing downloaded map content.
-    The built-in sample map is restored, and maps re-download the next time you open them (if
-    downloads are on)."** (`body`), actions **"Cancel"** / **"Clear"** (Clear in
-    `accentDanger`). On confirm: clears the maps blob store, resets the seed-import guard so
-    the bundled baseline re-imports, and refreshes the dependent providers (store size,
-    installed version, manifest, seed import). On failure: snackbar **"Could not clear maps.
-    Try again."**
+  - Reset flow: confirmation dialog (background `bgElevated`) — title **"Reset interactive
+    maps?"** (`headline`), body **"This deletes the stored copy of the maps and sets up the
+    built-in maps again. Use it if a map no longer opens. Your zone notes and favorites are
+    kept."** (`body`), actions **"Cancel"** / **"Reset"**. On confirm: clears the maps store,
+    resets the seed-import guard and re-imports the built-in maps right away
+    (`resetToBuiltInMaps`), then refreshes the version and size. Snackbar **"Maps reset"**; on
+    failure **"Could not reset maps. Try again."** (or **"Could not reset maps: storage is
+    full."**).
 
 ### 8.5 Card "INTRO" (icon `satellite_alt`)
 
@@ -628,9 +629,8 @@ Same sub-page chrome (transparent AppBar titled **"About"**).
 - Free forever. No ads, no IAP.
 - No telemetry. No analytics SDK.
 - No backend operated by us. Data stays on your device.
-- Most outbound network is opt-in (Discord invite, System Scan, Discoveries, Tracker).
-- Interactive maps download from GitHub (Pages/Fastly + jsDelivr), at most once a day. On by
-  default — turn it off in Settings › Interactive maps.
+- Network features are opt-in (Discord invite, System Scan, Discoveries, Tracker).
+- Interactive maps are built into the app and work offline. Nothing is downloaded for them.
 
 ---
 
@@ -665,9 +665,9 @@ Exact Q/A copy:
 **network**
 
 5. **Does the app need internet?**
-   Not for normal use. Notes, links, ships, the knowledge base, the Asteroid Analyzer, the Fishing Map, the Mars Express schedule and the Wallet Lookup all work fully offline. Three tools are opt-in and do talk to a network: System Scan, Discoveries, and Tracker. They call NASA APIs (JPL Horizons and SBDB). Nothing happens unless you tap their action button. Interactive maps are the one feature that reaches out on its own: they download map content from GitHub (see the next question). Tapping the Discord invite link in the Menu also opens the network, but only at the moment you tap it.
+   Not for normal use. Notes, links, ships, the knowledge base and its interactive maps, the Asteroid Analyzer, the Fishing Map, the Mars Express schedule and the Wallet Lookup all work fully offline. Three tools are opt-in and do talk to a network: System Scan, Discoveries, and Tracker. They call NASA APIs (JPL Horizons and SBDB). Nothing happens unless you tap their action button. Tapping the Discord invite link in the Menu also opens the network, but only at the moment you tap it.
 6. **Where do interactive maps come from?**
-   Map content (the map list, each map, and its images) is hosted on GitHub and delivered over a multi-CDN path: GitHub Pages (fronted by Fastly) for the small "which version is current" pointer, and jsDelivr — with raw.githubusercontent.com as a fallback — for the actual files. Downloads are on by default and happen at most once every 24 hours; every file is checked against a SHA-256 hash before it is stored. Nothing about you is sent — these are plain GET requests, so your IP address is visible to those CDNs, and that is all. A built-in sample map ships inside the app so maps work offline on first launch. You can turn downloads off entirely in Settings › Interactive maps, and clear anything already downloaded there too.
+   (Web copy.) They are built into ESSI. The first time you open Knowledge, the maps that ship with the app are set up in your browser's local storage, and from then on they work offline. ESSI never downloads maps on its own: new or updated maps arrive with a new version of the app. If a map stops opening, Settings › Interactive maps › Reset sets the built-in maps up again; your zone notes are kept.
 7. **What does System Scan send to NASA?**
    When you tap "Scan now" in Tools / System Scan, Underdeck makes 9 GET requests to ssd.jpl.nasa.gov/api/horizons.api, one per planet. Sent: NAIF code (199-999) and current UTC timestamp. Received: public ephemeris text. Visible to NASA: your IP address. Stored: nothing on first run; entries you keep are saved locally.
 8. **What does Tracker send to NASA?**
@@ -698,7 +698,7 @@ Sub-page chrome (AppBar title **"Disclaimer"**). Five `GlassCard`s, 16px gaps:
 
 **Card 4** — SectionHeader **"Map content & updates"** (icon `public`):
 
-- "Interactive maps are downloaded from GitHub — GitHub Pages (fronted by Fastly) for the version pointer and jsDelivr (with raw.githubusercontent.com as a fallback) for the files — at most once a day, and verified by SHA-256 before use. A built-in sample map ships with the app so maps work offline. Downloads are on by default and can be turned off, or cleared, in Settings › Interactive maps."
+- (Web, built-in maps only.) "Interactive maps are built into the app and work offline. ESSI does not download map content; new or updated maps arrive with app updates. If a map stops opening, Settings › Interactive maps › Reset sets them up again."
 
 **Card 5** — SectionHeader **"Trademarks & assets"**:
 
@@ -903,8 +903,8 @@ localStorage**), loaded synchronously at startup, defaults applied per-key when 
 | lastBackupAt | DateTime? (epoch ms int) | `null` | `settings.lastBackupAt` |
 | backupReminderSnoozedUntil | DateTime? (epoch ms int) | `null` | `settings.backupReminderSnoozedUntil` |
 | autoBackupEnabled | bool | `false` | `settings.autoBackupEnabled` |
-| mapsNetworkEnabled | bool | `true` | `settings.mapsNetworkEnabled` |
-| mapsAutoUpdate | bool | `true` | `settings.mapsAutoUpdate` |
+| mapsNetworkEnabled | bool | `true` | `settings.mapsNetworkEnabled` (web: kept, no UI, unused) |
+| mapsAutoUpdate | bool | `true` | `settings.mapsAutoUpdate` (web: kept, no UI, unused) |
 | mapsLastSeenChangelogVersion | string? | `null` | `settings.mapsLastSeenChangelogVersion` |
 
 Mutations relevant to this area:
@@ -912,7 +912,7 @@ Mutations relevant to this area:
 - `setOnboardingSeen(true)` — on onboarding finish (Done or Skip).
 - `setFastBoot`, `setReduceAnimations`, `setHapticsEnabled`, `setAutoBackupEnabled`,
   `setMapsNetworkEnabled`, `setMapsAutoUpdate` — Settings toggles; each updates state then
-  persists.
+  persists. (Web: the two maps setters have no toggle any more — maps are built in.)
 - `markBackedUp(at = now)` — sets `lastBackupAt` and **clears** any snooze (removes the snooze
   key) so the backup-reminder timer restarts; called after a successful (non-dismissed) export.
 - `snoozeBackupReminder(until)` — sets the snooze timestamp (used by the reminder banner,

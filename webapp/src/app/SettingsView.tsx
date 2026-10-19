@@ -9,6 +9,7 @@ import { showSnackbar } from '../core/snackbar';
 import { db } from '../data/db';
 import { describeImportSummary, exportAndDownload, importFromUserPick } from '../data/exportImport';
 import { useSettingsStore } from '../data/settings';
+import { resetToBuiltInMaps } from '../features/knowledge/maps/data/seedImporter';
 import { GlassCard } from '../design-system/components/GlassCard';
 import { SectionHeader } from '../design-system/components/SectionHeader';
 import { SubPage } from '../design-system/components/SubPage';
@@ -31,17 +32,15 @@ function ToggleRow({
   title,
   subtitle,
   value,
-  disabled = false,
   onChange,
 }: {
   title: string;
   subtitle: string;
   value: boolean;
-  disabled?: boolean;
   onChange: (value: boolean) => void;
 }) {
   return (
-    <div className={`${styles.toggleRow} ${disabled ? styles.toggleRowDisabled : ''}`}>
+    <div className={styles.toggleRow}>
       <div className={styles.toggleText}>
         <div className={styles.toggleTitle}>{title}</div>
         <div className={styles.toggleSubtitle}>{subtitle}</div>
@@ -52,7 +51,6 @@ function ToggleRow({
         aria-checked={value}
         aria-label={title}
         className={`${styles.switch} ${value ? styles.switchOn : ''}`}
-        disabled={disabled}
         onClick={() => onChange(!value)}
       >
         <span className={styles.thumb} />
@@ -88,20 +86,14 @@ function ActionRow({
   );
 }
 
-const MAPS_LOCAL_STORAGE_KEYS = [
-  'underdeck.maps.pointerEtag',
-  'underdeck.maps.lastCheckAt',
-  'underdeck.maps.seedImported',
-  'underdeck.maps.seedImportedVersion',
-];
-
 /** Settings (/menu/settings) - app-shell spec §8. Auto-backup is hidden on web. */
 export function SettingsView() {
   const navigate = useNavigate();
   const settings = useSettingsStore();
   const [mapsVersion, setMapsVersion] = useState<string | null>(null);
   const [mapsBytes, setMapsBytes] = useState<number | null>(null);
-  const [confirmClear, setConfirmClear] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
+  const [resetting, setResetting] = useState(false);
   const [exporting, setExporting] = useState(false);
 
   const refreshMapsInfo = useCallback(() => {
@@ -146,19 +138,29 @@ export function SettingsView() {
     }
   };
 
-  const onClearMaps = async () => {
-    setConfirmClear(false);
+  const onResetMaps = async () => {
+    setConfirmReset(false);
+    if (resetting) return;
+    setResetting(true);
     try {
-      await db.transaction('rw', [db.mapPackFiles, db.mapPacks, db.mapBlobs], async () => {
-        await db.mapPackFiles.clear();
-        await db.mapPacks.clear();
-        await db.mapBlobs.clear();
-      });
-      for (const key of MAPS_LOCAL_STORAGE_KEYS) localStorage.removeItem(key);
-      refreshMapsInfo();
+      const result = await resetToBuiltInMaps();
+      if (result.kind === 'failed') {
+        logError(result.error);
+        showSnackbar(
+          result.diskFull
+            ? 'Could not reset maps: storage is full.'
+            : 'Could not reset maps. Try again.',
+          { danger: true },
+        );
+      } else {
+        showSnackbar('Maps reset');
+      }
     } catch (e) {
       logError(e);
-      showSnackbar('Could not clear maps. Try again.', { danger: true });
+      showSnackbar('Could not reset maps. Try again.', { danger: true });
+    } finally {
+      setResetting(false);
+      refreshMapsInfo();
     }
   };
 
@@ -224,36 +226,28 @@ export function SettingsView() {
       <GlassCard>
         <SectionHeader title="Interactive maps" icon={<IconMap size={18} />} />
         <div className={styles.cardStack}>
-          <ToggleRow
-            title="Download interactive maps"
-            subtitle="Fetch new and updated maps from GitHub (Pages/Fastly + jsDelivr), at most once a day. Off keeps only what is already on your device."
-            value={settings.mapsNetworkEnabled}
-            onChange={settings.setMapsNetworkEnabled}
-          />
-          <ToggleRow
-            title="Auto-update maps"
-            subtitle="Automatically check for newer map content in the background. Turn off to update only when you choose."
-            value={settings.mapsAutoUpdate}
-            disabled={!settings.mapsNetworkEnabled}
-            onChange={settings.setMapsAutoUpdate}
-          />
+          <div className={styles.caption}>
+            The maps are built into ESSI and work offline. New maps come with app updates;
+            nothing is downloaded on its own.
+          </div>
           <div className={styles.infoLine}>
-            Installed version: <span className={styles.infoValue}>{mapsVersion ?? 'none'}</span>
+            Maps version: <span className={styles.infoValue}>{mapsVersion ?? 'none'}</span>
           </div>
           <div className={styles.mapsManageRow}>
             <div className={styles.infoLine}>
-              Downloaded maps:{' '}
+              Storage used:{' '}
               <span className={styles.infoValue}>
                 {mapsBytes === null ? '…' : formatBytes(mapsBytes)}
               </span>
             </div>
             <button
               type="button"
-              className={styles.clearButton}
-              aria-label="Clear downloaded maps"
-              onClick={() => setConfirmClear(true)}
+              className={styles.resetButton}
+              aria-label="Reset interactive maps"
+              disabled={resetting}
+              onClick={() => setConfirmReset(true)}
             >
-              Clear
+              {resetting ? 'Resetting…' : 'Reset'}
             </button>
           </div>
         </div>
@@ -293,30 +287,30 @@ export function SettingsView() {
         </div>
       </GlassCard>
 
-      {confirmClear && (
+      {confirmReset && (
         <div className={styles.dialogScrim}>
-          <div className={styles.dialog} role="alertdialog" aria-label="Clear downloaded maps?">
-            <div className={styles.dialogTitle}>Clear downloaded maps?</div>
+          <div className={styles.dialog} role="alertdialog" aria-label="Reset interactive maps?">
+            <div className={styles.dialogTitle}>Reset interactive maps?</div>
             <div className={styles.dialogBody}>
-              This frees up space by removing downloaded map content. The built-in sample map is
-              restored, and maps re-download the next time you open them (if downloads are on).
+              This deletes the stored copy of the maps and sets up the built-in maps again. Use it
+              if a map no longer opens. Your zone notes and favorites are kept.
             </div>
             <div className={styles.dialogActions}>
               <button
                 type="button"
                 className={styles.dialogButton}
-                onClick={() => setConfirmClear(false)}
+                onClick={() => setConfirmReset(false)}
               >
                 Cancel
               </button>
               <button
                 type="button"
-                className={`${styles.dialogButton} ${styles.dialogDanger}`}
+                className={styles.dialogButton}
                 onClick={() => {
-                  void onClearMaps();
+                  void onResetMaps();
                 }}
               >
-                Clear
+                Reset
               </button>
             </div>
           </div>

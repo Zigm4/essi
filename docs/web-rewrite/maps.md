@@ -2,6 +2,8 @@
 
 Source of truth: `lib/features/knowledge/maps/` (data/, domain/, render/, views/, widgets/), `assets/maps_seed/`, plus the shared infrastructure they reference (design system, Drift tables, settings, router, share/haptics services). This document is written so the module can be re-implemented from scratch as a Vite + React + TypeScript web app (Canvas 2D / WebGL rendering) hosted on GitHub Pages, with **no access to the Flutter code**.
 
+> **Web app status — maps are built in only (owner decision).** ESSI ships its maps inside the app (`webapp/public/maps-seed`, imported into IndexedDB by `seedImporter.ts`) and never downloads map content. The remote pipeline described in §4 and §10.1–10.2, §10.5 (pointer polling, jsDelivr install, "New maps ready" banner) is **not wired**: `fetcher.ts`, `endpoints.ts`, `checkForUpdate` and `install` are kept but currently unused, and the Settings download/auto-update toggles (§17) are gone. New or updated maps arrive with a new app version (bump the seed `contentVersion`). Sections describing the pipeline are kept as reference for a possible future content repo.
+
 ---
 
 ## Table of contents
@@ -36,7 +38,7 @@ Source of truth: `lib/features/knowledge/maps/` (data/, domain/, render/, views/
 "Interactive maps" is a dynamic-content module inside the Knowledge section. Maps are **content, not code**: JSON documents (geometry + schema-driven field data) plus image assets, authored in a public GitHub repository (`underpunks55/underdeck-content`) and delivered as plain data. Key properties:
 
 - **Offline-first**: a seed pack (4 maps) is bundled with the app and imported into a local content-addressed blob store on first use. Rendering *always* reads from the local store, never the network.
-- **Pull-only pipeline**: a tiny mutable "pointer" JSON is polled (≤1/24h, ETag-conditional); it points at an immutable tag-pinned manifest on jsDelivr; every file is sha256-pinned and verified before it is stored. Nothing about the user is ever uploaded.
+- **Pull-only pipeline** (*not used by the web app — see the status note above*): a tiny mutable "pointer" JSON is polled (≤1/24h, ETag-conditional); it points at an immutable tag-pinned manifest on jsDelivr; every file is sha256-pinned and verified before it is stored. Nothing about the user is ever uploaded.
 - Two-and-a-half map renderers:
   - **flat** — 2D pan/zoom viewer over a background image with polygon/marker zones;
   - **sphere** — an orthographic, quaternion-oriented, stylized "neon globe" (no texture) with spherical polygon/cap zones and an optional uniform lon/lat **grid** (grid-sphere documents also get a pan/zoomable "grid table" text view).
@@ -141,6 +143,8 @@ Bundled font families (variable TTFs, no network fonts): `Inter` (fontSans), `Je
 ---
 
 ## 4. Content delivery protocol
+
+> Web app: not used. The maps are built in; `endpoints.ts` / `fetcher.ts` are dormant (see the status note at the top).
 
 ### 4.1 Endpoints
 
@@ -500,10 +504,10 @@ Steps (order matters; result is idempotent):
 3. **Stroke contrast**: if `contrastRatio(zoneStroke, guardedBackground) < 3.0` → `zoneStroke = #4FC3FF` (default).
 4. **Selection visibility**: if `deltaL(zoneSelectedFill, zoneFill) < 0.06`, first try the default `#7AE3FF`; if still too close, `pushLuminance(zoneFill, 0.06)`:
    - target = white if `L(fill) < 0.5` else black; for `t = 0.15, 0.30, …, < 1.0` (step 0.15) lerp fill→target and return the first colour whose |ΔL| ≥ 0.06; else return the target itself.
-5. **Label contrast**: label must reach contrast ≥ 4.5 against ALL of `[surface, zoneFill, selectedFill]`; if not, replace it with whichever of `[#E8F4FF, #03060B]` maximises the **worst-case** contrast across those surfaces.
+5. **Label contrast** (web): every label is painted on the engine's scrim (`background` @ `LABEL_SCRIM_ALPHA` = 0.72), never straight on a fill, so the label is checked against the **lightest that scrim can get** — the scrim composited (sRGB) over white. The label must be lighter than that colour and reach contrast ≥ 4.5 against it; otherwise it becomes `#E8F4FF`, or `#FFFFFF` if even that fails. The dark-guard (step 1) also replaces a `background` too light for `#FFFFFF` to reach 4.5:1 on its scrim with the default, so a legible label always exists. (The original check against `[surface, zoneFill, selectedFill]` flipped Io's label to `#03060B` because its fills are light, leaving it at ~1:1 on the dark scrim.)
 6. `zoneFill`, `glow`, `accent` pass through unchanged.
 
-Note for renderers: label token guards are belt-and-suspenders. The *real* legibility guarantee is the **systematic scrim/halo drawn behind every label by the rendering engine** (non-bypassable by content) — see §13/§14/§15.
+Note for renderers: the label guarantee holds only because the engine draws the **scrim behind every label** (non-bypassable by content) — see §13/§14/§15. The grid's cell numbers get a small scrim chip on every tile and on the selection for the same reason. App chrome (the zone sheet's handle and Close button) uses app tokens, not `theme.label`.
 
 ---
 
@@ -568,12 +572,12 @@ CREATE VIRTUAL TABLE IF NOT EXISTS map_zone_fts USING fts5(
 
 | Key | Type | Meaning |
 |---|---|---|
-| `maps.pointerEtag` | string | last pointer ETag; sent as `If-None-Match` |
-| `maps.lastCheckAt` | int (ms epoch) | last update-check timestamp (throttle) |
+| `maps.pointerEtag` | string | last pointer ETag; sent as `If-None-Match` (web: unused) |
+| `maps.lastCheckAt` | int (ms epoch) | last update-check timestamp (throttle) (web: unused) |
 | `maps.seedImported` | bool | LEGACY seed guard (true ⇒ treated as `'0-seed'` imported) |
 | `maps.seedImportedVersion` | string | seed contentVersion last imported/covered |
-| `settings.mapsNetworkEnabled` | bool (default **true**) | master maps-network switch |
-| `settings.mapsAutoUpdate` | bool (default **true**) | gates the ≤1/24h auto check |
+| `settings.mapsNetworkEnabled` | bool (default **true**) | master maps-network switch (web: kept in the store, no UI, read by nothing) |
+| `settings.mapsAutoUpdate` | bool (default **true**) | gates the ≤1/24h auto check (web: kept in the store, no UI, read by nothing) |
 | `settings.mapsLastSeenChangelogVersion` | string? (default null) | changelog banner ack |
 
 ---
@@ -597,13 +601,15 @@ Algorithm:
 
 Failure UX contract (M1): render a real empty state, never a mystery blank — disk-full: "Storage full — free up space and retry" + Retry; otherwise: "Couldn't set up offline maps." + Retry (details logged). Exact strings in §12.
 
-`resetMapSeedImportGuard(prefs)` removes both seed prefs keys — used by Settings › Clear so the baseline re-imports at the next Knowledge entry.
+`resetMapSeedImportGuard(prefs)` removes both seed prefs keys — used by Settings › Clear so the baseline re-imports at the next Knowledge entry. Web: `resetToBuiltInMaps()` (`seedImporter.ts`) = `clearAllContent()` + `resetSeedImportGuard()` + `ensureSeedImported()`, run by Settings › Interactive maps › Reset so the built-in maps are set up again right away.
 
 ---
 
 ## 10. Update lifecycle
 
 Orchestrated by `MapContentRepository`. All render-time reads come from the store — **never the network**.
+
+> Web app: only §10.3 (offline reads) and §10.4 (`clearAllContent`, via Settings › Reset) are used. `checkForUpdate` / `install` (§10.1–10.2) exist in `repository.ts` but nothing calls them, and the §10.5 gallery check / "New maps ready" banner is not implemented — the maps are built in.
 
 ### 10.1 `checkForUpdate({networkEnabled, appVersion, force=false})` → outcome
 
@@ -699,6 +705,8 @@ All screens: `Scaffold` with `backgroundColor: #03060B`, `extendBodyBehindAppBar
 
 ### 12.2 MapsGalleryView (`/knowledge/maps`)
 
+> Web app: there is no gallery — the maps are listed inline on the Knowledge home — and no update/changelog banner or background check (the maps are built in).
+
 AppBar: title `Interactive maps` (headline). Action: `IconButton` `Icons.info_outline`, tooltip `How interactive maps work` → modal bottom sheet `MapsHowItWorksView` (isScrollControlled, transparent background).
 
 On entry (post-frame): invalidate manifest; kick the guarded background update check (§10.5).
@@ -732,6 +740,8 @@ GlassCard row, tap → `/knowledge/maps/{descriptor.id}` (push). Semantics "{tit
 - Trailing chevron_right 20 px textDim.
 
 ### 12.4 MapsHowItWorksView — FULL copy
+
+> Web app: not ported. Its copy describes the GitHub/jsDelivr download pipeline, which the web app does not use; the unreferenced `MapsHowItWorks.tsx` was removed. The FAQ ("Where do interactive maps come from?") explains that the maps are built in.
 
 `HowItWorksSheet` with cards (in order). Header: `TransmissionHeader(label: 'INTERACTIVE MAPS · how this works')`.
 
@@ -877,6 +887,7 @@ The canvas child (sized to `canvasSize`) hosts 4 independent layers (each its ow
   - Deep-linked zone id is also pre-selected (post-frame) if it exists.
 - **Tap** (tap-up, local position already in canvas space because the child is inside the transform): `hitIndex.hitTest(canvasPoint, scale)` → selection (`selectedZoneProvider(mapId)`); a hit fires a **selection haptic**; a miss sets selection to null (dismisses the sheet).
 - Selected zone → the `ZoneSheet` overlay in screen space over the viewport, with a full-screen tap-catcher behind it that clears the selection.
+- Web (`MapCanvas`, shared by flat/globe/grid pointer handling): when a pinch drops to one finger, the pan restarts from the **remaining finger's current position** (no jump); when a third finger lifts, the pinch is re-based on the new pair. `pointercancel` releases the pointer like `pointerup` but **never counts as a tap** (no hit-test, no selection change).
 
 ### 13.5 Flat hit-testing (`ZoneHitIndex`)
 
@@ -1011,6 +1022,7 @@ Let `R = globeRadius(size, zoom)`, `C = center`, `theme` = map-level sanitized t
 3. `save` + **clip to the disc circle** (trims limb overflow):
    4. **Graticule** (grid docs): one path; per polyline, project each sample; back-hemisphere samples lift the pen (moveTo on the next front sample). Stroke width `clamp(R×0.0035, 0.6, 1.4)`, color `zoneStroke` α 0.14.
    5. **Zones**: for each item with a body (selected item deferred): cull if the **centroid** projects back-hemisphere; else build one even-odd path over all rings, projecting each vertex with **limb clamping** — a back-hemisphere vertex is clamped onto the limb circle along its screen direction (`center + dir·(R/|dir|)`) so straddling polygons keep a sane silhouette. Paint with `paintPolygonZone` (§13.3) at this globe stroke width, `selected:false`, dimmed via the 30 % saveLayer (bounds inflated `strokeWidth*4 + 8`).
+   5b. Web — **filter matches without a body**: while a filter is active (dimmed zones hidden), every matching grid zone that has no body (no override, no geometry — e.g. Venus "Uncharted") is painted as a base-theme cell (`gridCellRing`, `paintPolygonZone`, `selected:false`), all front-facing ones batched into one path. Without this the globe showed only the graticule for such a filter. The rings are precomputed once in `buildSphereRender` (`plainCells`).
    6. **Selected zone** drawn last/on top (`selected:true`; never dimmed — selection wins over filter). If the selected id has **no prebuilt body** (unexplored/label-only grid cell): densify its implicit `gridCellRing` on demand and paint it with the base theme as selected.
    7. **Limb darkening** over the zones: radial gradient on the disc — transparent to `0.62R`, then `background` α 0.55 at the rim (stops `[0, 0.62, 1.0]`, alphas `[0, 0, 0.55]`) — makes fills appear to curve away.
    `restore`.
@@ -1091,6 +1103,11 @@ Painters:
    - Texts: normal cells directly; ALL dimmed cells' texts through one shared 30 % saveLayer (never a layer per cell). Cell number pinned top-left at `rect.topLeft + (4, 3)`. Name (only when `scale ≥ nameLodScale`) centered, shifted down by `numFontSize·0.35`, behind a scrim RRect (padX `13·0.35`, padY `13·0.2`, radius `13·0.4`, fill `cell.theme.background` α 0.72).
 2. **Selection**: `paintPolygonZone(rectPath(cell.rect), cell.theme, strokeWidth: 2.5, selected: true)` — same visual system as the globe.
 
+Web (`drawGridTable`) differences:
+- Tiles: charted cells get an inset rounded tile (`zoneFill` α 0.62). While a filter is active (`filterActive`), **matching uncharted cells get a tile too** (base theme), so a match never stays a bare lattice cell.
+- The selection is painted **inside** the table pass, after the tiles and before the railway/texts, so the selected cell's name and number stay on their scrim and legible. The selected cell's texts are never faded.
+- Cell numbers are drawn in `theme.label` at full opacity; on a tile (or the selection) they sit on a small scrim chip (`background` @ 0.72), like the names, since a tile can be as light as the label (Io). Bare cells are already dark.
+
 Viewport: identical config to flat (`minScale = fit`, `maxScale = max(8, fit)`, boundaryMargin `max(vw,vh)`, fit-centered initial transform). Deep-linked cell: `scale = clamp(max(nameLodScale·1.1, fit), fit, max(8, fit))` centered on the cell (frame it name-readable). Tap: `col = floor(x/96)`, `row = floor(y/64)` (clamped); id from `zoneIdByCell[row*cols+col]`; hit → haptic + select; miss → clear. Selected cell opens the shared `ZoneSheet`.
 
 ---
@@ -1153,14 +1170,13 @@ Container padding 16; fill `theme.background` + top-left→bottom-right gradient
 
 ## 17. Settings integration
 
-Card "Interactive maps" in Settings (`SectionHeader` icon `Icons.map`):
+Card "Interactive maps" in Settings (`SectionHeader` icon `Icons.map`). Web app (built-in maps only — the original download and auto-update toggles were removed, their store keys are kept):
 
-1. Toggle `Download interactive maps` — subtitle `Fetch new and updated maps from GitHub (Pages/Fastly + jsDelivr), at most once a day. Off keeps only what is already on your device.` → `settings.mapsNetworkEnabled` (default ON).
-2. Toggle `Auto-update maps` — subtitle `Automatically check for newer map content in the background. Turn off to update only when you choose.` → `settings.mapsAutoUpdate` (default ON); **disabled** while the master switch is off.
-3. Info line `Installed version: {version|'none'}` (value in mono, accentSecondary).
-4. Row `Downloaded maps: {size}` + bordered `Clear` button (border accentDanger α 0.5, radius 8, padding 12×8, text body accentDanger). Size shown as `…` while loading.
+1. Caption `The maps are built into ESSI and work offline. New maps come with app updates; nothing is downloaded on its own.`
+2. Info line `Maps version: {version|'none'}` (value in mono, accentSecondary) — the installed seed `contentVersion`.
+3. Row `Storage used: {size}` + bordered `Reset` button (border `--border-glow`, radius 8, padding 12×8, text body accentPrimary; label `Resetting…` and disabled while running; accessibility label `Reset interactive maps`). Size shown as `…` while loading.
    - Byte formatting: `none` for ≤0; units B/KB/MB/GB ÷1024; 1 decimal below 10 in units > B, else 0 decimals (e.g. `3.4 MB`, `12 MB`).
-   - Clear → confirm dialog (bg bgElevated): title `Clear downloaded maps?`, content `This frees up space by removing downloaded map content. The built-in sample map is restored, and maps re-download the next time you open them (if downloads are on).`, actions `Cancel` / `Clear` (accentDanger). On confirm: `clearAllContent()` → `resetMapSeedImportGuard` → invalidate store-size, installed-version, manifest, seed providers. Failure → snackbar `Could not clear maps. Try again.`
+   - Reset → confirm dialog (bg bgElevated): title `Reset interactive maps?`, content `This deletes the stored copy of the maps and sets up the built-in maps again. Use it if a map no longer opens. Your zone notes and favorites are kept.`, actions `Cancel` / `Reset`. On confirm: `resetToBuiltInMaps()` (`clearAllContent()` → reset the seed guard → `ensureSeedImported()`), then refresh version and size. Success → snackbar `Maps reset`; failure → snackbar `Could not reset maps. Try again.` (`Could not reset maps: storage is full.` when the quota is exceeded).
 
 ---
 
@@ -1256,7 +1272,7 @@ Seed docs' `_comment` keys are ignored by the parser (unknown JSON keys are simp
 
 **Share card**: `UNDERDECK · MAP` · `Generated by Underdeck · Interactive maps`.
 
-**Settings**: `Interactive maps` · `Download interactive maps` (+subtitle) · `Auto-update maps` (+subtitle) · `Installed version` · `Downloaded maps` · `Clear` · `Clear downloaded maps?` (+content) · `Cancel` · `Could not clear maps. Try again.`
+**Settings** (web): `Interactive maps` · caption (see §17) · `Maps version` · `Storage used` · `Reset` / `Resetting…` · `Reset interactive maps?` (+content) · `Cancel` · `Maps reset` · `Could not reset maps. Try again.` · `Could not reset maps: storage is full.`
 
 **How it works**: full text in §12.4.
 

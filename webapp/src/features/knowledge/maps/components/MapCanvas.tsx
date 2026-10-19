@@ -88,12 +88,6 @@ function ringsPath(rings: readonly (readonly CanvasPoint[])[]): Path2D {
   return p;
 }
 
-function rectPath(r: { x: number; y: number; w: number; h: number }): Path2D {
-  const p = new Path2D();
-  p.rect(r.x, r.y, r.w, r.h);
-  return p;
-}
-
 function clamp(v: number, lo: number, hi: number): number {
   return v < lo ? lo : v > hi ? hi : v;
 }
@@ -288,11 +282,12 @@ export function MapCanvas({
     ctx.scale(scale, scale);
 
     if (m === 'grid' && r.grid !== null) {
-      drawGridTable(ctx, r.grid, { scale, dimmed: dim });
-      if (sel !== null) {
-        const cell = r.grid.cells.find((c) => c.zoneId === sel);
-        if (cell !== undefined) paintPolygonZone(ctx, rectPath(cell.rect), cell.theme, 2.5, true);
-      }
+      drawGridTable(ctx, r.grid, {
+        scale,
+        dimmed: dim,
+        filterActive: stateRef.current.hideDimmed,
+        selectedId: sel,
+      });
       return;
     }
 
@@ -516,6 +511,15 @@ export function MapCanvas({
       markDirty();
     };
 
+    /** Restart the pinch from the current two first pointers and view. */
+    const startPinch = (): void => {
+      const g = gestureRef.current;
+      const pts = [...pointers.current.values()];
+      g.pinchDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) || 1;
+      g.pinchScale = viewRef.current.scale;
+      g.pinchZoom = globeRef.current.zoom;
+    };
+
     const onPointerDown = (e: PointerEvent): void => {
       canvas.setPointerCapture(e.pointerId);
       const p = localPoint(e);
@@ -530,10 +534,7 @@ export function MapCanvas({
         g.pinched = false;
         interactingRef.current = true;
       } else if (pointers.current.size === 2) {
-        const pts = [...pointers.current.values()];
-        g.pinchDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) || 1;
-        g.pinchScale = viewRef.current.scale;
-        g.pinchZoom = globeRef.current.zoom;
+        startPinch();
         g.pinched = true;
         g.moved = true;
       }
@@ -575,7 +576,8 @@ export function MapCanvas({
       applyPan(dx, dy);
     };
 
-    const endPointer = (e: PointerEvent): void => {
+    /** Pointer lifted (`pointerup`) or taken by the browser (`pointercancel`). */
+    const endPointer = (e: PointerEvent, cancelled: boolean): void => {
       if (!pointers.current.has(e.pointerId)) return;
       const p = localPoint(e);
       pointers.current.delete(e.pointerId);
@@ -583,14 +585,27 @@ export function MapCanvas({
       if (pointers.current.size === 0) {
         interactingRef.current = false;
         lastTsRef.current = null;
-        if (!g.moved && !g.pinched) {
+        // A cancelled pointer never selects: the browser took the gesture.
+        if (!cancelled && !g.moved && !g.pinched) {
           const id = hitTestAt(p.x, p.y);
           if (id !== null) Haptics.selection();
           onSelectRef.current(id);
         }
         if (rendersRef.current.sphere !== null) scheduleFrame(); // resume autorotation
+      } else if (pointers.current.size === 1) {
+        // Pinch → one finger: pan on from where the remaining finger is now,
+        // not from where the first finger went down (that jumped the view).
+        const rest = pointers.current.values().next().value;
+        if (rest !== undefined) {
+          g.lastX = rest.x;
+          g.lastY = rest.y;
+        }
+      } else {
+        startPinch(); // a third finger lifted: re-base the pinch on the new pair
       }
     };
+    const onPointerUp = (e: PointerEvent): void => endPointer(e, false);
+    const onPointerCancel = (e: PointerEvent): void => endPointer(e, true);
 
     const onWheel = (e: WheelEvent): void => {
       e.preventDefault();
@@ -605,16 +620,16 @@ export function MapCanvas({
 
     canvas.addEventListener('pointerdown', onPointerDown);
     canvas.addEventListener('pointermove', onPointerMove);
-    canvas.addEventListener('pointerup', endPointer);
-    canvas.addEventListener('pointercancel', endPointer);
+    canvas.addEventListener('pointerup', onPointerUp);
+    canvas.addEventListener('pointercancel', onPointerCancel);
     canvas.addEventListener('wheel', onWheel, { passive: false });
 
     return () => {
       ro.disconnect();
       canvas.removeEventListener('pointerdown', onPointerDown);
       canvas.removeEventListener('pointermove', onPointerMove);
-      canvas.removeEventListener('pointerup', endPointer);
-      canvas.removeEventListener('pointercancel', endPointer);
+      canvas.removeEventListener('pointerup', onPointerUp);
+      canvas.removeEventListener('pointercancel', onPointerCancel);
       canvas.removeEventListener('wheel', onWheel);
     };
     // Intentionally bound once - all live data flows through refs.
