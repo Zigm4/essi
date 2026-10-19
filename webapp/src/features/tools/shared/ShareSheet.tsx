@@ -55,7 +55,7 @@ function ShareSheetBody({ content, onDone }: { content: ShareContent; onDone: ()
   const sendImage = () => {
     if (image.status !== 'ready') return;
     Haptics.tap();
-    void shareImage(image.blob, content.fileName, content.title).then(onDone);
+    void shareImage(image.blob, content.fileName, content.title, content.caption).then(onDone);
   };
   const download = () => {
     if (image.status !== 'ready') return;

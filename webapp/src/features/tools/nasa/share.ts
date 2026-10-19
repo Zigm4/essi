@@ -2,6 +2,10 @@
  * Share content for the three NASA tools: the Discord message, the PNG card
  * (layout from tools-live spec §7, ESSI-branded) and the link.
  *
+ * Discord messages read as a short ESSI transmission (header, division,
+ * one-line intro, the data as a list, the link, a sign-off) - light role-play
+ * that keeps the numbers first.
+ *
  * Links: Tracker and System Scan positions change every day, so their link
  * carries a snapshot of the shared values (`?snap=`, base64url JSON) and the
  * tool shows it as "shared, as of …" with a Refresh button. Discoveries
@@ -10,7 +14,13 @@
  */
 
 import type { CardBlock, CardSpec } from '../shared/shareCard';
-import { appLink, discordLink, DISCORD_MAX, type ShareContent } from '../shared/shareActions';
+import {
+  appLink,
+  discordMaskedLink,
+  DISCORD_MAX,
+  escapeDiscord,
+  type ShareContent,
+} from '../shared/shareActions';
 import { ymdLocal } from './discoveriesClient';
 import type { PlanetPosition, ScanMode, TrackerResult } from './models';
 import { PLANETS } from './planets';
@@ -19,7 +29,7 @@ import {
   displayNameOf,
   KIND_EMOJI,
   statusEmoji,
-  statusLabel,
+  statusExplanation,
   trackingPeriodDays,
   type DiscoveredObject,
   type ObjectKind,
@@ -57,12 +67,48 @@ function round(v: number, digits: number): number {
   return Math.round(v * f) / f;
 }
 
-function capDiscord(lines: string[], tail: string[]): string {
-  // Keep the tail (link) and drop body lines until it fits Discord's limit.
-  const body = [...lines];
-  const join = () => [...body, ...tail].join('\n');
-  while (join().length > DISCORD_MAX && body.length > 1) body.pop();
-  return join();
+// --- Discord transmission ----------------------------------------------------
+
+const SIGN_OFF = '-# End of transmission · Scientific Directorate, East Shire Space Industries (ESSI)';
+
+const KIND_WORDS: Record<ObjectKind, { emoji: string; noun: string; plural: string }> = {
+  comet: { emoji: '☄️', noun: 'comet', plural: 'comets' },
+  asteroid: { emoji: '🪨', noun: 'asteroid', plural: 'asteroids' },
+};
+
+interface Transmission {
+  /** e.g. "📡 ESSI · Priority transmission" (a Discord ### heading). */
+  header: string;
+  /** Small text under the header, e.g. "Astrometry & Deep Space Surveillance Division". */
+  division: string;
+  intro: string;
+  /** The data: a bold title line, then "- " list lines. */
+  body: string[];
+  /** Lines after the data (advice, legend). */
+  after?: string[];
+  linkLabel: string;
+  link: string;
+}
+
+/** "Gatlas (MPC C/2024 G3)", or just the name when it already is the designation. */
+function nameAndDesignation(name: string, designation: string): string {
+  return name.toLowerCase().includes(designation.toLowerCase()) ? name : `${name} (MPC ${designation})`;
+}
+
+export function transmission(t: Transmission): string {
+  return [
+    `### ${t.header}`,
+    `-# ${t.division}`,
+    '',
+    t.intro,
+    '',
+    ...t.body,
+    '',
+    ...(t.after ?? []),
+    `🔗 ${discordMaskedLink(t.linkLabel, t.link)}`,
+    '',
+    SIGN_OFF,
+  ].join('\n');
 }
 
 // --- Tracker -----------------------------------------------------------------
@@ -130,15 +176,26 @@ export function trackerFromSnapshot(param: string | null): TrackerResult | null 
 export function trackerShare(r: TrackerResult): ShareContent {
   const link = appLink(`/tools/tracker?snap=${trackerSnapshotParam(r)}`);
   const emoji = KIND_EMOJI[r.kind];
-  const discordText = capDiscord(
-    [
-      `🛰️ **ESSI Tracker** · ${emoji} **${r.displayName}** (MPC ${r.mpcID})`,
-      `**Sector ${r.sector}** · ${r.slRounded.toFixed(3)} SL · ${r.distanceAU.toFixed(3)} AU`,
-      `X ${r.xAU.toFixed(3)} · Y ${r.yAU.toFixed(3)} · Z ${r.zAU.toFixed(3)} AU`,
-      `📅 Position on ${dMonthYearHm(r.timestamp)}`,
+  const words = KIND_WORDS[r.kind];
+  const sl = `${r.slRounded.toFixed(3)} SL`;
+  const date = dMonthYearHm(r.timestamp);
+  const discordText = transmission({
+    header: '📡 ESSI · Priority transmission',
+    division: 'Astrometry & Deep Space Surveillance Division',
+    intro: `Our long-range arrays have locked onto the ${words.noun} ${words.emoji} **${escapeDiscord(r.displayName)}**. Position fixed on **${date}**.`,
+    body: [
+      '**Telemetry**',
+      `- **Designation:** MPC ${escapeDiscord(r.mpcID)}`,
+      `- **Sector:** ${r.sector}`,
+      `- **Distance:** ${sl}`,
+      `- **Navigation flooring:** ${r.slFloor} SL`,
+      `- **AU distance:** ${r.distanceAU.toFixed(3)} AU`,
+      `- **Coordinates (AU):** X ${r.xAU.toFixed(3)} · Y ${r.yAU.toFixed(3)} · Z ${r.zAU.toFixed(3)}`,
     ],
-    [discordLink(link)],
-  );
+    after: [`🧭 Flight engineers advise: enter **${r.slFloor} SL** in your jump calculator.`],
+    linkLabel: 'Open this track in ESSI',
+    link,
+  });
   const blocks: CardBlock[] = [
     { kind: 'hero', emoji, title: r.displayName, caption: `MPC ${r.mpcID}` },
     { kind: 'space', height: 8 },
@@ -157,7 +214,14 @@ export function trackerShare(r: TrackerResult): ShareContent {
     blocks,
     footer: `ESSI · real-time tracking · ${SITE}`,
   };
-  return { title: 'ESSI tracker', discordText, link, card, fileName: `essi-track-${r.timestamp.getTime()}.png` };
+  return {
+    title: `ESSI tracking report: ${r.displayName}`,
+    caption: `📡 ESSI tracking report · ${words.emoji} ${nameAndDesignation(r.displayName, r.mpcID)}\nSector ${r.sector} · ${sl} · navigate ${r.slFloor} SL · position on ${date}`,
+    discordText,
+    link,
+    card,
+    fileName: `essi-track-${r.timestamp.getTime()}.png`,
+  };
 }
 
 // --- System Scan -------------------------------------------------------------
@@ -225,11 +289,25 @@ function nextChangeText(p: PlanetPosition): string | null {
 
 export function scanShare(date: Date, mode: ScanMode, snapshots: readonly PlanetPosition[]): ShareContent {
   const link = appLink(`/tools/scan?snap=${scanSnapshotParam(date, mode, snapshots)}`);
-  const lines = [`🪐 **ESSI System Scan** · ${scanShareDateTime(date)} · ${mode.toUpperCase()}`];
-  for (const p of snapshots) {
-    const next = nextChangeText(p);
-    lines.push(`${p.emoji} **${p.name}** · Sector ${p.sector} · ${p.distanceSL} SL${next === null ? '' : ` · ${next}`}`);
-  }
+  const when = scanShareDateTime(date);
+  const planets = snapshots.length === PLANETS.length ? `all ${PLANETS.length} planets` : `${snapshots.length} planets`;
+  const discordText = transmission({
+    header: '🪐 ESSI · Solar system survey',
+    division: `Planetary Monitoring Division · ${mode.toUpperCase()} scan`,
+    intro: `Our sensor arrays have fixed the position of ${planets} on **${when}**.`,
+    body: [
+      '**Planetary positions**',
+      ...snapshots.map((p) => {
+        const next =
+          p.nextChange === undefined
+            ? ''
+            : ` · next: sector ${p.nextChange.toSector} on ${dMonthYear(p.nextChange.date)}`;
+        return `- ${p.emoji} **${p.name}** · Sector **${p.sector}** · ${p.distanceSL} SL${next}`;
+      }),
+    ],
+    linkLabel: 'Open this survey in ESSI',
+    link,
+  });
   const blocks: CardBlock[] = [];
   snapshots.forEach((p, i) => {
     const spec = PLANETS.find((s) => s.name === p.name) ?? PLANETS[0]!;
@@ -253,8 +331,9 @@ export function scanShare(date: Date, mode: ScanMode, snapshots: readonly Planet
     footer: `ESSI · deep space monitoring · ${SITE}`,
   };
   return {
-    title: 'ESSI system scan',
-    discordText: capDiscord(lines, [discordLink(link)]),
+    title: 'ESSI solar system survey',
+    caption: `🪐 ESSI solar system survey · ${mode.toUpperCase()} scan\nPositions of ${planets} on ${when}`,
+    discordText,
     link,
     card,
     fileName: `essi-scan-${date.getTime()}.png`,
@@ -308,13 +387,49 @@ export function discoveriesListShare(
 ): ShareContent {
   const link = appLink(discoveriesRoute(q));
   const range = `${dMonthYear(q.start)} → ${dMonthYear(q.end)}`;
-  const count = `${objects.length}${truncated ? '+' : ''} found`;
-  const lines = [`${KIND_EMOJI[q.kind]} **ESSI Discoveries** · ${kindPlural(q.kind)} · ${range} · ${count}`];
-  for (const o of objects.slice(0, LIST_DISCORD_MAX)) {
-    lines.push(`${statusEmoji(computeStatus(o))} ${displayNameOf(o)} · first obs ${o.firstObs ?? '?'}`);
+  const words = KIND_WORDS[q.kind];
+  const count = `${objects.length}${truncated ? '+' : ''}`;
+  const between = `first observed between **${dMonthYear(q.start)}** and **${dMonthYear(q.end)}**`;
+  const intro =
+    objects.length === 0
+      ? `Our deep-space survey found no ${words.emoji} ${words.plural} ${between}.`
+      : `Our deep-space survey has logged **${count}** ${words.emoji} ${
+          objects.length === 1 && !truncated ? words.noun : words.plural
+        } ${between}${truncated ? ' (SBDB row limit reached)' : ''}.`;
+  const discordFor = (shown: number): string => {
+    const hidden = objects.length - shown;
+    return transmission({
+      header: '🔭 ESSI · Discovery bulletin',
+      division: `Deep Space Discovery Division · ${kindPlural(q.kind)}`,
+      intro,
+      body:
+        objects.length === 0
+          ? ['Nothing new in this window: the sky was quiet.']
+          : [
+              '**Registry extract**',
+              ...objects
+                .slice(0, shown)
+                .map(
+                  (o) =>
+                    `- ${statusEmoji(computeStatus(o))} **${escapeDiscord(displayNameOf(o))}** · first observed ${o.firstObs ?? '?'}`,
+                ),
+              ...(hidden > 0 ? [`- …and ${hidden} more in ESSI`] : []),
+            ],
+      after:
+        objects.length === 0
+          ? []
+          : ['-# 🟢 nominal · 🟡 short tracking window or over 140 m · 🔴 potentially hazardous'],
+      linkLabel: 'Open this bulletin in ESSI',
+      link,
+    });
+  };
+  // As many objects as Discord's message limit allows (long names → fewer).
+  let shown = Math.min(objects.length, LIST_DISCORD_MAX);
+  let discordText = discordFor(shown);
+  while (discordText.length > DISCORD_MAX && shown > 1) {
+    shown -= 1;
+    discordText = discordFor(shown);
   }
-  const hidden = objects.length - Math.min(objects.length, LIST_DISCORD_MAX);
-  const more = hidden > 0 ? [`…and ${hidden} more`] : [];
 
   const blocks: CardBlock[] = [];
   if (objects.length === 0) blocks.push({ kind: 'caption', text: 'No matches in this window.' });
@@ -338,8 +453,9 @@ export function discoveriesListShare(
     footer: `ESSI · deep space discovery · ${SITE}`,
   };
   return {
-    title: 'ESSI discoveries',
-    discordText: capDiscord([...lines, ...more], [discordLink(link)]),
+    title: 'ESSI discovery bulletin',
+    caption: `🔭 ESSI discovery bulletin · ${count} ${objects.length === 1 && !truncated ? words.noun : words.plural}\nFirst observed ${range}`,
+    discordText,
     link,
     card,
     fileName: `essi-discoveries-${q.start.getTime()}-${q.end.getTime()}.png`,
@@ -363,28 +479,55 @@ function objectFacts(o: DiscoveredObject): [string, string][] {
   return facts;
 }
 
+/**
+ * Short status for the card and caption. statusLabel says "Short tracking
+ * window" for a large asteroid too; this follows statusExplanation's reasons.
+ */
+function shortStatus(o: DiscoveredObject): string {
+  if (o.isHazardous) return 'Potentially hazardous';
+  if ((trackingPeriodDays(o) ?? 0) < 3) return 'Short tracking window';
+  if (o.kind === 'asteroid' && (o.diameterMeters ?? 0) > 140) return 'Large body (over 140 m)';
+  return 'Within normal parameters';
+}
+
+const DISCORD_FACT_LABELS: Record<string, string> = {
+  'First obs.': 'First observed',
+  'Last obs.': 'Last observed',
+  Tracking: 'Tracking period',
+  'PHA flag': 'Potentially hazardous',
+};
+
 export function discoveryObjectShare(o: DiscoveredObject, q: DiscoveriesQuery): ShareContent {
   const name = displayNameOf(o);
   const status = computeStatus(o);
   const link = appLink(discoveriesRoute(q, o.designation));
   const facts = objectFacts(o);
-  const discordText = capDiscord(
-    [
-      `${KIND_EMOJI[o.kind]} **ESSI Discovery** · **${name}** (MPC ${o.designation})`,
-      `${statusEmoji(status)} ${statusLabel(status)}`,
-      facts
+  const words = KIND_WORDS[o.kind];
+  const statusText = `${statusEmoji(status)} ${statusExplanation(o).replace(/\.$/, '')}`;
+  const discordText = transmission({
+    header: '🔭 ESSI · Discovery report',
+    division: 'Deep Space Discovery Division',
+    intro: `Our registries hold a new entry: the ${words.noun} ${words.emoji} **${escapeDiscord(name)}**.`,
+    body: [
+      '**Survey data**',
+      `- **Designation:** MPC ${escapeDiscord(o.designation)}`,
+      `- **Status:** ${statusText}`,
+      ...facts
         .slice(2)
-        .map(([k, v]) => `${k} ${v}`)
-        .join(' · '),
-    ].filter((l) => l.length > 0),
-    [discordLink(link)],
-  );
+        // The status line already says so.
+        .filter(([label]) => !(label === 'PHA flag' && o.isHazardous))
+        .map(([label, value]) => `- **${DISCORD_FACT_LABELS[label] ?? label}:** ${value}`),
+    ],
+    after: ['🛰️ Its live position is one tap away in the Tracker.'],
+    linkLabel: 'Open this report in ESSI',
+    link,
+  });
   const card: CardSpec = {
     title: 'ESSI · Discovery',
     blocks: [
       { kind: 'hero', emoji: KIND_EMOJI[o.kind], title: name, caption: `MPC ${o.designation}` },
       { kind: 'divider' },
-      { kind: 'status', emoji: statusEmoji(status), text: statusLabel(status), color: '#E8F4FF' },
+      { kind: 'status', emoji: statusEmoji(status), text: shortStatus(o), color: '#E8F4FF' },
       ...facts.map(([label, value]): CardBlock => ({ kind: 'kv', label, value })),
       { kind: 'space', height: 6 },
       { kind: 'divider' },
@@ -392,7 +535,8 @@ export function discoveryObjectShare(o: DiscoveredObject, q: DiscoveriesQuery): 
     footer: `ESSI · deep space discovery · ${SITE}`,
   };
   return {
-    title: 'ESSI discovery',
+    title: `ESSI discovery report: ${name}`,
+    caption: `🔭 ESSI discovery report · ${words.emoji} ${nameAndDesignation(name, o.designation)}\n${statusEmoji(status)} ${shortStatus(o)}`,
     discordText,
     link,
     card,

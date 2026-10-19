@@ -75,13 +75,29 @@ describe('tracker share', () => {
     expect(trackerFromSnapshot(encodeSnapshot({ ...ok, x: 'nope' }))).toBeNull();
   });
 
-  it('writes a Discord message that ends with the link, without preview', () => {
+  it('writes an ESSI transmission with a masked, preview-less link', () => {
     const share = trackerShare(TRACK);
-    expect(share.discordText).toContain('**1P/Halley**');
-    expect(share.discordText).toContain('**Sector 7**');
-    expect(share.discordText).toContain('3.512 SL');
-    expect(share.discordText.endsWith(`<${share.link}>`)).toBe(true);
+    const text = share.discordText;
+    expect(text.startsWith('### 📡 ESSI · Priority transmission\n-# Astrometry')).toBe(true);
+    expect(text).toContain('the comet ☄️ **1P/Halley**');
+    expect(text).toContain('- **Sector:** 7');
+    expect(text).toContain('- **Distance:** 3.512 SL');
+    expect(text).toContain('- **Navigation flooring:** 3.5 SL');
+    expect(text).toContain(`🔗 [Open this track in ESSI](<${share.link}>)`);
+    expect(text.endsWith('East Shire Space Industries (ESSI)')).toBe(true);
     expect(share.card.blocks.some((b) => b.kind === 'kv' && b.label === 'Sector')).toBe(true);
+  });
+
+  it('says what the image is', () => {
+    const share = trackerShare(TRACK);
+    expect(share.title).toBe('ESSI tracking report: 1P/Halley');
+    expect(share.caption).toContain('📡 ESSI tracking report · ☄️ 1P/Halley\n');
+    expect(share.caption).toContain('Sector 7 · 3.512 SL · navigate 3.5 SL');
+  });
+
+  it('escapes Discord markdown in a typed name', () => {
+    const share = trackerShare({ ...TRACK, displayName: '*bold*_x_' });
+    expect(share.discordText).toContain('**\\*bold\\*\\_x\\_**');
   });
 });
 
@@ -123,9 +139,11 @@ describe('scan share', () => {
 
   it('lists every planet in the Discord message', () => {
     const share = scanShare(date, 'light', SCAN);
-    expect(share.discordText).toContain('LIGHT');
-    expect(share.discordText).toContain('**Mercury** · Sector 3 · 0.39 SL');
-    expect(share.discordText).toContain('→ sector 12');
+    expect(share.discordText).toContain('-# Planetary Monitoring Division · LIGHT scan');
+    expect(share.discordText).toContain('- ☿ **Mercury** · Sector **3** · 0.39 SL');
+    expect(share.discordText).toContain('· next: sector 12 on');
+    expect(share.discordText).toContain('fixed the position of 2 planets');
+    expect(share.caption).toContain('🪐 ESSI solar system survey · LIGHT scan');
     expect(share.card.blocks.filter((b) => b.kind === 'planet')).toHaveLength(2);
   });
 });
@@ -169,16 +187,35 @@ describe('discoveries share', () => {
     );
     const share = discoveriesListShare(q, many, true);
     expect(share.discordText.length).toBeLessThanOrEqual(1900);
-    expect(share.discordText).toContain('400+ found');
-    expect(share.discordText.endsWith(`<${share.link}>`)).toBe(true);
+    expect(share.discordText).toContain('has logged **400+** 🪨 asteroids first observed between');
+    expect(share.discordText).toContain('(SBDB row limit reached).');
+    expect(share.discordText).toMatch(/- …and \d+ more in ESSI/);
+    expect(share.discordText).toContain(`(<${share.link}>)`);
     expect(share.card.blocks.filter((b) => b.kind === 'listRow')).toHaveLength(30);
   });
 
   it('shares one object with its status and a focus link', () => {
     const share = discoveryObjectShare(object(1, { isHazardous: true, diameterMeters: 320 }), q);
-    expect(share.discordText).toContain('**2026 AB1**');
-    expect(share.discordText).toContain('Potentially hazardous');
-    expect(share.discordText).toContain('Diameter 320 m');
+    expect(share.discordText).toContain('a new entry: the asteroid 🪨 **2026 AB1**.');
+    expect(share.discordText).toContain('- **First observed:** 2026-10-01');
+    expect(share.discordText).toContain('- **Status:** 🔴 Flagged as potentially hazardous');
+    expect(share.discordText).toContain('- **Diameter:** 320 m');
+    expect(share.discordText).not.toContain('- **Potentially hazardous:**');
+    expect(share.caption).toContain('🔴 Potentially hazardous');
     expect(share.link).toContain('focus=2026+AB1');
+  });
+
+  it('labels a large, well-tracked asteroid as large (not "short tracking window")', () => {
+    const share = discoveryObjectShare(object(2, { diameterMeters: 500 }), q);
+    expect(share.discordText).toContain('- **Potentially hazardous:** No');
+    expect(share.caption).toContain('🪨 2026 AB2\n');
+    expect(share.caption).toContain('🟡 Large body (over 140 m)');
+    expect(share.discordText).toContain('Large diameter (>140 m)');
+  });
+
+  it('reports an empty window', () => {
+    const share = discoveriesListShare(q, [], false);
+    expect(share.discordText).toContain('found no 🪨 asteroids first observed between');
+    expect(share.discordText).not.toContain('Registry extract');
   });
 });

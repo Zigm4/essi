@@ -6,9 +6,11 @@ import type { CardSpec } from './shareCard';
  * the end), a PNG card drawn like the app, and a link that reopens the result.
  */
 export interface ShareContent {
-  /** Share-sheet / OS share title, e.g. "ESSI tracker". */
+  /** OS share-sheet title, e.g. "ESSI tracking report: Apophis". */
   title: string;
-  /** Discord markdown, under Discord's 2000-character limit, ending with the link. */
+  /** The text sent with the image (a phone's share sheet → Discord puts it in the message). */
+  caption: string;
+  /** Discord markdown, under Discord's 2000-character limit, with the link near the end. */
   discordText: string;
   /** Absolute URL that reopens this result in ESSI. */
   link: string;
@@ -26,9 +28,17 @@ export function appLink(route: string): string {
   return `${base}#${route.startsWith('/') ? route : `/${route}`}`;
 }
 
-/** `<url>` stops Discord from adding a (useless, site-wide) link preview. */
-export function discordLink(url: string): string {
-  return `<${url}>`;
+/**
+ * A Discord masked link: the long snapshot URL hides behind `label`, and the
+ * `<url>` form stops Discord from adding a (useless, site-wide) link preview.
+ */
+export function discordMaskedLink(label: string, url: string): string {
+  return `[${label}](<${url}>)`;
+}
+
+/** Escapes Discord markdown in user-provided text (a typed object name). */
+export function escapeDiscord(text: string): string {
+  return text.replace(/([\\*_~`|>[\]])/g, '\\$1');
 }
 
 export async function copyText(text: string, confirmation: string): Promise<boolean> {
@@ -79,11 +89,11 @@ function canCopyImage(): boolean {
  * from the tap itself (the image is pre-rendered when the sheet opens) so the
  * browser still counts it as a user gesture.
  */
-export async function shareImage(blob: Blob, fileName: string, title: string): Promise<void> {
+export async function shareImage(blob: Blob, fileName: string, title: string, text: string): Promise<void> {
   const file = new File([blob], fileName, { type: 'image/png' });
   if (canShareImageFile()) {
     try {
-      await navigator.share({ files: [file], title });
+      await navigator.share({ files: [file], title, text });
       return;
     } catch (e) {
       if (e instanceof DOMException && e.name === 'AbortError') return;
