@@ -1,6 +1,7 @@
 import type { ShipRow, TagRow } from '../../data/db';
 import {
   CUSTOM_LOCATION_KEY,
+  availableRoles,
   hasPrefix,
   type CatalogData,
   type ShipCatalogEntry,
@@ -127,15 +128,35 @@ export function draftToShipRow(
 
 // --- Name / prefix logic (spec §6.5) ----------------------------------------
 
-/** Splits a stored `PREFIX-SUFFIX` name into its suffix (spec §6.5). */
+/**
+ * Splits a stored `PREFIX-SUFFIX` name into its suffix (spec §6.5). The prefix
+ * matches in any case, so an imported "oort-01" still gives 01.
+ */
 export function extractSuffix(name: string, prefix: string): string {
   if (prefix === '') return '';
-  if (name.startsWith(prefix + '-')) return name.slice(prefix.length + 1);
-  if (name.startsWith(prefix)) {
+  const upper = name.toUpperCase();
+  const tag = prefix.toUpperCase();
+  if (upper.startsWith(tag + '-')) return name.slice(prefix.length + 1);
+  if (upper.startsWith(tag)) {
     const rest = name.slice(prefix.length);
     return rest.startsWith('-') ? rest.slice(1) : rest;
   }
   return name;
+}
+
+/**
+ * What the call-sign field keeps of its input (spec §6.5): uppercased, minus a
+ * typed or pasted `PREFIX-` (any case) and leading dashes - the prefix is
+ * already shown before the field, so pasting "oort-01" gives OORT-01, not
+ * OORT-OORT-01.
+ */
+export function callSignSuffixInput(raw: string, prefix: string): string {
+  let value = raw.toUpperCase().trimStart();
+  const tag = `${prefix.trim().toUpperCase()}-`;
+  if (tag !== '-') {
+    while (value.startsWith(tag)) value = value.slice(tag.length).trimStart();
+  }
+  return value.replace(/^-+/, '');
 }
 
 /** Composes the full stored name from the current fields (spec §6.5). */
@@ -209,13 +230,41 @@ export function hullTone(hull: number, hullMax: number): HullTone {
   return 'danger';
 }
 
-/** Assigned (role, name) pairs in seat order, blanks skipped (spec §9.4). */
-export function assignedRoles(model: ShipModel): Array<{ right: ShipRight; name: string }> {
+/**
+ * Assigned (role, name) pairs in seat order, blanks skipped (spec §9.4). Only
+ * the model's seats count (`availableRoles`), like in the editor: a name left
+ * in a seat the crew size hides (saved before Save dropped them) isn't shown.
+ */
+export function assignedRoles(
+  model: ShipModel,
+  catalog: CatalogData | null,
+): Array<{ right: ShipRight; name: string }> {
+  const entry = model.modelKey != null ? catalog?.modelByKey.get(model.modelKey) : undefined;
+  const seats = new Set(availableRoles(entry));
   const out: Array<{ right: ShipRight; name: string }> = [];
   for (const r of SHIP_RIGHTS) {
+    if (!seats.has(r)) continue;
     const raw = model.roles[r];
     const name = raw?.trim() ?? '';
     if (name.length > 0) out.push({ right: r, name });
+  }
+  return out;
+}
+
+/**
+ * The roles Save stores (spec §6.6): trimmed names for the seats the model
+ * shows, null for blanks and for every seat its crew size hides - so a name
+ * typed before switching to a smaller model doesn't linger out of reach.
+ */
+export function rolesForSave(
+  fields: Record<ShipRight, string>,
+  entry: ShipCatalogEntry | null | undefined,
+): Record<ShipRight, string | null> {
+  const seats = new Set(availableRoles(entry));
+  const out = emptyRoles();
+  for (const r of SHIP_RIGHTS) {
+    const trimmed = fields[r].trim();
+    out[r] = seats.has(r) && trimmed !== '' ? trimmed : null;
   }
   return out;
 }

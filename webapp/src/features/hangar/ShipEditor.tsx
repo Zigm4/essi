@@ -25,8 +25,10 @@ import {
 } from './hangarIcons';
 import { ROLE_DISPLAY, SHIP_RIGHTS, roleHint, type ShipRight } from './roles';
 import {
+  callSignSuffixInput,
   composedName,
   extractSuffix,
+  rolesForSave,
   type ShipDraft,
   type ShipModel,
 } from './shipModel';
@@ -373,12 +375,6 @@ function ShipEditorForm({
       f.locationKey === initial?.locationKey;
     const customModelVisible = f.modelKey == null || !hasPrefix(currentEntry);
 
-    const roles = {} as Record<ShipRight, string | null>;
-    for (const r of SHIP_RIGHTS) {
-      const trimmed = f.roles[r].trim();
-      roles[r] = trimmed === '' ? null : trimmed;
-    }
-
     const draft: ShipDraft = {
       id: initial?.id ?? '',
       name: composedName(f, catalog.modelByKey),
@@ -414,7 +410,8 @@ function ShipEditorForm({
           ? parseIntOrNull(f.slField)
           : null,
       hull: parseIntOrNull(f.hullField),
-      roles,
+      // Seats the crew size hides are dropped, like the hidden custom model label.
+      roles: rolesForSave(f.roles, currentEntry),
       note: f.noteField,
     };
 
@@ -509,7 +506,9 @@ function ShipEditorForm({
                 autoCorrect="off"
                 spellCheck={false}
                 disabled={evilPlayed}
-                onChange={(e) => set({ suffixField: e.target.value.toUpperCase() })}
+                onChange={(e) =>
+                  set({ suffixField: callSignSuffixInput(e.target.value, entry?.prefix ?? '') })
+                }
               />
             </div>
           </LabeledField>

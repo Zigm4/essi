@@ -302,9 +302,17 @@ File: `lib/features/captures/views/notes_list_view.dart`
 4. **List or empty state**:
    - If the filtered list is empty → fills remaining viewport, centered column, padding 32:
      - Material icon `note_outlined`, 48px, color `accentPrimary @ 40%`;
-     - 8px gap; headline text: `No matches` when a search query is active, else `No notes yet`;
-     - 4px gap; caption text (centered): `Try a different search.` when query active,
-       else `Tap + to capture your first note.`
+     - 8px gap; headline text: `No matches` when a search query or tag filter is active,
+       else `No notes yet`;
+     - 4px gap; caption text (centered): `Try a different search.` when only a search is
+       active, else `Tap + to capture your first note.`
+     - **Tag filter** (web amendment): when notes exist but the selected tags (with or
+       without a search) hide them all, the caption is `Nothing matches your filters.`
+       followed by a 12px gap and a tonal `Clear filters` button that clears the search
+       and the tag selection. Tags are global, so the chip row offers tags that only
+       links or ships use; without this the list claimed `No notes yet`. With no notes
+       at all the plain `No notes yet` state shows even if a tag is selected
+       (`listEmptyKind`).
    - Else a vertical list of note rows, horizontal padding 12, 12px gap between cards.
 5. Bottom spacer 32px.
 
@@ -354,6 +362,7 @@ tagsOk = selected.isEmpty OR any(link.tags, t.id ∈ selected)
 - empty state icon: Material `link` (48px, `accentPrimary @ 40%`);
 - empty-state strings: `No matches` / `No links yet`;
   captions: `Try a different search.` / `Save Discord messages and other URLs here.`;
+  same tag-filter state as Notes (`Nothing matches your filters.` + `Clear filters`);
 - delete dialog title: `Delete link?`; confirm calls `deleteLink(id)`;
 - tap pushes `/captures/link/{id}`.
 
@@ -605,7 +614,14 @@ Pool = every tag displayName in the DB (alphabetical). Max 6 suggestions.
 
 - Typing a comma `,` **or ending the input with a space** immediately commits the token.
 - Enter/submit commits.
-- Commit = `trim(text.replaceAll(',', ''))`; empty result → just clear the field.
+- Commit = `trim(text.replaceAll(',', ''))` minus a leading `#`; empty result → just clear
+  the field.
+- Web amendment (`splitTagInput`): text holding several separators at once — a paste
+  such as `intel, mars trade`, `#intel #mars` or one tag per line — is split on commas
+  and whitespace; every complete token is added (each through `_add`), and the fragment
+  after the last separator stays in the input (committed by Enter/Save as usual).
+  Pasted newlines are turned into separators before a single-line input can drop them.
+  The Hangar tag field uses the same tokenizer.
 - `_add(tag)`: ignore blank; ignore if a selected tag already equals it
   case-insensitively; else append to the list (order preserved = insertion order).
 - The parent editor holds the list of **display-name strings**; nothing touches the DB
@@ -644,6 +660,20 @@ sanitizer. Style sheet (map to CSS):
 
 Link taps route through `launchExternal` (§18.7) — never a raw `window.open` of
 arbitrary schemes.
+
+Images (web amendment, `markdownImageSource`):
+- every image is scaled to the card: `max-width: 100%; height: auto` (the card clips
+  overflow, so a wide screenshot used to be cut off along with the text after it);
+- images from the app's own origin load directly;
+- an http(s) image from **any other host does not load on its own**: it renders as a
+  dashed button `Image from {host}` + `Show` (alt text as tooltip; accessible label
+  `Show image from {host}`). A note imported from someone else's backup could otherwise
+  fetch a tracking pixel, and nothing would show offline anyway. Tapping loads that one
+  image with `referrerpolicy="no-referrer"`; if it fails the button reads
+  `Couldn't load image from {host}` + `Retry`. Inside a link, the tap shows the image
+  instead of following the link;
+- other sources (react-markdown blanks `javascript:`, `data:` and other unsafe schemes)
+  never load; the alt text shows instead, if any.
 
 ---
 

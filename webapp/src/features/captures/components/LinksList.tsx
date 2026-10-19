@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { logError } from '../../../core/logging';
 import { useCapturesStore } from '../capturesStore';
-import { filterLinks, liveTagSelection } from '../logic';
+import { filterLinks, listEmptyKind, liveTagSelection } from '../logic';
 import type { LinkModel } from '../models';
 import { loadLinks, loadTags } from '../queries';
 import { deleteLink } from '../repository';
@@ -22,6 +22,7 @@ export function LinksList() {
   const tags = useLiveQuery(loadTags, []);
   const selectedTags = useCapturesStore((s) => s.linksSelectedTags);
   const toggleTag = useCapturesStore((s) => s.toggleLinksTag);
+  const clearTags = useCapturesStore((s) => s.clearLinksTags);
 
   const all = links.data ?? [];
   const activeTags = liveTagSelection(selectedTags, tags.data);
@@ -40,7 +41,11 @@ export function LinksList() {
         selectedTagIds={activeTags}
         onToggleTag={toggleTag}
         isEmpty={filtered.length === 0}
-        hasQuery={search !== ''}
+        emptyKind={listEmptyKind(all.length, search, activeTags.size > 0)}
+        onClearFilters={() => {
+          setSearch('');
+          clearTags();
+        }}
         emptyIcon={<IconLink size={48} />}
         emptyTitleNone="No links yet"
         emptyCaptionNone="Save Discord messages and other URLs here."

@@ -2,6 +2,7 @@ import { useImperativeHandle, useRef, useState, type Ref } from 'react';
 import { Haptics } from '../../core/haptics';
 import { IconClose } from '../../design-system/icons';
 import { TagChip } from '../../design-system/components/TagChip';
+import { pastedTagText, splitTagInput, tagTokens } from '../captures/logic';
 import styles from './hangar.module.css';
 
 /** Imperative handle so the editor can flush a half-typed tag at Save (spec §4.7, F38). */
@@ -22,8 +23,8 @@ function addTag(list: string[], token: string): string[] {
 
 /**
  * Wrap of removable selected chips + an inline borderless input, with a
- * substring-matched suggestion row (spec §4.7). Comma / trailing space / Enter
- * commit the current token; newlines are filtered out.
+ * substring-matched suggestion row (spec §4.7). Comma / space / newline / Enter
+ * commit the current token; a pasted list becomes one tag per entry.
  */
 export function TagInputField({
   selected,
@@ -40,39 +41,24 @@ export function TagInputField({
   const [focused, setFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
-  useImperativeHandle(controlRef, () => ({
-    commitPending: () => {
-      const next = addTag(selected, pending);
-      if (next !== selected) onChange(next);
-      setPending('');
-      return next;
-    },
-  }));
-
-  const handleInput = (raw: string) => {
-    const value = raw.replace(/\n/g, '');
-    if (value.includes(',')) {
-      const parts = value.split(',');
-      const tail = parts.pop() ?? '';
-      let next = selected;
-      for (const part of parts) next = addTag(next, part);
-      if (next !== selected) onChange(next);
-      setPending(tail);
-      return;
-    }
-    if (value.endsWith(' ') && value.trim() !== '') {
-      const next = addTag(selected, value);
-      if (next !== selected) onChange(next);
-      setPending('');
-      return;
-    }
-    setPending(value);
-  };
-
-  const commit = () => {
-    const next = addTag(selected, pending);
+  // Same tokenizing as the Captures tag field (shared tags): a pasted
+  // "intel, mars trade" gives one tag per word, never one merged tag.
+  const commit = (): string[] => {
+    let next = selected;
+    for (const token of tagTokens(pending)) next = addTag(next, token);
     if (next !== selected) onChange(next);
     setPending('');
+    return next;
+  };
+
+  useImperativeHandle(controlRef, () => ({ commitPending: commit }));
+
+  const handleInput = (raw: string) => {
+    const { tokens, pending: rest } = splitTagInput(raw);
+    let next = selected;
+    for (const token of tokens) next = addTag(next, token);
+    if (next !== selected) onChange(next);
+    setPending(rest);
   };
 
   const remove = (tag: string) => {
@@ -130,6 +116,18 @@ export function TagInputField({
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           onChange={(e) => handleInput(e.target.value)}
+          onPaste={(e) => {
+            const el = e.currentTarget;
+            const value = pastedTagText(
+              pending,
+              el.selectionStart ?? pending.length,
+              el.selectionEnd ?? pending.length,
+              e.clipboardData.getData('text'),
+            );
+            if (value === null) return;
+            e.preventDefault();
+            handleInput(value);
+          }}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               e.preventDefault();

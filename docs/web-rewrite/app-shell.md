@@ -711,6 +711,11 @@ Sub-page chrome (AppBar title **"Disclaimer"**). Five `GlassCard`s, 16px gaps:
 Sub-page chrome (AppBar title **"Contact"**). Composes an email to
 `contact@overthecloud.xyz`. Accepts an optional `initialMessage` prop that pre-fills the
 message field (used by a KB "Contribute intel" flow); default empty.
+Web: the route renders `<ContactView />` without props, so the pre-fill arrives as router
+state — `navigate('/menu/contact', { state: { initialMessage } })` (the Knowledge
+"Contribute intel" banner). A string `initialMessage` in `location.state` wins over the
+prop; it is used once, then the history entry is replaced without state so Back/Forward
+or a reload don't re-fill a message the user has since deleted.
 
 Body content, top to bottom (16px gaps):
 

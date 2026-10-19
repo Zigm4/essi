@@ -1,13 +1,21 @@
 import { forwardRef, useImperativeHandle, useState } from 'react';
-import { addTag, commitTokenText, computeTagSuggestions, removeTag } from '../logic';
+import {
+  addTag,
+  addTags,
+  computeTagSuggestions,
+  pastedTagText,
+  removeTag,
+  splitTagInput,
+  tagTokens,
+} from '../logic';
 import { TagPill } from './TagPill';
 import styles from './TagInputField.module.css';
 
 /**
  * TagInputField + TagInputController (spec §15). Holds a list of display-name
  * strings; nothing touches the DB until the editor saves. Commit rules: a comma
- * or a trailing space commits the pending token; Enter commits; newlines are
- * impossible (single-line input).
+ * or a space commits the pending token; Enter commits; a pasted list ("intel,
+ * mars" or one tag per line) becomes one tag per entry.
  */
 
 export interface TagInputHandle {
@@ -30,20 +38,17 @@ export const TagInputField = forwardRef<
   const [input, setInput] = useState('');
   const [focused, setFocused] = useState(false);
 
-  const commit = (text: string): string[] => {
-    const token = commitTokenText(text);
-    const next = addTag(tags, token);
-    onChange(next);
+  const commit = (text: string) => {
+    const next = addTags(tags, tagTokens(text));
+    if (next.length !== tags.length) onChange(next);
     setInput('');
-    return next;
   };
 
   useImperativeHandle(
     ref,
     () => ({
       commitPending: () => {
-        const token = commitTokenText(input);
-        const next = addTag(tags, token);
+        const next = addTags(tags, tagTokens(input));
         if (next.length !== tags.length) onChange(next);
         setInput('');
         return next;
@@ -53,11 +58,12 @@ export const TagInputField = forwardRef<
   );
 
   const onInputChange = (value: string) => {
-    if (value.includes(',') || value.endsWith(' ')) {
-      commit(value);
-    } else {
-      setInput(value);
+    const { tokens, pending } = splitTagInput(value);
+    if (tokens.length > 0) {
+      const next = addTags(tags, tokens);
+      if (next.length !== tags.length) onChange(next);
     }
+    setInput(pending);
   };
 
   const suggestions = computeTagSuggestions(suggestionPool, tags, input);
@@ -83,6 +89,18 @@ export const TagInputField = forwardRef<
           spellCheck={false}
           aria-label="Add tag"
           onChange={(e) => onInputChange(e.target.value)}
+          onPaste={(e) => {
+            const el = e.currentTarget;
+            const value = pastedTagText(
+              input,
+              el.selectionStart ?? input.length,
+              el.selectionEnd ?? input.length,
+              e.clipboardData.getData('text'),
+            );
+            if (value === null) return;
+            e.preventDefault();
+            onInputChange(value);
+          }}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           onKeyDown={(e) => {

@@ -2,15 +2,19 @@ import { describe, expect, it } from 'vitest';
 import { availableRoles, type CatalogData, type ShipCatalogEntry, type ShipLocation } from './catalog';
 import { emptyRoles, type ShipModel } from './shipModel';
 import {
+  assignedRoles,
+  callSignSuffixInput,
   composedName,
   extractSuffix,
   groupShips,
   hullTone,
   locationDisplay,
   modelLabel,
+  rolesForSave,
   shipCategory,
   sortShips,
 } from './shipModel';
+import { SHIP_RIGHTS, type ShipRight } from './roles';
 
 const MODELS: ShipCatalogEntry[] = [
   { key: 'mmc-shootingstar', displayName: 'MMC Shootingstar', category: 'spacecraft', prefix: 'MMCS', crewSize: null, hullMax: null },
@@ -67,6 +71,34 @@ describe('extractSuffix', () => {
   });
   it('returns the raw name on prefix mismatch', () => {
     expect(extractSuffix('1234', 'MMCS')).toBe('1234');
+  });
+  it('matches the prefix in any case', () => {
+    expect(extractSuffix('oort-01', 'OORT')).toBe('01');
+  });
+});
+
+describe('callSignSuffixInput', () => {
+  it('uppercases what is typed', () => {
+    expect(callSignSuffixInput('01a', 'OORT')).toBe('01A');
+  });
+  it('drops a pasted full call sign\'s prefix, in any case', () => {
+    expect(callSignSuffixInput('OORT-01', 'OORT')).toBe('01');
+    expect(callSignSuffixInput('oort-01', 'OORT')).toBe('01');
+    expect(callSignSuffixInput(' Oort-OORT-01', 'OORT')).toBe('01');
+  });
+  it('drops leading dashes', () => {
+    expect(callSignSuffixInput('-01', 'OORT')).toBe('01');
+  });
+  it('keeps a suffix that only starts with the prefix letters', () => {
+    expect(callSignSuffixInput('OORT', 'OORT')).toBe('OORT');
+    expect(callSignSuffixInput('MMCS-42', 'OORT')).toBe('MMCS-42');
+  });
+  it('composes OORT-01 from a pasted "oort-01", not OORT-OORT-01', () => {
+    const byKey = new Map([
+      ['ufo-oort', { key: 'ufo-oort', displayName: 'UFO Oort', category: 'spacecraft' as const, prefix: 'OORT', crewSize: null, hullMax: null }],
+    ]);
+    const suffixField = callSignSuffixInput('oort-01', 'OORT');
+    expect(composedName({ modelKey: 'ufo-oort', suffixField, nameField: '' }, byKey)).toBe('OORT-01');
   });
 });
 
@@ -132,6 +164,55 @@ describe('availableRoles', () => {
   });
   it('gives none for crewSize 0 (EVIL)', () => {
     expect(availableRoles(CATALOG.modelByKey.get('evil-lawless'))).toEqual([]);
+  });
+});
+
+function roleFields(names: Partial<Record<ShipRight, string>>): Record<ShipRight, string> {
+  const out = {} as Record<ShipRight, string>;
+  for (const r of SHIP_RIGHTS) out[r] = names[r] ?? '';
+  return out;
+}
+
+describe('rolesForSave', () => {
+  it('drops the seats the crew size hides', () => {
+    const fields = roleFields({ pilot: ' Ann ', gunner: 'Bob', medic: 'Alice' });
+    const roles = rolesForSave(fields, CATALOG.modelByKey.get('moon-buggy'));
+    expect(roles.pilot).toBe('Ann');
+    expect(roles.gunner).toBeNull();
+    expect(roles.medic).toBeNull();
+  });
+  it('keeps every seat when the model has no crew size (or no model)', () => {
+    const fields = roleFields({ gunner: 'Bob', alchemist: 'Zed', chef: '  ' });
+    for (const entry of [CATALOG.modelByKey.get('mmc-shootingstar'), undefined]) {
+      const roles = rolesForSave(fields, entry);
+      expect(roles.gunner).toBe('Bob');
+      expect(roles.alchemist).toBe('Zed');
+      expect(roles.chef).toBeNull();
+    }
+  });
+  it('stores no roles for the void ship', () => {
+    const roles = rolesForSave(roleFields({ pilot: 'Ann' }), CATALOG.modelByKey.get('evil-lawless'));
+    expect(Object.values(roles).every((v) => v === null)).toBe(true);
+  });
+});
+
+describe('assignedRoles', () => {
+  const roles = { ...emptyRoles(), pilot: 'Ann', gunner: 'Bob', medic: 'Alice', chef: '  ' };
+  it('lists filled seats in seat order', () => {
+    const ship = makeShip({ modelKey: 'mmc-shootingstar', roles });
+    expect(assignedRoles(ship, CATALOG)).toEqual([
+      { right: 'pilot', name: 'Ann' },
+      { right: 'gunner', name: 'Bob' },
+      { right: 'medic', name: 'Alice' },
+    ]);
+  });
+  it('hides names left in seats the crew size hides, like the editor', () => {
+    const ship = makeShip({ modelKey: 'moon-buggy', roles });
+    expect(assignedRoles(ship, CATALOG)).toEqual([{ right: 'pilot', name: 'Ann' }]);
+  });
+  it('shows every seat while the catalog is unavailable', () => {
+    const ship = makeShip({ modelKey: 'moon-buggy', roles });
+    expect(assignedRoles(ship, null)).toHaveLength(3);
   });
 });
 

@@ -47,3 +47,14 @@ export function IconBackup(props: IconProps) {
     </Svg>
   );
 }
+
+/** image - framed landscape (Material `image_outlined`). Markdown image placeholder. */
+export function IconImage(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <rect x="4" y="5" width="16" height="14" rx="2" />
+      <circle cx="9" cy="10" r="1.5" />
+      <path d="M20 16l-4.5-4.5L7 19" />
+    </Svg>
+  );
+}

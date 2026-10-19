@@ -51,6 +51,25 @@ export function filterLinks(
   });
 }
 
+/**
+ * Which empty state a list shows when nothing is left to display (spec §6.4):
+ * - `tags`: items exist but the tag filter (maybe with a search) hides them all,
+ *   so the list offers to clear the filters instead of claiming it's empty;
+ * - `search`: a search query matches nothing;
+ * - `none`: there's nothing to show at all.
+ */
+export type ListEmptyKind = 'none' | 'search' | 'tags';
+
+export function listEmptyKind(
+  totalCount: number,
+  rawSearch: string,
+  tagFilterActive: boolean,
+): ListEmptyKind {
+  if (tagFilterActive && totalCount > 0) return 'tags';
+  if (rawSearch !== '') return 'search';
+  return 'none';
+}
+
 // --- Tag input (spec §15) ----------------------------------------------------
 
 export const MAX_TAG_SUGGESTIONS = 6;
@@ -96,9 +115,58 @@ export function removeTag(selectedTags: readonly string[], tag: string): string[
   return selectedTags.filter((t) => t !== tag);
 }
 
-/** Commit token = `trim(text.replaceAll(',', ''))` (spec §15). */
+/**
+ * Commit token = `trim(text.replaceAll(',', ''))` (spec §15), minus any leading
+ * `#` so a pasted "#intel" gives the tag "intel".
+ */
 export function commitTokenText(text: string): string {
-  return text.replace(/,/g, '').trim();
+  return text.replace(/,/g, '').trim().replace(/^#+\s*/, '');
+}
+
+/** Tag separators (spec §15): commas and any whitespace, newlines included. */
+const TAG_SEPARATORS = /[\s,]+/;
+
+/**
+ * Splits raw tag-field text on separators (spec §15). Every complete token is a
+ * tag; the fragment after the last separator stays in the field. Pasting
+ * "intel, mars trade" gives the tags intel and mars, with "trade" still typed -
+ * never the single tag "intel mars trade".
+ */
+export function splitTagInput(text: string): { tokens: string[]; pending: string } {
+  const parts = text.split(TAG_SEPARATORS);
+  const pending = parts.pop() ?? '';
+  const tokens = parts.map(commitTokenText).filter((t) => t !== '');
+  return { tokens, pending };
+}
+
+/** Every tag in `text`, the trailing fragment included (Enter / Save, spec §15). */
+export function tagTokens(text: string): string[] {
+  return text
+    .split(TAG_SEPARATORS)
+    .map(commitTokenText)
+    .filter((t) => t !== '');
+}
+
+/**
+ * The tag-field text after pasting `text` over [start, end), or null when the
+ * browser can paste it as is. A single-line input may drop pasted newlines
+ * ("intel\nmars" → "intelmars"), so they become separators first.
+ */
+export function pastedTagText(
+  current: string,
+  start: number,
+  end: number,
+  text: string,
+): string | null {
+  if (!/[\r\n]/.test(text)) return null;
+  return current.slice(0, start) + text.replace(/[\r\n]+/g, ' ') + current.slice(end);
+}
+
+/** `addTag` for each token in turn (duplicates and blanks ignored). */
+export function addTags(selectedTags: readonly string[], tokens: readonly string[]): string[] {
+  let next = [...selectedTags];
+  for (const token of tokens) next = addTag(next, token);
+  return next;
 }
 
 /**
@@ -177,6 +245,37 @@ export function lastBackupLabel(lastBackupAt: number | null, now: number): strin
   if (daysSince === 0) return 'backed up today';
   if (daysSince === 1) return 'last backup yesterday';
   return `last backup ${daysSince} days ago`;
+}
+
+// --- Markdown images (spec §16) ----------------------------------------------
+
+export type MarkdownImageSource =
+  | { kind: 'local'; src: string }
+  | { kind: 'remote'; src: string; host: string }
+  | { kind: 'none' };
+
+/**
+ * How a markdown image may load (spec §16). The app's own images load as usual;
+ * an http(s) image from any other host waits for a tap, so a note imported
+ * from someone else's backup can't fetch a tracking pixel behind the user's
+ * back. Anything else - react-markdown blanks `javascript:`, `data:` and other
+ * unsafe schemes - doesn't load at all.
+ */
+export function markdownImageSource(
+  src: string | null | undefined,
+  pageUrl: string,
+): MarkdownImageSource {
+  const raw = src?.trim() ?? '';
+  if (raw === '') return { kind: 'none' };
+  let url: URL;
+  try {
+    url = new URL(raw, pageUrl);
+  } catch {
+    return { kind: 'none' };
+  }
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') return { kind: 'none' };
+  if (url.origin === new URL(pageUrl).origin) return { kind: 'local', src: url.href };
+  return { kind: 'remote', src: url.href, host: url.hostname };
 }
 
 // --- Discord detection (spec §18.8) ------------------------------------------

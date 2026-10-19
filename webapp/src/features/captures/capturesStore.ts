@@ -16,6 +16,8 @@ interface CapturesState {
   setMode: (mode: CapturesMode) => void;
   toggleNotesTag: (tagId: string) => void;
   toggleLinksTag: (tagId: string) => void;
+  clearNotesTags: () => void;
+  clearLinksTags: () => void;
 }
 
 function toggle(set: Set<string>, id: string): Set<string> {
@@ -34,4 +36,6 @@ export const useCapturesStore = create<CapturesState>((set) => ({
     set((s) => ({ notesSelectedTags: toggle(s.notesSelectedTags, tagId) })),
   toggleLinksTag: (tagId) =>
     set((s) => ({ linksSelectedTags: toggle(s.linksSelectedTags, tagId) })),
+  clearNotesTags: () => set({ notesSelectedTags: new Set<string>() }),
+  clearLinksTags: () => set({ linksSelectedTags: new Set<string>() }),
 }));

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { logError } from '../../../core/logging';
 import { IconNotes } from '../../../design-system/icons';
 import { useCapturesStore } from '../capturesStore';
-import { filterNotes, liveTagSelection } from '../logic';
+import { filterNotes, listEmptyKind, liveTagSelection } from '../logic';
 import type { NoteModel } from '../models';
 import { loadNotes, loadTags } from '../queries';
 import { deleteNote } from '../repository';
@@ -22,6 +22,7 @@ export function NotesList() {
   const tags = useLiveQuery(loadTags, []);
   const selectedTags = useCapturesStore((s) => s.notesSelectedTags);
   const toggleTag = useCapturesStore((s) => s.toggleNotesTag);
+  const clearTags = useCapturesStore((s) => s.clearNotesTags);
 
   const all = notes.data ?? [];
   const activeTags = liveTagSelection(selectedTags, tags.data);
@@ -40,7 +41,11 @@ export function NotesList() {
         selectedTagIds={activeTags}
         onToggleTag={toggleTag}
         isEmpty={filtered.length === 0}
-        hasQuery={search !== ''}
+        emptyKind={listEmptyKind(all.length, search, activeTags.size > 0)}
+        onClearFilters={() => {
+          setSearch('');
+          clearTags();
+        }}
         emptyIcon={<IconNotes size={48} />}
         emptyTitleNone="No notes yet"
         emptyCaptionNone="Tap + to capture your first note."

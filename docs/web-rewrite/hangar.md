@@ -149,7 +149,7 @@ Terminal-style notes card (GlassCard) shown at the bottom of the hangar list:
 
 `TagInputField`: a wrap container (padding 12h/8v, bg `bgGlass`, radius 8, 1px border — `borderGlow` when focused else `borderSubtle`) holding: selected tags as removable selected-chips + an inline borderless text input (min-width 80, placeholder `Add tag…` in body style `textDim`).
 Behavior:
-- Typing a comma or trailing space **commits** the current token (comma stripped, trimmed). Enter commits. Newlines are filtered out.
+- Typing a comma or a space **commits** the current token (comma stripped, trimmed, a leading `#` dropped). Enter commits. Text holding several separators at once (a paste such as `intel, mars trade`, `#intel #mars` or one tag per line) becomes one tag per entry, the fragment after the last separator staying in the input; pasted newlines count as separators. Same tokenizer as the Captures field (captures spec §15).
 - Duplicate check is case-insensitive; duplicates silently ignored.
 - Suggestions: when the trimmed input is non-empty, show up to **6** pool tags whose lowercase name **contains** the input and are not already selected, as tappable unselected chips in a horizontal scroll row below (8px gaps). Tapping adds and clears the input.
 - `TagInputController.commitPending()` — the editor calls this at the start of Save so a half-typed tag is not lost (F38).
@@ -189,7 +189,7 @@ File: `lib/features/hangar/views/hangar_list_view.dart`.
 
 ### 5.3 Ship card (`_ShipCard`)
 
-A `GlassCard`; whole card is tappable (opens editor pre-filled, haptic tap) and **long-pressable** (delete confirm). Content column, left-aligned:
+A `GlassCard`; whole card is tappable (opens editor pre-filled, haptic tap) and **long-pressable** (delete confirm). With the keyboard, Enter/Space on the focused card opens the editor; on a control inside it (hull steppers, tag chips) they activate that control and never reach the card. Content column, left-aligned:
 
 1. **Header row**: left column — ship name in `headline` (empty name renders literal `(unnamed)`); if a model display exists, 2px gap + model label in `caption`. Model display = `customModelLabel` if non-empty, else the catalog entry's `displayName`. Right side — registered badge: icon 14px + 4px gap + text in `caption` recolored:
    - registered: `Icons.verified`, color `accentSuccess`, text `Registered`
@@ -199,7 +199,7 @@ A `GlassCard`; whole card is tappable (opens editor pre-filled, haptic tap) and 
    - if the catalog model has `hullMax`: `{hull} / {hullMax}` in JetBrainsMono 13 w600, colored by ratio `hull/hullMax`: `>= 0.75` → `accentSuccess`; `>= 0.40` → `accentWarn`; else `accentDanger` (ratio counts as 0 when max is 0).
    - else: `{hull}` in JetBrainsMono 13 w600 `accentSecondary`.
    - Spacer, then two stepper buttons (`−` then 6px gap then `+`): 28×28 squares, bg `bgGlass`, radius 8, 1px border (`accentPrimary` @40% when enabled, `borderSubtle` when disabled), icon 16px (`Icons.remove` / `Icons.add`) colored `accentPrimary` enabled / `textDim` disabled. `−` disabled at hull ≤ 0; `+` disabled when hullMax is known and hull ≥ hullMax.
-4. **Assigned roles** (only when at least one role has a non-blank name; 8px gap above): one row per assigned role in seat order, 1px vertical padding: 4px indent, role icon 12px `accentSecondary`, 6px gap, role display name in `caption` inside a fixed 80px-wide box, then the crew member's name in JetBrainsMono 12 w600 `textPrimary`.
+4. **Assigned roles** (only when at least one role has a non-blank name; 8px gap above): one row per assigned role in seat order, limited to the model's `availableRoles` (§12.2) like the editor — a name left in a seat the crew size hides is not shown, 1px vertical padding: 4px indent, role icon 12px `accentSecondary`, 6px gap, role display name in `caption` inside a fixed 80px-wide box, then the crew member's name in JetBrainsMono 12 w600 `textPrimary`.
 5. **Tags** (only when the ship has tags; 8px gap above): horizontal scroll row of unselected `TagChip`s with 4px gaps.
 
 Role icons (Material):
@@ -308,7 +308,7 @@ All cards are `GlassCard`s separated by 16px gaps.
 Catalog models carry a call-sign prefix (e.g. `MMCS`). The stored ship `name` is the full string `PREFIX-SUFFIX`; the editor surfaces only the suffix.
 
 ```
-extractSuffix(name, prefix):
+extractSuffix(name, prefix):          // prefix compared case-insensitively
   if prefix empty → ''
   if name startsWith prefix + '-': return remainder
   if name startsWith prefix:          // tolerate missing dash
@@ -328,7 +328,7 @@ composedName():
 - **On model change**:
   - to a prefixed model: `suffix = extractSuffix(trim(nameField), newPrefix)` (so e.g. a raw name "1234" carries over as the suffix, and a matching `MMCS-1234` is split).
   - to no-prefix/no model: if the suffix field is non-empty and the name field is blank, promote the suffix into the name field; then clear the suffix.
-- The suffix input uppercases input (autocapitalize characters), no autocorrect/suggestions. It is not digit-restricted despite the `number` hint.
+- The suffix input uppercases input (autocapitalize characters), no autocorrect/suggestions. It is not digit-restricted despite the `number` hint. A typed or pasted `PREFIX-` (any case, repeated) and leading dashes are dropped from it (`callSignSuffixInput`): the prefix is already shown before the field, so pasting a full call sign `oort-01` saves `OORT-01`, not `OORT-OORT-01`.
 
 ### 6.6 Save validation & mapping (exact)
 
@@ -339,7 +339,8 @@ commit pending tag token
 hull = parseInt(trim(hullField)) or null
 zone = parseInt(trim(zoneField)) or null
 sl   = parseInt(trim(slField)) or null
-roles[r] = trim(roleField[r]) == '' ? null : trim(roleField[r])   // all 12 seats
+roles[r] = r in availableRoles(entry) AND trim(roleField[r]) != ''
+           ? trim(roleField[r]) : null   // seats the crew size hides are dropped
 
 model = {
   id: existing id or '' (new),
@@ -360,6 +361,7 @@ model = {
 }
 repository.save(model, tagDisplayNames: tags)
 ```
+- Roles: only the seats the editor shows are stored (like `customModelLabel`, no stale hidden text the user can't reach). Names typed in seats a model switch hides stay in the editor until Save, so switching back before saving brings them back.
 - On success: success haptic, sheet closes.
 - On failure: error logged; SnackBar inside the sheet: `Couldn't save — please try again.` (via `friendlyError` fallback); sheet stays open.
 
@@ -515,7 +517,7 @@ Constant: custom location key = `other`.
 | `createdAt` / `updatedAt` | DateTime | required |
 | `tags` | TagModel[] | `[]` |
 
-Helpers: `roleName(r)` returns the trimmed name or null if blank; `assignedRoles` returns `(role, name)` pairs in seat order for non-blank roles; `locationDisplay` see §12.4.
+Helpers: `roleName(r)` returns the trimmed name or null if blank; `assignedRoles(model, catalog)` returns `(role, name)` pairs in seat order for non-blank roles among the model's `availableRoles`; `locationDisplay` see §12.4.
 
 ### 9.5 `TagModel` (shared)
 

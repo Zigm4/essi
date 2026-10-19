@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { contactEmail } from '../core/constants';
 import { versionFullLabel } from '../core/version';
 import { GlassCard } from '../design-system/components/GlassCard';
@@ -14,10 +15,34 @@ const CATEGORIES = ['Feedback', 'Bug report', 'Support', 'Other'] as const;
 
 const DEVICE_LABEL = 'Web';
 
-/** Contact (/menu/contact) - mailto composer. Photo attachments are mobile-only. */
+/** A pre-filled message passed as router state (`navigate(…, { state })`). */
+function routedMessage(state: unknown): string | null {
+  if (state === null || typeof state !== 'object') return null;
+  const value = (state as { initialMessage?: unknown }).initialMessage;
+  return typeof value === 'string' ? value : null;
+}
+
+/**
+ * Contact (/menu/contact) - mailto composer. Photo attachments are mobile-only.
+ * The message can be pre-filled by the caller, either as a prop or as router
+ * state `{ initialMessage }` (the Knowledge "Contribute intel" banner).
+ */
 export function ContactView({ initialMessage = '' }: { initialMessage?: string }) {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const prefill = routedMessage(location.state);
   const [category, setCategory] = useState<(typeof CATEGORIES)[number]>('Feedback');
-  const [message, setMessage] = useState(initialMessage);
+  const [message, setMessage] = useState(prefill ?? initialMessage);
+
+  // The pre-fill is used once: drop it from the history entry so Back/Forward
+  // or a reload don't bring back a template the user has since deleted.
+  useEffect(() => {
+    if (prefill === null) return;
+    navigate(
+      { pathname: location.pathname, search: location.search, hash: location.hash },
+      { replace: true, state: null },
+    );
+  }, [prefill, location.pathname, location.search, location.hash, navigate]);
 
   const appLine = `App: ESSI ${versionFullLabel}`;
   const canSend = message.trim().length > 0;

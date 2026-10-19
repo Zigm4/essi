@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { LinkModel, NoteModel, TagModel } from './models';
 import {
   addTag,
+  addTags,
   commitTokenText,
   computeTagSuggestions,
   dedupeTagInputs,
@@ -9,7 +10,12 @@ import {
   filterNotes,
   isDiscordUrl,
   lastBackupLabel,
+  listEmptyKind,
+  markdownImageSource,
+  pastedTagText,
   removeTag,
+  splitTagInput,
+  tagTokens,
   shouldShowReminder, liveTagSelection } from './logic';
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -136,6 +142,107 @@ describe('commitTokenText', () => {
     expect(commitTokenText('salvage,')).toBe('salvage');
     expect(commitTokenText('  combat ')).toBe('combat');
     expect(commitTokenText(',,,')).toBe('');
+  });
+
+  it('drops a leading # (hashtag style)', () => {
+    expect(commitTokenText('#intel')).toBe('intel');
+    expect(commitTokenText('##')).toBe('');
+  });
+});
+
+describe('splitTagInput / tagTokens (pasted lists)', () => {
+  it('splits a pasted list on commas and spaces, keeping the last fragment typed', () => {
+    expect(splitTagInput('intel, mars trade')).toEqual({ tokens: ['intel', 'mars'], pending: 'trade' });
+  });
+
+  it('commits everything when the text ends with a separator', () => {
+    expect(splitTagInput('temp zeta alpha mid bravo  ')).toEqual({
+      tokens: ['temp', 'zeta', 'alpha', 'mid', 'bravo'],
+      pending: '',
+    });
+    expect(splitTagInput('salvage,combat,')).toEqual({ tokens: ['salvage', 'combat'], pending: '' });
+  });
+
+  it('handles newlines and hashtags', () => {
+    expect(splitTagInput('#intel\n#mars\ttrade\n')).toEqual({
+      tokens: ['intel', 'mars', 'trade'],
+      pending: '',
+    });
+  });
+
+  it('keeps a plain token pending and ignores lone separators', () => {
+    expect(splitTagInput('salv')).toEqual({ tokens: [], pending: 'salv' });
+    expect(splitTagInput(' ')).toEqual({ tokens: [], pending: '' });
+    expect(splitTagInput(', #,')).toEqual({ tokens: [], pending: '' });
+  });
+
+  it('tagTokens includes the trailing fragment (Enter / Save)', () => {
+    expect(tagTokens('intel, mars trade')).toEqual(['intel', 'mars', 'trade']);
+    expect(tagTokens('  ')).toEqual([]);
+  });
+
+  it('addTags adds each token once, case-insensitively', () => {
+    expect(addTags(['Intel'], ['intel', 'mars', 'MARS', ''])).toEqual(['Intel', 'mars']);
+  });
+});
+
+describe('pastedTagText', () => {
+  it('leaves a single-line paste to the browser', () => {
+    expect(pastedTagText('ab', 2, 2, 'intel, mars')).toBeNull();
+  });
+
+  it('turns pasted newlines into separators at the caret', () => {
+    expect(pastedTagText('xy', 1, 1, 'intel\r\nmars\n')).toBe('xintel mars y');
+    expect(pastedTagText('old', 0, 3, 'a\nb')).toBe('a b');
+  });
+});
+
+describe('listEmptyKind', () => {
+  it('is "none" when there is nothing at all', () => {
+    expect(listEmptyKind(0, '', false)).toBe('none');
+    // A tag that only ships/links use, selected while there are no notes yet.
+    expect(listEmptyKind(0, '', true)).toBe('none');
+  });
+
+  it('is "search" when only a search hides everything', () => {
+    expect(listEmptyKind(3, 'zzz', false)).toBe('search');
+    expect(listEmptyKind(0, 'zzz', false)).toBe('search');
+  });
+
+  it('is "tags" when items exist but the tag filter hides them (with or without a search)', () => {
+    expect(listEmptyKind(3, '', true)).toBe('tags');
+    expect(listEmptyKind(3, 'zzz', true)).toBe('tags');
+  });
+});
+
+describe('markdownImageSource', () => {
+  const page = 'https://essi.example/captures/note/1';
+
+  it('loads the app\'s own images directly', () => {
+    expect(markdownImageSource('/pwa-512.png', page)).toEqual({
+      kind: 'local',
+      src: 'https://essi.example/pwa-512.png',
+    });
+  });
+
+  it('holds back images from any other host', () => {
+    expect(markdownImageSource('https://i.imgur.com/x.png', page)).toEqual({
+      kind: 'remote',
+      src: 'https://i.imgur.com/x.png',
+      host: 'i.imgur.com',
+    });
+    // Protocol-relative URLs are remote too.
+    expect(markdownImageSource('//tracker.example/p.gif', page)).toMatchObject({
+      kind: 'remote',
+      host: 'tracker.example',
+    });
+  });
+
+  it('never loads blank or non-http sources', () => {
+    expect(markdownImageSource(undefined, page)).toEqual({ kind: 'none' });
+    expect(markdownImageSource('', page)).toEqual({ kind: 'none' });
+    expect(markdownImageSource('data:image/png;base64,AAAA', page)).toEqual({ kind: 'none' });
+    expect(markdownImageSource('javascript:alert(1)', page)).toEqual({ kind: 'none' });
   });
 });
 

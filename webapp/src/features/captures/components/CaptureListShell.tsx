@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { friendlyError } from '../../../core/errorText';
 import { PageScrollView } from '../../../design-system/components/PageScrollView';
 import { IconSearch } from '../../../design-system/icons';
+import type { ListEmptyKind } from '../logic';
 import type { TagModel } from '../models';
 import { TagPill } from './TagPill';
 import styles from './CaptureListShell.module.css';
@@ -9,7 +10,9 @@ import styles from './CaptureListShell.module.css';
 /**
  * Shared chrome for the Notes and Links lists (spec §6/§7): async matrix
  * (spinner / red error / data), search field, tag-filter row and empty states.
- * The filtered card list is passed as `children`.
+ * The filtered card list is passed as `children`. When the tag filter hides
+ * every item, the empty state says so and offers to clear the filters rather
+ * than claiming there's nothing saved.
  */
 export function CaptureListShell({
   loading,
@@ -22,7 +25,8 @@ export function CaptureListShell({
   selectedTagIds,
   onToggleTag,
   isEmpty,
-  hasQuery,
+  emptyKind,
+  onClearFilters,
   emptyIcon,
   emptyTitleNone,
   emptyCaptionNone,
@@ -38,7 +42,8 @@ export function CaptureListShell({
   selectedTagIds: ReadonlySet<string>;
   onToggleTag: (id: string) => void;
   isEmpty: boolean;
-  hasQuery: boolean;
+  emptyKind: ListEmptyKind;
+  onClearFilters: () => void;
   emptyIcon: ReactNode;
   emptyTitleNone: string;
   emptyCaptionNone: string;
@@ -98,10 +103,21 @@ export function CaptureListShell({
         {isEmpty ? (
           <div className={styles.empty}>
             <span className={styles.emptyIcon}>{emptyIcon}</span>
-            <div className={styles.emptyTitle}>{hasQuery ? 'No matches' : emptyTitleNone}</div>
-            <div className={styles.emptyCaption}>
-              {hasQuery ? 'Try a different search.' : emptyCaptionNone}
+            <div className={styles.emptyTitle}>
+              {emptyKind === 'none' ? emptyTitleNone : 'No matches'}
             </div>
+            <div className={styles.emptyCaption}>
+              {emptyKind === 'none'
+                ? emptyCaptionNone
+                : emptyKind === 'search'
+                  ? 'Try a different search.'
+                  : 'Nothing matches your filters.'}
+            </div>
+            {emptyKind === 'tags' && (
+              <button type="button" className={styles.emptyAction} onClick={onClearFilters}>
+                Clear filters
+              </button>
+            )}
           </div>
         ) : (
           <div className={styles.list}>{children}</div>

@@ -70,7 +70,7 @@ export function ShipCard({
 
   const label = modelLabel(model, catalog);
   const location = locationDisplay(model, catalog);
-  const roles = assignedRoles(model);
+  const roles = assignedRoles(model, catalog);
 
   const minusDisabled = (model.hull ?? 0) <= 0;
   const plusDisabled = hullMax != null && (model.hull ?? 0) >= hullMax;
@@ -90,6 +90,9 @@ export function ShipCard({
         onOpen();
       }}
       onKeyDown={(e) => {
+        // Keys on the hull steppers and tag chips bubble up here: leave them to
+        // the button (Enter/Space must step the hull, not open the editor).
+        if (e.target !== e.currentTarget) return;
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           onOpen();
