@@ -58,15 +58,6 @@ function startOfHour(now: Date): Date {
   return d;
 }
 
-/** The 3 alert instants for an arrival: −2 min, −1 min, on arrival. */
-export function alertsForArrival(arrival: Date): Date[] {
-  return [
-    new Date(arrival.getTime() - 2 * 60_000),
-    new Date(arrival.getTime() - 1 * 60_000),
-    new Date(arrival.getTime()),
-  ];
-}
-
 /**
  * Next `count` absolute arrival instants strictly after `now` (§5.2). A zone
  * visited k minutes per hour yields k occurrences per hour. Arming exactly on

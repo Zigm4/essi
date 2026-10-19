@@ -3,7 +3,6 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
-  alertsForArrival,
   consolidated,
   currentStop,
   isCurrentEntry,
@@ -101,12 +100,3 @@ describe('nextOccurrences', () => {
   });
 });
 
-describe('alertsForArrival', () => {
-  it('returns −2 min, −1 min, and the arrival', () => {
-    const arrival = new Date(2026, 0, 1, 10, 30, 0, 0);
-    const [a, b, c] = alertsForArrival(arrival);
-    expect(arrival.getTime() - a!.getTime()).toBe(120_000);
-    expect(arrival.getTime() - b!.getTime()).toBe(60_000);
-    expect(c!.getTime()).toBe(arrival.getTime());
-  });
-});

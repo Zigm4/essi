@@ -40,7 +40,7 @@ const PAGES: OnboardingPage[] = [
     channel: 'ESSI//TOOLKIT',
     icon: <IconGridView size={22} />,
     title: 'The tools & SL-sectors',
-    body: 'The Tools deck holds the working kit - System Scan, Asteroid Analyzer, Mars Express alerts, the Fishing map and more. Captures, Hangar and the Knowledge core keep your notes and references close.\n\nThe ESSI banner up top reads out an SL-sector code (SL = star-lane): a scroll-driven coordinate that anchors where you are in the console. It is flavour, not a live position - no location is ever read.',
+    body: 'The Tools deck holds the working kit - System Scan, Asteroid Analyzer, the Mars Express schedule, the Fishing map and more. Captures, Hangar and the Knowledge core keep your notes and references close.\n\nThe ESSI banner up top reads out an SL-sector code (SL = star-lane): a scroll-driven coordinate that anchors where you are in the console. It is flavour, not a live position - no location is ever read.',
     bullets: [
       'Sector codes are cosmetic - nothing is tracked from them.',
       'Tabs along the bottom switch between decks.',

@@ -40,7 +40,7 @@ const TOOLS = [
   },
   {
     title: 'Mars Express',
-    subtitle: 'Live schedule + zone alerts',
+    subtitle: 'Live schedule + next arrivals',
     icon: <IconTrain size={28} />,
     tint: '#FFB347',
     path: '/tools/mars-express',

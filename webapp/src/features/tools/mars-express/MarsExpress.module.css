@@ -134,89 +134,10 @@
   color: var(--text-secondary);
 }
 
-.schedArmed {
-  flex: none;
-  color: var(--accent-warn);
-  display: inline-flex;
-}
-
 .schedChevron {
   flex: none;
   color: var(--text-dim);
   display: inline-flex;
-}
-
-/* --- Armed alerts card --- */
-
-.armedHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.cancelAll {
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  font-family: var(--font-sans);
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--accent-danger);
-}
-
-.armedRow {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 12px;
-}
-
-.armedIcon {
-  flex: none;
-  color: var(--accent-warn);
-  display: inline-flex;
-}
-
-.armedMain {
-  flex: 1;
-  min-width: 0;
-}
-
-.armedZone {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-family: var(--font-sans);
-  font-size: 15px;
-  color: var(--text-primary);
-}
-
-.armedRepeat {
-  color: var(--accent-primary);
-  display: inline-flex;
-}
-
-.armedCaption {
-  font-family: var(--font-sans);
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--text-secondary);
-}
-
-.cancelBtn {
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 36px;
-  min-height: 36px;
-  padding: 0;
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--accent-danger);
 }
 
 /* --- Zone detail sheet --- */
@@ -266,71 +187,25 @@
   color: var(--accent-secondary);
 }
 
-.alertsHead {
+.arrivalsHead {
   display: flex;
   align-items: center;
   gap: 8px;
   color: var(--accent-primary);
 }
 
-.alertsHeadline {
+.arrivalsHeadline {
   font-family: var(--font-sans);
   font-size: 17px;
   font-weight: 600;
   color: var(--text-primary);
 }
 
-.alertsCaption {
+.arrivalsCaption {
   margin-top: 8px;
   font-family: var(--font-sans);
   font-size: 12px;
   font-weight: 500;
   line-height: 1.4;
   color: var(--text-secondary);
-}
-
-.webHint {
-  margin-top: 6px;
-  display: flex;
-  align-items: flex-start;
-  gap: 6px;
-  font-family: var(--font-sans);
-  font-size: 12px;
-  font-weight: 500;
-  line-height: 1.4;
-  color: var(--accent-warn);
-}
-
-.repeatRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: 14px;
-}
-
-.repeatMain {
-  min-width: 0;
-}
-
-.repeatTitle {
-  font-family: var(--font-sans);
-  font-size: 15px;
-  color: var(--text-primary);
-}
-
-.repeatCaption {
-  margin-top: 2px;
-  font-family: var(--font-sans);
-  font-size: 12px;
-  font-weight: 500;
-  line-height: 1.4;
-  color: var(--text-secondary);
-}
-
-.sheetButtons {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: 6px;
 }
