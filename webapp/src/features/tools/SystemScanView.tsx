@@ -1,4 +1,5 @@
-import { useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { GlassCard } from '../../design-system/components/GlassCard';
 import { NeonButton } from '../../design-system/components/NeonButton';
 import { PageScrollView } from '../../design-system/components/PageScrollView';
@@ -23,17 +24,22 @@ import {
   IconCenterFocus,
   IconError,
   IconRadioUnchecked,
+  IconRefresh,
   IconSchedule,
+  IconShare,
   IconStopCircle,
 } from './nasa/ui/toolIcons';
 import { ScanHowItWorks } from './nasa/ui/howItWorks/ScanHowItWorks';
 import { dMonthHm, dMonthYear, dMonthYearHm, dMonthYearHms, hms } from './nasa/ui/format';
 import { PLANETS, type PlanetSpec } from './nasa/planets';
 import { fetchFull, fetchLight, INTER_REQUEST_DELAY_MS } from './nasa/scanClient';
-import { ScanCancelledError, ScanError, ScanUnparseableError } from './nasa/errors';
+import { ScanCancelledError, ScanError, ScanOfflineError, ScanUnparseableError } from './nasa/errors';
 import type { PlanetPosition, ScanMode } from './nasa/models';
 import { decodeScanEntry, saveScanHistory, type ScanEntry } from './nasa/history';
 import { Haptics } from '../../core/haptics';
+import { scanFromSnapshot, scanShare, type SharedScan } from './nasa/share';
+import { ShareSheet } from './shared/ShareSheet';
+import type { ShareContent } from './shared/shareActions';
 import styles from './nasa/ui/nasa.module.css';
 
 /**
@@ -41,6 +47,7 @@ import styles from './nasa/ui/nasa.module.css';
  * planet positions from JPL Horizons (via the configured proxy) one at a time,
  * converts (X, Y) into the game's sector/SL grid, and - in Full mode - locates
  * each planet's next sector change. Errors surface verbatim per §4.9.
+ * A shared link (`?snap=…`) shows the shared scan as-is, with a Refresh button.
  */
 
 type PlanetRowStatus =
@@ -79,6 +86,10 @@ function statusLine(status: PlanetRowStatus): { text: string; color: string } {
   if (pos.nextChange !== undefined) {
     const days = (pos.nextChange.date.getTime() - Date.now()) / MS_PER_DAY;
     const dateStr = days > 365 ? dMonthYear(pos.nextChange.date) : dMonthYearHm(pos.nextChange.date);
+    // An old scan (history, shared link): the change already happened.
+    if (days < 0) {
+      return { text: `→ sector ${pos.nextChange.toSector} since ${dateStr}`, color: 'var(--text-dim)' };
+    }
     const color =
       days <= 30
         ? 'var(--accent-success)'
@@ -173,15 +184,29 @@ const SCAN_HISTORY_STRINGS = {
 export function SystemScanView() {
   const proxyBase = resolveProxyBase();
 
-  const [mode, setMode] = useState<ScanMode>('light');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [shared, setShared] = useState<SharedScan | null>(() => scanFromSnapshot(searchParams.get('snap')));
+  const [mode, setMode] = useState<ScanMode>(() => shared?.mode ?? 'light');
   const [isScanning, setIsScanning] = useState(false);
   const [progress, setProgress] = useState(0);
   const [rows, setRows] = useState<PlanetRowStatus[]>(pendingRows);
   const [lastScannedAt, setLastScannedAt] = useState<Date | null>(null);
   const [detail, setDetail] = useState<{ date: Date; entry: ScanEntry } | null>(null);
+  /** The last completed scan (what Share sends). */
+  const [lastScan, setLastScan] = useState<SharedScan | null>(null);
+  const [share, setShare] = useState<ShareContent | null>(null);
 
   const genRef = useRef(0);
   const abortRef = useRef<AbortController | null>(null);
+
+  // Leaving the page stops the scan (it would otherwise keep calling JPL in
+  // the background and still write history).
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+      genRef.current += 1;
+    };
+  }, []);
 
   const runScan = async (base: string, scanMode: ScanMode, gen: number, signal: AbortSignal) => {
     const now = new Date();
@@ -202,8 +227,17 @@ export function SystemScanView() {
         if (e instanceof ScanCancelledError) return;
         if (gen !== genRef.current) return;
         const error = e instanceof ScanError ? e : new ScanUnparseableError();
-        setRows((r): PlanetRowStatus[] => r.map((row, j) => (j === idx ? { kind: 'errored', error } : row)));
+        // Offline / timed out (after the retries): the next planets would fail
+        // the same way, 2 s each - stop here and mark them all.
+        const stop = error instanceof ScanOfflineError;
+        setRows((r): PlanetRowStatus[] =>
+          r.map((row, j) => (j === idx || (stop && j > idx) ? { kind: 'errored', error } : row)),
+        );
         anyErrored = true;
+        if (stop) {
+          setProgress(PLANETS.length);
+          break;
+        }
       }
       if (gen !== genRef.current) return;
       setProgress(idx + 1);
@@ -219,6 +253,7 @@ export function SystemScanView() {
     setIsScanning(false);
     setLastScannedAt(new Date());
     if (okSnapshots.length > 0) {
+      setLastScan({ date: now, mode: scanMode, snapshots: okSnapshots });
       void saveScanHistory(scanMode, okSnapshots, anyErrored);
     }
   };
@@ -230,6 +265,11 @@ export function SystemScanView() {
     const controller = new AbortController();
     abortRef.current = controller;
     const scanMode = mode;
+    if (shared !== null) {
+      setShared(null);
+      setSearchParams({}, { replace: true });
+    }
+    setLastScan(null);
     setRows(pendingRows());
     setProgress(0);
     setIsScanning(true);
@@ -400,28 +440,100 @@ export function SystemScanView() {
           </GlassCard>
         )}
 
-        <GlassCard>
-          <SectionHeader title="Solar system snapshot" icon={<IconPublic size={18} />} />
-          <div style={{ marginTop: 12 }}>
-            {PLANETS.map((planet, i) => (
-              <div key={planet.name}>
-                {i > 0 && <Divider alpha={0.3} margin="2px 0" />}
-                <PlanetResultRow planet={planet} index={i} status={rows[i]!} />
+        {shared !== null && (
+          <GlassCard>
+            <div className={styles.rowCenter} style={{ gap: 10 }}>
+              <span style={{ color: 'var(--accent-secondary)', display: 'inline-flex' }}>
+                <IconShare size={18} />
+              </span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div className={styles.headline}>Shared scan · {shared.mode.toUpperCase()}</div>
+                <div className={styles.caption} style={{ marginTop: 2 }}>
+                  As of {dMonthYearHm(shared.date)}. Planets move - refresh for now.
+                </div>
               </div>
-            ))}
+              {proxyBase !== null && (
+                <button
+                  type="button"
+                  className={styles.refreshBtn}
+                  onClick={() => {
+                    Haptics.tap();
+                    startScan();
+                  }}
+                >
+                  <IconRefresh size={16} />
+                  Refresh
+                </button>
+              )}
+            </div>
+          </GlassCard>
+        )}
+
+        <GlassCard>
+          <div className={styles.rowCenter}>
+            <SectionHeader title="Solar system snapshot" icon={<IconPublic size={18} />} />
+            {!isScanning && (shared ?? lastScan) !== null && (
+              <button
+                type="button"
+                className={styles.iconBtn}
+                style={{ marginLeft: 'auto', color: 'var(--accent-primary)' }}
+                title="Share"
+                aria-label="Share this scan"
+                onClick={() => {
+                  const scan = shared ?? lastScan;
+                  if (scan === null) return;
+                  Haptics.tap();
+                  setShare(scanShare(scan.date, scan.mode, scan.snapshots));
+                }}
+              >
+                <IconShare size={18} />
+              </button>
+            )}
+          </div>
+          <div style={{ marginTop: 12 }}>
+            {shared !== null ? (
+              <SnapshotRows snapshots={shared.snapshots} />
+            ) : (
+              PLANETS.map((planet, i) => (
+                <div key={planet.name}>
+                  {i > 0 && <Divider alpha={0.3} margin="2px 0" />}
+                  <PlanetResultRow planet={planet} index={i} status={rows[i]!} />
+                </div>
+              ))
+            )}
           </div>
         </GlassCard>
       </ToolScaffold>
 
       {detail !== null && (
-        <ScanDetail date={detail.date} entry={detail.entry} onClose={() => setDetail(null)} />
+        <ScanDetail
+          date={detail.date}
+          entry={detail.entry}
+          onClose={() => setDetail(null)}
+          onShare={() => {
+            Haptics.tap();
+            setShare(scanShare(detail.date, detail.entry.mode, detail.entry.snapshots));
+          }}
+        />
       )}
+
+      <ShareSheet content={share} onClose={() => setShare(null)} />
     </>
   );
 }
 
 /** Full-screen scan history detail (spec §4.12). */
-function ScanDetail({ date, entry, onClose }: { date: Date; entry: ScanEntry; onClose: () => void }) {
+function ScanDetail({
+  date,
+  entry,
+  onClose,
+  onShare,
+}: {
+  date: Date;
+  entry: ScanEntry;
+  onClose: () => void;
+  onShare: () => void;
+}) {
   return (
     <div className={styles.detailScrim}>
       <AppBackground showsScanlines={false}>
@@ -431,6 +543,16 @@ function ScanDetail({ date, entry, onClose }: { date: Date; entry: ScanEntry; on
               Close
             </button>
             <span className={styles.title}>{dMonthHm(date)}</span>
+            <button
+              type="button"
+              className={styles.iconBtn}
+              style={{ marginLeft: 'auto', color: 'var(--accent-primary)' }}
+              title="Share"
+              aria-label="Share this scan"
+              onClick={onShare}
+            >
+              <IconShare size={20} />
+            </button>
           </div>
           <PageScrollView padding="64px 12px 32px">
             <div className={styles.stack}>

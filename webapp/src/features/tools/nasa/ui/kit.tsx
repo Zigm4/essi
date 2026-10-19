@@ -36,18 +36,23 @@ export function SquareSegmented<T extends string>({
   disabled?: boolean;
 }) {
   return (
-    <div className={`${styles.segTrack} ${disabled ? styles.segDisabled : ''}`} role="tablist">
+    <div
+      className={`${styles.segTrack} ${disabled ? styles.segDisabled : ''}`}
+      role="radiogroup"
+      aria-disabled={disabled || undefined}
+    >
       {options.map((o) => {
         const selected = o.value === value;
         return (
           <button
             key={o.value}
             type="button"
-            role="tab"
-            aria-selected={selected}
+            role="radio"
+            aria-checked={selected}
+            disabled={disabled}
             className={`${styles.segItem} ${selected ? styles.segItemSelected : ''}`}
             onClick={() => {
-              if (selected) return;
+              if (selected || disabled) return;
               Haptics.selection();
               onChange(o.value);
             }}
@@ -75,7 +80,8 @@ export function PillSegmented<T extends string>({
   return (
     <div
       className={`${styles.segTrack} ${styles.segPillTrack} ${disabled ? styles.segDisabled : ''}`}
-      role="tablist"
+      role="radiogroup"
+      aria-disabled={disabled || undefined}
     >
       {options.map((o) => {
         const selected = o.value === value;
@@ -83,13 +89,14 @@ export function PillSegmented<T extends string>({
           <button
             key={o.value}
             type="button"
-            role="tab"
-            aria-selected={selected}
+            role="radio"
+            aria-checked={selected}
+            disabled={disabled}
             className={`${styles.segItem} ${styles.segPillItem} ${
               selected ? `${styles.segItemSelected} ${styles.segPillItemSelected}` : ''
             }`}
             onClick={() => {
-              if (selected) return;
+              if (selected || disabled) return;
               Haptics.selection();
               onChange(o.value);
             }}

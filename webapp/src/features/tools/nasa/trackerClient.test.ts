@@ -3,7 +3,9 @@ import type { TrackedObject } from './catalog';
 import { TrackerMpcLookupError } from './errors';
 import {
   buildCommandID,
+  parseHorizonsIndexSearch,
   resolveMPC,
+  sbdbChoices,
   stripTrailingParenthetical,
   stripWrappingParens,
   type SbdbLookupFn,
@@ -87,6 +89,9 @@ describe('buildCommandID', () => {
   it('appends a semicolon to numbered asteroids (Ceres, not Mercury barycenter)', () => {
     expect(buildCommandID('1', 'asteroid')).toBe('1;');
     expect(buildCommandID('99942', 'asteroid')).toBe('99942;');
+    // Comets selected + a number: still a small body, never Mercury's barycenter.
+    expect(buildCommandID('1', 'comet')).toBe('1;');
+    expect(buildCommandID('301', 'comet')).toBe('301;');
   });
 
   it('leaves non-numeric asteroid designations untouched', () => {
@@ -102,5 +107,117 @@ describe('name helpers', () => {
   it('stripTrailingParenthetical', () => {
     expect(stripTrailingParenthetical('C/2024 G3 (ATLAS)')).toBe('C/2024 G3');
     expect(stripTrailingParenthetical('433 Eros')).toBe('433 Eros');
+  });
+});
+
+// Live Horizons replies (Oct 2026), trimmed.
+const HZ_NONE = `*******************************************************************************
+JPL/DASTCOM            Small-body Index Search Results     2026-Oct-19 02:01:16
+
+ Comet AND asteroid index search:
+
+   NAME = XYZNOTHING123;
+
+ Matching small-bodies: 
+    No matches found.
+*******************************************************************************
+`;
+
+const HZ_HALLEY = `*******************************************************************************
+JPL/DASTCOM            Small-body Index Search Results     2026-Oct-19 02:01:18
+
+ Comet AND asteroid index search:
+
+   NAME = Halley;
+
+ Matching small-bodies: 
+
+    Record #  Epoch-yr  Primary Desig  >MATCH NAME<
+    --------  --------  -------------  -------------------------
+        2688            1982 HG1        Halley
+    90000001    -239    1P              Halley
+    90000029    1910    1P              Halley
+    90000030    1968    1P              Halley
+
+ (31 matches. To SELECT, enter record # (integer), followed by semi-colon.)
+*******************************************************************************
+`;
+
+const HZ_ATLAS = `*******************************************************************************
+JPL/DASTCOM            Small-body Index Search Results     2026-Oct-19 02:01:27
+
+ Comets-only index search:
+
+   NAME = ATLAS; CAP < 2461393.5; NOFRAG;
+
+ Matching small-bodies: 
+
+    Record #  Epoch-yr  Primary Desig  >MATCH NAME<
+    --------  --------  -------------  -------------------------
+${Array.from({ length: 14 }, (_, i) => `    9000${4900 + i}    2025    C/2025 A${i + 1}       ATLAS`).join('\n')}
+
+ (14 matches. To SELECT, enter record # (integer), followed by semi-colon.)
+*******************************************************************************
+`;
+
+describe('parseHorizonsIndexSearch', () => {
+  it('reads "No matches found" as not found', () => {
+    expect(parseHorizonsIndexSearch(HZ_NONE)).toEqual({ kind: 'none' });
+  });
+
+  it('lists each object once, with its kind', () => {
+    const r = parseHorizonsIndexSearch(HZ_HALLEY);
+    expect(r).toEqual({
+      kind: 'choices',
+      more: 0,
+      choices: [
+        { label: 'Halley (1982 HG1)', mpcID: '1982 HG1', kind: 'asteroid' },
+        { label: 'Halley (1P)', mpcID: '1P', kind: 'comet' },
+      ],
+    });
+  });
+
+  it('keeps 12 choices and counts the rest', () => {
+    const r = parseHorizonsIndexSearch(HZ_ATLAS);
+    expect(r?.kind).toBe('choices');
+    if (r?.kind !== 'choices') return;
+    expect(r.choices).toHaveLength(12);
+    expect(r.more).toBe(2);
+    expect(r.choices[0]).toEqual({ label: 'ATLAS (C/2025 A1)', mpcID: 'C/2025 A1', kind: 'comet' });
+  });
+
+  it('ignores a normal ephemeris', () => {
+    expect(parseHorizonsIndexSearch('$$SOE\n2461164.5 = A.D. 2026-May-04\n$$EOE')).toBeNull();
+  });
+});
+
+describe('sbdbChoices', () => {
+  // Live SBDB HTTP 300 for sstr=Halley.
+  const HALLEY = {
+    code: '300',
+    list: [
+      { name: '2688 Halley (1982 HG1)', pdes: '2688' },
+      { name: '1P/Halley', pdes: '1P' },
+    ],
+  };
+
+  it('reads non-periodic comets from their name (live sstr=ATLAS)', () => {
+    const atlas = {
+      code: '300',
+      list: [
+        { name: '427P/ATLAS', pdes: '427P' },
+        { pdes: '2015 X7', name: 'C/2015 X7 (ATLAS)' },
+        { pdes: '2019 AA', name: '2019 AA (ATLAS)' },
+      ],
+    };
+    expect(sbdbChoices(atlas, 'comet').map((c) => c.mpcID)).toEqual(['427P', '2015 X7']);
+    expect(sbdbChoices(atlas, 'asteroid').map((c) => c.mpcID)).toEqual(['2019 AA']);
+  });
+
+  it('keeps only the requested kind', () => {
+    expect(sbdbChoices(HALLEY, 'comet')).toEqual([{ label: '1P/Halley', mpcID: '1P', kind: 'comet' }]);
+    expect(sbdbChoices(HALLEY, 'asteroid')).toEqual([
+      { label: '2688 Halley (1982 HG1)', mpcID: '2688', kind: 'asteroid' },
+    ]);
   });
 });

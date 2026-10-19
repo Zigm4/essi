@@ -2,13 +2,16 @@ import { NetworkError } from '../../../core/errors';
 import type { TrackedObject } from './catalog';
 import { findCatalogMatch } from './catalog';
 import {
+  TrackerAmbiguousError,
   TrackerApiMessageError,
   TrackerCancelledError,
   TrackerHttpError,
   TrackerMpcLookupError,
   TrackerNoEphemerisError,
+  TrackerNotFoundError,
   TrackerOfflineError,
   TrackerUnparseableError,
+  type TrackChoice,
 } from './errors';
 import { HorizonsFormatError, parseHorizonsEphemeris } from './horizonsParser';
 import { jplRequest } from './jplClient';
@@ -64,6 +67,10 @@ function hasDigitAndLetter(s: string): boolean {
  * (checked on the live API, Oct 2026). `C/2024 G3` → `DES=2024 G3;CAP;NOFRAG`.
  */
 export function buildCommandID(mpcID: string, kind: ObjectKind): string {
+  // A bare number is a small-body number only with ';' - without it Horizons
+  // reads a major-body id ('1' → Mercury barycenter, '301' → the Moon), even
+  // when Comets is selected.
+  if (isAllDigits(mpcID.trim())) return `${mpcID.trim()};`;
   if (kind === 'comet') {
     const designation = stripTrailingParenthetical(mpcID.trim().replace(/^[cp]\//i, '')).replace(
       /^(\d+[PDI](?:-[A-Z]+)?)\/.*$/i, // "1P/Halley" → "1P"
@@ -71,8 +78,90 @@ export function buildCommandID(mpcID: string, kind: ObjectKind): string {
     );
     return `DES=${designation};CAP;NOFRAG`;
   }
-  // asteroid: a bare number is the Ceres-vs-Mercury ambiguity → append ';'
-  return isAllDigits(mpcID.trim()) ? `${mpcID.trim()};` : mpcID.trim();
+  return mpcID.trim();
+}
+
+// --- Horizons small-body index replies ----------------------------------------
+
+const MAX_CHOICES = 12;
+
+function choiceKind(designation: string): ObjectKind {
+  return /^(\d+[PDI](-[A-Z]+)?$|[CPDXI]\/)/.test(designation) ? 'comet' : 'asteroid';
+}
+
+/** Up to 12 distinct objects (by designation, in order) and the count left out. */
+export function limitChoices(all: readonly TrackChoice[]): { choices: TrackChoice[]; more: number } {
+  const seen = new Set<string>();
+  const unique: TrackChoice[] = [];
+  for (const c of all) {
+    const key = c.mpcID.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    unique.push(c);
+  }
+  return { choices: unique.slice(0, MAX_CHOICES), more: Math.max(0, unique.length - MAX_CHOICES) };
+}
+
+/**
+ * Horizons answers a name it can't pin down with a "Small-body Index Search
+ * Results" page instead of an ephemeris: either "No matches found." or a
+ * "Matching small-bodies" table (Record # / Epoch-yr / Primary Desig / name;
+ * checked on the live API, Oct 2026). Returns null for any other reply.
+ */
+export function parseHorizonsIndexSearch(
+  result: string,
+): { kind: 'none' } | { kind: 'choices'; choices: TrackChoice[]; more: number } | null {
+  if (!/Index Search Results|Matching small-bodies|Multiple major-bodies match/i.test(result)) return null;
+  if (/No matches found/i.test(result)) return { kind: 'none' };
+  const lines = result.split(/\r?\n/);
+  const dashIndex = lines.findIndex((l) => /^\s*-{4,}(\s+-{4,})+\s*$/.test(l));
+  if (dashIndex < 1) return { kind: 'choices', choices: [], more: 0 };
+  // Column spans come from the dash runs; names from the header above them.
+  const spans: [number, number][] = [];
+  const dashes = lines[dashIndex]!;
+  for (const m of dashes.matchAll(/-+/g)) spans.push([m.index, m.index + m[0].length]);
+  const header = lines[dashIndex - 1]!;
+  const cell = (line: string, i: number): string => {
+    const [start] = spans[i]!;
+    const end = i + 1 < spans.length ? spans[i + 1]![0] : line.length;
+    return line.slice(start, end).trim();
+  };
+  const names = spans.map((_, i) => cell(header, i).toLowerCase());
+  const desigCol = names.findIndex((n) => n.includes('primary desig') || n.includes('designation'));
+  const nameCol = names.findIndex((n) => n.includes('match name') || n === 'name');
+  const all: TrackChoice[] = [];
+  for (const line of lines.slice(dashIndex + 1)) {
+    if (line.trim().length === 0 || /^\s*\(/.test(line) || line.startsWith('*')) break;
+    const designation = desigCol >= 0 ? cell(line, desigCol) : '';
+    const name = nameCol >= 0 ? cell(line, nameCol) : '';
+    if (designation.length === 0) continue;
+    all.push({
+      label: name.length > 0 && name !== designation ? `${name} (${designation})` : designation,
+      mpcID: designation,
+      kind: choiceKind(designation),
+    });
+  }
+  // Newest apparition last in Horizons' list; the dedupe keeps one per object.
+  return { kind: 'choices', ...limitChoices(all) };
+}
+
+/** SBDB HTTP 300 `list` entries of the requested kind. */
+export function sbdbChoices(json: unknown, kind: ObjectKind): TrackChoice[] {
+  if (typeof json !== 'object' || json === null) return [];
+  const list = (json as Record<string, unknown>).list;
+  if (!Array.isArray(list)) return [];
+  const out: TrackChoice[] = [];
+  for (const entry of list) {
+    if (typeof entry !== 'object' || entry === null) continue;
+    const e = entry as Record<string, unknown>;
+    const pdes = typeof e.pdes === 'string' ? e.pdes : '';
+    const name = typeof e.name === 'string' ? e.name : pdes;
+    // Non-periodic comets list a bare pdes ('2015 X7'); the name has the 'C/'.
+    const entryKind: ObjectKind = /^(\d+[PDI]|[CPDXI])\//.test(name) ? 'comet' : choiceKind(pdes);
+    if (pdes.length === 0 || entryKind !== kind) continue;
+    out.push({ label: name, mpcID: pdes, kind });
+  }
+  return out;
 }
 
 // --- Tier 1..4 resolution ----------------------------------------------------
@@ -144,11 +233,17 @@ export function makeSbdbLookup(base: string, signal: AbortSignal | undefined): S
     }
     if (status === 404) return null;
     if (status >= 200 && status < 400) {
+      let json: unknown;
       try {
-        return extractSbdbPdes(JSON.parse(body), kind);
+        json = JSON.parse(body);
       } catch {
         return null;
       }
+      if (status === 300 && kind !== undefined) {
+        const { choices, more } = limitChoices(sbdbChoices(json, kind));
+        if (choices.length > 1) throw new TrackerAmbiguousError(choices, more);
+      }
+      return extractSbdbPdes(json, kind);
     }
     throw new TrackerHttpError(status);
   };
@@ -230,6 +325,12 @@ async function fetchVectorsForDay(
   // Empty / "No ephemeris available" → land in the day-retry loop (spec §6.6).
   const trimmed = result.trim();
   if (trimmed.length === 0 || /no ephemeris/i.test(trimmed)) return null;
+
+  const search = parseHorizonsIndexSearch(result);
+  if (search !== null) {
+    if (search.kind === 'none' || search.choices.length === 0) throw new TrackerNotFoundError();
+    throw new TrackerAmbiguousError(search.choices, search.more);
+  }
 
   let positions;
   try {

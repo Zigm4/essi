@@ -2,8 +2,15 @@ import { useState, type ReactNode } from 'react';
 import { GlassCard } from '../../../../design-system/components/GlassCard';
 import { IconWarningAmber } from '../../../../design-system/icons';
 import { Haptics } from '../../../../core/haptics';
+import { showSnackbar } from '../../../../core/snackbar';
 import type { HistoryRow } from '../../../../data/db';
-import { clearHistory, deleteHistoryRow, useHistory, type HistoryKind } from '../history';
+import {
+  clearHistory,
+  deleteHistoryRow,
+  restoreHistoryRow,
+  useHistory,
+  type HistoryKind,
+} from '../history';
 import { Spinner } from './kit';
 import { IconDelete, IconHistory } from './toolIcons';
 import styles from './nasa.module.css';
@@ -84,7 +91,7 @@ export interface HistorySheetStrings {
   deleteTitle: string;
 }
 
-/** Corrupted-payload tile (spec §3.3). Tap opens the single-delete confirm. */
+/** Corrupted-payload tile (spec §3.3). Tap deletes it (with Undo). */
 function CorruptedTile({ onDelete }: { onDelete: () => void }) {
   return (
     <GlassCard onTap={onDelete} ariaLabel="Corrupted entry">
@@ -107,9 +114,10 @@ function CorruptedTile({ onDelete }: { onDelete: () => void }) {
 
 /**
  * The shared history sheet: draggable-modal chrome, loading/empty/error/data
- * bodies, and the clear-all + single-delete confirm flows. `renderRow` builds a
+ * bodies, the clear-all confirm and single deletes. `renderRow` builds a
  * tool-specific row and may throw on a corrupt payload (→ corrupted tile).
- * Right-click / long-press a row opens the single-delete confirm.
+ * Each row has a visible delete button (right-click works too, but iOS Safari
+ * never fires contextmenu); a delete happens at once with an Undo snackbar.
  */
 export function HistorySheet({
   kind,
@@ -124,7 +132,28 @@ export function HistorySheet({
 }) {
   const feed = useHistory(kind);
   const [showClear, setShowClear] = useState(false);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const deleteRow = async (id: string) => {
+    Haptics.selection();
+    try {
+      const row = await deleteHistoryRow(kind, id);
+      showSnackbar('Entry deleted.', {
+        action:
+          row === undefined
+            ? undefined
+            : {
+                label: 'Undo',
+                onClick: () => {
+                  void restoreHistoryRow(kind, row).catch(() =>
+                    showSnackbar("Couldn't restore the entry.", { danger: true }),
+                  );
+                },
+              },
+      });
+    } catch {
+      showSnackbar("Couldn't delete the entry.", { danger: true });
+    }
+  };
 
   const hasRows = feed.status === 'data' && feed.rows.length > 0;
   const showDeleteAll = hasRows || feed.status === 'error';
@@ -196,12 +225,26 @@ export function HistorySheet({
               return (
                 <div
                   key={row.id}
+                  className={styles.historyRow}
                   onContextMenu={(e) => {
                     e.preventDefault();
-                    setDeleteId(row.id);
+                    void deleteRow(row.id);
                   }}
                 >
-                  {corrupted ? <CorruptedTile onDelete={() => setDeleteId(row.id)} /> : content}
+                  <div className={styles.historyRowMain}>
+                    {corrupted ? <CorruptedTile onDelete={() => void deleteRow(row.id)} /> : content}
+                  </div>
+                  {!corrupted && (
+                    <button
+                      type="button"
+                      className={styles.historyRowDelete}
+                      title={strings.deleteTitle.replace(/\?$/, '')}
+                      aria-label={strings.deleteTitle.replace(/\?$/, '')}
+                      onClick={() => void deleteRow(row.id)}
+                    >
+                      <IconDelete size={18} />
+                    </button>
+                  )}
                 </div>
               );
             })}
@@ -222,18 +265,6 @@ export function HistorySheet({
         />
       )}
 
-      {deleteId !== null && (
-        <ConfirmDialog
-          title={strings.deleteTitle}
-          confirmLabel="Delete"
-          onCancel={() => setDeleteId(null)}
-          onConfirm={() => {
-            const id = deleteId;
-            setDeleteId(null);
-            void deleteHistoryRow(kind, id);
-          }}
-        />
-      )}
     </>
   );
 }

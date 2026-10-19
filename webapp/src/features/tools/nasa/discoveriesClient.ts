@@ -4,6 +4,7 @@ import {
   CelestialDateOutOfRangeError,
   CelestialHttpError,
   CelestialOfflineError,
+  CelestialTimeoutError,
   CelestialUnparseableError,
 } from './errors';
 import { jplRequest } from './jplClient';
@@ -65,7 +66,8 @@ export function expectedSeconds(kind: ObjectKind, days: number): ExpectedSeconds
 
 function mapCelestialNetworkError(e: unknown): never {
   if (e instanceof NetworkError) {
-    if (e.kind === 'offline' || e.kind === 'timeout') throw new CelestialOfflineError();
+    if (e.kind === 'timeout') throw new CelestialTimeoutError();
+    if (e.kind === 'offline') throw new CelestialOfflineError();
     if (e.kind === 'cancelled') throw new CelestialCancelledError();
     if (e.kind === 'http') throw new CelestialHttpError(e.status ?? 0);
   }
@@ -104,8 +106,15 @@ export async function searchDiscoveries(
   let status: number;
   let body: string;
   try {
+    // One deadline for the whole query: SBDB sends its headers only once the
+    // result is computed (7-9 s measured for asteroids), so a 10 s "connect"
+    // timeout would cut it. A timeout isn't retried - re-running a query that
+    // just took 90 s only makes the wait longer.
+    const timeoutMs = input.kind === 'asteroid' ? ASTEROID_TIMEOUT_MS : COMET_TIMEOUT_MS;
     const res = await jplRequest(base, 'sbdb_query', params, {
-      readTimeoutMs: input.kind === 'asteroid' ? ASTEROID_TIMEOUT_MS : COMET_TIMEOUT_MS,
+      connectTimeoutMs: timeoutMs,
+      readTimeoutMs: timeoutMs,
+      retryOnTimeout: false,
       signal,
     });
     status = res.status;

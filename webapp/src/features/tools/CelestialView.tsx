@@ -1,5 +1,5 @@
-import { useRef, useState, type ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { GlassCard } from '../../design-system/components/GlassCard';
 import { NeonButton } from '../../design-system/components/NeonButton';
 import { SectionHeader } from '../../design-system/components/SectionHeader';
@@ -22,6 +22,7 @@ import {
   IconEventNote,
   IconList,
   IconSchedule,
+  IconShare,
   IconStopCircle,
   IconTimer,
   IconTravelExplore,
@@ -35,7 +36,7 @@ import {
   windowDays,
   ymdLocal,
 } from './nasa/discoveriesClient';
-import { CelestialCancelledError, CelestialError, CelestialOfflineError } from './nasa/errors';
+import { CelestialCancelledError, CelestialError, CelestialTimeoutError } from './nasa/errors';
 import {
   computeStatus,
   displayNameOf,
@@ -50,6 +51,15 @@ import {
 } from './nasa/sbdb';
 import { decodeDiscoveryEntry, saveDiscoveryHistory } from './nasa/history';
 import type { TrackTarget } from './nasa/trackerClient';
+import {
+  discoveriesListShare,
+  discoveriesRoute,
+  discoveryObjectShare,
+  parseDiscoveriesParams,
+  type DiscoveriesQuery,
+} from './nasa/share';
+import { ShareSheet } from './shared/ShareSheet';
+import type { ShareContent } from './shared/shareActions';
 import styles from './nasa/ui/nasa.module.css';
 
 /**
@@ -57,7 +67,31 @@ import styles from './nasa/ui/nasa.module.css';
  * bulk query per Search tap, filtered by object kind and a first-observation
  * date window; results are classified locally (status icons) and each opens a
  * detail sheet that can hand off to the Tracker.
+ *
+ * The last form and results live at module level, so Discoveries → Tracker →
+ * Back finds them again, and the URL carries the last query
+ * (`?kind=&from=&to=`): a shared link re-runs it, `&focus=` opens one object.
  */
+
+/** Results render in pages (a pre-1900 search can return ~50 000 objects). */
+const PAGE_SIZE = 100;
+
+interface LastResults {
+  query: DiscoveriesQuery;
+  results: DiscoveredObject[];
+  truncated: boolean;
+}
+
+let lastForm: { kind: ObjectKind; startDate: Date; endDate: Date } | null = null;
+let lastResults: LastResults | null = null;
+
+function sameQuery(a: DiscoveriesQuery, b: DiscoveriesQuery): boolean {
+  return (
+    a.kind === b.kind &&
+    ymdLocal(a.start) === ymdLocal(b.start) &&
+    ymdLocal(a.end) === ymdLocal(b.end)
+  );
+}
 
 function yesterdayMidnight(): Date {
   const now = new Date();
@@ -159,28 +193,55 @@ const DISCOVERY_HISTORY_STRINGS = {
   deleteTitle: 'Delete search?',
 } as const;
 
-interface ResultMeta {
-  kind: ObjectKind;
-  startYmd: string;
-  endYmd: string;
-}
-
 export function CelestialView() {
   const proxyBase = resolveProxyBase();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const [kind, setKind] = useState<ObjectKind>('comet');
-  const [startDate, setStartDate] = useState<Date>(() => defaultStart());
-  const [endDate, setEndDate] = useState<Date>(() => yesterdayMidnight());
+  // Initial state: a link's query, else the last form / results of this visit.
+  const [initial] = useState(() => {
+    const linked = parseDiscoveriesParams(searchParams);
+    const cached =
+      lastResults !== null && (linked === null || sameQuery(lastResults.query, linked)) ? lastResults : null;
+    const form =
+      linked !== null
+        ? { kind: linked.kind, startDate: linked.start, endDate: linked.end }
+        : (lastForm ?? { kind: 'comet' as ObjectKind, startDate: defaultStart(), endDate: yesterdayMidnight() });
+    return { linked, cached, form };
+  });
+
+  const [kind, setKind] = useState<ObjectKind>(initial.form.kind);
+  const [startDate, setStartDate] = useState<Date>(initial.form.startDate);
+  const [endDate, setEndDate] = useState<Date>(initial.form.endDate);
   const [isSearching, setIsSearching] = useState(false);
-  const [results, setResults] = useState<DiscoveredObject[] | null>(null);
-  const [truncated, setTruncated] = useState(false);
-  const [resultMeta, setResultMeta] = useState<ResultMeta | null>(null);
+  const [results, setResults] = useState<DiscoveredObject[] | null>(initial.cached?.results ?? null);
+  const [truncated, setTruncated] = useState(initial.cached?.truncated ?? false);
+  const [resultMeta, setResultMeta] = useState<DiscoveriesQuery | null>(initial.cached?.query ?? null);
+  const [visible, setVisible] = useState(PAGE_SIZE);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [timedOut, setTimedOut] = useState(false);
   const [detail, setDetail] = useState<DiscoveredObject | null>(null);
+  const [share, setShare] = useState<ShareContent | null>(null);
 
   const genRef = useRef(0);
   const abortRef = useRef<AbortController | null>(null);
+  const focusRef = useRef<string | null>(initial.linked?.focus ?? null);
+
+  useEffect(() => {
+    lastForm = { kind, startDate, endDate };
+  }, [kind, startDate, endDate]);
+
+  // A link opens the object it names once its results are in.
+  useEffect(() => {
+    const focus = focusRef.current;
+    if (focus === null || results === null) return;
+    focusRef.current = null;
+    const hit = results.find((o) => o.designation === focus);
+    if (hit !== undefined) setDetail(hit);
+    const next = new URLSearchParams(searchParams);
+    next.delete('focus');
+    setSearchParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [results]);
 
   const maxYmd = ymdLocal(todayMidnight());
   const days = windowDays(startDate, endDate);
@@ -203,14 +264,17 @@ export function CelestialView() {
       // Save even 0-result searches, before the supersession check (spec §5.3).
       void saveDiscoveryHistory(input.kind, input.startDate, input.endDate, res.objects);
       if (gen !== genRef.current) return;
+      const query: DiscoveriesQuery = { kind: input.kind, start: input.startDate, end: input.endDate };
+      lastResults = { query, results: res.objects, truncated: res.truncated };
       setResults(res.objects);
       setTruncated(res.truncated);
-      setResultMeta({
-        kind: input.kind,
-        startYmd: ymdLocal(input.startDate),
-        endYmd: ymdLocal(input.endDate),
-      });
+      setResultMeta(query);
+      setVisible(PAGE_SIZE);
       setIsSearching(false);
+      // The URL keeps the query: Back from the Tracker, a reload or a shared
+      // link find these results again.
+      const route = discoveriesRoute(query);
+      setSearchParams(new URLSearchParams(route.slice(route.indexOf('?') + 1)), { replace: true });
       if (res.objects.length === 0) Haptics.warning();
       else Haptics.success();
     } catch (e) {
@@ -224,7 +288,7 @@ export function CelestialView() {
         setResults(null);
         setResultMeta(null);
         setErrorMessage(e.message);
-        setTimedOut(e instanceof CelestialOfflineError);
+        setTimedOut(e instanceof CelestialTimeoutError);
       } else {
         setResults(null);
         setResultMeta(null);
@@ -236,7 +300,7 @@ export function CelestialView() {
     }
   };
 
-  const search = () => {
+  const search = (input: ResultMetaInput = { kind, startDate, endDate }) => {
     if (proxyBase === null) return;
     abortRef.current?.abort();
     const gen = ++genRef.current;
@@ -246,8 +310,21 @@ export function CelestialView() {
     setErrorMessage(null);
     setTimedOut(false);
     setTruncated(false);
-    void runSearch(proxyBase, { kind, startDate, endDate }, gen, controller.signal);
+    void runSearch(proxyBase, input, gen, controller.signal);
   };
+
+  // A shared link runs its query (unless these results are already here).
+  // Leaving the page stops the request.
+  useEffect(() => {
+    if (initial.linked !== null && initial.cached === null) {
+      search({ kind: initial.linked.kind, startDate: initial.linked.start, endDate: initial.linked.end });
+    }
+    return () => {
+      abortRef.current?.abort();
+      genRef.current += 1;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const cancel = () => {
     Haptics.warning();
@@ -260,7 +337,7 @@ export function CelestialView() {
     (close: () => void) =>
     (row: HistoryRow): ReactNode => {
       const entry = decodeDiscoveryEntry(row);
-      const count = entry.results.length;
+      const count = entry.total;
       return (
         <GlassCard
           onTap={() => {
@@ -436,7 +513,7 @@ export function CelestialView() {
                 </button>
               </div>
             ) : (
-              <NeonButton title="Search" icon={<IconTravelExplore size={18} />} onPressed={search} />
+              <NeonButton title="Search" icon={<IconTravelExplore size={18} />} onPressed={() => search()} />
             )}
           </GlassCard>
         )}
@@ -469,13 +546,28 @@ export function CelestialView() {
                   <span className={styles.headline}>No matches</span>
                 </div>
                 <div className={styles.caption} style={{ marginTop: 8 }}>
-                  No {kindPlural(resultMeta.kind)} were discovered between {resultMeta.startYmd} and{' '}
-                  {resultMeta.endYmd}. Try a wider window or shift the dates.
+                  No {kindPlural(resultMeta.kind)} were discovered between {ymdLocal(resultMeta.start)} and{' '}
+                  {ymdLocal(resultMeta.end)}. Try a wider window or shift the dates.
                 </div>
               </GlassCard>
             ) : (
               <GlassCard>
-                <SectionHeader title={`Results · ${results.length}`} icon={<IconList size={18} />} />
+                <div className={styles.rowCenter}>
+                  <SectionHeader title={`Results · ${results.length}`} icon={<IconList size={18} />} />
+                  <button
+                    type="button"
+                    className={styles.iconBtn}
+                    style={{ marginLeft: 'auto', color: 'var(--accent-primary)' }}
+                    title="Share"
+                    aria-label="Share these results"
+                    onClick={() => {
+                      Haptics.tap();
+                      setShare(discoveriesListShare(resultMeta, results, truncated));
+                    }}
+                  >
+                    <IconShare size={18} />
+                  </button>
+                </div>
                 {truncated && (
                   <div
                     className={styles.banner}
@@ -495,17 +587,41 @@ export function CelestialView() {
                   </div>
                 )}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
-                  {results.map((object, i) => (
+                  {results.slice(0, visible).map((object, i) => (
                     <DiscoveryCard key={`${object.designation}-${i}`} object={object} onOpen={setDetail} />
                   ))}
                 </div>
+                {results.length > visible && (
+                  <button
+                    type="button"
+                    className={styles.showMoreBtn}
+                    onClick={() => setVisible((v) => v + PAGE_SIZE)}
+                  >
+                    Show {Math.min(PAGE_SIZE, results.length - visible)} more · {visible} of {results.length} shown
+                  </button>
+                )}
               </GlassCard>
             )}
           </>
         )}
       </ToolScaffold>
 
-      {detail !== null && <DiscoveryDetail object={detail} onClose={() => setDetail(null)} />}
+      {detail !== null && (
+        <DiscoveryDetail
+          object={detail}
+          onClose={() => setDetail(null)}
+          onShare={
+            resultMeta === null
+              ? undefined
+              : () => {
+                  Haptics.tap();
+                  setShare(discoveryObjectShare(detail, resultMeta));
+                }
+          }
+        />
+      )}
+
+      <ShareSheet content={share} onClose={() => setShare(null)} />
     </>
   );
 }
@@ -563,7 +679,15 @@ function DiscoveryCard({
 }
 
 /** Discovery detail bottom sheet (spec §5.7). */
-function DiscoveryDetail({ object, onClose }: { object: DiscoveredObject; onClose: () => void }) {
+function DiscoveryDetail({
+  object,
+  onClose,
+  onShare,
+}: {
+  object: DiscoveredObject;
+  onClose: () => void;
+  onShare?: () => void;
+}) {
   const navigate = useNavigate();
   const status = computeStatus(object);
   const name = displayNameOf(object);
@@ -584,6 +708,18 @@ function DiscoveryDetail({ object, onClose }: { object: DiscoveredObject; onClos
             Close
           </button>
           <span className={styles.sheetTitle}>Discovery</span>
+          {onShare !== undefined && (
+            <button
+              type="button"
+              className={styles.iconBtn}
+              style={{ marginLeft: 'auto', color: 'var(--accent-primary)' }}
+              title="Share"
+              aria-label="Share this discovery"
+              onClick={onShare}
+            >
+              <IconShare size={20} />
+            </button>
+          )}
         </div>
         <div className={styles.sheetBody}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>

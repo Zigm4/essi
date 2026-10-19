@@ -30,8 +30,11 @@ export interface JplResponse {
 
 export interface JplRequestOptions {
   signal?: AbortSignal;
+  /** Until the response headers arrive (SBDB computes the whole result first). */
   connectTimeoutMs?: number;
   readTimeoutMs?: number;
+  /** false for heavy queries: a timeout fails at once instead of re-running them. */
+  retryOnTimeout?: boolean;
 }
 
 const CONNECT_TIMEOUT_MS = 10_000;
@@ -152,7 +155,9 @@ export async function jplRequest(
       return res;
     } catch (e) {
       const cancelled = e instanceof NetworkError && e.kind === 'cancelled';
-      const transient = e instanceof NetworkError && (e.kind === 'offline' || e.kind === 'timeout');
+      const transient =
+        e instanceof NetworkError &&
+        (e.kind === 'offline' || (e.kind === 'timeout' && options.retryOnTimeout !== false));
       if (cancelled || !transient || attemptCount >= MAX_RETRIES) throw e;
       await delay(RETRY_DELAYS_MS[Math.min(attemptCount, RETRY_DELAYS_MS.length - 1)]!, options.signal);
       attemptCount += 1;

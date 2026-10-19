@@ -1,10 +1,16 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { GlassCard } from '../../design-system/components/GlassCard';
 import { NeonButton } from '../../design-system/components/NeonButton';
 import { SectionHeader } from '../../design-system/components/SectionHeader';
 import { TransmissionHeader } from '../../design-system/components/TransmissionHeader';
-import { IconPublic, IconTrack, IconWarningAmber, IconWifiTethering } from '../../design-system/icons';
+import {
+  IconClose,
+  IconPublic,
+  IconTrack,
+  IconWarningAmber,
+  IconWifiTethering,
+} from '../../design-system/icons';
 import { resolveProxyBase } from './nasa/jplClient';
 import type { HistoryRow } from '../../data/db';
 import { Haptics } from '../../core/haptics';
@@ -16,6 +22,8 @@ import {
   IconCenterFocus,
   IconPushPin,
   IconPushPinOutlined,
+  IconRefresh,
+  IconShare,
   IconStopCircle,
 } from './nasa/ui/toolIcons';
 import { TrackerHowItWorks } from './nasa/ui/howItWorks/TrackerHowItWorks';
@@ -28,11 +36,20 @@ import {
   type TrackedObject,
 } from './nasa/catalog';
 import { track, type TrackTarget } from './nasa/trackerClient';
-import { TrackerCancelledError, TrackerError, TrackerUnparseableError } from './nasa/errors';
+import {
+  TrackerAmbiguousError,
+  TrackerCancelledError,
+  TrackerError,
+  TrackerUnparseableError,
+  type TrackChoice,
+} from './nasa/errors';
 import type { TrackerResult } from './nasa/models';
 import { KIND_EMOJI, type ObjectKind } from './nasa/sbdb';
 import { decodeTrackerEntry, saveTrackerHistory } from './nasa/history';
 import { toggleFavorite, useFavoriteSet } from './shared/favorites';
+import { trackerFromSnapshot, trackerShare } from './nasa/share';
+import { ShareSheet } from './shared/ShareSheet';
+import type { ShareContent } from './shared/shareActions';
 import styles from './nasa/ui/nasa.module.css';
 
 /**
@@ -40,13 +57,15 @@ import styles from './nasa/ui/nasa.module.css';
  * MPC designation (curated catalog, then SBDB) and fetches the body's live
  * heliocentric vector from JPL Horizons, reporting sector, AU coordinates and
  * SL distance. Accepts a prefill TrackTarget via router location state and
- * auto-tracks it once when an MPC id is provided.
+ * auto-tracks it once when an MPC id is provided. A shared link
+ * (`?snap=…`) shows the shared position as-is, with a Refresh button.
  */
 
 type TrackerPhase =
   | { kind: 'idle' }
   | { kind: 'loading' }
-  | { kind: 'ready'; result: TrackerResult }
+  /** `shared`: opened from a share link - the position on the sharer's day. */
+  | { kind: 'ready'; result: TrackerResult; shared?: boolean }
   | { kind: 'errored'; error: TrackerError };
 
 const TRACKER_FAVORITE_KIND = 'tracked_object' as const;
@@ -79,6 +98,8 @@ function InfoRow({ label, children }: { label: string; children: ReactNode }) {
 
 export function TrackerView() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const proxyBase = resolveProxyBase();
 
   const [query, setQuery] = useState('');
@@ -86,6 +107,7 @@ export function TrackerView() {
   const [phase, setPhase] = useState<TrackerPhase>({ kind: 'idle' });
   const [lockedMpcID, setLockedMpcID] = useState<string | null>(null);
   const [catalog, setCatalog] = useState<readonly TrackedObject[]>([]);
+  const [share, setShare] = useState<ShareContent | null>(null);
 
   const genRef = useRef(0);
   const abortRef = useRef<AbortController | null>(null);
@@ -105,8 +127,20 @@ export function TrackerView() {
     };
   }, []);
 
+  // Leaving the page stops the request (it would otherwise finish in the
+  // background and still write history).
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+      genRef.current += 1;
+      // StrictMode re-runs effects after this cleanup: let the auto-track run again.
+      autoTrackedRef.current = false;
+    };
+  }, []);
+
   const runTrack = (target: TrackTarget) => {
     if (proxyBase === null) return;
+    if (searchParams.has('snap')) setSearchParams({}, { replace: true });
     abortRef.current?.abort();
     const gen = ++genRef.current;
     const controller = new AbortController();
@@ -115,8 +149,8 @@ export function TrackerView() {
     void (async () => {
       try {
         const result = await track(proxyBase, target, catalog, controller.signal);
-        void saveTrackerHistory(result);
         if (gen !== genRef.current) return;
+        void saveTrackerHistory(result);
         setPhase({ kind: 'ready', result });
         Haptics.success();
       } catch (e) {
@@ -133,11 +167,23 @@ export function TrackerView() {
     })();
   };
 
-  // Prefill + one-shot auto-track from Discoveries / history / pin navigation.
+  // A shared link wins; otherwise prefill + one-shot auto-track from
+  // Discoveries / history / pin navigation. The router state is cleared once
+  // used, so a reload or Back → Forward doesn't track again.
   useEffect(() => {
     if (autoTrackedRef.current) return;
+    const shared = trackerFromSnapshot(searchParams.get('snap'));
+    if (shared !== null) {
+      autoTrackedRef.current = true;
+      setQuery(shared.displayName);
+      setKind(shared.kind);
+      setLockedMpcID(shared.mpcID);
+      setPhase({ kind: 'ready', result: shared, shared: true });
+      return;
+    }
     const state: unknown = location.state;
     if (!isTrackTarget(state)) return;
+    navigate({ pathname: location.pathname, search: location.search }, { replace: true, state: null });
     setQuery(state.name);
     setKind(state.kind);
     const mpc =
@@ -196,14 +242,36 @@ export function TrackerView() {
     runTrack({ name: pin.label, kind: pin.kind, mpcID: pin.id });
   };
 
-  const unpin = async (id: string) => {
+  const unpin = async (id: string, label: string) => {
     Haptics.selection();
     try {
       await toggleFavorite(TRACKER_FAVORITE_KIND, id);
-      showSnackbar('Unpinned.');
+      showSnackbar(`${label} unpinned.`, {
+        action: {
+          label: 'Undo',
+          onClick: () => {
+            void toggleFavorite(TRACKER_FAVORITE_KIND, id).catch(() =>
+              showSnackbar("Couldn't pin it again.", { danger: true }),
+            );
+          },
+        },
+      });
     } catch {
       showSnackbar("Couldn't unpin.", { danger: true });
     }
+  };
+
+  const trackChoice = (choice: TrackChoice) => {
+    Haptics.tap();
+    setQuery(choice.label);
+    setKind(choice.kind);
+    setLockedMpcID(choice.mpcID);
+    runTrack({ name: choice.label, kind: choice.kind, mpcID: choice.mpcID });
+  };
+
+  const refreshShared = (result: TrackerResult) => {
+    Haptics.tap();
+    runTrack({ name: result.displayName, kind: result.kind, mpcID: result.mpcID });
   };
 
   const togglePin = async (id: string) => {
@@ -302,9 +370,16 @@ export function TrackerView() {
           autoCorrect="off"
           spellCheck={false}
           placeholder="Object name (e.g. Ceres, C/2025 N1)"
+          enterKeyHint="go"
           value={query}
           disabled={loading}
           onChange={(e) => onQueryChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && canTrack && proxyBase !== null) {
+              e.preventDefault();
+              trackFromInput();
+            }
+          }}
         />
 
         {pins.length > 0 && (
@@ -322,23 +397,33 @@ export function TrackerView() {
             </div>
             <div className={styles.chipWrap} style={{ marginTop: 6 }}>
               {pins.map((pin) => (
-                <button
-                  key={pin.id}
-                  type="button"
-                  className={styles.chip}
-                  disabled={loading}
-                  title={`Track ${pin.label} · right-click to unpin`}
-                  onClick={() => trackPin(pin)}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    void unpin(pin.id);
-                  }}
-                >
-                  <span style={{ color: 'var(--accent-primary)', display: 'inline-flex' }}>
-                    <IconPushPin size={11} />
-                  </span>
-                  {pin.label}
-                </button>
+                <span key={pin.id} className={styles.pinChip}>
+                  <button
+                    type="button"
+                    className={styles.pinChipMain}
+                    disabled={loading}
+                    title={`Track ${pin.label}`}
+                    onClick={() => trackPin(pin)}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      void unpin(pin.id, pin.label);
+                    }}
+                  >
+                    <span style={{ color: 'var(--accent-primary)', display: 'inline-flex' }}>
+                      <IconPushPin size={11} />
+                    </span>
+                    {pin.label}
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.pinChipRemove}
+                    title={`Unpin ${pin.label}`}
+                    aria-label={`Unpin ${pin.label}`}
+                    onClick={() => void unpin(pin.id, pin.label)}
+                  >
+                    <IconClose size={12} />
+                  </button>
+                </span>
               ))}
             </div>
           </>
@@ -414,10 +499,69 @@ export function TrackerView() {
             </span>
             <span className={styles.body}>{phase.error.message}</span>
           </div>
+          {phase.error instanceof TrackerAmbiguousError && (
+            <>
+              <div className={styles.chipWrap} style={{ marginTop: 10 }}>
+                {phase.error.choices.map((choice) => (
+                  <button
+                    key={`${choice.kind}:${choice.mpcID}`}
+                    type="button"
+                    className={styles.chip}
+                    onClick={() => trackChoice(choice)}
+                  >
+                    {KIND_EMOJI[choice.kind]} {choice.label}
+                  </button>
+                ))}
+              </div>
+              {phase.error.more > 0 && (
+                <div className={styles.caption} style={{ marginTop: 8 }}>
+                  …and {phase.error.more} more. Type a more precise name or the designation.
+                </div>
+              )}
+            </>
+          )}
         </GlassCard>
       )}
 
-      {phase.kind === 'ready' && <TrackResult result={phase.result} favoriteIds={favoriteIds} onTogglePin={togglePin} />}
+      {phase.kind === 'ready' && phase.shared === true && (
+        <GlassCard>
+          <div className={styles.rowCenter} style={{ gap: 10 }}>
+            <span style={{ color: 'var(--accent-secondary)', display: 'inline-flex' }}>
+              <IconShare size={18} />
+            </span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className={styles.headline}>Shared position</div>
+              <div className={styles.caption} style={{ marginTop: 2 }}>
+                As of {dMonthYearHm(phase.result.timestamp)}. Objects move - refresh for today&apos;s.
+              </div>
+            </div>
+            {proxyBase !== null && (
+              <button
+                type="button"
+                className={styles.refreshBtn}
+                onClick={() => refreshShared(phase.result)}
+              >
+                <IconRefresh size={16} />
+                Refresh
+              </button>
+            )}
+          </div>
+        </GlassCard>
+      )}
+
+      {phase.kind === 'ready' && (
+        <TrackResult
+          result={phase.result}
+          favoriteIds={favoriteIds}
+          onTogglePin={togglePin}
+          onShare={() => {
+            Haptics.tap();
+            setShare(trackerShare(phase.result));
+          }}
+        />
+      )}
+
+      <ShareSheet content={share} onClose={() => setShare(null)} />
     </ToolScaffold>
   );
 }
@@ -426,10 +570,12 @@ function TrackResult({
   result,
   favoriteIds,
   onTogglePin,
+  onShare,
 }: {
   result: TrackerResult;
   favoriteIds: Set<string>;
   onTogglePin: (id: string) => void;
+  onShare: () => void;
 }) {
   const pinned = favoriteIds.has(result.mpcID);
   return (
@@ -439,7 +585,17 @@ function TrackResult({
         <button
           type="button"
           className={styles.iconBtn}
-          style={{ marginLeft: 'auto', color: pinned ? 'var(--accent-primary)' : 'var(--text-dim)' }}
+          style={{ marginLeft: 'auto', color: 'var(--accent-primary)' }}
+          title="Share"
+          aria-label="Share this position"
+          onClick={onShare}
+        >
+          <IconShare size={18} />
+        </button>
+        <button
+          type="button"
+          className={styles.iconBtn}
+          style={{ color: pinned ? 'var(--accent-primary)' : 'var(--text-dim)' }}
           title={pinned ? 'Remove favorite' : 'Pin object'}
           aria-label={pinned ? 'Remove favorite' : 'Pin object'}
           aria-pressed={pinned}

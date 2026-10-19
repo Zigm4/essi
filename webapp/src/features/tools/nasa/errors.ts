@@ -88,6 +88,13 @@ export class CelestialOfflineError extends CelestialError {
   }
 }
 
+export class CelestialTimeoutError extends CelestialError {
+  constructor() {
+    super('JPL SBDB took too long to answer. Try again, or search a shorter date range.');
+    this.name = 'CelestialTimeoutError';
+  }
+}
+
 export class CelestialCancelledError extends CelestialError {
   constructor() {
     super('Request cancelled.');
@@ -142,6 +149,32 @@ export class TrackerNoEphemerisError extends TrackerError {
   constructor() {
     super('No ephemeris data available for that object right now.');
     this.name = 'TrackerNoEphemerisError';
+  }
+}
+
+export class TrackerNotFoundError extends TrackerError {
+  constructor() {
+    super('No object matches that name. Check the spelling, or try its designation (e.g. 2024 PT5, C/2025 N1).');
+    this.name = 'TrackerNotFoundError';
+  }
+}
+
+/** One object the user can pick when a name matches several. */
+export interface TrackChoice {
+  label: string;
+  mpcID: string;
+  kind: 'comet' | 'asteroid';
+}
+
+export class TrackerAmbiguousError extends TrackerError {
+  readonly choices: readonly TrackChoice[];
+  /** Matches beyond `choices` (not listed). */
+  readonly more: number;
+  constructor(choices: readonly TrackChoice[], more = 0) {
+    super('Several objects match that name. Pick one:');
+    this.name = 'TrackerAmbiguousError';
+    this.choices = choices;
+    this.more = more;
   }
 }
 

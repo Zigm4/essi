@@ -67,6 +67,16 @@ export function useHistory(kind: HistoryKind): HistoryFeed {
 
 // --- Writes ------------------------------------------------------------------
 
+/** Discoveries rows keep this many objects (a pre-1900 search can return ~50 000). */
+export const DISCOVERY_HISTORY_MAX_OBJECTS = 200;
+
+/** Drops rows past the newest HISTORY_LIMIT (the list never shows them, but backups did). */
+async function purgeOld(kind: HistoryKind): Promise<void> {
+  const table = tableFor(kind);
+  const stale = await table.orderBy('date').reverse().offset(HISTORY_LIMIT).primaryKeys();
+  if (stale.length > 0) await table.bulkDelete(stale);
+}
+
 export async function saveScanHistory(
   mode: ScanMode,
   snapshots: PlanetPosition[],
@@ -79,6 +89,7 @@ export async function saveScanHistory(
     payloadJson: JSON.stringify({ snapshots: snapshots.map(planetPositionToJson) }),
     errored,
   });
+  await purgeOld('scan');
 }
 
 export async function saveTrackerHistory(result: TrackerResult): Promise<void> {
@@ -89,6 +100,7 @@ export async function saveTrackerHistory(result: TrackerResult): Promise<void> {
     payloadJson: JSON.stringify(trackerResultToJson(result)),
     errored: false,
   });
+  await purgeOld('tracker');
 }
 
 export async function saveDiscoveryHistory(
@@ -104,14 +116,24 @@ export async function saveDiscoveryHistory(
     payloadJson: JSON.stringify({
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
-      results: results.map(discoveredObjectToJson),
+      total: results.length,
+      results: results.slice(0, DISCOVERY_HISTORY_MAX_OBJECTS).map(discoveredObjectToJson),
     }),
     errored: false,
   });
+  await purgeOld('discovery');
 }
 
-export async function deleteHistoryRow(kind: HistoryKind, id: string): Promise<void> {
-  await tableFor(kind).delete(id);
+/** Deletes one row and returns it, so an Undo can put it back. */
+export async function deleteHistoryRow(kind: HistoryKind, id: string): Promise<HistoryRow | undefined> {
+  const table = tableFor(kind);
+  const row = await table.get(id);
+  await table.delete(id);
+  return row;
+}
+
+export async function restoreHistoryRow(kind: HistoryKind, row: HistoryRow): Promise<void> {
+  await tableFor(kind).put(row);
 }
 
 export async function clearHistory(kind: HistoryKind): Promise<void> {
@@ -144,7 +166,10 @@ export interface DiscoveryEntry {
   kind: ObjectKind;
   startDate: Date;
   endDate: Date;
+  /** The saved objects (at most DISCOVERY_HISTORY_MAX_OBJECTS). */
   results: DiscoveredObject[];
+  /** How many objects the search found (≥ results.length). */
+  total: number;
 }
 
 export function decodeDiscoveryEntry(row: HistoryRow): DiscoveryEntry {
@@ -162,5 +187,6 @@ export function decodeDiscoveryEntry(row: HistoryRow): DiscoveryEntry {
     startDate: new Date(typeof o.startDate === 'string' ? o.startDate : NaN),
     endDate: new Date(typeof o.endDate === 'string' ? o.endDate : NaN),
     results,
+    total: typeof o.total === 'number' && o.total >= results.length ? o.total : results.length,
   };
 }
