@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { GlassCard } from '../../design-system/components/GlassCard';
 import { SectionHeader } from '../../design-system/components/SectionHeader';
@@ -15,15 +15,30 @@ import {
 import { DetailScaffold } from '../knowledge/components/DetailScaffold';
 import { SearchField } from '../knowledge/components/SearchField';
 import { Spinner } from '../knowledge/components/Spinner';
+import { ensureSeedImported } from '../knowledge/maps/data/seedImporter';
 import { useLiveQuery } from '../favorites/useLiveQuery';
 import {
-  runGlobalSearch,
+  SEARCH_SOURCE_ORDER,
+  SEARCH_SOURCE_TITLES,
+  seeAllLink,
+  targetLocation,
   totalHitCount,
   type GlobalSearchHit,
+  type GlobalSearchResult,
   type SearchGroup,
   type SearchHitIcon,
+  type SourceFailure,
 } from './globalSearch';
+import { runGlobalSearch } from './searchSources';
+import { useSearchQuery } from './useSearchQuery';
 import styles from './GlobalSearchView.module.css';
+
+/**
+ * The last results shown. Coming back from an opened result draws them at
+ * once (before the live query re-emits), so the page's saved scroll offset
+ * can be restored on a full-height list.
+ */
+let lastResult: GlobalSearchResult | null = null;
 
 function sourceIcon(icon: SearchHitIcon): ReactNode {
   switch (icon) {
@@ -55,18 +70,7 @@ function ResultRow({ hit }: { hit: GlobalSearchHit }) {
   const ariaLabel = hit.subtitle.length > 0 ? `${hit.title}. ${hit.subtitle}` : hit.title;
 
   const open = (): void => {
-    switch (hit.target.kind) {
-      case 'route':
-        navigate(hit.target.location);
-        break;
-      case 'wallet':
-        navigate(`/tools/wallet?q=${encodeURIComponent(hit.target.query)}`);
-        break;
-      case 'job':
-        // Job detail is a modal owned by the tools area (no route); deferred.
-        navigate('/tools/jobs');
-        break;
-    }
+    navigate(targetLocation(hit.target));
   };
 
   return (
@@ -85,7 +89,9 @@ function ResultRow({ hit }: { hit: GlobalSearchHit }) {
   );
 }
 
-function GroupBlock({ group }: { group: SearchGroup }) {
+function GroupBlock({ group, query }: { group: SearchGroup; query: string }) {
+  const navigate = useNavigate();
+  const seeAll = seeAllLink(group.source, query);
   return (
     <div className={styles.group}>
       <SectionHeader title={group.title} subtitle={resultCountLabel(group.total)} />
@@ -94,11 +100,19 @@ function GroupBlock({ group }: { group: SearchGroup }) {
           <ResultRow key={`${hit.source}-${index}`} hit={hit} />
         ))}
       </div>
-      {group.hasMore && (
-        <p className={styles.more}>
-          +{group.hiddenCount} more - refine your search to narrow down.
-        </p>
-      )}
+      {group.hasMore &&
+        (seeAll === null ? (
+          <p className={styles.more}>
+            +{group.hiddenCount} more - refine your search to narrow down.
+          </p>
+        ) : (
+          <p className={styles.more}>
+            +{group.hiddenCount} more -{' '}
+            <button type="button" className={styles.moreLink} onClick={() => navigate(seeAll.location)}>
+              {`show all in ${seeAll.label}`}
+            </button>
+          </p>
+        ))}
     </div>
   );
 }
@@ -132,38 +146,64 @@ function NoMatches({ query }: { query: string }) {
   );
 }
 
+/** "Jobs", "Jobs and Wallets", "Jobs, Wallets and Notes & links". */
+function sourceList(failed: readonly SourceFailure[]): string {
+  const names = failed.map((f) => SEARCH_SOURCE_TITLES[f.source]);
+  return names.length <= 1 ? (names[0] ?? '') : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+}
+
+function Results({ result }: { result: GlobalSearchResult }) {
+  const { query, groups, failed } = result;
+  if (failed.length === SEARCH_SOURCE_ORDER.length) {
+    return <p className={styles.errorText}>{friendlyError(failed[0]!.error, "Couldn't run that search.")}</p>;
+  }
+  return (
+    <>
+      {failed.length > 0 && (
+        <p className={styles.sourceErrors} role="status">
+          {`Couldn't search ${sourceList(failed)} - showing the other results.`}
+        </p>
+      )}
+      {totalHitCount(groups) === 0 ? (
+        <NoMatches query={query} />
+      ) : (
+        <div className={styles.groups}>
+          {groups.map((group) => (
+            <GroupBlock key={group.source} group={group} query={query} />
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
 /** /menu/search - global search across maps, KB, jobs, wallets, notes. */
 export function GlobalSearchView() {
-  const [text, setText] = useState('');
-  const [committed, setCommitted] = useState('');
+  const { initial, text, setText, committed, clear } = useSearchQuery();
 
-  // Debounce 250ms: committed query = trimmed field text, pending timer
-  // cancelled on each keystroke and on unmount (§11.2.1).
+  // Map zones come from the installed maps: install the bundled seed if the
+  // Knowledge tab was never opened (idempotent; never throws).
   useEffect(() => {
-    const trimmed = text.trim();
-    const timer = setTimeout(() => setCommitted(trimmed), 250);
-    return () => clearTimeout(timer);
-  }, [text]);
+    void ensureSeedImported();
+  }, []);
 
-  const results = useLiveQuery(() => runGlobalSearch(committed), [committed]);
+  const live = useLiveQuery(() => runGlobalSearch(committed), [committed]);
+  // Right after a new query the hook still holds the previous one's data.
+  const fresh = live.status === 'ready' && live.data.query === committed ? live.data : null;
+  useEffect(() => {
+    if (fresh !== null) lastResult = fresh;
+  }, [fresh]);
+  const result = fresh ?? (lastResult !== null && lastResult.query === committed ? lastResult : null);
 
   let body: ReactNode;
   if (committed.length === 0) {
     body = <Hint />;
-  } else if (results.status === 'loading') {
-    body = <Spinner padded />;
-  } else if (results.status === 'error') {
-    body = <p className={styles.errorText}>{friendlyError(results.error, "Couldn't run that search.")}</p>;
-  } else if (totalHitCount(results.data) === 0) {
-    body = <NoMatches query={committed} />;
+  } else if (result !== null) {
+    body = <Results result={result} />;
+  } else if (live.status === 'error') {
+    body = <p className={styles.errorText}>{friendlyError(live.error, "Couldn't run that search.")}</p>;
   } else {
-    body = (
-      <div className={styles.groups}>
-        {results.data.map((group) => (
-          <GroupBlock key={group.source} group={group} />
-        ))}
-      </div>
-    );
+    body = <Spinner padded />;
   }
 
   return (
@@ -173,8 +213,8 @@ export function GlobalSearchView() {
           value={text}
           onChange={setText}
           placeholder="Search maps, jobs, wallets, notes…"
-          autoFocus
-          onClear={() => setCommitted('')}
+          autoFocus={initial.length === 0}
+          onClear={clear}
         />
       </div>
       {body}
