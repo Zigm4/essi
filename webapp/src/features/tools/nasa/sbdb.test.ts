@@ -150,14 +150,48 @@ describe('filterHistorical', () => {
   });
 });
 
+// Trimmed from real sbdb.api?sstr=… responses (Oct 2026): a single match
+// carries `object.des` (no `pdes`); an ambiguous one (HTTP 300) a `list`.
+const SBDB_EROS = { object: { fullname: '433 Eros (A898 PA)', kind: 'an', des: '433', prefix: null, spkid: '2000433' } };
+const SBDB_1P = { object: { fullname: '1P/Halley', kind: 'cn', des: '1P', prefix: 'P', spkid: '1000036' } };
+const SBDB_2024G3 = { object: { fullname: 'C/2024 G3 (ATLAS)', kind: 'cu', des: '2024 G3', prefix: 'C', spkid: '1003993' } };
+const SBDB_HALLEY_300 = {
+  message: 'specified query matched more than one object',
+  code: '300',
+  count: 2,
+  list: [
+    { name: '2688 Halley (1982 HG1)', pdes: '2688' },
+    { name: '1P/Halley', pdes: '1P' },
+  ],
+};
+
 describe('extractSbdbPdes', () => {
-  it('reads object.pdes for a single match', () => {
+  it('reads object.des for a single match (the live API has no object.pdes)', () => {
+    expect(extractSbdbPdes(SBDB_EROS)).toBe('433');
+    expect(extractSbdbPdes(SBDB_1P)).toBe('1P');
+    expect(extractSbdbPdes(SBDB_2024G3)).toBe('2024 G3');
+    expect(extractSbdbPdes(SBDB_EROS, 'asteroid')).toBe('433');
+    expect(extractSbdbPdes(SBDB_2024G3, 'comet')).toBe('2024 G3');
+  });
+  it('still reads a legacy object.pdes', () => {
     expect(extractSbdbPdes({ object: { pdes: '1', fullname: '1 Ceres', kind: 'an' } })).toBe('1');
   });
-  it('reads list[0].pdes for an ambiguous match', () => {
+  it('rejects a single match of the other kind', () => {
+    expect(extractSbdbPdes(SBDB_EROS, 'comet')).toBeNull();
+    expect(extractSbdbPdes(SBDB_1P, 'asteroid')).toBeNull();
+  });
+  it('picks the entry of the requested kind in an ambiguous match', () => {
+    expect(extractSbdbPdes(SBDB_HALLEY_300, 'comet')).toBe('1P');
+    expect(extractSbdbPdes(SBDB_HALLEY_300, 'asteroid')).toBe('2688');
+    expect(extractSbdbPdes(SBDB_HALLEY_300)).toBe('2688'); // no kind: first entry
+  });
+  it('reads list[0].pdes for an ambiguous match without a kind', () => {
     expect(
       extractSbdbPdes({ code: 300, list: [{ pdes: '1996', name: 'Adams' }, { pdes: '(2009 BJ81)' }] }),
     ).toBe('1996');
+  });
+  it('returns null when no entry of the requested kind is listed', () => {
+    expect(extractSbdbPdes({ code: 300, list: [{ pdes: '1996', name: '1996 Adams' }] }, 'comet')).toBeNull();
   });
   it('returns null when no pdes present', () => {
     expect(extractSbdbPdes({ object: {} })).toBeNull();

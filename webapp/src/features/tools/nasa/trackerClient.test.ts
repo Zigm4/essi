@@ -42,7 +42,7 @@ describe('resolveMPC tiers', () => {
   it('tier 3 - SBDB lookup returns a pdes', async () => {
     const lookup = vi.fn<SbdbLookupFn>().mockResolvedValue('1P');
     expect(await resolveMPC({ name: 'Halley', kind: 'comet' }, CATALOG, lookup)).toBe('1P');
-    expect(lookup).toHaveBeenCalledWith('Halley');
+    expect(lookup).toHaveBeenCalledWith('Halley', 'comet');
   });
 
   it('tier 3 - retries with the trailing parenthetical stripped', async () => {
@@ -53,8 +53,8 @@ describe('resolveMPC tiers', () => {
     // Use a comet name NOT in the catalog so tier 1 does not short-circuit.
     const got = await resolveMPC({ name: 'C/2099 Z9 (TEST)', kind: 'comet' }, CATALOG, lookup);
     expect(got).toBe('2024 G3');
-    expect(lookup).toHaveBeenNthCalledWith(1, 'C/2099 Z9 (TEST)');
-    expect(lookup).toHaveBeenNthCalledWith(2, 'C/2099 Z9');
+    expect(lookup).toHaveBeenNthCalledWith(1, 'C/2099 Z9 (TEST)', 'comet');
+    expect(lookup).toHaveBeenNthCalledWith(2, 'C/2099 Z9', 'comet');
   });
 
   it('tier 4 - passthrough when the cleaned name has a digit and a letter', async () => {
@@ -71,9 +71,17 @@ describe('resolveMPC tiers', () => {
 });
 
 describe('buildCommandID', () => {
-  it('strips C//P/ prefix and trailing parenthetical for comets', () => {
-    expect(buildCommandID('C/2024 G3 (ATLAS)', 'comet')).toBe('2024 G3');
-    expect(buildCommandID('P/2003 CP7', 'comet')).toBe('2003 CP7');
+  it('strips C//P/ prefix and trailing parenthetical for comets and asks Horizons by designation', () => {
+    expect(buildCommandID('C/2024 G3 (ATLAS)', 'comet')).toBe('DES=2024 G3;CAP;NOFRAG');
+    expect(buildCommandID('P/2003 CP7', 'comet')).toBe('DES=2003 CP7;CAP;NOFRAG');
+  });
+
+  it('never sends a bare periodic-comet number (Horizons reads 1P / 2P as Pluto moons)', () => {
+    expect(buildCommandID('1P', 'comet')).toBe('DES=1P;CAP;NOFRAG'); // 1P/Halley, not Kerberos
+    expect(buildCommandID('2P', 'comet')).toBe('DES=2P;CAP;NOFRAG'); // 2P/Encke, not Styx
+    expect(buildCommandID('67P', 'comet')).toBe('DES=67P;CAP;NOFRAG');
+    expect(buildCommandID('1P/Halley', 'comet')).toBe('DES=1P;CAP;NOFRAG');
+    expect(buildCommandID('73P-B', 'comet')).toBe('DES=73P-B;CAP;NOFRAG');
   });
 
   it('appends a semicolon to numbered asteroids (Ceres, not Mercury barycenter)', () => {

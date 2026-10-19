@@ -216,21 +216,44 @@ export const KIND_EMOJI: Record<ObjectKind, string> = {
 
 // --- Single-body lookup pdes extraction (§6.6) -------------------------------
 
-/** Read `object.pdes` (single match) or `list[0].pdes` (ambiguous). */
-export function extractSbdbPdes(json: unknown): string | null {
+/** A comet designation or name: `1P`, `73P-B`, `1P/Halley`, `C/2024 G3 (ATLAS)`, `P/2003 CP7`. */
+function looksLikeComet(pdes: string, name: string): boolean {
+  return /^\d+[PDI](-[A-Z]+)?$/.test(pdes) || /^(\d+[PDI]|[CPDXI])\//.test(name) || /^[CPDXI]\//.test(pdes);
+}
+
+/**
+ * The designation from an SBDB `sstr` lookup.
+ * - Single match (HTTP 200): `object.des` - the live API has no `pdes` there
+ *   (checked Oct 2026 for Eros, Ceres, 1P, C/2024 G3); `object.pdes` is kept as
+ *   a fallback. When `kind` is given, a match of the other kind (SBDB
+ *   `object.kind` starts with `a` for asteroids, `c` for comets) is rejected.
+ * - Ambiguous (HTTP 300): `list[].pdes`, keeping the first entry of the
+ *   requested kind ("Halley" lists asteroid 2688 before comet 1P). Without a
+ *   kind, the first entry.
+ */
+export function extractSbdbPdes(json: unknown, kind?: ObjectKind): string | null {
   if (typeof json !== 'object' || json === null) return null;
   const obj = json as Record<string, unknown>;
   const single = obj.object;
   if (typeof single === 'object' && single !== null) {
-    const pdes = (single as Record<string, unknown>).pdes;
-    if (typeof pdes === 'string' && pdes.length > 0) return pdes;
+    const o = single as Record<string, unknown>;
+    const des = typeof o.des === 'string' && o.des.length > 0 ? o.des : typeof o.pdes === 'string' ? o.pdes : '';
+    if (des.length > 0) {
+      const sbdbKind = typeof o.kind === 'string' ? o.kind : '';
+      if (kind !== undefined && sbdbKind.length > 0 && !sbdbKind.startsWith(kind === 'comet' ? 'c' : 'a')) return null;
+      return des;
+    }
   }
   const list = obj.list;
-  if (Array.isArray(list) && list.length > 0) {
-    const first = list[0];
-    if (typeof first === 'object' && first !== null) {
-      const pdes = (first as Record<string, unknown>).pdes;
-      if (typeof pdes === 'string' && pdes.length > 0) return pdes;
+  if (Array.isArray(list)) {
+    for (const entry of list) {
+      if (typeof entry !== 'object' || entry === null) continue;
+      const e = entry as Record<string, unknown>;
+      const pdes = typeof e.pdes === 'string' ? e.pdes : '';
+      if (pdes.length === 0) continue;
+      if (kind === undefined) return pdes;
+      const isComet = looksLikeComet(pdes, typeof e.name === 'string' ? e.name : '');
+      if (isComet === (kind === 'comet')) return pdes;
     }
   }
   return null;

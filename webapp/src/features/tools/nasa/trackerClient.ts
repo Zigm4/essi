@@ -56,11 +56,20 @@ function hasDigitAndLetter(s: string): boolean {
   return /\d/.test(s) && /[a-zA-Z]/.test(s);
 }
 
-/** Build the Horizons COMMAND designation from a resolved mpcID (spec §6.6). */
+/**
+ * Build the Horizons COMMAND from a resolved mpcID (spec §6.6).
+ * Comets go through `DES=…;CAP;NOFRAG` (current apparition, no fragments): a
+ * bare `1P` or `2P` is read by Horizons as a body number and lands on Pluto's
+ * moons Kerberos / Styx, and `67P` returns a list instead of an ephemeris
+ * (checked on the live API, Oct 2026). `C/2024 G3` → `DES=2024 G3;CAP;NOFRAG`.
+ */
 export function buildCommandID(mpcID: string, kind: ObjectKind): string {
   if (kind === 'comet') {
-    const noPrefix = mpcID.replace(/^[cp]\//i, '');
-    return stripTrailingParenthetical(noPrefix);
+    const designation = stripTrailingParenthetical(mpcID.trim().replace(/^[cp]\//i, '')).replace(
+      /^(\d+[PDI](?:-[A-Z]+)?)\/.*$/i, // "1P/Halley" → "1P"
+      '$1',
+    );
+    return `DES=${designation};CAP;NOFRAG`;
   }
   // asteroid: a bare number is the Ceres-vs-Mercury ambiguity → append ';'
   return isAllDigits(mpcID.trim()) ? `${mpcID.trim()};` : mpcID.trim();
@@ -68,7 +77,7 @@ export function buildCommandID(mpcID: string, kind: ObjectKind): string {
 
 // --- Tier 1..4 resolution ----------------------------------------------------
 
-export type SbdbLookupFn = (query: string) => Promise<string | null>;
+export type SbdbLookupFn = (query: string, kind?: ObjectKind) => Promise<string | null>;
 
 /**
  * Resolve the canonical MPC designation. `lookup` performs the SBDB sstr call
@@ -95,9 +104,9 @@ export async function resolveMPC(
   if (target.kind === 'asteroid' && isAllDigits(cleaned)) return cleaned;
 
   // Tier 3 - SBDB sstr lookup, with a parenthetical-stripped retry.
-  let hit = await lookup(cleaned);
+  let hit = await lookup(cleaned, target.kind);
   if (hit === null && hasTrailingParenthetical(cleaned)) {
-    hit = await lookup(stripTrailingParenthetical(cleaned));
+    hit = await lookup(stripTrailingParenthetical(cleaned), target.kind);
   }
   if (hit !== null && hit.length > 0) return hit;
 
@@ -116,7 +125,7 @@ export async function resolveMPC(
  * transport failure → null.
  */
 export function makeSbdbLookup(base: string, signal: AbortSignal | undefined): SbdbLookupFn {
-  return async (query: string): Promise<string | null> => {
+  return async (query: string, kind?: ObjectKind): Promise<string | null> => {
     let status: number;
     let body: string;
     try {
@@ -136,7 +145,7 @@ export function makeSbdbLookup(base: string, signal: AbortSignal | undefined): S
     if (status === 404) return null;
     if (status >= 200 && status < 400) {
       try {
-        return extractSbdbPdes(JSON.parse(body));
+        return extractSbdbPdes(JSON.parse(body), kind);
       } catch {
         return null;
       }
