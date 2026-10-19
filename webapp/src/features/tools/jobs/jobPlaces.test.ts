@@ -3,7 +3,16 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { parseJobsJson, type Job } from './jobModel';
-import { astroLabel, buildPlaces, parsePlaceKey, placeContains, placeLabel } from './jobPlaces';
+import {
+  astroLabel,
+  buildPlaces,
+  locationDisplayLabel,
+  locationName,
+  parsePlaceKey,
+  placeContains,
+  placeLabel,
+  zoneLabel,
+} from './jobPlaces';
 
 const jobs = parseJobsJson(
   JSON.parse(
@@ -24,10 +33,13 @@ function pickupJob(astnum: number, zone: number, name: string | null): Job {
 }
 
 describe('astro labels', () => {
-  it('always carry the number', () => {
+  it("use the owner's names and always carry the number", () => {
     expect(astroLabel(301)).toBe('Luna · 301');
     expect(astroLabel(100)).toBe('Mercury · 100');
-    expect(astroLabel(506)).toBe('Astro 506');
+    expect(astroLabel(506)).toBe('Jupiter Station · 506');
+    expect(astroLabel(355)).toBe('Ratropia · 355');
+    expect(astroLabel(174310223)).toBe('Oort Station · 174310223');
+    expect(astroLabel(206)).toBe('Astro 206');
   });
 });
 
@@ -39,17 +51,24 @@ describe('buildPlaces', () => {
     const luna = places.astros.find((a) => a.astnum === 301)!;
     expect(luna.label).toBe('Luna · 301');
     expect(luna.total).toBe(24);
-    expect(places.astros.find((a) => a.astnum === 506)!.label).toBe('Astro 506');
+    expect(places.astros.find((a) => a.astnum === 506)!.label).toBe('Jupiter Station · 506');
+    expect(places.astros.find((a) => a.astnum === 466)!.label).toBe('Astro 466');
     for (const astro of places.astros) {
       expect(astro.zones.reduce((sum, z) => sum + z.total, 0)).toBe(astro.total);
     }
   });
 
-  it('names a zone by its most frequent name', () => {
-    expect(zoneOf(506, 55).name).toBe('Docking Port'); // Docking Port ×5, Docking Bay ×1
+  it("names a zone by the owner's table first, else by its most frequent name", () => {
+    expect(zoneOf(506, 55).name).toBe('Docking Port'); // owner's name (data: Docking Port ×5, Docking Bay ×1)
     expect(zoneOf(506, 55).total).toBe(6);
-    expect(zoneOf(506, 53).name).toBe('Research Ring'); // vs "research ring" ×1
-    expect(zoneOf(355, 54).name).toBe('Imperious Falls (ratropia)'); // null names ignored
+    expect(zoneOf(206, 59).name).toBe('Life Support System'); // every station gets the nine zone names
+    expect(zoneOf(355, 54).name).toBe('Imperious Falls'); // owner's name beats "Imperious Falls (ratropia)"
+    expect(zoneOf(355, 68).name).toBe('Town Hall');
+    expect(placeLabel(null, 'zone:355:112')).toBe("Ratropia · Queen's Quarry"); // a dropoff only; beats "Queens Quarry"
+    expect(zoneOf(301, 7).name).toBe('Luna Mesa Mart / Moonhowl Mesa (Endymion)');
+    expect(zoneOf(301, 73).name).toBe('Moonclaw Mountains (Lycanox)'); // not listed: most frequent pickup name
+    expect(zoneOf(401, 49).name).toBe("Wendell's Watch (comms) observatory");
+    expect(zoneLabel(355, 999)).toBeNull();
   });
 
   it('breaks ties alphabetically and falls back to "Zone n"', () => {
@@ -62,14 +81,33 @@ describe('buildPlaces', () => {
   it('disambiguates zones of one astro that share a name', () => {
     expect(zoneOf(355, 35).name).toBe('Northshire · z35');
     expect(zoneOf(355, 56).name).toBe('Northshire · z56');
-    expect(zoneOf(355, 55).name).toBe('Area 55 North');
+    expect(zoneOf(355, 55).name).toBe('Area55 North');
   });
 
   it('labels place keys for chips', () => {
     expect(placeLabel(places, 'ast:301')).toBe('Luna · 301');
-    expect(placeLabel(places, 'zone:506:55')).toBe('Docking Port, Astro 506');
-    expect(placeLabel(places, 'zone:1:2')).toBe('Zone 2, Astro 1');
+    expect(placeLabel(places, 'zone:506:55')).toBe('Jupiter Station · Docking Port');
+    expect(placeLabel(places, 'zone:206:55')).toBe('Astro 206 · Docking Port');
+    expect(placeLabel(places, 'zone:301:0')).toBe('Luna Space'); // already names the astro
+    expect(placeLabel(places, 'zone:355:35')).toBe('Ratropia · Northshire · z35');
+    expect(placeLabel(places, 'zone:1:2')).toBe('Astro 1 · Zone 2');
+    expect(placeLabel(null, 'zone:355:68')).toBe('Ratropia · Town Hall');
     expect(placeLabel(null, 'ast:400')).toBe('Mars · 400');
+  });
+
+  it("labels a job's location for cards and the detail sheet", () => {
+    expect(locationDisplayLabel({ astnum: 506, zone: 55, name: 'Docking Bay' })).toBe(
+      'Jupiter Station · Docking Port (506 · z55)',
+    );
+    expect(locationDisplayLabel({ astnum: 355, zone: 35, name: 'Northshire' })).toBe('Ratropia · Northshire (355 · z35)');
+    expect(locationDisplayLabel({ astnum: 301, zone: 0, name: 'Luna Space' })).toBe('Luna Space (301 · z0)');
+    expect(locationDisplayLabel({ astnum: 200, zone: 55, name: 'Venus' })).toBe('Venus (200 · z55)');
+    expect(locationDisplayLabel({ astnum: 301, zone: 55, name: null })).toBe('Luna (301 · z55)');
+    expect(locationDisplayLabel({ astnum: 199990000, zone: 58, name: 'OORTOPIA - Engineering Core' })).toBe(
+      'OORTOPIA - Engineering Core (199990000 · z58)',
+    );
+    expect(locationDisplayLabel({ astnum: 9, zone: 1, name: null })).toBe('9 · z1');
+    expect(locationName({ astnum: 9, zone: 1, name: null })).toBeNull();
   });
 });
 

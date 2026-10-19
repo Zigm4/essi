@@ -1,11 +1,12 @@
 import { memo, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
 import type { JobStatusValue } from '../../../data/db';
 import { withAlpha } from '../../../design-system/color';
-import { IconCheckCircle, IconWarningAmber } from '../../../design-system/icons';
+import { IconCheckCircle, IconLock, IconWarningAmber } from '../../../design-system/icons';
 import { FavoriteButton } from '../shared/FavoriteButton';
 import { stripMarkdown } from '../shared/markdown';
 import {
   IconBolt,
+  IconFlag,
   IconGppBad,
   IconLocalAtm,
   IconLocalShipping,
@@ -13,7 +14,8 @@ import {
   IconPlace,
   IconShieldOutlined,
 } from '../shared/toolIcons';
-import { locationLabel, type Job } from './jobModel';
+import type { Job } from './jobModel';
+import { locationDisplayLabel } from './jobPlaces';
 import { factionInfo, rewardInfo, skillLabel, skillTint, tagLabel } from './jobTaxonomies';
 import styles from './Jobs.module.css';
 
@@ -64,7 +66,8 @@ export const JobCard = memo(function JobCard({
   onOpen: (id: number) => void;
 }) {
   const ally = job.factionRep !== null ? factionInfo(job.factionRep) : null;
-  const rival = job.factionRival !== null ? factionInfo(job.factionRival) : null;
+  const harmed = job.harmedFaction !== null ? factionInfo(job.harmedFaction) : null;
+  const gains = job.alsoGainsFaction !== null ? factionInfo(job.alsoGainsFaction) : null;
   const reward = rewardInfo(job.reward);
   const teaser = stripMarkdown(job.description);
 
@@ -91,13 +94,23 @@ export const JobCard = memo(function JobCard({
             {ally.label}
           </span>
         )}
-        {rival !== null && (
-          <span className={styles.rivalGroup}>
-            <span className={styles.rivalIcon} style={{ color: withAlpha(rival.tint, 0.9) }}>
+        {gains !== null && (
+          <span className={styles.rivalGroup} title={`${gains.label} also gains reputation`}>
+            <span className={styles.gainSign} style={{ color: withAlpha(gains.tint, 0.9) }} aria-hidden="true">
+              +
+            </span>
+            <span className={styles.factionPill} style={tintStyle(gains.tint, 0.06, 0.5)}>
+              {gains.label}
+            </span>
+          </span>
+        )}
+        {harmed !== null && (
+          <span className={styles.rivalGroup} title={`${harmed.label} loses reputation`}>
+            <span className={styles.rivalIcon} style={{ color: withAlpha(harmed.tint, 0.9) }}>
               <IconGppBad size={11} />
             </span>
-            <span className={styles.factionPill} style={tintStyle(rival.tint, 0.06, 0.5)}>
-              {rival.label}
+            <span className={styles.factionPill} style={tintStyle(harmed.tint, 0.06, 0.5)}>
+              {harmed.label}
             </span>
           </span>
         )}
@@ -140,6 +153,16 @@ export const JobCard = memo(function JobCard({
             }
           />
         )}
+        {job.requiredRep > 0 && (
+          <Stat
+            icon={<IconFlag size={12} />}
+            tint={ally?.tint ?? ACCENT_PRIMARY}
+            label={ally !== null ? `rep ≥ ${job.requiredRep} ${ally.code}` : `rep ≥ ${job.requiredRep}`}
+          />
+        )}
+        {job.requiredAsset !== null && (
+          <Stat icon={<IconLock size={12} />} tint={ACCENT_WARN} label="equipment" />
+        )}
         <Stat icon={<IconWarningAmber size={12} />} tint={riskTint(job.risk)} label={`risk ${job.risk}`} />
         <Stat
           icon={<IconLocalAtm size={12} />}
@@ -151,8 +174,8 @@ export const JobCard = memo(function JobCard({
           tint={ACCENT_PRIMARY}
           label={
             job.isOnSite
-              ? locationLabel(job.pickupLocation)
-              : `${locationLabel(job.pickupLocation)} → ${locationLabel(job.dropoffLocation)}`
+              ? locationDisplayLabel(job.pickupLocation)
+              : `${locationDisplayLabel(job.pickupLocation)} → ${locationDisplayLabel(job.dropoffLocation)}`
           }
         />
         {job.isCargoJob && (

@@ -15,37 +15,63 @@ export const DEFAULT_TINT = '#8AA4C2'; // textSecondary
 const ACCENT_SECONDARY = '#7AE3FF';
 export const ACCENT_SUCCESS = '#5FE8A0';
 
-/** Allied factions (appear as `factionRep`). */
-export const ALLIED_FACTIONS: Record<string, Tinted> = {
-  rep_chat: { label: 'Chattery', tint: '#B377FF' },
-  rep_clst: { label: 'Celestyn', tint: '#E6E6FF' },
-  rep_hex: { label: 'Hex', tint: '#FF77AA' },
-  rep_king: { label: 'King', tint: '#FFD15C' },
-  rep_lycnx: { label: 'Lycanox', tint: '#9DDCFF' },
-  rep_mrtn: { label: 'Martian', tint: '#FF7755' },
-  rep_mschf: { label: 'Mischief', tint: '#FFC766' },
-  rep_pearl: { label: 'Pearl', tint: '#FFE9A8' },
-  rep_proq: { label: 'Proquinox', tint: '#9C9C9C' },
-  rep_rsa: { label: 'RSA', tint: '#FF5577' },
-  rep_rts: { label: 'Rustwind', tint: '#C58A4F' },
-  rep_rvnts: { label: 'Revenants', tint: '#8B6FFF' },
-  rep_tfi: { label: 'TFI', tint: '#5FE8A0' },
-  rep_uurt: { label: 'Uurt', tint: '#3FBFA0' },
-  rep_zcorp: { label: 'Z-Corp', tint: '#4FC3FF' },
+interface FactionDef {
+  /** The short code the game's bot shows (descriptions read `**MSC & QNX**`, `[PRQ SQUIRE: …]`). */
+  code: string;
+  /** The faction's name when a source attests it; null = not attested, the code is shown instead. */
+  name: string | null;
+  tint: string;
+}
+
+/**
+ * Factions by reputation key (`factionRep`, `factionRival`, and the stems of
+ * the rival functions). The game's bot only shows codes; a name is listed only
+ * where a source attests it. Names left null (PRQ, MSN, 55th, CO8, TFI, HEX,
+ * RSA) are still to be confirmed with the game's developer - earlier labels
+ * such as "Proquinox", "Mischen", "55 Imperials" or "Co8" were made up.
+ */
+const FACTIONS: Record<string, FactionDef> = {
+  rep_55imp: { code: '55th', name: null, tint: '#FF7777' },
+  rep_chat: { code: 'CHT', name: 'Chattery', tint: '#B377FF' },
+  rep_clst: { code: 'CLS', name: 'Celestyn', tint: '#E6E6FF' },
+  rep_co8: { code: 'CO8', name: null, tint: '#8B7BFF' },
+  rep_hex: { code: 'HEX', name: null, tint: '#FF77AA' },
+  rep_king: { code: 'KING', name: 'King', tint: '#FFD15C' },
+  rep_lycnx: { code: 'LYC', name: 'Lycanox', tint: '#9DDCFF' },
+  rep_mrtn: { code: 'MRT', name: 'Martian', tint: '#FF7755' },
+  rep_mschf: { code: 'MSC', name: 'Mischief', tint: '#FFC766' },
+  rep_mschn: { code: 'MSN', name: null, tint: '#FF8844' },
+  rep_oort: { code: 'ORT', name: 'Oortians', tint: '#AACCFF' },
+  rep_pearl: { code: 'PRL', name: 'Pearl', tint: '#FFE9A8' },
+  rep_proq: { code: 'PRQ', name: null, tint: '#9C9C9C' },
+  rep_qnxs: { code: 'QNX', name: 'Qnexus', tint: '#66E0DD' },
+  rep_rsa: { code: 'RSA', name: null, tint: '#FF5577' },
+  rep_rts: { code: 'RTS', name: 'Rustwind', tint: '#C58A4F' },
+  rep_rvnts: { code: 'PRV', name: 'Revenants', tint: '#8B6FFF' },
+  rep_tfi: { code: 'TFI', name: null, tint: '#5FE8A0' },
+  rep_uurt: { code: 'URT', name: 'Uurtians', tint: '#3FBFA0' },
+  rep_zcorp: { code: 'ZCP', name: 'Z-Corp', tint: '#4FC3FF' },
 };
 
-/** Rival-only factions (appear only as `factionRival`). */
-export const RIVAL_ONLY_FACTIONS: Record<string, Tinted> = {
-  rep_55imp: { label: '55 Imperials', tint: '#FF7777' },
-  rep_co8: { label: 'Co8', tint: '#8B7BFF' },
-  rep_mschn: { label: 'Mischen', tint: '#FF8844' },
-  rep_oort: { label: 'Oortians', tint: '#AACCFF' },
-  rep_qnxs: { label: 'Qnexus', tint: '#66E0DD' },
-};
+export interface FactionInfo extends Tinted {
+  code: string;
+  name: string | null;
+  /** Short label (cards, chips): the name when attested, else the code. */
+  label: string;
+  /** Long label (detail sheet, filter sheet): `Name (CODE)` when the name is attested, else the code. */
+  fullLabel: string;
+}
 
-/** Faction lookup across both lists; unknown → raw key + default tint. */
-export function factionInfo(key: string): Tinted {
-  return ALLIED_FACTIONS[key] ?? RIVAL_ONLY_FACTIONS[key] ?? { label: key, tint: DEFAULT_TINT };
+/** Faction lookup; an unknown key renders raw (as its own code) with the default tint. */
+export function factionInfo(key: string): FactionInfo {
+  const def = FACTIONS[key] ?? { code: key, name: null, tint: DEFAULT_TINT };
+  return {
+    code: def.code,
+    name: def.name,
+    tint: def.tint,
+    label: def.name ?? def.code,
+    fullLabel: def.name === null ? def.code : `${def.name} (${def.code})`,
+  };
 }
 
 /** Tags (`requiredTag` → human label). */

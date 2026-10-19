@@ -214,7 +214,8 @@ function FilterSheetDialog({
   };
 
   const patch = (partial: Partial<JobFilter>) => setDraft((d) => ({ ...d, ...partial }));
-  const factionLabel = (key: string) => factionInfo(key).label;
+  /** `Name (CODE)` when the name is attested, else the code. */
+  const factionLabel = (key: string) => factionInfo(key).fullLabel;
   const rewardLabel = (key: string) => rewardInfo(key).label;
 
   const factionKeys = rankByCount(options.factions, counts.factions, factionLabel);

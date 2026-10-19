@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import type { JobStatusValue } from '../../../data/db';
-import { canonicalReward, coordsLabel, locationLabel, parseJobsJson, type Job } from './jobModel';
+import { canonicalReward, coordsLabel, locationLabel, parseJob, parseJobsJson, secondFactionEffect, type Job } from './jobModel';
 import { buildPlaces } from './jobPlaces';
 import {
   activeFilterChips,
@@ -25,7 +25,7 @@ import {
   type JobContext,
   type JobFilter,
 } from './jobsLogic';
-import { categoryLabel, jobCategory, JOB_CATEGORIES, skillLabel } from './jobTaxonomies';
+import { categoryLabel, factionInfo, jobCategory, JOB_CATEGORIES, skillLabel } from './jobTaxonomies';
 
 const jobs = parseJobsJson(
   JSON.parse(
@@ -74,6 +74,51 @@ describe('parseJobsJson', () => {
     expect(first.isOnSite).toBe(false);
   });
 
+  it("derives the second faction's effect from rivalFunction (add = also gains, remove = loses)", () => {
+    const harmed: Record<string, number> = {};
+    for (const job of jobs) if (job.harmedFaction !== null) harmed[job.harmedFaction] = (harmed[job.harmedFaction] ?? 0) + 1;
+    expect(harmed).toEqual({
+      rep_mrtn: 17,
+      rep_lycnx: 17,
+      rep_qnxs: 3,
+      rep_rsa: 3,
+      rep_king: 2,
+      rep_55imp: 1,
+      rep_uurt: 1,
+      rep_chat: 1,
+      rep_rvnts: 1,
+      rep_oort: 1,
+    });
+    expect(jobs.filter((j) => j.alsoGainsFaction !== null).length).toBe(283);
+    expect(jobs.some((j) => j.harmedFaction !== null && j.alsoGainsFaction !== null)).toBe(false);
+    // The stem names the faction when factionRival is missing; setStaminaAmt touches none.
+    expect(secondFactionEffect('removeRsaAmt', null)).toEqual({ harmed: 'rep_rsa', gains: null });
+    expect(secondFactionEffect('remove55ImpAmt', null)).toEqual({ harmed: 'rep_55imp', gains: null });
+    expect(secondFactionEffect('addCo8Amt', 'rep_co8')).toEqual({ harmed: null, gains: 'rep_co8' });
+    expect(secondFactionEffect('setStaminaAmt', null)).toEqual({ harmed: null, gains: null });
+    expect(secondFactionEffect(null, 'rep_mrtn')).toEqual({ harmed: null, gains: null });
+    // A faction the data names as rival can also gain: Martian is rival on 50 jobs, harmed on 17.
+    expect(jobs.filter((j) => j.factionRival === 'rep_mrtn' && j.alsoGainsFaction === 'rep_mrtn').length).toBe(33);
+  });
+
+  it('parses the required equipment and its description note', () => {
+    const job = jobById(40022001);
+    expect(job.requiredRep).toBe(5);
+    expect(job.factionRep).toBe('rep_rts');
+    expect(job.requiredAsset).toEqual({ template: 'up.tech', id: '874023', note: 'Space Camera required' });
+    expect(jobById(40021101).requiredAsset).toEqual({ template: 'up.tech', id: '874023', note: null });
+    // The key is present on 15 rows but set on 11 (10 ids: 30107301 is duplicated).
+    expect(jobs.filter((j) => j.requiredAsset !== null).length).toBe(11);
+    expect(jobById(35511202).requiredAsset).toBeNull();
+    const numeric = parseJob({
+      id: 9,
+      requiredAssetId: 42,
+      pickupLocation: { astnum: 1, zone: 2 },
+      dropoffLocation: { astnum: 1, zone: 2 },
+    });
+    expect(numeric?.requiredAsset).toEqual({ template: null, id: '42', note: null });
+  });
+
   it('canonicalises rewards by function then by raw fixups', () => {
     expect(canonicalReward('coin', 'addCarryCoinAmt')).toBe('coin');
     expect(canonicalReward('anything', 'addTungstenAmt')).toBe('wolfram');
@@ -89,6 +134,24 @@ describe('location labels', () => {
     expect(coordsLabel({ astnum: 355, zone: 35, name: null })).toBe('355 · z35');
     expect(locationLabel({ astnum: 355, zone: 35, name: 'Northshire' })).toBe('Northshire (355 · z35)');
     expect(locationLabel({ astnum: 355, zone: 35, name: null })).toBe('355 · z35');
+  });
+});
+
+describe('faction labels', () => {
+  it('show the attested name, else the code', () => {
+    expect(factionInfo('rep_rts')).toMatchObject({ code: 'RTS', name: 'Rustwind', label: 'Rustwind', fullLabel: 'Rustwind (RTS)' });
+    expect(factionInfo('rep_proq')).toMatchObject({ code: 'PRQ', name: null, label: 'PRQ', fullLabel: 'PRQ' });
+    expect(factionInfo('rep_mschn').label).toBe('MSN');
+    expect(factionInfo('rep_55imp').label).toBe('55th');
+    expect(factionInfo('rep_co8').label).toBe('CO8');
+    expect(factionInfo('rep_rvnts').fullLabel).toBe('Revenants (PRV)');
+    expect(factionInfo('rep_uurt').label).toBe('Uurtians');
+    expect(factionInfo('rep_unknown')).toMatchObject({ code: 'rep_unknown', label: 'rep_unknown' });
+  });
+
+  it('cover every faction key in the data', () => {
+    const keys = new Set(jobs.flatMap((j) => [j.factionRep, j.factionRival, j.harmedFaction]).filter((k) => k !== null));
+    for (const key of keys) expect(factionInfo(key!).code).not.toBe(key);
   });
 });
 
@@ -178,17 +241,23 @@ describe('predicate - sections', () => {
     expect(count({ noRepOnly: true })).toBe(169);
   });
 
-  it("don't anger excludes the rival's jobs and keeps rival-less ones", () => {
-    expect(count({ avoidRivals: new Set(['rep_mrtn']) })).toBe(321);
+  it("don't anger excludes only the jobs that make the faction lose reputation", () => {
+    expect(count({ avoidRivals: new Set(['rep_mrtn']) })).toBe(354);
     const kept = visibleJobs(jobs, { ...pristineFilter(), avoidRivals: new Set(['rep_mrtn', 'rep_chat']) }, EMPTY_CONTEXT);
-    expect(kept.length).toBe(371 - 50 - 37);
-    expect(kept.some((j) => j.factionRival === null)).toBe(true);
-    expect(kept.every((j) => j.factionRival !== 'rep_mrtn' && j.factionRival !== 'rep_chat')).toBe(true);
+    expect(kept.length).toBe(371 - 17 - 1);
+    expect(kept.some((j) => j.harmedFaction === null)).toBe(true);
+    expect(kept.every((j) => j.harmedFaction !== 'rep_mrtn' && j.harmedFaction !== 'rep_chat')).toBe(true);
+    // Jobs where Martian also gains are kept.
+    expect(kept.some((j) => j.alsoGainsFaction === 'rep_mrtn')).toBe(true);
   });
 
-  it('no prerequisites = 21 jobs in the shipped data', () => {
+  it('no prerequisites = 21 jobs in the shipped data (no reputation, skill, shire or equipment)', () => {
     expect(count({ noPrereqOnly: true })).toBe(21);
     expect(jobs.filter(hasNoPrerequisite).length).toBe(21);
+    // Every equipment job also needs a skill today, so the count is unchanged - but equipment alone excludes.
+    const free = jobs.find(hasNoPrerequisite)!;
+    expect(hasNoPrerequisite({ ...free, requiredAsset: { template: 'up.tech', id: '874023', note: null } })).toBe(false);
+    expect(jobs.filter((j) => j.requiredAsset !== null).every((j) => !hasNoPrerequisite(j))).toBe(true);
   });
 
   it('companion filters read favorites and statuses from the context', () => {
@@ -217,11 +286,24 @@ describe('search', () => {
     expect(ids({ query: '  35511202  ' })).toEqual([35511202]);
   });
 
-  it('matches faction names', () => {
+  it('matches faction names and codes', () => {
     const found = new Set(ids({ query: 'mischief' }));
     const mischief = jobs.filter((j) => j.factionRep === 'rep_mschf');
     expect(mischief.length).toBe(72);
     expect(mischief.every((j) => found.has(j.id))).toBe(true);
+    const byCode = new Set(ids({ query: 'msc' }));
+    expect(mischief.every((j) => byCode.has(j.id))).toBe(true);
+    const prq = new Set(ids({ query: 'PRQ' }));
+    expect(jobs.filter((j) => j.factionRep === 'rep_proq').every((j) => prq.has(j.id))).toBe(true);
+    expect(count({ query: 'rustwind' })).toBeGreaterThanOrEqual(10);
+    // Made-up names are gone.
+    expect(count({ query: 'proquinox' })).toBe(0);
+    expect(count({ query: 'mischen' })).toBe(0);
+  });
+
+  it('matches the equipment', () => {
+    expect(ids({ query: 'space camera' })).toEqual([40022001]);
+    expect(count({ query: 'up.tech' })).toBe(9);
   });
 
   it('matches place names (pickup or dropoff), every word required', () => {
@@ -246,16 +328,19 @@ describe('search', () => {
     expect(count({ query: 'carry coin' })).toBeGreaterThanOrEqual(7);
   });
 
-  it("matches the name the place picker gives a job's zone (with the dataset's zone names)", () => {
+  it("matches the owner's zone names and the name the place picker gives a job's zone", () => {
+    // Owner's names (ZONE_LABELS / ASTNUM_LABELS) are always searchable.
+    expect(jobById(50605703).pickupLocation.name).toBe('Docking Bay');
+    expect(ids({ query: 'docking port' })).toContain(50605703);
+    expect(ids({ query: 'jupiter station' })).toContain(50605703);
+    expect(count({ query: "queen's quarry" })).toBeGreaterThanOrEqual(24);
+    // The picker's name for a zone the owner hasn't named needs the dataset's table.
     const ctx: JobContext = { ...EMPTY_CONTEXT, zoneNames: buildPlaces(jobs).zoneNames };
     const found = (query: string) =>
       new Set(visibleJobs(jobs, { ...pristineFilter(), query }, ctx).map((j) => j.id));
-    expect(jobById(50605703).pickupLocation.name).toBe('Docking Bay'); // filed under "Docking Port"
-    expect(found('docking port').has(50605703)).toBe(true);
     expect(jobById(35511201).pickupLocation.name).toBe('Upshire'); // filed under "Northshire" (z56)
     expect(found('northshire').has(35511201)).toBe(true);
-    // Without the table only the job's own names match.
-    expect(ids({ query: 'docking port' })).not.toContain(50605703);
+    expect(ids({ query: 'northshire' })).not.toContain(35511201);
   });
 });
 
@@ -344,7 +429,7 @@ describe('activeFilterChips', () => {
     };
     expect(activeFilterChips(f, places).map((c) => c.label)).toEqual([
       'Mischief',
-      'From: Docking Port, Astro 506',
+      'From: Jupiter Station · Docking Port',
       'Skill gain',
       'Reward: Map Data',
       'Skill: Stealth',
@@ -361,6 +446,11 @@ describe('activeFilterChips', () => {
       'No skill needed',
       'Open to all only',
     ]);
+  });
+
+  it('names factions by attested name or code', () => {
+    const f: JobFilter = { ...pristineFilter(), factions: new Set(['rep_proq']), avoidRivals: new Set(['rep_55imp']) };
+    expect(activeFilterChips(f, places).map((c) => c.label)).toEqual(['PRQ', "Don't anger 55th"]);
   });
 
   it('exposes pure removers', () => {

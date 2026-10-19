@@ -153,8 +153,8 @@ A job with no row is implicitly `todo`; setting a job back to `todo` **deletes**
 |---|---|---|---|---|
 | `id` | number | no | — | `id: int` |
 | `factionRep` | string | yes | null | allied faction key, e.g. `"rep_proq"` |
-| `factionRival` | string | yes | null | rival faction key |
-| `requiredRep` | number | yes | 0 | `requiredRep: int` |
+| `factionRival` | string | yes | null | second faction key — what happens to it is decided by `rivalFunction` (see derived fields) |
+| `requiredRep` | number | yes | 0 | `requiredRep: int` — reputation needed **with the faction giving the job** (`factionRep`), confirmed by the game's developer (e.g. 40022001: RTS rep 5) |
 | `requiredSkill` | string | yes | null | e.g. `"stealth"` |
 | `requiredSkillAmt` | number | yes | 0 | `requiredSkillAmt: int` |
 | `requiredTag` | string | yes | null | e.g. `"NorthSquire"` |
@@ -166,7 +166,9 @@ A job with no row is implicitly `todo`; setting a job back to `todo` **deletes**
 | `reward` | string | yes | `''` | canonicalised (below) |
 | `rewardFunction` | string | yes | null | source of truth for reward canonicalisation |
 | `allyFunction` | string | yes | null | displayed nowhere; kept in model |
-| `rivalFunction` | string | yes | null | kept in model |
+| `rivalFunction` | string | yes | null | `add…Amt` (283 jobs): the second faction **also gains** reputation; `remove…Amt` (47): it **loses** reputation; `setStaminaAmt` (2) / null: no faction effect |
+| `requiredAssetTemplate` | string | yes | null | equipment template, e.g. `up.tech` (with `requiredAssetId` → `requiredAsset`) |
+| `requiredAssetId` | string | yes | null | equipment id, e.g. `874023` (numbers are stringified) |
 | `capacity` | number | yes | 0 | 0–5000 in data |
 | `ship` | string | yes | null | one of `oort, prqc, ratr, solt, solv, sosm` |
 | `description` | string | yes | `''` | markdown |
@@ -177,9 +179,11 @@ A job with no row is implicitly `todo`; setting a job back to `todo` **deletes**
 - `coordsLabel` = `"{astnum} · z{zone}"` (e.g. `355 · z35`)
 - `label` = name == null ? coordsLabel : `"{name} ({astnum} · z{zone})"`
 
-Derived flags:
+Derived fields:
 - `isCargoJob` = `capacity > 0` (28 jobs)
 - `isOnSite` = pickup == dropoff (same astnum+zone) (1 job)
+- `requiredAsset` = `{ template, id, note }` when `requiredAssetTemplate` or `requiredAssetId` is set, else null. The key exists on 15 rows but is set on 11 (10 ids; 30107301 is duplicated). `note` = the description's `[… required]` text without brackets when present (e.g. 40022001 → `Space Camera required`). Shown as an "Equipment" prerequisite.
+- `harmedFaction` / `alsoGainsFaction` — the real effect on the second faction, from `rivalFunction` (checked against ~8,700 Discord delivery logs: `add` means the second faction gains reputation too). `remove…Amt` → `harmedFaction` = `factionRival`, or, when that is null, the faction named by the function stem (`removeRsaAmt` → `rep_rsa`, `remove55ImpAmt` → `rep_55imp`, `removeKingAmt` → `rep_king`; stems: Martian→`rep_mrtn`, Lycanox→`rep_lycnx`, Qnexus→`rep_qnxs`, Uurt→`rep_uurt`, Chattery→`rep_chat`, King→`rep_king`, Revenant→`rep_rvnts`, Oortian→`rep_oort`, Rsa→`rep_rsa`, 55Imp→`rep_55imp`, ThMschn→`rep_mschn`, Co8→`rep_co8`). `add…Amt` → `alsoGainsFaction` the same way. Anything else → both null. Shipped data: harmed Martian 17, Lycanox 17, Qnexus 3, RSA 3, King 2, 55th 1, Uurtians 1, Chattery 1, Revenants 1, Oortians 1 (47); also-gains 283.
 
 **Reward canonicalisation** (`Job._canonicalReward(raw, rewardFunction)`): first map by `rewardFunction`:
 
@@ -208,7 +212,7 @@ Raw `reward` values present in data: `DATA, NRG, WACKOS, aurum, coin, energy, en
 
 **Parsing rules** (`parseJobsJson`): the file must be a JSON array; each element must be an object; each row is parsed independently and **malformed rows are silently skipped** (one bad entry must not kill the tool). Parse runs off the UI thread (Flutter isolate → web: worker or async chunking; the ~337KB parse is fast enough on modern browsers to just do inline).
 
-Additional JSON keys that exist in the data but are **ignored** by the app (do not model, but don't crash on them): `damage, followerKeyword, requiredAssetId, requiredAssetTemplate, requiredResource, requiredResourceAmt, resourceAdd, resourceAddAmt, resourceReceiverId, resourceRemoval, resourceRemovalAmt`.
+Additional JSON keys that exist in the data but are **ignored** by the app (do not model, but don't crash on them): `damage, followerKeyword, requiredResource, requiredResourceAmt, resourceAdd, resourceAddAmt, resourceReceiverId, resourceRemoval, resourceRemovalAmt`.
 
 **Sample entry** (first in file):
 ```json
@@ -249,37 +253,32 @@ Sample cargo job with rival + resource side-fields (kept only partially by the m
 
 ### 3.2 Taxonomies (`domain/job_taxonomies.dart`) — labels & tints
 
-**Allied factions** (keys appear as `factionRep`):
+**Factions** (`jobTaxonomies.ts`) — one table for every reputation key (`factionRep`, `factionRival` and the rival-function stems). Each faction has a **code** — what the game's bot shows (descriptions read `**MSC & QNX**`, `[PRQ SQUIRE: …]`) — and a **name** only where a source attests it. The UI shows the name when attested, else the code (`label`: cards, active-filter chips); the detail sheet and the filter sheet show `Name (CODE)` when the name exists, else the code alone (`fullLabel`). The search matches the code and the name. Earlier labels "Proquinox", "Mischen", "55 Imperials" and "Co8" were invented (no source has them); the names left empty below are still **to be confirmed with the game's developer**.
 
-| key | label | tint |
-|---|---|---|
-| `rep_chat` | Chattery | `#B377FF` |
-| `rep_clst` | Celestyn | `#E6E6FF` |
-| `rep_hex` | Hex | `#FF77AA` |
-| `rep_king` | King | `#FFD15C` |
-| `rep_lycnx` | Lycanox | `#9DDCFF` |
-| `rep_mrtn` | Martian | `#FF7755` |
-| `rep_mschf` | Mischief | `#FFC766` |
-| `rep_pearl` | Pearl | `#FFE9A8` |
-| `rep_proq` | Proquinox | `#9C9C9C` |
-| `rep_rsa` | RSA | `#FF5577` |
-| `rep_rts` | Rustwind | `#C58A4F` |
-| `rep_rvnts` | Revenants | `#8B6FFF` |
-| `rep_tfi` | TFI | `#5FE8A0` |
-| `rep_uurt` | Uurt | `#3FBFA0` |
-| `rep_zcorp` | Z-Corp | `#4FC3FF` |
+| key | code | name | tint | appears as |
+|---|---|---|---|---|
+| `rep_mschf` | MSC | Mischief | `#FFC766` | factionRep |
+| `rep_pearl` | PRL | Pearl | `#FFE9A8` | factionRep |
+| `rep_proq` | PRQ | — | `#9C9C9C` | factionRep |
+| `rep_tfi` | TFI | — | `#5FE8A0` | factionRep |
+| `rep_hex` | HEX | — | `#FF77AA` | factionRep |
+| `rep_clst` | CLS | Celestyn | `#E6E6FF` | factionRep |
+| `rep_mrtn` | MRT | Martian | `#FF7755` | both |
+| `rep_lycnx` | LYC | Lycanox | `#9DDCFF` | both |
+| `rep_rts` | RTS | Rustwind | `#C58A4F` | factionRep |
+| `rep_zcorp` | ZCP | Z-Corp | `#4FC3FF` | factionRep |
+| `rep_king` | KING | King | `#FFD15C` | both |
+| `rep_rsa` | RSA | — | `#FF5577` | both |
+| `rep_rvnts` | PRV | Revenants | `#8B6FFF` | both |
+| `rep_chat` | CHT | Chattery | `#B377FF` | both |
+| `rep_uurt` | URT | Uurtians | `#3FBFA0` | both |
+| `rep_qnxs` | QNX | Qnexus | `#66E0DD` | second faction only |
+| `rep_oort` | ORT | Oortians | `#AACCFF` | second faction only |
+| `rep_55imp` | 55th | — | `#FF7777` | second faction only |
+| `rep_mschn` | MSN | — | `#FF8844` | second faction only |
+| `rep_co8` | CO8 | — | `#8B7BFF` | second faction only |
 
-**Rival-only factions** (appear only as `factionRival`):
-
-| key | label | tint |
-|---|---|---|
-| `rep_55imp` | 55 Imperials | `#FF7777` |
-| `rep_co8` | Co8 | `#8B7BFF` |
-| `rep_mschn` | Mischen | `#FF8844` |
-| `rep_oort` | Oortians | `#AACCFF` |
-| `rep_qnxs` | Qnexus | `#66E0DD` |
-
-Lookup covers both lists; an unknown key renders the raw key with a default tint.
+An unknown key renders raw (as its own code) with a default tint.
 
 **Tags** (`requiredTag` → label): `NorthSquire→North Squire`, `EastSquire→East Squire`, `WestSquire→West Squire`, `SouthSquire→South Squire`, `UpSquire→Up Squire`, `DownSquire→Down Squire`, `VERIFIED→Verified`. (Data actually contains only the six *Squire values; `VERIFIED` is defined but unused.)
 
@@ -316,14 +315,14 @@ Layout, top to bottom (all inside `AppBackground`, page bg `bgDeepest`, zero-hei
    - `Done` — icon `check_circle_outline`, tint `accentSuccess` → toggles `done`
    Statuses are multi-select (OR).
 4. **Active-filter chips row** — horizontal scroll with the same right-edge fade, height 44 (hidden entirely when no removable chips), 6px gaps, padding 0 24 0 12. One removable chip per active **sheet** criterion (search and quick filters have their own controls), in sheet order (chip pill min height 36: tint@18% fill, tint@70% border, label mono 11/600 in tint + trailing `close` 12px; accessible name `Remove filter: {label}`). Tapping a chip removes that criterion; when the chip had keyboard focus, focus moves to the chip that takes its place (else the Filters button):
-   - per faction: `{faction label}` (faction tint)
-   - pickup place: `From: {place}` (accentPrimary) — `Luna · 301` for a whole astro, `{zone name}, {astro label}` for a zone (§3.5)
+   - per faction: `{faction label}` — the name when attested, else the code (`Mischief`, `PRQ`) (faction tint)
+   - pickup place: `From: {place}` (accentPrimary) — `Luna · 301` for a whole astro; for a zone `{astro name} · {zone name}` (`Jupiter Station · Docking Port`), just the zone name when it already names the astro (`Luna Space`), `Astro {n} · {zone name}` when the astro has no name (§3.5)
    - per category: `{category label}` (accentPrimary)
    - per reward: `Reward: {label}` (reward tint)
    - skill: `Skill: {skill label}` (skill tint) or `No skill needed` (accentSecondary)
    - shire: `Shire: {label}` or `Open to all only` (accentSuccess)
    - `No reputation needed` (accentSecondary)
-   - per avoided rival: `Don't anger {faction label}` (faction tint)
+   - per avoided faction: `Don't anger {faction label}` (`Don't anger Martian`, `Don't anger 55th`) (faction tint)
 5. **Result list** — padding (12, 4, 12, 32), 8px separators. First row is a summary line (mono 11 `textDim`, 4px horizontal padding): `"{n} job{s} · sorted by {sortLabel}"` e.g. `142 jobs · sorted by Risk ↓`. `{n}` comes from the same predicate as the sheet's `Show N jobs` button (§3.7), so the two always agree. An always-mounted visually hidden `role="status"` region repeats `{n} job{s}` so screen readers hear the result of a quick filter, a chip removal or a search. Then one `JobCard` per job (§3.4). Tapping a card opens the detail sheet (§3.6).
 6. **Empty state** (replaces the list): centered `search_off` icon 48 `accentWarn`; headline `No jobs match these filters.` when anything narrows the list (sheet, quick filters or search), else `No jobs.`; in the former case, caption `Loosen the criteria or reset everything.` + tonal button `Clear all filters & search` — the escape hatch: it clears the sheet sections, the quick filters (Starred, statuses, No prerequisites) **and** the search; only the sort is kept.
 
@@ -340,14 +339,20 @@ GlassCard. Contents top-to-bottom:
 1. **Badge row** (wraps; 6px gaps):
    - Type badge: `typeRaw` uppercased, mono 9.5/700/letter-spacing 1 in `accentPrimary`; pill padding 8×3, radius 6, fill `accentPrimary`@12%, border `accentPrimary`@50%.
    - Allied faction pill (if any): label mono 9/700 in faction tint, padding 6×2, radius 4, fill tint@16%, border tint@70% (0.7px).
-   - Rival (if any): a `gpp_bad` icon 11px in rival tint@90% followed by the rival faction pill in "hostile" style — fill tint@6%, border tint@50%.
+   - Second faction (§3.1), pill fill tint@6%, border tint@50%, preceded by:
+     - when it **also gains** reputation (`alsoGainsFaction`): a `+` (mono 11/800, tint@90%) — no hostile icon; tooltip `{faction} also gains reputation`;
+     - when it **loses** reputation (`harmedFaction`): the hostile `gpp_bad` icon 11px in tint@90%; tooltip `{faction} loses reputation`;
+     - nothing at all when the job has no faction effect.
+   - Faction pills use the short label (name when attested, else code).
    - Right side: status pill only when progress ≠ todo — `DONE` (accentSuccess) or `WIP` (accentWarn): mono 9/700/ls 0.5 + 10px icon (`check_circle_outline`/`pending_outlined`), fill tint@14%, border tint@60%, radius 4, padding 6×2. Then `#{id}` mono 10 `textDim`, then a FavoriteButton (18px, kind `job`).
 2. **Description teaser** — the markdown stripped of `**` and backticks, max 2 lines with ellipsis, body 13px, line-height 1.25.
 3. **Stats wrap** (12px column gap, 4px run gap; each stat = 12px icon in tint + mono 10.5 `textSecondary` label, max-width 240px, single line ellipsis):
-   - if `requiredSkill`: icon `bolt`, tint = skill tint; label `{skill}` or `{skill} ≥{amt}` when amt > 0
+   - if `requiredSkill`: icon `bolt`, tint = skill tint; label `{skill label}` or `{skill label} ≥{amt}` when amt > 0
+   - if `requiredRep > 0`: icon `flag`, tint = the giving faction's tint; label `rep ≥ {n} {CODE}` (e.g. `rep ≥ 5 RTS`) — the reputation is with the faction giving the job; nothing when 0
+   - if `requiredAsset`: icon `lock`, tint accentWarn; label `equipment`
    - always: icon `warning_amber`, label `risk {n}`; tint: risk ≥ 7 → `accentDanger`, risk ≥ 3 → `accentWarn`, else `accentSuccess`
    - always: icon `local_atm`, tint = reward tint; label `{RewardLabel} {bonusText}` where bonusText = `?` if bonus == 0, `+{bonus}` if > 0, `{bonus}` if < 0
-   - always: icon `place`, tint accentPrimary; label = `pickup.label` when on-site, else `{pickup.label} → {dropoff.label}`
+   - always: icon `place`, tint accentPrimary; label = the pickup's display label when on-site, else `{pickup} → {dropoff}`. Display label (`locationDisplayLabel`, jobPlaces.ts) = `{name} ({astnum} · z{zone})` where name = `{astro name} · {zone name}` — the owner's zone name (`ZONE_LABELS`) first, else the job's own name; the astro prefix only when `ASTNUM_LABELS` knows it and the zone name doesn't already contain it — e.g. `Jupiter Station · Docking Port (506 · z55)`, `Luna Space (301 · z0)`; coordinates alone when nothing names it
    - if cargo: icon `local_shipping`, tint accentWarn; label `cap {capacity}` or `cap {capacity} · {ship}`
    - if tag: icon `shield_outlined`, tint accentSuccess; label = tag human label
 
@@ -359,10 +364,13 @@ Modal bottom sheet (`BottomSheet`, max height 95% of the viewport, container `bg
 - Header row (padding 0×16): `Filters` headline (h2); right-aligned text button `Reset` in `accentDanger` (disabled, `textDim`, when no sheet section is set). Reset clears **only the six sheet sections of the draft** — never the search, the quick filters (Starred, statuses, No prerequisites) or the sort.
 - Scrollable body (padding 8 16 16). Each section has a heading: title uppercased, mono 11/700/ls 1.4 `accentPrimary`, optional hint in caption 11 `textDim` on the same line, 8px below, 14px between sections. Sections in exact order:
 
-1. **FACTION** — hint `Who gives the job`. Chips = the distinct `factionRep` values in the data (15), multi-select (OR).
+1. **FACTION** — hint `Who gives the job`. Chips = the distinct `factionRep` values in the data (15), labelled `Name (CODE)` when the name is attested, else the code (§3.2), multi-select (OR).
 2. **PICKUP PLACE** — a native `<select>` (restyled: height 40, radius 12, `bgGlass`, `borderSubtle`, chevron `accentPrimary`, `color-scheme: dark`, text 16px so iOS Safari doesn't zoom on tap; the OS picker stays native) named by the section heading (`<h3>`, `aria-labelledby` on the section and the select). Options: `Any place ({n})`, then one `<optgroup>` per astro labelled with its astro label, containing `All of {astro label} ({n})` followed by its zones `{zone name} ({n})`. Astros and zones are ordered by contextual count, descending (ties: total pickups, then astnum / zone name). Places come from `jobPlaces.ts`, computed once per dataset from the pickup locations:
-   - a zone (`astnum`, `zone`) is named by its most frequent non-null pickup name (ties → alphabetical), else `Zone {zone}`; when two zones of one astro end up with the same name, ` · z{zone}` is appended (astro 355 has six "Northshire" zones);
-   - an astro label always carries its number: `{name} · {astnum}` when `ASTNUM_LABELS` knows it (only names attested in the data: 100 Mercury, 200 Venus, 301 Luna, 400 Mars, 401 Phobos, 501 Io, 600 Saturn — the table is meant to be extended by the owner), else `Astro {astnum}`.
+   - a zone (`astnum`, `zone`) is named by the owner's `ZONE_LABELS` when listed (authoritative), else by its most frequent non-null pickup name (ties → alphabetical), else `Zone {zone}`; when two zones of one astro end up with the same name, ` · z{zone}` is appended (astro 355 has six "Northshire" zones);
+   - an astro label always carries its number: `{name} · {astnum}` when `ASTNUM_LABELS` knows it (`Jupiter Station · 506`), else `Astro {astnum}`.
+   - `ASTNUM_LABELS` (owner's list, not exhaustive, to be completed): 100 Mercury, 106 Mercury Station, 200 Venus, 300 Earth Orbit, 301 Luna, 302 Nerva Beacon, 306 Earth Station, 355 Ratropia, 356 Rankle River, 400 Mars, 401 Phobos, 402 Deimos, 406 Mars Station, 500 Jupiter, 506 Jupiter Station, 600 Saturn, 700 Uranus, 800 Neptune, 806 Neptune Station, 174310223 Oort Station, 168940424 Kirsch 57 Asteroid, 110000666 Velvet Asteroid — plus 501 Io, attested in the data.
+   - `ZONE_LABELS` (owner's list, not exhaustive): every station (106, 206, 306, 406, 466, 506, 806, 174310223) → 51 Command Nexus, 52 Habitation Hub, 53 Research Ring, 54 Engineering Bay, 55 Docking Port, 56 Observation Deck, 57 Medical Module, 58 Storage Sector, 59 Life Support System; Ratropia 355 → 54 Imperious Falls, 55 Area55 North, 62 Vault of Webs, 68 Town Hall, 80 Tavern, 112 Queen's Quarry; Luna 301 → 5 Copperclaw Canyon (Aristoteles), 7 Luna Mesa Mart / Moonhowl Mesa (Endymion).
+   These names are used everywhere a place shows: this picker, the `From:` chip, cards, the detail sheet and the search.
    Values are place keys: `ast:{astnum}` (any zone of that astro) or `zone:{astnum}:{zone}`; they filter on `pickupLocation`.
 3. **CATEGORY** — six chips in this fixed order (only categories present in the data): `Beginner`, `Skill gain`, `Standard`, `Expansion`, `Event`, `Unknown`, multi-select (OR). Category = the type bucket of §3.2 folded into stable keys: Beginner → `beginner`, Skill gain → `skill-gain`, Regular **and** Other → `standard`, Expansion → `expansion`, Event → `event`, Unknown (`???`) → `unknown`. Shipped counts: 24 / 113 / 188 / 33 / 5 / 8.
 4. **REWARD** — chips = the distinct canonical rewards in the data, labels/tints per taxonomy, multi-select (OR).
@@ -370,14 +378,14 @@ Modal bottom sheet (`BottomSheet`, max height 95% of the viewport, container `bg
    - `Skill`: `Any ({n})`, `No skill needed ({n})` (requiredSkill null), then each skill present in the data `{skill label} ({n})`, ordered by count. Skill label = `skillLabel` (§3.2).
    - `Shire`: `Any ({n})`, `Open to all only ({n})` (requiredTag null only), then each shire present `{North Squire…} ({n})`, ordered by count. Help text below (also the select's `aria-describedby`): `Shows jobs open to everyone plus that shire's jobs.` — picking a shire keeps the open-to-all jobs **and** that shire's jobs.
    - then a `No reputation needed {n}` chip (requiredRep = 0).
-6. **DON'T ANGER** — hint `Hide jobs that hurt these factions`. Chips = the distinct `factionRival` values in the data (12); each picked faction **excludes** the jobs whose rival it is. The chip count reads `−{n}`: the jobs that faction hides given everything else.
+6. **DON'T ANGER** — hint `Hide jobs that hurt these factions`. Chips = the distinct `harmedFaction` values in the data — only factions some job really makes **lose** reputation (10: Martian 17, Lycanox 17, Qnexus 3, RSA 3, King 2, 55th 1, Uurtians 1, Chattery 1, Revenants 1, Oortians 1), labelled like the Faction chips; each picked faction **excludes** the jobs that make it lose reputation (a job where it *also gains* stays). The chip count reads `−{n}`: the jobs that faction hides given everything else.
 
-Chips (multi-select sections): buttons with `aria-pressed`, min height 36, pill radius 999, padding 11×6; unselected `bgGlass` fill + `borderSubtle`, label mono 11/600 `textSecondary`; selected tint@18% fill, tint@80% border, tint label. The count follows the label in mono 10 `textDim`; the accessible name spells it out (`Mischief, 72 jobs`, `Pearl, adds 69 jobs`, `Martian, hides 50 jobs`). Faction, Reward and Don't anger chips are ordered by count desc (ties: label) and show the first 8 plus a dashed `+N more` chip that unfolds the rest and then reads `Show less` (one toggle button with `aria-expanded`, so keyboard focus stays on it); picked values — and values picked when the sheet opened — always stay visible. Category keeps its fixed order. A section with a single possible value renders normally.
+Chips (multi-select sections): buttons with `aria-pressed`, min height 36, pill radius 999, padding 11×6; unselected `bgGlass` fill + `borderSubtle`, label mono 11/600 `textSecondary`; selected tint@18% fill, tint@80% border, tint label. The count follows the label in mono 10 `textDim`; the accessible name spells it out (`Mischief (MSC), 72 jobs`, `Pearl (PRL), adds 69 jobs`, `Martian (MRT), hides 17 jobs`). Faction, Reward and Don't anger chips are ordered by count desc (ties: label) and show the first 8 plus a dashed `+N more` chip that unfolds the rest and then reads `Show less` (one toggle button with `aria-expanded`, so keyboard focus stays on it); picked values — and values picked when the sheet opened — always stay visible. Category keeps its fixed order. A section with a single possible value renders normally.
 
 **Contextual counts** (`jobsFacets.ts`, recomputed per draft, memoised): every count is computed with the exact list predicate (§3.7), including the search, the quick filters and favorites/statuses, so a count is always what the list will show:
 - multi-select sections (Faction, Category, Reward): the jobs passing every *other* criterion that carry the value. When the section has no pick, that is the list size once the value is picked; when it already has a pick, an unpicked value's count is shown as `+{n}` — the jobs picking it adds.
 - single-value selectors (place, skill, shire) and the No reputation chip: the list size with that value in place of the current one.
-- Don't anger: the jobs passing every other criterion whose rival is that faction (`−{n}`); picking it removes exactly those (Martian at rest: −50 → 321 jobs). This variant was preferred over "jobs concerned" because it reads as the effect of the tap.
+- Don't anger: the jobs passing every other criterion that make that faction lose reputation (`−{n}`); picking it removes exactly those (Martian at rest: −17 → 354 jobs). This variant was preferred over "jobs concerned" because it reads as the effect of the tap.
 - An unpicked value (or select option) whose count is 0 stays visible but is greyed out (opacity .45) and disabled. Only values present in the data are offered.
 
 - **Footer** — passed to `BottomSheet` as `footer`, so it is pinned below the scrolling area (nothing scrolls underneath it; it carries the safe-area inset): a full-width filled button `Show {n} job{s}` (bg `accentPrimary`, fg `bgDeepest`, min height 44, radius 12) where `{n}` is the draft's full-predicate count — exactly the summary line after applying. It applies the draft and closes the sheet. A polite live region announces the count as it changes.
@@ -395,15 +403,17 @@ Modal bottom sheet 0.78 / 0.4 / 0.95, `bgElevated`, top radius 22, padding (16, 
 3. **Status control** — 3 equal segments in a row (6px gaps): `Not done` / `In progress` / `Done`. Segment: padding-y 9, radius 8; selected = tint@18% fill + tint@80% border + tint mono 11/700 label; unselected `bgGlass` + `borderSubtle` + `textSecondary`. Tints: Not done `textSecondary`, In progress `accentWarn`, Done `accentSuccess`. Writes to the JobStatus store immediately (todo deletes the row).
 4. **Description card** — GlassCard containing the `description` rendered as markdown. Markdown style: paragraphs body 13/1.4; `**bold**` → weight 800 in `accentPrimary`; inline code mono 12 `accentSecondary` on `bgDeepest`; code blocks on `bgDeepest`, radius 8.
 5. **Facts card** — GlassCard, key/value rows (key column 130px, mono 11 `textDim`; value body, optionally tinted):
-   - `Allied faction` → label or `—` (value in faction tint)
-   - `Rival faction` → label, or the raw key if unknown, or `—` (rival tint)
+   - `Allied faction` → `Name (CODE)` / code, or `—` (value in faction tint)
+   - `Also gains rep` (only when `alsoGainsFaction`) → `Name (CODE)` / code (faction tint, no hostile icon)
+   - `Loses rep` (only when `harmedFaction`) → hostile `gpp_bad` icon + `Name (CODE)` / code (faction tint)
    - `Required tag` → human label / raw / `—`
-   - `Required skill` → `—`, or `{skill}`, or `{skill} ≥{amt}` when amt > 0
-   - `Required reputation` → number
+   - `Required skill` → `—`, or `{skill label}`, or `{skill label} ≥{amt}` when amt > 0
+   - `Required reputation` → `{n} with {Name (CODE)}` (the faction giving the job, e.g. `5 with Rustwind (RTS)`), `—` when 0
+   - `Equipment` (only when `requiredAsset`) → `{template} #{id}` plus ` · {note}` when the description carries one (e.g. `up.tech #874023 · Space Camera required`), tinted accentWarn
    - `Risk` → number
    - `Reward` → `{RewardLabel} · {bonus}` where bonus renders `amount unknown` when 0, `+{n}` when positive, `{n}` when negative (value in reward tint)
-   - `Pickup` → `pickup.label`
-   - `Dropoff` → `dropoff.label`
+   - `Pickup` → the pickup's display label (§3.4)
+   - `Dropoff` → the dropoff's display label
    - `Cargo` (only if isCargoJob) → `capacity {n}` (+ ` · ship {ship}` when ship set), tinted accentWarn
 6. **"View on map"** NeonButton (icon `map_outlined`) — only when `mapRef` present (currently never; keep the capability).
 7. **On-complete card** — GlassCard: heading `ON COMPLETE` (mono 11/700/ls 1.5 `accentSuccess`), then `onComplete` markdown (same style).
@@ -426,9 +436,9 @@ Modal bottom sheet 0.78 / 0.4 / 0.95, `bgElevated`, top radius 22, padding (16, 
   skill: string | null = null,     // 5 Requirements: null any | '__none__' | exact skill
   shire: string | null = null,     // 5 Requirements: null any | '__none__' | a requiredTag
   noRepOnly: false,                // 5 Requirements: requiredRep === 0
-  avoidRivals: Set<string> = {},   // 6 Don't anger: EXCLUDES factionRival in set
+  avoidRivals: Set<string> = {},   // 6 Don't anger: EXCLUDES harmedFaction in set
   // Quick filters (chip row)
-  noPrereqOnly: false,             // requiredRep 0 && requiredSkill null && requiredTag null
+  noPrereqOnly: false,             // requiredRep 0 && no skill, shire or equipment
   starredOnly: false,              // companion: favorites
   statuses: Set<'todo'|'in_progress'|'done'> = {}, // companion: progress (OR)
   sort: 'idAsc',
@@ -436,7 +446,7 @@ Modal bottom sheet 0.78 / 0.4 / 0.95, `bgElevated`, top radius 22, padding (16, 
 ```
 
 **The predicate** — `compileFilter(filter, { starred, statusMap })` returns, per job, the bitmask of failed criteria (0 = listed). It is the only predicate: the list (`visibleJobs`), the summary line, the sheet's `Show N jobs` and every contextual count (§3.5) use it. All criteria are ANDed; values inside a multi-select section are ORed:
-1. Search: the query is trimmed, lowercased and split on whitespace; a leading `#` is dropped from each word. Every word must occur in the job's haystack = `description`, `onComplete`, `id`, `typeRaw`, category label, allied and rival faction labels, reward label, `requiredSkill` (key and label), tag label, the pickup and dropoff names, the astro name of either when `ASTNUM_LABELS` knows it, and the name the place picker gives each zone (`PlacesIndex.zoneNames`, passed in the predicate context — a job whose own pickup reads "Docking Bay" is found by "docking port", the name it is listed under) — all lowercased (cached per job and dataset). So `#35511202` and `35511202` find job 35511202, `mischief` finds the Mischief jobs, `queens quarry` the jobs going to Queens Quarry.
+1. Search: the query is trimmed, lowercased and split on whitespace; a leading `#` is dropped from each word. Every word must occur in the job's haystack = `description`, `onComplete`, `id`, `typeRaw`, category label, the code and name of the giving faction and of the second faction (also gains / loses), reward label, `requiredSkill` (key and label), tag label, the equipment (template, id, note), the pickup and dropoff names, the owner's zone name (`ZONE_LABELS`) and astro name (`ASTNUM_LABELS`) of either, and the name the place picker gives each zone (`PlacesIndex.zoneNames`, passed in the predicate context — a job whose own pickup reads "Upshire" is found by "northshire", the name it is listed under) — all lowercased (cached per job and dataset). So `#35511202` and `35511202` find job 35511202, `mischief` finds the Mischief jobs, `queens quarry` the jobs going to Queens Quarry.
 2. `factions` non-empty → `factionRep` non-null and in the set.
 3. `place` set → the pickup location is on that astro (`ast:`) or in that zone (`zone:`); a malformed key matches nothing.
 4. `categories` non-empty → `jobCategory(type)` in the set.
@@ -444,8 +454,8 @@ Modal bottom sheet 0.78 / 0.4 / 0.95, `bgElevated`, top radius 22, padding (16, 
 6. `skill`: `'__none__'` → `requiredSkill` null; otherwise → `requiredSkill === skill`.
 7. `shire`: `'__none__'` → `requiredTag` null; otherwise → `requiredTag` null **or** `requiredTag === shire` (open-to-all jobs plus that shire's).
 8. `noRepOnly` → `requiredRep === 0`.
-9. `avoidRivals` non-empty → reject when `factionRival` is in the set (jobs without a rival always pass).
-10. `noPrereqOnly` → `requiredRep === 0 && requiredSkill === null && requiredTag === null` (21 jobs in the shipped data).
+9. `avoidRivals` non-empty → reject when `harmedFaction` is in the set (jobs that harm no faction, or where the faction also gains, always pass).
+10. `noPrereqOnly` → `requiredRep === 0 && requiredSkill === null && requiredTag === null && requiredAsset === null` (21 jobs in the shipped data — every equipment job also needs a skill, so the equipment rule removes none today).
 11. `starredOnly` → the job is starred.
 12. `statuses` non-empty → must contain the job's progress (absent row = `todo`).
 
@@ -485,7 +495,7 @@ Container: fill `bgDeepest` + diagonal gradient (top-left `accentPrimary`@8% →
 4. `{typeRaw}` uppercased — headline
 5. Rows (label column 110px caption; value mono 13/600, tinted):
    - `Allied faction` → label or `—` (faction tint or textPrimary)
-   - `Rival faction` (only when set) → label (tint)
+   - `Also gains rep` / `Loses rep` (only when set, §3.1) → label (tint)
    - `Reward` → `{label} · {bonusText}` (`amount unknown` / `+n` / `n`), reward tint
    - `Required skill` → `—` or `{skill}` / `{skill} ≥{amt}`
    - `Risk` → number, accentWarn

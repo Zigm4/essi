@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { GlassCard } from '../../../design-system/components/GlassCard';
 import { NeonButton } from '../../../design-system/components/NeonButton';
 import { withAlpha } from '../../../design-system/color';
@@ -9,8 +9,9 @@ import { FavoriteButton } from '../shared/FavoriteButton';
 import { setJobStatus } from '../shared/jobStatus';
 import { Markdown } from '../shared/markdown';
 import { copyToClipboard, shareOrCopy } from '../shared/share';
-import { IconIosShare } from '../shared/toolIcons';
-import { coordsLabel, locationLabel, type Job } from './jobModel';
+import { IconGppBad, IconIosShare } from '../shared/toolIcons';
+import { coordsLabel, type Job } from './jobModel';
+import { locationDisplayLabel } from './jobPlaces';
 import { factionInfo, rewardInfo, skillLabel, tagLabel } from './jobTaxonomies';
 import styles from './Jobs.module.css';
 
@@ -36,12 +37,33 @@ function skillText(job: Job): string {
   return job.requiredSkillAmt > 0 ? `${skill} ≥${job.requiredSkillAmt}` : skill;
 }
 
-function FactRow({ label, value, tint }: { label: string; value: string; tint?: string }) {
+/** `5 with Rustwind (RTS)` - the reputation applies to the faction giving the job; `-` when none is needed. */
+function repText(job: Job): string {
+  if (job.requiredRep <= 0) return '-';
+  return job.factionRep === null
+    ? String(job.requiredRep)
+    : `${job.requiredRep} with ${factionInfo(job.factionRep).fullLabel}`;
+}
+
+/** `up.tech #874023 · Space Camera required`. */
+function equipmentText(job: Job): string | null {
+  const asset = job.requiredAsset;
+  if (asset === null) return null;
+  const ref = [asset.template, asset.id === null ? null : `#${asset.id}`].filter((p) => p !== null).join(' ');
+  return asset.note === null ? ref : `${ref} · ${asset.note}`;
+}
+
+function FactRow({ label, value, tint, icon }: { label: string; value: string; tint?: string; icon?: ReactNode }) {
   const style: CSSProperties = tint !== undefined ? { color: tint } : {};
   return (
     <div className={styles.factRow}>
       <span className={styles.factKey}>{label}</span>
       <span className={styles.factValue} style={style}>
+        {icon !== undefined && (
+          <span className={styles.factIcon} aria-hidden="true">
+            {icon}
+          </span>
+        )}
         {value}
       </span>
     </div>
@@ -82,8 +104,10 @@ function JobDetailContent({
   starred: boolean;
 }) {
   const ally = job.factionRep !== null ? factionInfo(job.factionRep) : null;
-  const rival = job.factionRival !== null ? factionInfo(job.factionRival) : null;
+  const harmed = job.harmedFaction !== null ? factionInfo(job.harmedFaction) : null;
+  const gains = job.alsoGainsFaction !== null ? factionInfo(job.alsoGainsFaction) : null;
   const reward = rewardInfo(job.reward);
+  const equipment = equipmentText(job);
   const showDataWarn = job.pickupLocation.astnum === 355 && job.pickupLocation.zone === 70;
 
   const onCopyId = () => {
@@ -93,8 +117,9 @@ function JobDetailContent({
   const onShare = () => {
     const lines = [
       `ESSI job #${job.id} - ${job.typeRaw}`,
-      ally !== null ? `Allied: ${ally.label}` : null,
-      rival !== null ? `Rival: ${rival.label}` : null,
+      ally !== null ? `Allied: ${ally.fullLabel}` : null,
+      gains !== null ? `Also gains: ${gains.fullLabel}` : null,
+      harmed !== null ? `Loses rep: ${harmed.fullLabel}` : null,
       `Reward: ${reward.label} · ${bonusFactText(job.bonus)}`,
       `Risk: ${job.risk}`,
       `Pickup: ${coordsLabel(job.pickupLocation)}`,
@@ -164,19 +189,23 @@ function JobDetailContent({
       )}
 
       <GlassCard>
-        <FactRow label="Allied faction" value={ally?.label ?? '-'} tint={ally?.tint} />
-        <FactRow label="Rival faction" value={rival?.label ?? '-'} tint={rival?.tint} />
+        <FactRow label="Allied faction" value={ally?.fullLabel ?? '-'} tint={ally?.tint} />
+        {gains !== null && <FactRow label="Also gains rep" value={gains.fullLabel} tint={gains.tint} />}
+        {harmed !== null && (
+          <FactRow label="Loses rep" value={harmed.fullLabel} tint={harmed.tint} icon={<IconGppBad size={14} />} />
+        )}
         <FactRow label="Required tag" value={job.requiredTag !== null ? tagLabel(job.requiredTag) : '-'} />
         <FactRow label="Required skill" value={skillText(job)} />
-        <FactRow label="Required reputation" value={String(job.requiredRep)} />
+        <FactRow label="Required reputation" value={repText(job)} />
+        {equipment !== null && <FactRow label="Equipment" value={equipment} tint={ACCENT_WARN} />}
         <FactRow label="Risk" value={String(job.risk)} />
         <FactRow
           label="Reward"
           value={`${reward.label} · ${bonusFactText(job.bonus)}`}
           tint={reward.tint}
         />
-        <FactRow label="Pickup" value={locationLabel(job.pickupLocation)} />
-        <FactRow label="Dropoff" value={locationLabel(job.dropoffLocation)} />
+        <FactRow label="Pickup" value={locationDisplayLabel(job.pickupLocation)} />
+        <FactRow label="Dropoff" value={locationDisplayLabel(job.dropoffLocation)} />
         {job.isCargoJob && (
           <FactRow
             label="Cargo"

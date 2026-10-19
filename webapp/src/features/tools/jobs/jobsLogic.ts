@@ -7,7 +7,15 @@
 
 import type { JobStatusValue } from '../../../data/db';
 import type { Job } from './jobModel';
-import { ASTNUM_LABELS, parsePlaceKey, placeContains, placeLabel, zoneKey, type PlacesIndex } from './jobPlaces';
+import {
+  ASTNUM_LABELS,
+  parsePlaceKey,
+  placeContains,
+  placeLabel,
+  zoneKey,
+  zoneLabel,
+  type PlacesIndex,
+} from './jobPlaces';
 import {
   ACCENT_SUCCESS,
   categoryLabel,
@@ -72,10 +80,10 @@ export interface JobFilter {
   shire: string | null;
   /** 5 Requirements: `requiredRep === 0`. */
   noRepOnly: boolean;
-  /** 6 Don't anger: EXCLUDES jobs whose `factionRival` is in the set. */
+  /** 6 Don't anger: EXCLUDES jobs whose `harmedFaction` (the faction they make lose reputation) is in the set. */
   avoidRivals: Set<string>;
   // Quick filters (chip row under the search field).
-  /** No reputation, no skill and no shire required. */
+  /** No reputation, skill, shire or equipment required. */
   noPrereqOnly: boolean;
   starredOnly: boolean;
   /** Progress (OR); absent status row = `todo`. */
@@ -188,10 +196,11 @@ const NO_ZONE_NAMES = {};
 
 /**
  * Everything a search word may match, lowercased: texts, ID, raw type,
- * category, faction (ally + rival), reward, skill, shire, and the pickup /
- * dropoff names (+ the astro name when known, + the name the place picker
- * gives the zone when `zoneNames` is passed - a job filed under "Docking Port"
- * is found by that name even if its own reads "Docking Bay"). Cached per job.
+ * category, the factions (giver + the one that also gains or loses - code and
+ * name), reward, skill, shire, equipment, and the pickup / dropoff names (+ the
+ * owner's zone and astro names, + the name the place picker gives the zone
+ * when `zoneNames` is passed - a job filed under "Northshire" is found by that
+ * name even if its own reads "Upshire"). Cached per job.
  */
 export function jobHaystack(job: Job, zoneNames?: ReadonlyMap<string, string>): string {
   let cache = haystackCaches.get(zoneNames ?? NO_ZONE_NAMES);
@@ -209,14 +218,24 @@ export function jobHaystack(job: Job, zoneNames?: ReadonlyMap<string, string>): 
     categoryLabel(jobCategory(job.type)),
     rewardInfo(job.reward).label,
   ];
-  if (job.factionRep !== null) parts.push(factionInfo(job.factionRep).label);
-  if (job.factionRival !== null) parts.push(factionInfo(job.factionRival).label);
+  for (const key of [job.factionRep, job.alsoGainsFaction, job.harmedFaction]) {
+    if (key === null) continue;
+    const faction = factionInfo(key);
+    parts.push(faction.code);
+    if (faction.name !== null) parts.push(faction.name);
+  }
+  if (job.requiredAsset !== null) {
+    const { template, id, note } = job.requiredAsset;
+    for (const part of [template, id, note]) if (part !== null) parts.push(part);
+  }
   if (job.requiredSkill !== null) parts.push(job.requiredSkill, skillLabel(job.requiredSkill));
   if (job.requiredTag !== null) parts.push(tagLabel(job.requiredTag));
   for (const loc of [job.pickupLocation, job.dropoffLocation]) {
     if (loc.name !== null) parts.push(loc.name);
+    const owner = zoneLabel(loc.astnum, loc.zone);
+    if (owner !== null) parts.push(owner);
     const canonical = zoneNames?.get(zoneKey(loc.astnum, loc.zone));
-    if (canonical !== undefined && canonical !== loc.name) parts.push(canonical);
+    if (canonical !== undefined && canonical !== loc.name && canonical !== owner) parts.push(canonical);
     const astro = ASTNUM_LABELS[loc.astnum];
     if (astro !== undefined) parts.push(astro);
   }
@@ -253,15 +272,18 @@ export const CRITERION = {
   statuses: 1 << 11,
 } as const;
 
-/** No reputation, no skill, no shire. */
+/** No reputation, no skill, no shire, no equipment. */
 export function hasNoPrerequisite(job: Job): boolean {
-  return job.requiredRep === 0 && job.requiredSkill === null && job.requiredTag === null;
+  return (
+    job.requiredRep === 0 && job.requiredSkill === null && job.requiredTag === null && job.requiredAsset === null
+  );
 }
 
 /**
  * THE job predicate. Returns a function giving the bitmask of failed criteria
  * (0 = the job is listed). Criteria are ANDed; values inside a multi-select
- * section are ORed; Don't anger excludes. Both the list and the sheet's
+ * section are ORed; Don't anger excludes (the jobs that make a picked faction
+ * lose reputation). Both the list and the sheet's
  * "Show N jobs" / contextual counts use this, so they can never disagree.
  */
 export function compileFilter(filter: JobFilter, ctx: JobContext): (job: Job) => number {
@@ -282,7 +304,7 @@ export function compileFilter(filter: JobFilter, ctx: JobContext): (job: Job) =>
     if (skill !== null && job.requiredSkill !== (skill === NONE ? null : skill)) failed |= CRITERION.skill;
     if (shire !== null && job.requiredTag !== null && (shire === NONE || job.requiredTag !== shire)) failed |= CRITERION.shire;
     if (filter.noRepOnly && job.requiredRep !== 0) failed |= CRITERION.noRep;
-    if (avoidRivals.size > 0 && job.factionRival !== null && avoidRivals.has(job.factionRival)) failed |= CRITERION.avoidRivals;
+    if (avoidRivals.size > 0 && job.harmedFaction !== null && avoidRivals.has(job.harmedFaction)) failed |= CRITERION.avoidRivals;
     if (filter.noPrereqOnly && !hasNoPrerequisite(job)) failed |= CRITERION.noPrereq;
     if (filter.starredOnly && !ctx.starred.has(String(job.id))) failed |= CRITERION.starred;
     if (statuses.size > 0 && !statuses.has(ctx.statusMap.get(String(job.id)) ?? 'todo')) failed |= CRITERION.statuses;

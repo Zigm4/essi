@@ -401,6 +401,14 @@
   display: inline-flex;
 }
 
+/* "+" before a second faction that also gains reputation (not hostile). */
+.gainSign {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+}
+
 .badgeRight {
   margin-left: auto;
   display: inline-flex;
@@ -795,6 +803,12 @@
   font-family: var(--font-mono);
   font-size: 11px;
   color: var(--text-dim);
+}
+
+.factIcon {
+  display: inline-flex;
+  vertical-align: -1px;
+  margin-right: 4px;
 }
 
 .factValue {

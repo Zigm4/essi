@@ -9,8 +9,8 @@
  * - single-value selectors (Pickup place, Skill, Shire) and the No reputation
  *   switch: jobs passing the whole filter with that value in place of the
  *   current one - exactly what the list shows once it is picked;
- * - Don't anger: jobs passing every other criterion whose rival is that
- *   faction - the jobs that choice hides (shown as `−n`);
+ * - Don't anger: jobs passing every other criterion that make that faction
+ *   lose reputation - the jobs that choice hides (shown as `−n`);
  * - No prerequisites (quick chip): the whole filter with it switched on.
  */
 
@@ -36,7 +36,7 @@ export interface JobsFacetOptions {
   skills: readonly string[];
   /** Distinct `requiredTag` values (the shires). */
   shires: readonly string[];
-  /** Distinct `factionRival` values (Don't anger). */
+  /** Distinct `harmedFaction` values (Don't anger) - only factions a job really makes lose reputation. */
   rivals: readonly string[];
   places: PlacesIndex;
 }
@@ -58,7 +58,7 @@ export function computeFacetOptions(jobs: readonly Job[]): JobsFacetOptions {
     rewards: distinct(jobs, (j) => j.reward),
     skills: distinct(jobs, (j) => j.requiredSkill),
     shires: distinct(jobs, (j) => j.requiredTag),
-    rivals: distinct(jobs, (j) => j.factionRival),
+    rivals: distinct(jobs, (j) => j.harmedFaction),
     places: buildPlaces(jobs),
   };
 }
@@ -114,7 +114,7 @@ export interface JobsFacetCounts {
   shireAny: number;
   /** Jobs listed with "No reputation needed" on. */
   noRep: number;
-  /** Rival → jobs that choice hides. */
+  /** Harmed faction → jobs that choice hides. */
   avoidRivals: ReadonlyMap<string, number>;
   /** Jobs listed with the No prerequisites quick chip on. */
   noPrereq: number;
@@ -166,7 +166,7 @@ export function computeFacetCounts(jobs: readonly Job[], filter: JobFilter, ctx:
       bump(tags, job.requiredTag ?? NONE);
     }
     if (passesBut(failed, CRITERION.noRep) && job.requiredRep === 0) noRep++;
-    if (passesBut(failed, CRITERION.avoidRivals) && job.factionRival !== null) bump(avoidRivals, job.factionRival);
+    if (passesBut(failed, CRITERION.avoidRivals) && job.harmedFaction !== null) bump(avoidRivals, job.harmedFaction);
     if (passesBut(failed, CRITERION.noPrereq) && hasNoPrerequisite(job)) noPrereq++;
   }
 

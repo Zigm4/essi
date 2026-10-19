@@ -39,7 +39,19 @@ function withoutMember(set: ReadonlySet<string>, key: string): Set<string> {
 describe('computeFacetOptions', () => {
   it('offers only the values present in the data', () => {
     expect(options.factions.length).toBe(15);
-    expect(options.rivals.length).toBe(12);
+    // Don't anger offers only the factions some job makes lose reputation.
+    expect(options.rivals).toEqual([
+      'rep_55imp',
+      'rep_chat',
+      'rep_king',
+      'rep_lycnx',
+      'rep_mrtn',
+      'rep_oort',
+      'rep_qnxs',
+      'rep_rsa',
+      'rep_rvnts',
+      'rep_uurt',
+    ]);
     expect(options.skills.length).toBe(17);
     expect(options.shires).toEqual(['DownSquire', 'EastSquire', 'NorthSquire', 'SouthSquire', 'UpSquire', 'WestSquire']);
     expect(options.categories).toEqual(['beginner', 'skill-gain', 'standard', 'expansion', 'event', 'unknown']);
@@ -68,7 +80,10 @@ describe('computeFacetCounts at rest', () => {
     expect(countOf(counts.shires, 'NorthSquire')).toBe(222);
     expect(countOf(counts.shires, 'SouthSquire')).toBe(200);
     expect(counts.noRep).toBe(169);
-    expect(countOf(counts.avoidRivals, 'rep_mrtn')).toBe(50);
+    expect(countOf(counts.avoidRivals, 'rep_mrtn')).toBe(17);
+    expect(countOf(counts.avoidRivals, 'rep_lycnx')).toBe(17);
+    expect(countOf(counts.avoidRivals, 'rep_king')).toBe(2);
+    expect(countOf(counts.avoidRivals, 'rep_co8')).toBe(0);
     expect(counts.noPrereq).toBe(21);
   });
 
@@ -162,10 +177,10 @@ describe('contextual counts equal the real result of picking the value', () => {
     it(name, () => checkCountsAgainstPredicate(filterOf(partial), context));
   }
 
-  it("Don't anger Martian at rest hides exactly 50 jobs (321 left)", () => {
+  it("Don't anger Martian at rest hides exactly 17 jobs (354 left)", () => {
     const counts = computeFacetCounts(jobs, pristineFilter(), EMPTY_CONTEXT);
-    expect(countOf(counts.avoidRivals, 'rep_mrtn')).toBe(50);
-    expect(countMatching(jobs, filterOf({ avoidRivals: new Set(['rep_mrtn']) }), EMPTY_CONTEXT)).toBe(321);
+    expect(countOf(counts.avoidRivals, 'rep_mrtn')).toBe(17);
+    expect(countMatching(jobs, filterOf({ avoidRivals: new Set(['rep_mrtn']) }), EMPTY_CONTEXT)).toBe(354);
   });
 });
 
