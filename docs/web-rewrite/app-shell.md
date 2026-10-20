@@ -191,7 +191,7 @@ root on re-click of the active tab).
 | `/tools/wallet` | `WalletLookupView(initialQuery: ?q)` | Query param `q` (from global search) pre-seeds the lookup. |
 | `/tools/mars-express` | `MarsExpressView` | |
 | `/tools/fishing` | `FishingMapView` | |
-| `/tools/fishing/:roomId` | `FishingRoomView(roomId)` | |
+| `/tools/fishing/:roomId` | `FishingRoomView(roomId)` | Web: `?zone=<id>` opens that zone's sheet (river grid; from Favorites). |
 | `/tools/tracker` | `TrackerView(prefill)` | `prefill` passed as in-memory navigation state (`extra` of type `TrackTarget`), NOT in the URL. Web: pass via router `state`/location state; absent state → no prefill. |
 | `/tools/discoveries` | `CelestialView` | |
 | `/tools/jobs` | `JobsView` | |
@@ -210,6 +210,7 @@ root on re-click of the active tab).
 | **Tab 4 — Menu** (branch root `/menu`) | | |
 | `/menu` | `MenuView` | |
 | `/menu/search` | `GlobalSearchView` | |
+| `/menu/favorites` | `FavoritesView` | Web only (§7.1). |
 | `/menu/settings` | `SettingsView` | |
 | `/menu/about` | `AboutView` | |
 | `/menu/faq` | `FAQView` | |
@@ -503,14 +504,42 @@ for external ones.
 | # | Title | Subtitle | Icon | Action |
 |---|---|---|---|---|
 | 1 | Search | Maps, KB, jobs, wallets, notes | `search` | push `/menu/search` |
-| 2 | Settings | Animations · haptics | `tune` | push `/menu/settings` |
-| 3 | FAQ | Free, local, private, the rules. | `help_outline` | push `/menu/faq` |
-| 4 | Contact | Feedback, bug reports, support | `mail_outline` | push `/menu/contact` |
-| 5 | Join Discord | UP55 community invite | `forum` | open `https://discord.gg/pGcD92Dm8H` externally (external chevron) |
-| 6 | Disclaimer | Unofficial fan project · made for the UP55 community | `info_outline` | push `/menu/disclaimer` |
-| 7 | About | `v<version>` (Alpha) — e.g. "v0.2.0 (Alpha)" | `auto_awesome` | push `/menu/about` |
+| 2 | Favorites *(web)* | Starred jobs, articles, maps, pins | `star_border` | push `/menu/favorites` |
+| 3 | Settings | Animations · haptics | `tune` | push `/menu/settings` |
+| 4 | FAQ | Free, local, private, the rules. | `help_outline` | push `/menu/faq` |
+| 5 | Contact | Feedback, bug reports, support | `mail_outline` | push `/menu/contact` |
+| 6 | Join Discord | UP55 community invite | `forum` | open `https://discord.gg/pGcD92Dm8H` externally (external chevron) |
+| 7 | Disclaimer | Unofficial fan project · made for the UP55 community | `info_outline` | push `/menu/disclaimer` |
+| 8 | About | `v<version>` (Alpha) — e.g. "v0.2.0 (Alpha)" | `auto_awesome` | push `/menu/about` |
 
 The version string comes from the async app-version provider with fallback `v0.2.0` (§12).
+
+### 7.1 Favorites (`/menu/favorites`, web only — `features/favorites/FavoritesView.tsx`)
+
+`SubPage` "Favorites" listing every row of the `favorites` table (data-layer §2.3), live (Dexie
+`liveQuery`), one `SectionHeader` group per kind in this order: Jobs, Articles, Maps, Map zones,
+Fishing zones, Tracked objects (rows sorted by label, numbers in order; unknown kinds skipped).
+Also reached from the Knowledge home banner (star action). Labels and links (pure:
+`favoritesList.ts`):
+
+| Kind | Label · subtitle | Opens |
+|---|---|---|
+| `job` | `Leadership #35511202` · giver faction | `/tools/jobs?job=<id>` (the job's sheet) |
+| `kb_article` | article title · category | `/knowledge/article/<slug>` |
+| `map` | map title · subtitle | `/knowledge/maps/<id>` |
+| `map_zone` | zone name · `Mars · owner · role` (as global search) | `/knowledge/maps/<mapId>?zone=<zoneId>` |
+| `fishing_zone` | `Zone 23 · Barbary Bend` · room · depth (a one-zone room: its name) | `/tools/fishing/<room>?zone=<id>` (one-zone room: no `zone`) |
+| `tracked_object` | catalog name or designation · kind (`jpl:<naif>`: body name · "Moon of Jupiter") | `/tools/tracker` with router state `TrackTarget` (auto-tracks) |
+
+Each source (jobs.json, KB, installed maps + the documents of maps with starred zones,
+fishing_zones.json, tracker catalog) loads on its own, only when a favorite of its kind exists:
+a group shows a spinner while its source loads; a failed source shows its rows by raw id (still
+openable when the link needs no data; fishing then opens `/tools/fishing`) under a warning
+line. An item the loaded data no longer has (job dropped, map not installed, zone gone,
+unknown `jpl:` id) shows its raw id and a reason, can't be opened, and can still be un-starred.
+Every row ends with a filled star: un-stars at once (through the toggle, so the tombstone
+rule holds) with a "… removed from favorites." snackbar + **Undo** (re-stars). Empty: star
+icon, "No favorites yet" and where the stars are.
 
 ---
 

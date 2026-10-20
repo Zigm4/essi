@@ -176,7 +176,7 @@ File: `lib/features/knowledge/views/kb_home_view.dart`.
 
 ### 3.1 Structure (top → bottom)
 
-1. **TransmissionHeader banner** — label `ESSI · Archive & Doctrine` (see §1.7). Pinned; content scrolls under it. No trailing actions.
+1. **TransmissionHeader banner** — label `ESSI · Archive & Doctrine` (see §1.7). Pinned; content scrolls under it. No trailing actions. **Web:** one action, a star icon "Favorites" (tap haptic) → push `/menu/favorites` (app-shell §7.1), where bookmarked articles and starred maps / zones are listed.
 2. Scrollable content (CustomScrollView; the banner owns the scroll controller so the sector code ticks):
    1. **Search field** — padding (12, 12, 12, 8):
       - Placeholder: `Search articles` (style: body with `textDim` color).

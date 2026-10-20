@@ -1,0 +1,147 @@
+.group {
+  display: flex;
+  flex-direction: column;
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* A GlassCard-like row: the open area, then the star that un-stars it. */
+.row {
+  display: flex;
+  align-items: stretch;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.rowMain {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0 12px 12px;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+}
+
+.rowOpen {
+  cursor: pointer;
+  transition: background-color var(--motion-subtle-duration) var(--motion-subtle-ease);
+}
+
+.rowOpen:active {
+  background-color: rgba(79, 195, 255, 0.08);
+}
+
+.rowOpen:focus-visible,
+.unstar:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: -2px;
+  border-radius: 14px;
+}
+
+.rowIcon {
+  flex: none;
+  display: inline-flex;
+  color: var(--accent-primary);
+}
+
+.rowText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.rowTitle {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.rowSubtitle,
+.rowGone {
+  margin-top: 2px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+/* Gone from the data: raw id, can only be un-starred. */
+.rowGone {
+  color: var(--accent-warn);
+}
+
+.unstar {
+  flex: none;
+  width: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--accent-warn);
+}
+
+/* A source that failed (its rows show raw ids) */
+.sourceError {
+  margin: 6px 0 0;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent-warn);
+}
+
+/* Empty state */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 24px;
+}
+
+.emptyIcon {
+  display: inline-flex;
+  margin-bottom: 12px;
+  color: var(--text-dim);
+  opacity: 0.6;
+}
+
+.centered {
+  text-align: center;
+}
+
+.emptyCaption {
+  max-width: 320px;
+  margin: 4px 0 0;
+  text-align: center;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.errorText {
+  margin: 0;
+  padding-top: 24px;
+  text-align: center;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--accent-danger);
+}

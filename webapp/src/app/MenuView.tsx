@@ -19,6 +19,7 @@ import {
   IconSparkle,
   IconTune,
 } from '../design-system/icons';
+import { IconStarBorder } from '../features/tools/shared/toolIcons';
 import styles from './MenuView.module.css';
 
 function MenuRow({
@@ -75,6 +76,12 @@ export function MenuView() {
             subtitle="Maps, KB, jobs, wallets, notes"
             icon={<IconSearch size={22} />}
             onTap={() => navigate('/menu/search')}
+          />
+          <MenuRow
+            title="Favorites"
+            subtitle="Starred jobs, articles, maps, pins"
+            icon={<IconStarBorder size={22} />}
+            onTap={() => navigate('/menu/favorites')}
           />
           <MenuRow
             title="Settings"

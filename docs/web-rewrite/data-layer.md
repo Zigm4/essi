@@ -175,6 +175,8 @@ Repository behavior: `toggle(kind, id)` — delete if present, else `insertOrRep
 
 **Web:** un-starring also writes a tombstone `{entityType, entityId, removedAt}` to the `removedFavorites` store (starring again deletes it; a key is never in both), so an import of an older backup can't bring the star back (§4.5). Readers of `favorites` are unaffected.
 
+**Web:** every kind is listed together at `/menu/favorites` (app-shell §7.1), which reads the whole table live and un-stars through the same toggle.
+
 #### `job_status` (class `JobStatus`) — schema v3
 | column | type | null | notes |
 |---|---|---|---|

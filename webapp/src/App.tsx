@@ -13,6 +13,7 @@ import { SnackbarHost } from './design-system/components/SnackbarHost';
 import { CapturesHomeView } from './features/captures/CapturesHomeView';
 import { LinkDetailView } from './features/captures/LinkDetailView';
 import { NoteDetailView } from './features/captures/NoteDetailView';
+import { FavoritesView } from './features/favorites/FavoritesView';
 import { HangarListView } from './features/hangar/HangarListView';
 import { KBArticleView } from './features/knowledge/KBArticleView';
 import { KBCategoryView } from './features/knowledge/KBCategoryView';
@@ -71,6 +72,7 @@ export default function App() {
           {/* Tab 4 - Menu */}
           <Route path="/menu" element={<MenuView />} />
           <Route path="/menu/search" element={<GlobalSearchView />} />
+          <Route path="/menu/favorites" element={<FavoritesView />} />
           <Route path="/menu/settings" element={<SettingsView />} />
           <Route path="/menu/about" element={<AboutView />} />
           <Route path="/menu/faq" element={<FAQView />} />

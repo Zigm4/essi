@@ -25,7 +25,7 @@ import {
  * maps change; notes, links and pins are read fresh on every run (live).
  */
 
-function zoneLocation(mapId: string, zoneId: string): string {
+export function zoneLocation(mapId: string, zoneId: string): string {
   return `/knowledge/maps/${encodeURIComponent(mapId)}?zone=${encodeURIComponent(zoneId)}`;
 }
 
@@ -67,7 +67,7 @@ function zoneKey(mapId: string, zoneId: string): string {
 }
 
 /** `Mars · Lalothen`: the map, then the zone's short searchable values (owner, region...). */
-function zoneSubtitle(mapTitle: string, doc: MapDocument, zone: MapZone): string {
+export function zoneSubtitle(mapTitle: string, doc: MapDocument, zone: MapZone): string {
   const parts = [mapTitle];
   for (const field of doc.fieldsSchema) {
     if (!field.searchable || (field.type !== 'enum' && field.type !== 'text')) continue;

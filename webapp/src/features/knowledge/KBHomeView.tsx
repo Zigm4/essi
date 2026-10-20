@@ -6,6 +6,7 @@ import { GlassCard } from '../../design-system/components/GlassCard';
 import { NeonButton } from '../../design-system/components/NeonButton';
 import { SectionHeader } from '../../design-system/components/SectionHeader';
 import { TagChip } from '../../design-system/components/TagChip';
+import { BannerAction } from '../../design-system/components/TransmissionHeader';
 import {
   IconChevronRight,
   IconForum,
@@ -19,6 +20,7 @@ import { Haptics } from '../../core/haptics';
 import { discordInviteUrl } from '../../core/constants';
 import { launchExternal } from '../../core/externalLink';
 import { friendlyError } from '../../core/errorText';
+import { IconStarBorder } from '../tools/shared/toolIcons';
 import type { KBArticle, KBArticleRef, KBCategory } from './data/kbModels';
 import { useKBData } from './data/kbLoader';
 import { homeCategoryIcon } from './kbCategoryIcon';
@@ -204,6 +206,7 @@ function ResultCard({ article }: { article: KBArticle }) {
 
 /** /knowledge - knowledge base home (Knowledge tab). */
 export function KBHomeView() {
+  const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const kb = useKBData();
   const trimmedIsEmpty = query.length === 0;
@@ -212,7 +215,21 @@ export function KBHomeView() {
     kb.status === 'ready' ? (kb.data.categories.find((c) => c.id === 'maps')?.articles ?? []) : [];
 
   return (
-    <BannerPage bannerLabel="ESSI · Archive & Doctrine">
+    <BannerPage
+      bannerLabel="ESSI · Archive & Doctrine"
+      bannerActions={
+        // Bookmarked articles and starred maps / zones are listed with every other favorite.
+        <BannerAction
+          label="Favorites"
+          onTap={() => {
+            Haptics.tap();
+            navigate('/menu/favorites');
+          }}
+        >
+          <IconStarBorder size={20} />
+        </BannerAction>
+      }
+    >
       <PageScrollView padding="12px 12px 32px">
         <div className={styles.searchField}>
           <SearchField value={query} onChange={setQuery} placeholder="Search articles" />

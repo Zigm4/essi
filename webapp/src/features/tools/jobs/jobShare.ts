@@ -36,7 +36,7 @@ export function jobIdFromSearch(search: string): number | null {
 }
 
 /** "Beginner", "Maintenance" - the job's type as a word. */
-function typeWord(job: Job): string {
+export function typeWord(job: Job): string {
   const t = job.typeRaw.trim();
   return t.length === 0 ? 'Job' : `${t.charAt(0).toUpperCase()}${t.slice(1)}`;
 }
