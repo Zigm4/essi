@@ -180,6 +180,8 @@ root on re-click of the active tab).
 
 ### 3.1 Complete route map
 
+> Web (Oct 2026): every screen except `/boot`, `/onboarding`, the shell and `/tools` is loaded on demand (`React.lazy` per route in `App.tsx`), so the first bundle is ~340 kB instead of ~970 kB. `AppShell` wraps the outlet in a `Suspense` with a centered spinner (the nav stays). The service worker precaches every chunk, so offline behaviour is unchanged.
+
 | Path | View | Notes |
 |---|---|---|
 | `/boot` | `BootScreen` | Initial location. On complete → `/tools` if `onboardingSeen`, else `/onboarding` (replace, not push). |

@@ -1,4 +1,6 @@
+import { Suspense } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
+import { CenteredSpinner } from '../features/tools/shared/Status';
 import { ErrorBoundary } from './ErrorBoundary';
 import { BackupReminderFooter } from './BackupReminderFooter';
 import { BottomNav } from './BottomNav';
@@ -20,7 +22,10 @@ export function AppShell() {
       <div className={styles.content}>
         {/* A crashing screen shows a recovery card; the nav stays usable and a new path resets it. */}
         <ErrorBoundary key={pathname}>
-          <Outlet />
+          {/* Screens load on demand (App.tsx): the nav stays while one arrives. */}
+          <Suspense fallback={<CenteredSpinner />}>
+            <Outlet />
+          </Suspense>
         </ErrorBoundary>
       </div>
       {/* Before the nav in the DOM so keyboard focus follows the visual order

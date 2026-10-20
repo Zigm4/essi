@@ -1,36 +1,48 @@
+import { lazy, type ComponentType } from 'react';
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
-import { AboutView } from './app/AboutView';
 import { AppShell } from './app/AppShell';
 import { BootScreen } from './app/BootScreen';
-import { ContactView } from './app/ContactView';
-import { DisclaimerView } from './app/DisclaimerView';
-import { FAQView } from './app/FAQView';
-import { MenuView } from './app/MenuView';
 import { Onboarding } from './app/Onboarding';
 import { RouteNotFound } from './app/RouteNotFound';
-import { SettingsView } from './app/SettingsView';
 import { SnackbarHost } from './design-system/components/SnackbarHost';
-import { CapturesHomeView } from './features/captures/CapturesHomeView';
-import { LinkDetailView } from './features/captures/LinkDetailView';
-import { NoteDetailView } from './features/captures/NoteDetailView';
-import { FavoritesView } from './features/favorites/FavoritesView';
-import { HangarListView } from './features/hangar/HangarListView';
-import { KBArticleView } from './features/knowledge/KBArticleView';
-import { KBCategoryView } from './features/knowledge/KBCategoryView';
-import { KBHomeView } from './features/knowledge/KBHomeView';
-import { MapDetailView } from './features/knowledge/MapDetailView';
-import { GlobalSearchView } from './features/search/GlobalSearchView';
-import { AsteroidAnalyzerView } from './features/tools/AsteroidAnalyzerView';
-import { CelestialView } from './features/tools/CelestialView';
-import { FishingMapView } from './features/tools/FishingMapView';
-import { FishingRoomView } from './features/tools/FishingRoomView';
-import { FoeDecoderView } from './features/tools/FoeDecoderView';
-import { JobsView } from './features/tools/JobsView';
-import { MarsExpressView } from './features/tools/MarsExpressView';
-import { SystemScanView } from './features/tools/SystemScanView';
 import { ToolsHomeView } from './features/tools/ToolsHomeView';
-import { TrackerView } from './features/tools/TrackerView';
-import { WalletLookupView } from './features/tools/WalletLookupView';
+
+/**
+ * Every screen but the first ones (boot, onboarding, Tools home) is its own
+ * chunk, loaded when opened: the app's first download and start-up stay small.
+ * The service worker still precaches every chunk, so offline is unchanged;
+ * AppShell shows a spinner while a chunk loads.
+ */
+function screen<K extends string>(load: () => Promise<Record<K, ComponentType>>, name: K) {
+  return lazy(() => load().then((m) => ({ default: m[name] })));
+}
+
+const AboutView = screen(() => import('./app/AboutView'), 'AboutView');
+const ContactView = screen(() => import('./app/ContactView'), 'ContactView');
+const DisclaimerView = screen(() => import('./app/DisclaimerView'), 'DisclaimerView');
+const FAQView = screen(() => import('./app/FAQView'), 'FAQView');
+const MenuView = screen(() => import('./app/MenuView'), 'MenuView');
+const SettingsView = screen(() => import('./app/SettingsView'), 'SettingsView');
+const CapturesHomeView = screen(() => import('./features/captures/CapturesHomeView'), 'CapturesHomeView');
+const LinkDetailView = screen(() => import('./features/captures/LinkDetailView'), 'LinkDetailView');
+const NoteDetailView = screen(() => import('./features/captures/NoteDetailView'), 'NoteDetailView');
+const FavoritesView = screen(() => import('./features/favorites/FavoritesView'), 'FavoritesView');
+const HangarListView = screen(() => import('./features/hangar/HangarListView'), 'HangarListView');
+const KBArticleView = screen(() => import('./features/knowledge/KBArticleView'), 'KBArticleView');
+const KBCategoryView = screen(() => import('./features/knowledge/KBCategoryView'), 'KBCategoryView');
+const KBHomeView = screen(() => import('./features/knowledge/KBHomeView'), 'KBHomeView');
+const MapDetailView = screen(() => import('./features/knowledge/MapDetailView'), 'MapDetailView');
+const GlobalSearchView = screen(() => import('./features/search/GlobalSearchView'), 'GlobalSearchView');
+const AsteroidAnalyzerView = screen(() => import('./features/tools/AsteroidAnalyzerView'), 'AsteroidAnalyzerView');
+const CelestialView = screen(() => import('./features/tools/CelestialView'), 'CelestialView');
+const FishingMapView = screen(() => import('./features/tools/FishingMapView'), 'FishingMapView');
+const FishingRoomView = screen(() => import('./features/tools/FishingRoomView'), 'FishingRoomView');
+const FoeDecoderView = screen(() => import('./features/tools/FoeDecoderView'), 'FoeDecoderView');
+const JobsView = screen(() => import('./features/tools/JobsView'), 'JobsView');
+const MarsExpressView = screen(() => import('./features/tools/MarsExpressView'), 'MarsExpressView');
+const SystemScanView = screen(() => import('./features/tools/SystemScanView'), 'SystemScanView');
+const TrackerView = screen(() => import('./features/tools/TrackerView'), 'TrackerView');
+const WalletLookupView = screen(() => import('./features/tools/WalletLookupView'), 'WalletLookupView');
 
 /** Complete route table (app-shell spec §3.1). Initial location: /boot. */
 export default function App() {
