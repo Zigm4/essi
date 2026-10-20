@@ -141,6 +141,7 @@
 }
 .segItem {
   flex: 1;
+  min-height: 36px; /* touch target */
   padding: 8px 0;
   border: 1px solid transparent;
   border-radius: 6px;
@@ -275,19 +276,21 @@
 .chipWrap {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
 }
+/* Suggestion / filter chips: 36px tall, a comfortable thumb target. */
 .chip {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  min-height: 36px;
   border: 0.7px solid rgba(79, 195, 255, 0.5);
-  border-radius: 4px;
-  padding: 4px 8px;
+  border-radius: 6px;
+  padding: 6px 10px;
   background: none;
   cursor: pointer;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-primary);
 }
 
@@ -344,19 +347,20 @@
 .pinChip {
   display: inline-flex;
   align-items: stretch;
+  min-height: 38px; /* 36px buttons inside the border */
   border: 0.7px solid rgba(79, 195, 255, 0.5);
-  border-radius: 4px;
+  border-radius: 6px;
 }
 .pinChipMain {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 4px 4px 4px 8px;
+  padding: 6px 6px 6px 10px;
   border: none;
   background: none;
   cursor: pointer;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-primary);
 }
 .pinChipMain:disabled {
@@ -367,7 +371,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 26px;
+  min-width: 36px;
   padding: 0 6px;
   border: none;
   border-left: 0.7px solid rgba(79, 195, 255, 0.25);
@@ -439,6 +443,12 @@
   display: flex;
   flex-direction: column;
 }
+/* Focus lands on the panel itself when it opens (programmatic, no ring needed). */
+.sheet:focus,
+.dialog:focus,
+.detailScrim:focus {
+  outline: none;
+}
 .sheetAppBar {
   position: relative;
   flex: none;
@@ -449,6 +459,7 @@
 }
 .sheetDone {
   width: 80px;
+  height: 44px; /* the whole app-bar slot is the target, not just the word */
   flex: none;
   background: none;
   border: none;
@@ -547,9 +558,10 @@
   margin-top: 4px;
 }
 .dialogBtn {
+  min-height: 44px;
   background: none;
   border: none;
-  padding: 8px 12px;
+  padding: 8px 14px;
   cursor: pointer;
   font-family: var(--font-sans);
   font-size: 15px;
@@ -559,7 +571,7 @@
 .detailScrim {
   position: fixed;
   inset: 0;
-  z-index: 42;
+  z-index: 40; /* layers stack by opening order (a Share sheet opens over it) */
   background: var(--bg-deepest);
   display: flex;
   flex-direction: column;

@@ -22,6 +22,11 @@
   flex-direction: column;
 }
 
+/* Focus lands on the panel itself when it opens (programmatic, no ring needed). */
+.sheet:focus {
+  outline: none;
+}
+
 .appBar {
   position: relative;
   flex: none;
@@ -32,6 +37,7 @@
 
 .close {
   width: 80px;
+  height: 44px; /* the whole app-bar slot is the target, not just the word */
   flex: none;
   background: none;
   border: none;

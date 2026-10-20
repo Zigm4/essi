@@ -433,6 +433,10 @@ Attempting to close (Cancel button, back gesture/navigation pop) while dirty sho
 - actions: `Keep editing` (body, textSecondary) → stay; `Discard` (body, accentDanger) → close.
 Not dirty → closes immediately.
 
+Web (Oct 2026): the editor and the dialog are modal layers (app-shell §3.3). Back (gesture,
+browser button) and Escape go through the same check: a clean editor closes and the Notes list
+stays; a dirty one asks; Back or Escape on the dialog means "Keep editing".
+
 ### Save flow
 
 1. Commit any half-typed tag token in the tag field (F38 — `TagInputController.commitPending`).

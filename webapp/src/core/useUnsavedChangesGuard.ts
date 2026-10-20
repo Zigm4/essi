@@ -1,49 +1,38 @@
 import { useEffect, useRef } from 'react';
-
-let guardSeq = 0;
+import { openBackLayer } from './backStack';
+import { useLayerOrder } from './useCloseOnBack';
 
 /**
  * Protects an editor's unsaved input from the back gesture / browser Back and
  * from a reload or tab close, while `dirty` is true:
- * - Back: a same-URL history entry is pushed while dirty, so Back only pops
- *   that entry (the route doesn't change); it is pushed again and
- *   `onBackAttempt` runs - typically to show "Discard changes?".
+ * - Back: the guard is a layer of the back stack (core/backStack.ts) with its
+ *   own same-URL history entry, above the editor's. Back only pops that entry
+ *   (the route doesn't change); it is pushed again and `onBackAttempt` runs -
+ *   typically to show "Discard changes?". A picker or dialog opened over the
+ *   dirty editor still closes first.
  * - Reload / close: the browser's own "Leave site?" prompt.
  * When the editor stops being dirty (saved, discarded, closed), the extra
  * entry is popped again so history is left as it was.
- *
- * The router (HashRouter) keeps working: the pushed entry carries the current
- * history state (its `idx`/`key`), so popping it is a no-op navigation.
  */
 export function useUnsavedChangesGuard(dirty: boolean, onBackAttempt: () => void): void {
+  const order = useLayerOrder(dirty);
   const callback = useRef(onBackAttempt);
-  callback.current = onBackAttempt;
+  useEffect(() => {
+    callback.current = onBackAttempt;
+  });
 
   useEffect(() => {
     if (!dirty) return;
-    guardSeq += 1;
-    const marker = `essi-guard-${guardSeq}`;
-    const pushGuard = () => {
-      const current = (window.history.state as Record<string, unknown> | null) ?? {};
-      window.history.pushState({ ...current, essiGuard: marker }, '');
-    };
-    pushGuard();
-
-    const onPopState = () => {
-      pushGuard();
-      callback.current();
-    };
+    const layer = openBackLayer({ order, keep: true, escape: false, onBack: () => callback.current() });
     const onBeforeUnload = (e: BeforeUnloadEvent) => {
       e.preventDefault();
       e.returnValue = '';
     };
-    window.addEventListener('popstate', onPopState);
     window.addEventListener('beforeunload', onBeforeUnload);
     return () => {
-      window.removeEventListener('popstate', onPopState);
       window.removeEventListener('beforeunload', onBeforeUnload);
-      const state = window.history.state as { essiGuard?: string } | null;
-      if (state?.essiGuard === marker) window.history.back();
+      layer.close();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dirty]);
 }

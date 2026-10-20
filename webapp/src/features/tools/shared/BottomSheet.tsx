@@ -6,22 +6,23 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react';
-import { createPortal } from 'react-dom';
+import { ModalLayer } from '../../../design-system/components/ModalLayer';
 import styles from './BottomSheet.module.css';
 
 /**
  * Modal bottom sheet (spec §1.4). The grab handle is a live control: drag the
  * top band down past a threshold to dismiss, or tap the handle itself to close
- * (the native mobile gesture) - scrim tap and Escape also dismiss. Dismissal
+ * (the native mobile gesture) - scrim tap, Escape and Back (the Android
+ * gesture, the browser button) also dismiss, the top-most sheet only. Dismissal
  * is deliberate: an upward, sideways, short or cancelled drag snaps back. The
  * body scrolls internally with a safe-area bottom inset so the last control
  * never hides behind the phone's bottom bar. An optional `footer` is pinned
  * under the scrolling body (it carries the safe-area inset instead), so
  * nothing scrolls beneath it.
  *
- * Focus: opening moves focus into the panel and makes the app behind it
- * `inert` (so Tab stays in the sheet); closing gives focus back to whatever
- * had it before.
+ * Focus: opening moves focus into the panel and makes the app behind it (and
+ * a sheet under it) `inert`, so Tab stays in the sheet; closing gives focus
+ * back to whatever had it before (ModalLayer).
  */
 
 const DISMISS_THRESHOLD_PX = 110;
@@ -49,20 +50,6 @@ interface HandleDrag {
   onGrip: boolean;
 }
 
-/** Open sheets holding the app root inert (sheets can stack). */
-let inertHolds = 0;
-
-function holdAppInert(): () => void {
-  const root = document.getElementById('root');
-  if (root === null) return () => {};
-  inertHolds++;
-  root.setAttribute('inert', '');
-  return () => {
-    inertHolds--;
-    if (inertHolds === 0) root.removeAttribute('inert');
-  };
-}
-
 export function BottomSheet({
   open,
   onClose,
@@ -85,34 +72,18 @@ export function BottomSheet({
   const [dragY, setDragY] = useState(0);
   const [dragging, setDragging] = useState(false);
   const drag = useRef<HandleDrag | null>(null);
-  const panelRef = useRef<HTMLDivElement>(null);
   const gripRef = useRef<HTMLButtonElement>(null);
   const hasFooter = footer !== undefined && footer !== null && footer !== false;
 
-  // Keyed on `open` only: callers pass inline `onClose`s, which must not re-run this.
   useEffect(() => {
     if (!open) return;
-    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const release = holdAppInert();
-    panelRef.current?.focus({ preventScroll: true });
     return () => {
-      // Drop a gesture cut short by Escape / scrim / the caller closing.
+      // Drop a gesture cut short by Escape / Back / scrim / the caller closing.
       drag.current = null;
       setDragging(false);
       setDragY(0);
-      release(); // first: an inert element can't take focus
-      if (opener?.isConnected) opener.focus({ preventScroll: true });
     };
   }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [open, onClose]);
 
   if (!open) return null;
 
@@ -157,14 +128,13 @@ export function BottomSheet({
     transition: dragging ? 'none' : undefined,
   };
 
-  // Portal to <body> so the scrim/sheet escape any page-level stacking context
-  // (a tool page wraps its content in a z-index:1 layer) and sit above the
-  // sidebar, bottom nav and the backup-reminder footer.
-  return createPortal(
-    <>
+  // ModalLayer portals to <body> so the scrim/sheet escape any page-level
+  // stacking context (a tool page wraps its content in a z-index:1 layer) and
+  // sit above the sidebar, bottom nav and the backup-reminder footer.
+  return (
+    <ModalLayer onClose={onClose}>
       <button type="button" className={styles.scrim} aria-label="Close" onClick={onClose} />
       <div
-        ref={panelRef}
         className={styles.sheet}
         role="dialog"
         aria-modal="true"
@@ -196,7 +166,6 @@ export function BottomSheet({
         <div className={hasFooter ? `${styles.body} ${styles.bodyWithFooter}` : styles.body}>{children}</div>
         {hasFooter && <div className={styles.footer}>{footer}</div>}
       </div>
-    </>,
-    document.body,
+    </ModalLayer>
   );
 }

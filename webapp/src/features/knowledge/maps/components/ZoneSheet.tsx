@@ -12,6 +12,7 @@ import { friendlyError } from '../../../../core/errorText';
 import { launchExternal } from '../../../../core/externalLink';
 import { logError } from '../../../../core/logging';
 import { showSnackbar } from '../../../../core/snackbar';
+import { useCloseOnBack } from '../../../../core/useCloseOnBack';
 import { useUnsavedChangesGuard } from '../../../../core/useUnsavedChangesGuard';
 import { ConfirmDialog } from '../../../captures/components/ConfirmDialog';
 import { FavoriteKind } from '../../../../data/db';
@@ -44,6 +45,8 @@ export function ZoneSheet({ mapId, doc, zone, theme, onClose }: ZoneSheetProps) 
     else action();
   };
   useUnsavedChangesGuard(pinDirty, () => setPendingAction(() => onClose));
+  // Back / Escape close the sheet (the map stays); an unsaved note asks first.
+  useCloseOnBack(true, () => guard(onClose));
   const accent = colorCss(theme.accent);
   // Neutral, always-readable surface: the zone's own (often muddy) palette is
   // used only for accents (badge, region chip, pin, top hairline) - never the

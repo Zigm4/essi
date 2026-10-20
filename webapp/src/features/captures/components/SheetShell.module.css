@@ -7,6 +7,11 @@
   justify-content: flex-end;
 }
 
+/* Focus lands on the overlay itself when it opens (programmatic, no ring needed). */
+.overlay:focus {
+  outline: none;
+}
+
 .backdrop {
   position: absolute;
   inset: 0;

@@ -211,9 +211,12 @@
   flex: 1;
 }
 
+/* Hull −/+ : 36px buttons with a 44px hit area, so a near miss steps the hull
+   instead of opening the editor behind it. */
 .stepper {
-  width: 28px;
-  height: 28px;
+  position: relative;
+  width: 36px;
+  height: 36px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -225,8 +228,14 @@
   cursor: pointer;
 }
 
+.stepper::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+}
+
 .stepper + .stepper {
-  margin-left: 6px;
+  margin-left: 8px;
 }
 
 .stepper:disabled {
@@ -292,6 +301,14 @@
   z-index: 50;
 }
 
+/* Focus lands on the panel itself when a sheet / dialog opens (programmatic, no ring needed). */
+.editorPanel:focus,
+.pickerSheet:focus,
+.dialog:focus,
+.evilRoot:focus {
+  outline: none;
+}
+
 .editorScrim {
   position: absolute;
   inset: 0;
@@ -353,6 +370,7 @@
 }
 
 .editorCancel {
+  min-height: 44px;
   background: none;
   border: none;
   padding: 8px 12px;
@@ -364,6 +382,7 @@
 }
 
 .editorSave {
+  min-height: 44px;
   background: none;
   border: none;
   padding: 8px 12px;
@@ -375,6 +394,7 @@
 }
 
 .editorSaveDisabled {
+  min-height: 44px;
   background: none;
   border: none;
   padding: 8px 12px;
@@ -608,6 +628,7 @@
   position: relative;
   width: 40px;
   height: 22px;
+  margin: 0 2px;
   flex: none;
   border-radius: 11px;
   border: none;
@@ -615,6 +636,13 @@
   cursor: pointer;
   background: rgba(122, 227, 255, 0.2);
   transition: background-color 160ms ease;
+}
+
+/* 44px hit area around the 40×22 track (its label is a <label> for it too). */
+.switch::before {
+  content: '';
+  position: absolute;
+  inset: -11px -2px;
 }
 
 .switchOn {
@@ -640,9 +668,12 @@
 }
 
 .switchLabel {
+  flex: 1;
+  padding: 11px 0;
   font-family: var(--font-sans);
   font-size: 15px;
   color: var(--text-primary);
+  cursor: pointer;
 }
 
 /* Owner card (spec §6.3) */
@@ -731,6 +762,7 @@
 }
 
 .chipRemove {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -739,6 +771,13 @@
   border: none;
   cursor: pointer;
   color: var(--bg-deepest);
+}
+
+/* The 12px × gets a ~32px hit area, mostly over its own chip. */
+.chipRemove::before {
+  content: '';
+  position: absolute;
+  inset: -10px -8px -10px -10px;
 }
 
 .tagInput {

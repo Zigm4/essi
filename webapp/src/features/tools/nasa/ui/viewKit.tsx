@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { GlassCard } from '../../../../design-system/components/GlassCard';
+import { ModalLayer } from '../../../../design-system/components/ModalLayer';
 import { IconWarningAmber } from '../../../../design-system/icons';
 import { Haptics } from '../../../../core/haptics';
 import { showSnackbar } from '../../../../core/snackbar';
@@ -18,6 +19,8 @@ import styles from './nasa.module.css';
 /**
  * Cross-view building blocks for the three NASA tool screens: a confirm dialog,
  * transparency bullet rows, and the generic history bottom sheet (spec §3.3).
+ * The dialog and the sheet are modal layers: Back / Escape close the top-most
+ * one, focus moves in and comes back on close (ModalLayer).
  */
 
 // --- Confirm dialog (clear-all / single-delete) ------------------------------
@@ -36,9 +39,16 @@ export function ConfirmDialog({
   onCancel: () => void;
 }) {
   return (
-    <>
+    <ModalLayer onClose={onCancel}>
       <div className={styles.dialogScrim} onClick={onCancel} role="presentation">
-        <div className={styles.dialog} role="dialog" aria-label={title} onClick={(e) => e.stopPropagation()}>
+        <div
+          className={styles.dialog}
+          role="alertdialog"
+          aria-modal="true"
+          aria-label={title}
+          tabIndex={-1}
+          onClick={(e) => e.stopPropagation()}
+        >
           <span className={styles.headline}>{title}</span>
           {message !== undefined && <span className={styles.caption}>{message}</span>}
           <div className={styles.dialogActions}>
@@ -64,7 +74,7 @@ export function ConfirmDialog({
           </div>
         </div>
       </div>
-    </>
+    </ModalLayer>
   );
 }
 
@@ -159,9 +169,9 @@ export function HistorySheet({
   const showDeleteAll = hasRows || feed.status === 'error';
 
   return (
-    <>
+    <ModalLayer onClose={onClose}>
       <div className={styles.sheetScrim} onClick={onClose} role="presentation" />
-      <div className={styles.sheet} role="dialog" aria-label={strings.title}>
+      <div className={styles.sheet} role="dialog" aria-modal="true" aria-label={strings.title} tabIndex={-1}>
         <div className={styles.sheetAppBar}>
           <button type="button" className={styles.sheetDone} onClick={onClose}>
             Done
@@ -264,7 +274,6 @@ export function HistorySheet({
           }}
         />
       )}
-
-    </>
+    </ModalLayer>
   );
 }

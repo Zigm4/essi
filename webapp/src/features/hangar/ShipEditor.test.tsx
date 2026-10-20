@@ -85,7 +85,7 @@ function pasteInto(input: HTMLInputElement, text: string) {
 }
 
 async function save(): Promise<ShipDraft> {
-  const button = [...host.querySelectorAll('button')].find((b) => b.textContent === 'Save');
+  const button = [...document.body.querySelectorAll('button')].find((b) => b.textContent === 'Save');
   await act(async () => button?.click());
   expect(saveShip).toHaveBeenCalledTimes(1);
   return saveShip.mock.calls[0][0];
@@ -94,7 +94,7 @@ async function save(): Promise<ShipDraft> {
 describe('ShipEditor call sign', () => {
   it('pasting the full call sign in any case does not double the prefix', async () => {
     render(ship({ name: 'OORT-1', modelKey: 'ufo-oort' }));
-    const input = host.querySelector('input[placeholder="number"]') as HTMLInputElement;
+    const input = document.body.querySelector('input[placeholder="number"]') as HTMLInputElement;
     expect(input.value).toBe('1');
     pasteInto(input, 'oort-07');
     expect(input.value).toBe('07');
@@ -111,8 +111,8 @@ describe('ShipEditor crew roles', () => {
         roles: { ...emptyRoles(), pilot: 'Ann', gunner: 'Bob', medic: 'Alice' },
       }),
     );
-    expect(host.querySelector('input[placeholder="Pilot\'s name"]')).not.toBeNull();
-    expect(host.querySelector('input[placeholder="Gunner\'s name"]')).toBeNull();
+    expect(document.body.querySelector('input[placeholder="Pilot\'s name"]')).not.toBeNull();
+    expect(document.body.querySelector('input[placeholder="Gunner\'s name"]')).toBeNull();
     const draft = await save();
     expect(draft.roles.pilot).toBe('Ann');
     expect(draft.roles.gunner).toBeNull();

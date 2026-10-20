@@ -125,7 +125,7 @@ Tools are reached from the Tools home (`/tools`) via ToolCard tiles (that view i
 
 `/tools/tracker` additionally accepts an in-memory navigation "extra" of type `TrackTarget { name, kind, mpcID? }` (used by Discoveries → "Track this object live"). **Web suggestion:** encode as query params, e.g. `/tools/tracker?name=…&kind=asteroid&mpc=…`, and auto-track when `mpc` is present.
 
-History detail (Scan) is pushed as a full-screen dialog route (no URL in Flutter). Web: either a sub-route `/tools/scan/history/:id` or modal.
+History detail (Scan) is pushed as a full-screen dialog route (no URL in Flutter). Web: either a sub-route `/tools/scan/history/:id` or modal. Web (Oct 2026): a modal layer. The history sheets, the discovery and scan details, the confirm dialogs and How it works close on Back / Escape (top-most first), are `role="dialog"` + `aria-modal`, and move focus in and back (app-shell §3.3). Tapping a history row closes the sheet and opens the detail on the same history entry, so one Back closes the detail.
 
 ---
 

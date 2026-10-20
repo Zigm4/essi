@@ -11,6 +11,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useBack } from '../../core/useBack';
+import { useCloseOnBack } from '../../core/useCloseOnBack';
 import { friendlyError } from '../../core/errorText';
 import { Haptics } from '../../core/haptics';
 import { logError } from '../../core/logging';
@@ -577,6 +578,7 @@ function Panel({
   onClose: () => void;
   children: ReactNode;
 }) {
+  useCloseOnBack(true, onClose); // Back / Escape close the panel, not the map
   return (
     <>
       <button type="button" className={styles.catcher} aria-label="Close panel" onClick={onClose} />

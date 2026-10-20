@@ -1,4 +1,5 @@
 .button {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -14,4 +15,11 @@
 
 .active {
   color: var(--accent-warn);
+}
+
+/* A 44px hit area around the 36px star, without growing the row it sits in. */
+.button::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
 }

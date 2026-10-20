@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { GlassCard } from '../../design-system/components/GlassCard';
+import { ModalLayer } from '../../design-system/components/ModalLayer';
 import { NeonButton } from '../../design-system/components/NeonButton';
 import { SectionHeader } from '../../design-system/components/SectionHeader';
 import { TransmissionHeader } from '../../design-system/components/TransmissionHeader';
@@ -783,7 +784,7 @@ function DiscoveryCard({
   );
 }
 
-/** Discovery detail bottom sheet (spec §5.7). */
+/** Discovery detail bottom sheet (spec §5.7); a modal layer (Back / Escape close it). */
 function DiscoveryDetail({
   object,
   onClose,
@@ -805,9 +806,9 @@ function DiscoveryDetail({
   };
 
   return (
-    <>
+    <ModalLayer onClose={onClose}>
       <div className={styles.sheetScrim} onClick={onClose} role="presentation" />
-      <div className={styles.sheet} role="dialog" aria-label="Discovery">
+      <div className={styles.sheet} role="dialog" aria-modal="true" aria-label="Discovery" tabIndex={-1}>
         <div className={styles.sheetAppBar}>
           <button type="button" className={styles.sheetDone} onClick={onClose}>
             Close
@@ -890,6 +891,6 @@ function DiscoveryDetail({
           </div>
         </div>
       </div>
-    </>
+    </ModalLayer>
   );
 }

@@ -6,6 +6,7 @@ import { PageScrollView } from '../../design-system/components/PageScrollView';
 import { SectionHeader } from '../../design-system/components/SectionHeader';
 import { TransmissionHeader } from '../../design-system/components/TransmissionHeader';
 import { AppBackground } from '../../design-system/components/AppBackground';
+import { ModalLayer } from '../../design-system/components/ModalLayer';
 import {
   IconCheckCircle,
   IconChevronRight,
@@ -522,7 +523,7 @@ export function SystemScanView() {
   );
 }
 
-/** Full-screen scan history detail (spec §4.12). */
+/** Full-screen scan history detail (spec §4.12); a modal layer (Back / Escape close it). */
 function ScanDetail({
   date,
   entry,
@@ -535,47 +536,55 @@ function ScanDetail({
   onShare: () => void;
 }) {
   return (
-    <div className={styles.detailScrim}>
-      <AppBackground showsScanlines={false}>
-        <div className={styles.page}>
-          <div className={styles.appBar}>
-            <button type="button" className={styles.sheetDone} onClick={onClose}>
-              Close
-            </button>
-            <span className={styles.title}>{dMonthHm(date)}</span>
-            <button
-              type="button"
-              className={styles.iconBtn}
-              style={{ marginLeft: 'auto', color: 'var(--accent-primary)' }}
-              title="Share"
-              aria-label="Share this scan"
-              onClick={onShare}
-            >
-              <IconShare size={20} />
-            </button>
-          </div>
-          <PageScrollView padding="64px 12px 32px">
-            <div className={styles.stack}>
-              <GlassCard>
-                <SectionHeader title="Scan" icon={<IconCenterFocus size={18} />} />
-                <div className={styles.rowCenter} style={{ gap: 8, marginTop: 8 }}>
-                  <span className={styles.body} style={{ flex: 1 }}>
-                    {dMonthYearHms(date)}
-                  </span>
-                  <PillBadge text={entry.mode.toUpperCase()} style={{ padding: '3px 6px', letterSpacing: 1.5 }} />
-                </div>
-              </GlassCard>
-
-              <GlassCard>
-                <SectionHeader title="Snapshot" icon={<IconPublic size={18} />} />
-                <div style={{ marginTop: 12 }}>
-                  <SnapshotRows snapshots={entry.snapshots} mode={entry.mode} />
-                </div>
-              </GlassCard>
+    <ModalLayer onClose={onClose}>
+      <div
+        className={styles.detailScrim}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Scan of ${dMonthYearHms(date)}`}
+        tabIndex={-1}
+      >
+        <AppBackground showsScanlines={false}>
+          <div className={styles.page}>
+            <div className={styles.appBar}>
+              <button type="button" className={styles.sheetDone} onClick={onClose}>
+                Close
+              </button>
+              <span className={styles.title}>{dMonthHm(date)}</span>
+              <button
+                type="button"
+                className={styles.iconBtn}
+                style={{ marginLeft: 'auto', color: 'var(--accent-primary)' }}
+                title="Share"
+                aria-label="Share this scan"
+                onClick={onShare}
+              >
+                <IconShare size={20} />
+              </button>
             </div>
-          </PageScrollView>
-        </div>
-      </AppBackground>
-    </div>
+            <PageScrollView padding="64px 12px 32px">
+              <div className={styles.stack}>
+                <GlassCard>
+                  <SectionHeader title="Scan" icon={<IconCenterFocus size={18} />} />
+                  <div className={styles.rowCenter} style={{ gap: 8, marginTop: 8 }}>
+                    <span className={styles.body} style={{ flex: 1 }}>
+                      {dMonthYearHms(date)}
+                    </span>
+                    <PillBadge text={entry.mode.toUpperCase()} style={{ padding: '3px 6px', letterSpacing: 1.5 }} />
+                  </div>
+                </GlassCard>
+
+                <GlassCard>
+                  <SectionHeader title="Snapshot" icon={<IconPublic size={18} />} />
+                  <div style={{ marginTop: 12 }}>
+                    <SnapshotRows snapshots={entry.snapshots} mode={entry.mode} />
+                  </div>
+                </GlassCard>
+              </div>
+            </PageScrollView>
+          </div>
+        </AppBackground>
+      </div>
+    </ModalLayer>
   );
 }

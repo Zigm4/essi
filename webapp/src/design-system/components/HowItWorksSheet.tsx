@@ -1,9 +1,11 @@
 import type { ReactNode } from 'react';
+import { ModalLayer } from './ModalLayer';
 import styles from './HowItWorksSheet.module.css';
 
 /**
  * Bottom-sheet scaffold for every "How it works" explainer (spec §7.8).
- * Fixed ~92dvh panel with internal scroll; scrim click dismisses.
+ * Fixed ~92dvh panel with internal scroll; Close, the scrim, Back and Escape
+ * dismiss it (a modal layer: focus moves in and comes back on close).
  */
 export function HowItWorksSheet({
   open,
@@ -16,9 +18,9 @@ export function HowItWorksSheet({
 }) {
   if (!open) return null;
   return (
-    <>
+    <ModalLayer onClose={onClose}>
       <button type="button" className={styles.scrim} aria-label="Close" onClick={onClose} />
-      <div className={styles.sheet} role="dialog" aria-label="How it works">
+      <div className={styles.sheet} role="dialog" aria-modal="true" aria-label="How it works" tabIndex={-1}>
         <div className={styles.appBar}>
           <button type="button" className={styles.close} onClick={onClose}>
             Close
@@ -27,6 +29,6 @@ export function HowItWorksSheet({
         </div>
         <div className={styles.body}>{children}</div>
       </div>
-    </>
+    </ModalLayer>
   );
 }

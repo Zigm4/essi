@@ -1,4 +1,5 @@
 import { IconCancel } from './hangarIcons';
+import { ModalLayer } from '../../design-system/components/ModalLayer';
 import { IconCheck } from '../../design-system/icons';
 import styles from './hangar.module.css';
 
@@ -17,7 +18,8 @@ export interface PickerGroup {
  * Modal bottom sheet used by the model & location pickers (spec §7.1 / §7.2).
  * An explicit tap (including the "none" row) calls `onPick`; tapping the
  * scrim calls `onDismiss` and leaves the selection unchanged - the two must
- * stay distinguishable.
+ * stay distinguishable. Back and Escape dismiss too (a modal layer: focus
+ * moves in and comes back to the field on close).
  */
 export function PickerSheet({
   title,
@@ -35,9 +37,9 @@ export function PickerSheet({
   onDismiss: () => void;
 }) {
   return (
-    <>
+    <ModalLayer onClose={onDismiss}>
       <button type="button" className={styles.pickerScrim} aria-label="Dismiss" onClick={onDismiss} />
-      <div className={styles.pickerSheet} role="dialog" aria-label={title}>
+      <div className={styles.pickerSheet} role="dialog" aria-modal="true" aria-label={title} tabIndex={-1}>
         <div className={styles.pickerTitle}>{title}</div>
         <div className={styles.pickerList}>
           <button
@@ -88,6 +90,6 @@ export function PickerSheet({
           ))}
         </div>
       </div>
-    </>
+    </ModalLayer>
   );
 }

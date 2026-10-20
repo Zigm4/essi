@@ -165,3 +165,73 @@ describe('BottomSheet dismissal', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('BottomSheet and Back', () => {
+  /** Lets the back stack's microtask, history traversals and React updates run. */
+  async function settle() {
+    await act(async () => {
+      for (let i = 0; i < 4; i++) await new Promise((r) => setTimeout(r, 5));
+    });
+  }
+
+  let onCloseInner: ReturnType<typeof vi.fn<() => void>>;
+
+  /** A Share sheet opened from inside a job sheet, both portaled to <body>. */
+  function renderNested(outer: boolean, inner: boolean) {
+    act(() => {
+      root.render(
+        <BottomSheet open={outer} onClose={onClose} ariaLabel="Job details">
+          <button type="button">Share</button>
+          <BottomSheet open={inner} onClose={onCloseInner} ariaLabel="Share">
+            <button type="button">Copy link</button>
+          </BottomSheet>
+        </BottomSheet>,
+      );
+    });
+  }
+
+  const sheet = (label: string) => document.querySelector<HTMLElement>(`[role="dialog"][aria-label="${label}"]`);
+
+  beforeEach(async () => {
+    onCloseInner = vi.fn<() => void>();
+    await settle(); // the sheets of earlier tests finish taking their entries back
+    window.history.pushState({ key: 'jobs', idx: 1 }, '', '#/tools/jobs');
+  });
+
+  afterEach(async () => {
+    renderNested(false, false);
+    await settle();
+  });
+
+  it('closes the top-most sheet on Back, one at a time', async () => {
+    renderNested(true, true);
+    await settle();
+    // Only the top sheet is reachable: the job sheet under it is inert too.
+    expect(sheet('Job details')!.parentElement!.hasAttribute('inert')).toBe(true);
+    expect(document.activeElement).toBe(sheet('Share'));
+
+    window.history.back();
+    await settle();
+    expect(onCloseInner).toHaveBeenCalledTimes(1);
+    expect(onClose).not.toHaveBeenCalled();
+
+    renderNested(true, false);
+    await settle();
+    expect(sheet('Job details')!.parentElement!.hasAttribute('inert')).toBe(false);
+    expect(window.location.hash).toBe('#/tools/jobs');
+
+    window.history.back();
+    await settle();
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('closes only the top-most sheet on Escape', async () => {
+    renderNested(true, true);
+    await settle();
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', cancelable: true }));
+    });
+    expect(onCloseInner).toHaveBeenCalledTimes(1);
+    expect(onClose).not.toHaveBeenCalled();
+  });
+});

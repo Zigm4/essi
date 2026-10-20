@@ -23,6 +23,8 @@ Everything glows subtly: buttons carry colored box-shadows, active elements puls
 
 **Accessibility / reduced motion:** Every animation in the design system is disabled when EITHER the OS-level "reduce motion" setting is on (web: `@media (prefers-reduced-motion: reduce)`) OR the in-app setting `settings.reduceAnimations` (persisted, see §10) is true. When disabled, components render their static end-state (details per component below).
 
+**Touch targets (web, Oct 2026):** tappable controls are at least 36px tall (chips, segmented items, tag chips), 40–44px where space allows (dialog buttons, sheet "Done"/"Close", editor Cancel/Save, Skip). Small icon buttons keep their look and get an invisible 44px hit area (`::before` with a negative inset): banner actions (32px), favorite stars (36px), Hangar hull steppers (36px), the Registered switch (whose label toggles it too), the CodeBlock copy button.
+
 ---
 
 ## 2. Color tokens (`lib/design_system/colors.dart`)
@@ -401,7 +403,7 @@ Behavior:
 ### 7.8 `HowItWorksSheet` (`components/info_card/how_it_works_sheet.dart`) — bottom sheet scaffold
 
 Standard scaffold for every "How it works" explainer. Presented as a **draggable modal bottom sheet**:
-- Initial height 92% of screen; user can drag between 50% (min) and 97% (max). Web adaptation: a modal sheet/dialog covering ~92dvh (drag-resize optional; a fixed 92dvh panel with internal scroll is acceptable), with an overlay behind that dismisses on click.
+- Initial height 92% of screen; user can drag between 50% (min) and 97% (max). Web adaptation: a modal sheet/dialog covering ~92dvh (drag-resize optional; a fixed 92dvh panel with internal scroll is acceptable), with an overlay behind that dismisses on click. Web: a `ModalLayer` — Back and Escape close it too, focus moves in and returns to the info button (app-shell §3.3).
 - Top corners rounded 22px (`AppRadius.lg`), content clipped.
 - Background `#03060B`.
 - **App bar** (transparent over the sheet background, no elevation):

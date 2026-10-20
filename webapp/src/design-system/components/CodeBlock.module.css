@@ -21,8 +21,8 @@
   position: absolute;
   top: 6px;
   right: 6px;
-  width: 28px;
-  height: 26px;
+  width: 32px;
+  height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -32,6 +32,13 @@
   color: var(--accent-primary);
   cursor: pointer;
   padding: 0;
+}
+
+/* A 44px hit area, without covering more of the code. */
+.copyButton::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
 }
 
 .copied {

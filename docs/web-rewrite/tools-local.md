@@ -393,7 +393,7 @@ Chips (multi-select sections): buttons with `aria-pressed`, min height 36, pill 
 
 The sheet edits a **draft** copy, taken from the current filter each time it opens; nothing applies to the list until `Show {n} jobs`. Any other dismissal (scrim tap, Escape, the drag handle) discards the draft.
 
-`BottomSheet` contract: the optional `footer` prop is rendered outside the scrolling body with padding `12px 16px calc(12px + env(safe-area-inset-bottom))`, `bgElevated` and a 1px `borderSubtle` top border; when a footer is present (not `undefined`, `null` or `false`) the body drops its own `20px + safe-area` bottom padding. Sheets without a footer are unchanged. Every sheet moves focus to its panel when it opens, marks the app root (`#root`) `inert` while open (so Tab stays inside the sheet, which is portalled to `<body>`), and gives focus back to the element that had it when it closes.
+`BottomSheet` contract: the optional `footer` prop is rendered outside the scrolling body with padding `12px 16px calc(12px + env(safe-area-inset-bottom))`, `bgElevated` and a 1px `borderSubtle` top border; when a footer is present (not `undefined`, `null` or `false`) the body drops its own `20px + safe-area` bottom padding. Sheets without a footer are unchanged. Every sheet moves focus to its panel when it opens, marks the app root (`#root`) — and a sheet under it — `inert` while open (so Tab stays inside the sheet, which is portalled to `<body>`), and gives focus back to the element that had it when it closes. Back (Android gesture, browser button) and Escape close the top-most sheet only: Share over a job sheet closes first, then the job (app-shell §3.3).
 
 ### 3.6 Job detail sheet (`JobDetailSheet`)
 

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { ModalLayer } from '../../design-system/components/ModalLayer';
 import { useReducedMotion } from '../../design-system/reducedMotion';
 import { IconCancel, IconDirectionsBoat } from './hangarIcons';
 import styles from './hangar.module.css';
@@ -7,6 +8,7 @@ import styles from './hangar.module.css';
  * Fullscreen "captain's log" easter egg for the EVIL void ship (spec §8).
  * A Star-Wars-style crawl over a starfield, resolving into a decorative void
  * portal. The portal is the sanctioned simpler CSS re-interpretation (spec §8.3).
+ * Back and Escape close the log like its Close button (a modal layer).
  */
 
 /** Verbatim log text (spec §8.2). Blank strings render as spacers; `//` lines are dim comments. */
@@ -121,84 +123,86 @@ export function EvilShipIntro({ onClose }: { onClose: () => void }) {
   const portalActive = phase === 'fading' || phase === 'portal';
 
   return (
-    <div className={styles.evilRoot} role="dialog" aria-label="Void ship log">
-      <div
-        ref={viewportRef}
-        className={`${styles.starfield} ${textHidden ? styles.starfieldDim : ''}`}
-      >
-        {stars.map((star, i) => (
-          <span
-            key={i}
-            className={`${styles.star} ${reduced ? '' : styles.starDrift}`}
-            style={{
-              left: `${star.x * 100}%`,
-              top: `${star.y * 100}%`,
-              width: star.r * 2,
-              height: star.r * 2,
-              opacity: star.o,
-            }}
-          />
-        ))}
-      </div>
-
-      {portalActive && (
+    <ModalLayer onClose={onClose}>
+      <div className={styles.evilRoot} role="dialog" aria-modal="true" aria-label="Void ship log" tabIndex={-1}>
         <div
-          className={`${styles.portal} ${phase === 'portal' ? styles.portalSettled : ''} ${
-            reduced ? styles.portalReduced : ''
-          }`}
-          aria-hidden="true"
+          ref={viewportRef}
+          className={`${styles.starfield} ${textHidden ? styles.starfieldDim : ''}`}
         >
-          <div className={styles.portalHalo} />
-          <div className={styles.portalCorona} />
-          <div className={styles.portalAqua} />
-          <div className={styles.portalMantle} />
-          <div className={styles.portalCore} />
-          <div className={styles.portalGlints} />
+          {stars.map((star, i) => (
+            <span
+              key={i}
+              className={`${styles.star} ${reduced ? '' : styles.starDrift}`}
+              style={{
+                left: `${star.x * 100}%`,
+                top: `${star.y * 100}%`,
+                width: star.r * 2,
+                height: star.r * 2,
+                opacity: star.o,
+              }}
+            />
+          ))}
         </div>
-      )}
 
-      <div className={styles.evilColumn}>
-        <div className={`${styles.evilText} ${textHidden ? styles.evilTextHidden : ''}`}>
-          <div className={styles.evilHeader}>
-            <span className={styles.evilHeaderRow}>
-              <IconDirectionsBoat size={22} />
-              <span className={styles.evilTitle}>VOID SHIP</span>
-            </span>
-            <span className={styles.evilSubtitle}>
-              EAST-SHIRE VESSEL INDUSTRIES . LAWLESS . EVIL-01
-            </span>
+        {portalActive && (
+          <div
+            className={`${styles.portal} ${phase === 'portal' ? styles.portalSettled : ''} ${
+              reduced ? styles.portalReduced : ''
+            }`}
+            aria-hidden="true"
+          >
+            <div className={styles.portalHalo} />
+            <div className={styles.portalCorona} />
+            <div className={styles.portalAqua} />
+            <div className={styles.portalMantle} />
+            <div className={styles.portalCore} />
+            <div className={styles.portalGlints} />
           </div>
+        )}
 
-          <div className={styles.crawlViewport}>
-            <div ref={crawlRef} className={styles.crawlContent}>
-              {LOG_LINES.map((line, i) => {
-                if (line === '') return <div key={i} className={styles.crawlSpacer} />;
-                if (line.startsWith('//'))
+        <div className={styles.evilColumn}>
+          <div className={`${styles.evilText} ${textHidden ? styles.evilTextHidden : ''}`}>
+            <div className={styles.evilHeader}>
+              <span className={styles.evilHeaderRow}>
+                <IconDirectionsBoat size={22} />
+                <span className={styles.evilTitle}>VOID SHIP</span>
+              </span>
+              <span className={styles.evilSubtitle}>
+                EAST-SHIRE VESSEL INDUSTRIES . LAWLESS . EVIL-01
+              </span>
+            </div>
+
+            <div className={styles.crawlViewport}>
+              <div ref={crawlRef} className={styles.crawlContent}>
+                {LOG_LINES.map((line, i) => {
+                  if (line === '') return <div key={i} className={styles.crawlSpacer} />;
+                  if (line.startsWith('//'))
+                    return (
+                      <div key={i} className={styles.crawlComment}>
+                        {line}
+                      </div>
+                    );
                   return (
-                    <div key={i} className={styles.crawlComment}>
+                    <p key={i} className={styles.crawlParagraph}>
                       {line}
-                    </div>
+                    </p>
                   );
-                return (
-                  <p key={i} className={styles.crawlParagraph}>
-                    {line}
-                  </p>
-                );
-              })}
+                })}
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className={styles.evilFooter}>
-          {phase === 'scrolling' && (
-            <div className={styles.evilHint}>She'll wait. So will the rest of the form.</div>
-          )}
-          <button type="button" className={styles.evilClose} onClick={onClose}>
-            <IconCancel size={18} />
-            {phase === 'portal' ? 'Step through' : 'Close log'}
-          </button>
+          <div className={styles.evilFooter}>
+            {phase === 'scrolling' && (
+              <div className={styles.evilHint}>She'll wait. So will the rest of the form.</div>
+            )}
+            <button type="button" className={styles.evilClose} onClick={onClose}>
+              <IconCancel size={18} />
+              {phase === 'portal' ? 'Step through' : 'Close log'}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </ModalLayer>
   );
 }

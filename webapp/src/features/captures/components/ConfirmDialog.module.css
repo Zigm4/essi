@@ -18,6 +18,11 @@
   padding: 20px;
 }
 
+/* Focus lands on the dialog itself when it opens (programmatic, no ring needed). */
+.dialog:focus {
+  outline: none;
+}
+
 .title {
   font-family: var(--font-sans);
   font-size: 17px;

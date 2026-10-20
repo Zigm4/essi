@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useId, useRef, useState, type ReactNode } from 'react';
 import { Haptics } from '../../core/haptics';
 import { friendlyError } from '../../core/errorText';
 import { showSnackbar } from '../../core/snackbar';
 import { deleteWithUndo } from '../../core/undoDelete';
 import { useUnsavedChangesGuard } from '../../core/useUnsavedChangesGuard';
 import { GlassCard } from '../../design-system/components/GlassCard';
+import { ModalLayer } from '../../design-system/components/ModalLayer';
 import { SectionHeader } from '../../design-system/components/SectionHeader';
 import { IconExpandMore, IconShield, IconShieldMoon, IconTag } from '../../design-system/icons';
 import {
@@ -152,6 +153,12 @@ function LabeledField({ label, children }: { label: string; children: ReactNode 
   );
 }
 
+/**
+ * The editor's modal sheet. The backdrop, Back and Escape all go through
+ * `onBackdrop` (the discard check); a picker or dialog opened over it closes
+ * first. With unsaved changes the guard's entry sits above this one, so Back
+ * asks "Discard changes?".
+ */
 function EditorSheet({
   title,
   leading,
@@ -166,22 +173,24 @@ function EditorSheet({
   children: ReactNode;
 }) {
   return (
-    <div className={styles.editorRoot}>
-      <button
-        type="button"
-        className={styles.editorScrim}
-        aria-label="Close editor"
-        onClick={onBackdrop}
-      />
-      <div className={styles.editorPanel} role="dialog" aria-label={title}>
-        <div className={styles.editorAppBar}>
-          <span className={styles.editorLeading}>{leading}</span>
-          <span className={styles.editorTitle}>{title}</span>
-          <span className={styles.editorTrailing}>{trailing}</span>
+    <ModalLayer onClose={onBackdrop}>
+      <div className={styles.editorRoot}>
+        <button
+          type="button"
+          className={styles.editorScrim}
+          aria-label="Close editor"
+          onClick={onBackdrop}
+        />
+        <div className={styles.editorPanel} role="dialog" aria-modal="true" aria-label={title} tabIndex={-1}>
+          <div className={styles.editorAppBar}>
+            <span className={styles.editorLeading}>{leading}</span>
+            <span className={styles.editorTitle}>{title}</span>
+            <span className={styles.editorTrailing}>{trailing}</span>
+          </div>
+          <div className={styles.editorBody}>{children}</div>
         </div>
-        <div className={styles.editorBody}>{children}</div>
       </div>
-    </div>
+    </ModalLayer>
   );
 }
 
@@ -261,6 +270,7 @@ function ShipEditorForm({
   const [showDiscard, setShowDiscard] = useState(false);
 
   const tagHandleRef = useRef<TagInputHandle | null>(null);
+  const registeredId = useId();
 
   const set = (patch: Partial<Fields>) => setFields((f) => ({ ...f, ...patch }));
 
@@ -341,18 +351,6 @@ function ShipEditorForm({
     if (dirty) setShowDiscard(true);
     else onClose();
   };
-
-  // Escape closes like Cancel (through the discard check), unless a dialog or picker is up.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape' || e.defaultPrevented) return;
-      if (showDiscard || modelPickerOpen || locationPickerOpen || intro.open) return;
-      e.preventDefault();
-      attemptClose();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  });
 
   const onSave = async () => {
     // A double click must not save twice (a new ship would be created twice).
@@ -546,6 +544,7 @@ function ShipEditorForm({
 
         <div className={styles.switchRow}>
           <button
+            id={registeredId}
             type="button"
             role="switch"
             aria-checked={fields.registered}
@@ -554,7 +553,10 @@ function ShipEditorForm({
           >
             <span className={styles.switchThumb} />
           </button>
-          <span className={styles.switchLabel}>Registered</span>
+          {/* The word toggles it too (a bigger target than the 40px track). */}
+          <label htmlFor={registeredId} className={styles.switchLabel}>
+            Registered
+          </label>
         </div>
       </GlassCard>
 

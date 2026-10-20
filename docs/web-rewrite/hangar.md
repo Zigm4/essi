@@ -265,6 +265,7 @@ File: `lib/features/hangar/views/ship_editor_view.dart`. Opened for "new" (no sh
 - A snapshot of every field is taken on open ("baseline"). `dirty` = any of: name, suffix, custom model, hull, sector, SL, zone, custom location, note text differs; or modelKey, locationKey, registered differ; or the tags list differs (ordered comparison); or any role text differs.
 - Baseline is **re-captured** after programmatic normalizations so they don't count as user edits: (a) after splitting a saved `PREFIX-NNNN` name into the suffix field on open; (b) after applying EVIL defaults.
 - Closing (Cancel button, back navigation) while dirty shows an `AlertDialog` (bg `bgElevated`): title `Discard changes?` (headline), content `You have unsaved changes.` (body), actions `Keep editing` (body `textSecondary`) / `Discard` (body `accentDanger`). Only "Discard" closes. The bottom sheet's swipe-dismiss is disabled at the call site precisely so this guard can't be bypassed.
+- Web (Oct 2026): the editor, the model/location pickers, the confirm dialog and the void-ship log are modal layers (app-shell §3.3): Back and Escape close the top-most one (a picker first, then the editor — through the dirty check), focus moves in and returns to the field or card that opened it. Hull −/+ are 36px with a 44px hit area; the word "Registered" toggles its switch.
 
 ### 6.3 Form sections, top to bottom
 

@@ -10,6 +10,7 @@ import { describeImportSummary, importFromUserPick } from '../data/exportImport'
 import { useSettingsStore } from '../data/settings';
 import { resetToBuiltInMaps } from '../features/knowledge/maps/data/seedImporter';
 import { GlassCard } from '../design-system/components/GlassCard';
+import { ModalLayer } from '../design-system/components/ModalLayer';
 import { SectionHeader } from '../design-system/components/SectionHeader';
 import { SubPage } from '../design-system/components/SubPage';
 import {
@@ -284,34 +285,44 @@ export function SettingsView() {
         </div>
       </GlassCard>
 
+      {/* A modal layer: the scrim, Back and Escape cancel; focus moves in and back. */}
       {confirmReset && (
-        <div className={styles.dialogScrim}>
-          <div className={styles.dialog} role="alertdialog" aria-label="Reset interactive maps?">
-            <div className={styles.dialogTitle}>Reset interactive maps?</div>
-            <div className={styles.dialogBody}>
-              This deletes the stored copy of the maps and sets up the built-in maps again. Use it
-              if a map no longer opens. Your zone notes and favorites are kept.
-            </div>
-            <div className={styles.dialogActions}>
-              <button
-                type="button"
-                className={styles.dialogButton}
-                onClick={() => setConfirmReset(false)}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className={styles.dialogButton}
-                onClick={() => {
-                  void onResetMaps();
-                }}
-              >
-                Reset
-              </button>
+        <ModalLayer onClose={() => setConfirmReset(false)}>
+          <div className={styles.dialogScrim} onClick={() => setConfirmReset(false)} role="presentation">
+            <div
+              className={styles.dialog}
+              role="alertdialog"
+              aria-modal="true"
+              aria-label="Reset interactive maps?"
+              tabIndex={-1}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className={styles.dialogTitle}>Reset interactive maps?</div>
+              <div className={styles.dialogBody}>
+                This deletes the stored copy of the maps and sets up the built-in maps again. Use it
+                if a map no longer opens. Your zone notes and favorites are kept.
+              </div>
+              <div className={styles.dialogActions}>
+                <button
+                  type="button"
+                  className={styles.dialogButton}
+                  onClick={() => setConfirmReset(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className={styles.dialogButton}
+                  onClick={() => {
+                    void onResetMaps();
+                  }}
+                >
+                  Reset
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </ModalLayer>
       )}
     </SubPage>
   );

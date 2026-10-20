@@ -241,6 +241,36 @@ Terminal fallback for a bad/stale deep link. Deliberately dependency-light.
 
 ---
 
+### 3.3 Back closes the top-most overlay (web, Oct 2026)
+
+On Android (system back, installed PWA) and in browsers (Back), Back closes the sheet or dialog
+on top instead of leaving the screen. One shared mechanism, `core/backStack.ts`:
+
+- Every open overlay (`useCloseOnBack(open, onClose)`; `ModalLayer` wraps it) owns one
+  same-URL history entry above the page's (the router's state plus an `essiLayer` marker), so
+  the router sees no navigation. Back pops the top entry and closes that overlay only — a
+  sheet over a sheet (Share over a job) closes one at a time. Escape does the same on desktop.
+- Closing from the UI (button, scrim, Escape, drag) pops the overlay's entry right after the
+  commit, without navigating; when another overlay opens in the same commit (history row →
+  detail) the entry is reused. These pops never reach the router (the listener runs first,
+  installed in `main.tsx`, and stops them).
+- The unsaved-changes guard (`useUnsavedChangesGuard`) is a layer of the same stack, above the
+  editor: Back with unsaved changes asks "Discard changes?" and the guard's entry comes back; a
+  picker or dialog opened over the dirty editor still closes first.
+- Router writes while an overlay is up: a `replace` (filter Apply, a stripped `?zone=`) is
+  copied down to the page's entry when the overlay's entry pops; a `push` (Discoveries →
+  "Track this object live") takes the overlay's entry, so Back from the new screen returns
+  straight to the page — no stray entries.
+- `ModalLayer` (design system) is the host for modal overlays: portal to `<body>`, the above,
+  focus moved into the `role="dialog"`/`"alertdialog"` panel (`aria-modal="true"`) and given
+  back on close, app root and lower overlays `inert`. The snackbar is portaled outside the app
+  root so "Undo" stays tappable over a sheet. Users: `BottomSheet` (every tools sheet), the
+  NASA history sheet / discovery detail / scan detail / confirm dialog, How it works, the Hangar
+  editor / pickers / confirm / void-ship log, the Notes & Link editors and their confirm, the
+  Settings "Reset interactive maps?" dialog. The map zone sheet and side panels use the hook
+  alone (Back / Escape close them).
+- Known limit: reloading with an overlay open leaves its same-URL entry behind (one extra Back).
+
 ## 4. App shell & bottom navigation (`lib/app/app_shell.dart`)
 
 The shell wraps the 5 tab branches: `Scaffold` with `backgroundColor #03060B`, body = active

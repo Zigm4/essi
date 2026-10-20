@@ -1,8 +1,10 @@
+import { ModalLayer } from '../../design-system/components/ModalLayer';
 import styles from './hangar.module.css';
 
 /**
  * Small centered confirm dialog over a scrim, reused by the list (delete) and
  * the editor (discard/delete). Background `bgElevated` (spec §5.3 / §6.2).
+ * The scrim, Back and Escape cancel (a modal layer: focus moves in and back).
  */
 export function ConfirmDialog({
   title,
@@ -20,9 +22,9 @@ export function ConfirmDialog({
   onConfirm: () => void;
 }) {
   return (
-    <>
+    <ModalLayer onClose={onCancel}>
       <button type="button" className={styles.dialogScrim} aria-label="Dismiss" onClick={onCancel} />
-      <div className={styles.dialog} role="alertdialog" aria-label={title}>
+      <div className={styles.dialog} role="alertdialog" aria-modal="true" aria-label={title} tabIndex={-1}>
         <div className={styles.dialogTitle}>{title}</div>
         {body != null && <div className={styles.dialogBody}>{body}</div>}
         <div className={styles.dialogActions}>
@@ -34,6 +36,6 @@ export function ConfirmDialog({
           </button>
         </div>
       </div>
-    </>
+    </ModalLayer>
   );
 }
