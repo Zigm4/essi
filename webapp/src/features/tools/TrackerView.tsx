@@ -9,15 +9,15 @@ import {
   IconPublic,
   IconTrack,
   IconWarningAmber,
-  IconWifiTethering,
 } from '../../design-system/icons';
 import { resolveProxyBase } from './nasa/jplClient';
 import type { HistoryRow } from '../../data/db';
 import { Haptics } from '../../core/haptics';
 import { showSnackbar } from '../../core/snackbar';
 import { ToolScaffold } from './nasa/ui/ToolScaffold';
+import { NetworkNotice } from './nasa/ui/NetworkNotice';
 import { Divider, Spinner, SquareSegmented } from './nasa/ui/kit';
-import { BulletRow, HistorySheet } from './nasa/ui/viewKit';
+import { HistorySheet } from './nasa/ui/viewKit';
 import {
   IconCenterFocus,
   IconPushPin,
@@ -387,27 +387,20 @@ export function TrackerView() {
     >
       <TransmissionHeader label="ESSI · real-time object tracking" />
 
-      <GlassCard>
-        <div className={styles.rowCenter} style={{ gap: 8 }}>
-          <span style={{ color: 'var(--accent-warn)', display: 'inline-flex' }}>
-            <IconWifiTethering size={18} />
-          </span>
-          <span className={styles.headline}>Network access required</span>
-        </div>
-        <div className={styles.caption} style={{ marginTop: 8 }}>
-          This tool sends up to 5 GET requests to public NASA APIs (JPL Horizons + SBDB). Browsers
-          can&apos;t call them directly (no CORS headers), so requests are relayed through a small
-          Cloudflare Worker proxy. Nothing happens until you tap Track.
-        </div>
-        <Divider alpha={0.4} margin="8px 0" />
-        <BulletRow label="Via:" value="A Cloudflare Worker proxy that forwards the request to NASA" />
-        <BulletRow label="Endpoint:" value="ssd.jpl.nasa.gov + ssd-api.jpl.nasa.gov" />
-        <BulletRow label="Sent:" value="An object name or designation" />
-        <BulletRow label="Received:" value="A single heliocentric position vector" />
-        <BulletRow label="Locally:" value="Sector (1-12), AU coordinates and distance in SL" />
-        <BulletRow label="Your IP:" value="Seen by the Cloudflare proxy, not by NASA" />
-        <BulletRow label="Stored:" value="Nothing sent to a server (tracks are saved locally)" />
-      </GlassCard>
+      <NetworkNotice
+        tool="tracker"
+        summary="Via a Cloudflare proxy to NASA JPL · nothing is sent until you tap Track"
+        intro="This tool sends up to 5 GET requests to public NASA APIs (JPL Horizons + SBDB). Browsers can't call them directly (no CORS headers), so requests are relayed through a small Cloudflare Worker proxy. Nothing happens until you tap Track."
+        rows={[
+          ['Via:', 'A Cloudflare Worker proxy that forwards the request to NASA'],
+          ['Endpoint:', 'ssd.jpl.nasa.gov + ssd-api.jpl.nasa.gov'],
+          ['Sent:', 'An object name or designation'],
+          ['Received:', 'A single heliocentric position vector'],
+          ['Locally:', 'Sector (1-12), AU coordinates and distance in SL'],
+          ['Your IP:', 'Seen by the Cloudflare proxy, not by NASA'],
+          ['Stored:', 'Nothing sent to a server (tracks are saved locally)'],
+        ]}
+      />
 
       <GlassCard>
         <SectionHeader title="Target" icon={<IconCenterFocus size={18} />} />

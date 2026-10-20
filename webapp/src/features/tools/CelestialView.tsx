@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { GlassCard } from '../../design-system/components/GlassCard';
 import { NeonButton } from '../../design-system/components/NeonButton';
@@ -10,14 +10,14 @@ import {
   IconInfoOutline,
   IconTrack,
   IconWarningAmber,
-  IconWifiTethering,
 } from '../../design-system/icons';
 import { resolveProxyBase } from './nasa/jplClient';
 import type { HistoryRow } from '../../data/db';
 import { Haptics } from '../../core/haptics';
 import { ToolScaffold } from './nasa/ui/ToolScaffold';
-import { Divider, PillSegmented, Spinner } from './nasa/ui/kit';
-import { BulletRow, HistorySheet } from './nasa/ui/viewKit';
+import { NetworkNotice } from './nasa/ui/NetworkNotice';
+import { PillSegmented, Spinner } from './nasa/ui/kit';
+import { HistorySheet } from './nasa/ui/viewKit';
 import {
   IconEventNote,
   IconList,
@@ -28,11 +28,15 @@ import {
   IconTravelExplore,
 } from './nasa/ui/toolIcons';
 import { DiscoveriesHowItWorks } from './nasa/ui/howItWorks/DiscoveriesHowItWorks';
-import { dMonthYear } from './nasa/ui/format';
+import { dMonthYear, dMonthYearHm } from './nasa/ui/format';
 import {
   expectedSeconds,
+  arrangeDiscoveries,
   isWideWindow,
   parseYmdInRange,
+  statusCounts,
+  type DiscoverySort,
+  type StatusFilter,
   searchDiscoveries,
   windowDays,
   ymdLocal,
@@ -81,7 +85,22 @@ interface LastResults {
   query: DiscoveriesQuery;
   results: DiscoveredObject[];
   truncated: boolean;
+  total: number | null;
 }
+
+/** Results reopened from the history: the objects saved then, read-only. */
+interface SavedView {
+  savedAt: Date;
+  /** How many the search had found (the history keeps at most 200). */
+  total: number;
+}
+
+const STATUS_FILTERS: readonly { value: StatusFilter; label: string }[] = [
+  { value: 'all', label: 'All' },
+  { value: 'danger', label: '🔴 Hazardous' },
+  { value: 'caution', label: '🟡 Caution' },
+  { value: 'ok', label: '🟢 Normal' },
+];
 
 let lastForm: { kind: ObjectKind; startDate: Date; endDate: Date } | null = null;
 let lastResults: LastResults | null = null;
@@ -220,6 +239,10 @@ export function CelestialView() {
   const [results, setResults] = useState<DiscoveredObject[] | null>(initial.cached?.results ?? null);
   const [truncated, setTruncated] = useState(initial.cached?.truncated ?? false);
   const [resultMeta, setResultMeta] = useState<DiscoveriesQuery | null>(initial.cached?.query ?? null);
+  const [total, setTotal] = useState<number | null>(initial.cached?.total ?? null);
+  const [saved, setSaved] = useState<SavedView | null>(null);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [sortOrder, setSortOrder] = useState<DiscoverySort>('oldest');
   const [visible, setVisible] = useState(PAGE_SIZE);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [timedOut, setTimedOut] = useState(false);
@@ -266,12 +289,16 @@ export function CelestialView() {
     try {
       const res = await searchDiscoveries(base, input, signal);
       // Save even 0-result searches, before the supersession check (spec §5.3).
-      void saveDiscoveryHistory(input.kind, input.startDate, input.endDate, res.objects);
+      void saveDiscoveryHistory(input.kind, input.startDate, input.endDate, res.objects, res.total ?? undefined);
       if (gen !== genRef.current) return;
       const query: DiscoveriesQuery = { kind: input.kind, start: input.startDate, end: input.endDate };
-      lastResults = { query, results: res.objects, truncated: res.truncated };
+      lastResults = { query, results: res.objects, truncated: res.truncated, total: res.total };
       setResults(res.objects);
       setTruncated(res.truncated);
+      setTotal(res.total);
+      setSaved(null);
+      setStatusFilter('all');
+      setSortOrder('oldest');
       setResultMeta(query);
       setVisible(PAGE_SIZE);
       setIsSearching(false);
@@ -345,9 +372,19 @@ export function CelestialView() {
       return (
         <GlassCard
           onTap={() => {
+            // Show what was saved (works offline); "Search again" refreshes it.
             setKind(entry.kind);
             setStartDate(entry.startDate);
             setEndDate(entry.endDate);
+            setResults(entry.results);
+            setResultMeta({ kind: entry.kind, start: entry.startDate, end: entry.endDate });
+            setTruncated(entry.total > entry.results.length);
+            setTotal(entry.total > entry.results.length ? entry.total : null);
+            setSaved({ savedAt: new Date(row.date), total: entry.total });
+            setStatusFilter('all');
+            setSortOrder('oldest');
+            setVisible(PAGE_SIZE);
+            setErrorMessage(null);
             close();
           }}
         >
@@ -372,6 +409,13 @@ export function CelestialView() {
         </GlassCard>
       );
     };
+
+  // What the results card lists: one status (or all), in the chosen order.
+  const counts = useMemo(() => statusCounts(results ?? []), [results]);
+  const shown = useMemo(
+    () => arrangeDiscoveries(results ?? [], statusFilter, sortOrder),
+    [results, statusFilter, sortOrder],
+  );
 
   const latency =
     kind === 'asteroid'
@@ -398,33 +442,20 @@ export function CelestialView() {
       >
         <TransmissionHeader label="ESSI · deep space discovery" />
 
-        <GlassCard>
-          <div className={styles.rowCenter} style={{ gap: 8 }}>
-            <span style={{ color: 'var(--accent-warn)', display: 'inline-flex' }}>
-              <IconWifiTethering size={18} />
-            </span>
-            <span className={styles.headline}>Network access required</span>
-          </div>
-          <div className={styles.caption} style={{ marginTop: 8 }}>
-            This tool sends a single GET request to the NASA SBDB Query API. Browsers can&apos;t call it
-            directly (no CORS headers), so the request is relayed through a small Cloudflare Worker
-            proxy. Nothing happens until you tap Search.
-          </div>
-          <Divider alpha={0.4} margin="8px 0" />
-          <BulletRow label="Via:" value="A Cloudflare Worker proxy that forwards the request to NASA" />
-          <BulletRow label="Endpoint:" value="ssd-api.jpl.nasa.gov/sbdb_query.api" />
-          <BulletRow label="Sent:" value="Object kind (comet or asteroid) + a date range" />
-          <BulletRow label="Received:" value="JSON list of bodies matching the filter" />
-          <BulletRow
-            label="Locally:"
-            value="Status icon + optional client-side date filter for pre-1900 dates"
-          />
-          <BulletRow label="Your IP:" value="Seen by the Cloudflare proxy, not by NASA" />
-          <BulletRow
-            label="Stored:"
-            value="Nothing sent to a server (searches are saved locally on your device)"
-          />
-        </GlassCard>
+        <NetworkNotice
+          tool="discoveries"
+          summary="Via a Cloudflare proxy to NASA JPL · nothing is sent until you tap Search"
+          intro="This tool sends a single GET request to the NASA SBDB Query API. Browsers can't call it directly (no CORS headers), so the request is relayed through a small Cloudflare Worker proxy. Nothing happens until you tap Search."
+          rows={[
+            ['Via:', 'A Cloudflare Worker proxy that forwards the request to NASA'],
+            ['Endpoint:', 'ssd-api.jpl.nasa.gov/sbdb_query.api'],
+            ['Sent:', 'Object kind (comet or asteroid) + a date range'],
+            ['Received:', 'JSON list of bodies matching the filter'],
+            ['Locally:', 'Status icon + optional client-side date filter for pre-1900 dates'],
+            ['Your IP:', 'Seen by the Cloudflare proxy, not by NASA'],
+            ['Stored:', 'Nothing sent to a server (searches are saved locally on your device)'],
+          ]}
+        />
 
         <GlassCard>
           <SectionHeader title="Query" icon={<IconEventNote size={18} />} />
@@ -557,7 +588,14 @@ export function CelestialView() {
             ) : (
               <GlassCard>
                 <div className={styles.rowCenter}>
-                  <SectionHeader title={`Results · ${results.length}`} icon={<IconList size={18} />} />
+                  <SectionHeader
+                    title={
+                      total !== null && total > results.length
+                        ? `Results · ${results.length} of ${total}`
+                        : `Results · ${results.length}`
+                    }
+                    icon={<IconList size={18} />}
+                  />
                   <button
                     type="button"
                     className={styles.iconBtn}
@@ -572,7 +610,33 @@ export function CelestialView() {
                     <IconShare size={18} />
                   </button>
                 </div>
-                {truncated && (
+                {saved !== null && (
+                  <div className={styles.banner} style={{ marginTop: 8 }}>
+                    <span style={{ color: 'var(--accent-secondary)', display: 'inline-flex', flex: 'none' }}>
+                      <IconSchedule size={16} />
+                    </span>
+                    <span className={styles.caption} style={{ flex: 1 }}>
+                      Saved search from {dMonthYearHm(saved.savedAt)}
+                      {saved.total > results.length
+                        ? ` · the ${results.length} kept of ${saved.total} found.`
+                        : '.'}
+                    </span>
+                    {proxyBase !== null && (
+                      <button
+                        type="button"
+                        className={styles.refreshBtn}
+                        disabled={isSearching}
+                        onClick={() => {
+                          Haptics.tap();
+                          search({ kind: resultMeta.kind, startDate: resultMeta.start, endDate: resultMeta.end });
+                        }}
+                      >
+                        Search again
+                      </button>
+                    )}
+                  </div>
+                )}
+                {truncated && saved === null && (
                   <div
                     className={styles.banner}
                     style={{
@@ -585,23 +649,60 @@ export function CelestialView() {
                       <IconWarningAmber size={16} />
                     </span>
                     <span className={styles.caption} style={{ color: 'var(--accent-warn)' }}>
-                      Results truncated - SBDB capped this reply at its row limit, so more matches
-                      almost certainly exist. Narrow the date range for a complete list.
+                      {total !== null && total > results.length
+                        ? `Showing the first ${results.length} of ${total} - SBDB caps a reply at ${results.length} rows. Narrow the date range for the complete list.`
+                        : 'Results truncated - SBDB capped this reply at its row limit, so more matches almost certainly exist. Narrow the date range for a complete list.'}
                     </span>
                   </div>
                 )}
+                <div className={styles.chipWrap} style={{ marginTop: 10 }} role="group" aria-label="Filter by status">
+                  {STATUS_FILTERS.map((f) => (
+                    <button
+                      key={f.value}
+                      type="button"
+                      className={`${styles.chip} ${statusFilter === f.value ? styles.chipOn : ''}`}
+                      aria-pressed={statusFilter === f.value}
+                      disabled={f.value !== 'all' && counts[f.value] === 0}
+                      onClick={() => {
+                        setStatusFilter(f.value);
+                        setVisible(PAGE_SIZE);
+                      }}
+                    >
+                      {f.label} <span className={styles.chipNote}>{counts[f.value]}</span>
+                    </button>
+                  ))}
+                </div>
+                <div className={styles.chipWrap} style={{ marginTop: 6 }} role="group" aria-label="Sort">
+                  <span className={styles.caption} style={{ alignSelf: 'center' }}>
+                    Sort:
+                  </span>
+                  {(resultMeta.kind === 'asteroid'
+                    ? (['oldest', 'newest', 'largest'] as const)
+                    : (['oldest', 'newest'] as const)
+                  ).map((value) => (
+                    <button
+                      key={value}
+                      type="button"
+                      className={`${styles.chip} ${sortOrder === value ? styles.chipOn : ''}`}
+                      aria-pressed={sortOrder === value}
+                      onClick={() => setSortOrder(value)}
+                    >
+                      {value === 'oldest' ? 'Oldest first' : value === 'newest' ? 'Newest first' : 'Largest first'}
+                    </button>
+                  ))}
+                </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
-                  {results.slice(0, visible).map((object, i) => (
+                  {shown.slice(0, visible).map((object, i) => (
                     <DiscoveryCard key={`${object.designation}-${i}`} object={object} onOpen={setDetail} />
                   ))}
                 </div>
-                {results.length > visible && (
+                {shown.length > visible && (
                   <button
                     type="button"
                     className={styles.showMoreBtn}
                     onClick={() => setVisible((v) => v + PAGE_SIZE)}
                   >
-                    Show {Math.min(PAGE_SIZE, results.length - visible)} more · {visible} of {results.length} shown
+                    Show {Math.min(PAGE_SIZE, shown.length - visible)} more · {visible} of {shown.length} shown
                   </button>
                 )}
               </GlassCard>

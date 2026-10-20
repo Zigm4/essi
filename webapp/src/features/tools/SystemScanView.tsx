@@ -12,14 +12,14 @@ import {
   IconPublic,
   IconTune,
   IconWarningAmber,
-  IconWifiTethering,
 } from '../../design-system/icons';
 import { resolveProxyBase } from './nasa/jplClient';
 import type { HistoryRow } from '../../data/db';
 import { ToolScaffold } from './nasa/ui/ToolScaffold';
+import { NetworkNotice } from './nasa/ui/NetworkNotice';
 import { Divider, PillBadge, Spinner, SquareSegmented } from './nasa/ui/kit';
 import { PlanetGlyph } from './nasa/ui/PlanetGlyph';
-import { BulletRow, HistorySheet } from './nasa/ui/viewKit';
+import { HistorySheet } from './nasa/ui/viewKit';
 import {
   IconCenterFocus,
   IconError,
@@ -356,34 +356,21 @@ export function SystemScanView() {
       >
         <TransmissionHeader label="ESSI · deep space monitoring" />
 
-        <GlassCard>
-          <div className={styles.rowCenter} style={{ gap: 8 }}>
-            <span style={{ color: 'var(--accent-warn)', display: 'inline-flex' }}>
-              <IconWifiTethering size={18} />
-            </span>
-            <span className={styles.headline}>Network access required</span>
-          </div>
-          <div className={styles.caption} style={{ marginTop: 8 }}>
-            This is one of a few ESSI features that reach the network (System Scan, Tracker and
-            Discoveries). Browsers can&apos;t call NASA&apos;s servers directly (they send no CORS headers),
-            so the request is relayed through a small Cloudflare Worker proxy. Calls are made one at a
-            time with a small gap, to stay under JPL Horizons&apos; rate limit.
-          </div>
-          <Divider alpha={0.4} margin="8px 0" />
-          <BulletRow label="Via:" value="A Cloudflare Worker proxy that forwards the request to NASA" />
-          <BulletRow label="Endpoint:" value="ssd.jpl.nasa.gov/api/horizons.api" />
-          <BulletRow label="Sent:" value="Planet codes (199-999) and the current UTC timestamp" />
-          <BulletRow label="Received:" value="Public ephemeris text (X, Y, Z heliocentric vectors)" />
-          <BulletRow label="Locally:" value="Sector (1-12) and distance in SL" />
-          <BulletRow label="Your IP:" value="Seen by the Cloudflare proxy, not by NASA" />
-          <BulletRow
-            label="Stored:"
-            value="Nothing sent to a server (scans are saved locally on your device)"
-          />
-          <div className={styles.caption} style={{ marginTop: 8 }}>
-            This feature is opt-in: nothing happens until you tap Scan now.
-          </div>
-        </GlassCard>
+        <NetworkNotice
+          tool="scan"
+          summary="Via a Cloudflare proxy to NASA JPL · nothing is sent until you tap Scan now"
+          intro="This is one of a few ESSI features that reach the network (System Scan, Tracker and Discoveries). Browsers can't call NASA's servers directly (they send no CORS headers), so the request is relayed through a small Cloudflare Worker proxy. Calls are made one at a time with a small gap, to stay under JPL Horizons' rate limit."
+          rows={[
+            ['Via:', 'A Cloudflare Worker proxy that forwards the request to NASA'],
+            ['Endpoint:', 'ssd.jpl.nasa.gov/api/horizons.api'],
+            ['Sent:', 'Planet codes (199-999) and the current UTC timestamp'],
+            ['Received:', 'Public ephemeris text (X, Y, Z heliocentric vectors)'],
+            ['Locally:', 'Sector (1-12) and distance in SL'],
+            ['Your IP:', 'Seen by the Cloudflare proxy, not by NASA'],
+            ['Stored:', 'Nothing sent to a server (scans are saved locally on your device)'],
+          ]}
+          footnote="This feature is opt-in: nothing happens until you tap Scan now."
+        />
 
         <GlassCard>
           <SectionHeader title="Mode" icon={<IconTune size={18} />} />

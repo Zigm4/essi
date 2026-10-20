@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { expectedSeconds, isWideWindow, parseYmdInRange, windowDays } from './discoveriesClient';
+import {
+  arrangeDiscoveries,
+  expectedSeconds,
+  isWideWindow,
+  parseYmdInRange,
+  statusCounts,
+  windowDays,
+} from './discoveriesClient';
+import type { DiscoveredObject } from './sbdb';
 
 describe('windowDays', () => {
   it('counts both ends (the SBDB filter is inclusive)', () => {
@@ -38,5 +46,46 @@ describe('parseYmdInRange', () => {
     expect(parseYmdInRange('2027-01-01', MIN, MAX)).toBeNull();
     expect(parseYmdInRange('2026-02-30', MIN, MAX)).toBeNull();
     expect(parseYmdInRange('', MIN, MAX)).toBeNull();
+  });
+});
+
+function obj(designation: string, extra: Partial<DiscoveredObject> = {}): DiscoveredObject {
+  return {
+    designation,
+    fullName: designation,
+    firstObs: '2026-10-01',
+    lastObs: '2026-10-15',
+    isHazardous: false,
+    kind: 'asteroid',
+    ...extra,
+  };
+}
+
+describe('statusCounts / arrangeDiscoveries', () => {
+  const objects = [
+    obj('A', { firstObs: '2026-10-03', diameterMeters: 50 }),
+    obj('B', { firstObs: '2026-10-01', isHazardous: true, diameterMeters: 320 }),
+    obj('C', { firstObs: '2026-10-02', lastObs: '2026-10-02' }), // short tracking → caution
+    obj('D', { firstObs: '2026-10-04', diameterMeters: 500 }), // large → caution
+  ];
+
+  it('counts each status', () => {
+    expect(statusCounts(objects)).toEqual({ all: 4, danger: 1, caution: 2, ok: 1 });
+  });
+
+  it('filters by status', () => {
+    expect(arrangeDiscoveries(objects, 'caution', 'oldest').map((o) => o.designation)).toEqual(['C', 'D']);
+    expect(arrangeDiscoveries(objects, 'danger', 'oldest').map((o) => o.designation)).toEqual(['B']);
+  });
+
+  it('sorts by first observation or size (unknown sizes last)', () => {
+    expect(arrangeDiscoveries(objects, 'all', 'oldest').map((o) => o.designation)).toEqual(['B', 'C', 'A', 'D']);
+    expect(arrangeDiscoveries(objects, 'all', 'newest').map((o) => o.designation)).toEqual(['D', 'A', 'C', 'B']);
+    expect(arrangeDiscoveries(objects, 'all', 'largest').map((o) => o.designation)).toEqual(['D', 'B', 'A', 'C']);
+  });
+
+  it('leaves the input untouched', () => {
+    arrangeDiscoveries(objects, 'all', 'newest');
+    expect(objects.map((o) => o.designation)).toEqual(['A', 'B', 'C', 'D']);
   });
 });

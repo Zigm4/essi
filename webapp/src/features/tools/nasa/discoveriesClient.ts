@@ -8,7 +8,13 @@ import {
   CelestialUnparseableError,
 } from './errors';
 import { jplRequest } from './jplClient';
-import { filterHistorical, parseSbdbObjects, type DiscoveredObject, type ObjectKind } from './sbdb';
+import {
+  computeStatus,
+  filterHistorical,
+  parseSbdbObjects,
+  type DiscoveredObject,
+  type ObjectKind,
+} from './sbdb';
 
 /**
  * NASA SBDB bulk-query client for Discoveries (tools-live spec §5.4). Routed
@@ -31,6 +37,12 @@ export interface SearchInput {
 export interface SearchResult {
   objects: DiscoveredObject[];
   truncated: boolean;
+  /**
+   * How many objects match in all, from SBDB's `count` (3277 asteroids for a
+   * month while a reply holds at most 1000). Null for the pre-1900 mode, whose
+   * reply is the whole catalog filtered locally.
+   */
+  total: number | null;
 }
 
 function pad2(n: number): string {
@@ -157,7 +169,49 @@ export async function searchDiscoveries(
   if (isHistorical) {
     objects = filterHistorical(objects, startYmd, endYmd);
   }
-  return { objects, truncated: rawCount >= limit };
+  const count = (json as { count?: unknown }).count;
+  return {
+    objects,
+    truncated: rawCount >= limit,
+    total: !isHistorical && typeof count === 'number' && Number.isFinite(count) ? count : null,
+  };
+}
+
+// --- Showing the results ------------------------------------------------------
+
+export type StatusFilter = 'all' | 'danger' | 'caution' | 'ok';
+export type DiscoverySort = 'oldest' | 'newest' | 'largest';
+
+/** How many objects each status filter keeps. */
+export function statusCounts(objects: readonly DiscoveredObject[]): Record<StatusFilter, number> {
+  const counts: Record<StatusFilter, number> = { all: objects.length, danger: 0, caution: 0, ok: 0 };
+  for (const o of objects) {
+    const s = computeStatus(o);
+    if (s === 'danger' || s === 'caution' || s === 'ok') counts[s] += 1;
+  }
+  return counts;
+}
+
+/**
+ * The objects to show: those of one status (or all), by first observation
+ * (oldest or newest first) or by diameter (largest first, unknown sizes last).
+ * Stable: equal keys keep SBDB's order.
+ */
+export function arrangeDiscoveries(
+  objects: readonly DiscoveredObject[],
+  filter: StatusFilter,
+  sort: DiscoverySort,
+): DiscoveredObject[] {
+  const kept = filter === 'all' ? [...objects] : objects.filter((o) => computeStatus(o) === filter);
+  const obs = (o: DiscoveredObject) => o.firstObs ?? '';
+  switch (sort) {
+    case 'oldest':
+      return kept.sort((a, b) => obs(a).localeCompare(obs(b)));
+    case 'newest':
+      return kept.sort((a, b) => obs(b).localeCompare(obs(a)));
+    case 'largest':
+      return kept.sort((a, b) => (b.diameterMeters ?? -1) - (a.diameterMeters ?? -1));
+  }
 }
 
 function countData(json: unknown): number {

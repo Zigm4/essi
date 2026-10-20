@@ -194,6 +194,7 @@ Body states:
 1. `TransmissionHeader` — label **"ESSI · deep space monitoring"** (rendered uppercase). 16px gap after (all inter-card gaps on this page are 16px / `lg`).
 2. **Transparency card** (GlassCard):
    - Header row: `wifi_tethering` icon 18px `accentWarn` + 8px + **"Network access required"** (headline).
+   - Web (Oct 2026, `nasa/ui/NetworkNotice.tsx`, all three tools): the card is open the first time a tool is opened, then folds to one line (title + "Via a Cloudflare proxy to NASA JPL · nothing is sent until you tap …" + chevron; tap to unfold), remembered per tool in `underdeck.nasa.networkNotice.<tool>`, so the action button stays on screen on phones.
    - 8px; body caption: **"This is one of a few Underdeck features that reach the network (System Scan, Tracker and Discoveries). Calls are made one at a time with a small gap, to stay under JPL Horizons' rate limit."**
    - 8px; divider (1px, borderSubtle @ 40%); 8px.
    - Six bullet rows (label column width 88, JetBrainsMono 11/600 `accentPrimary`; value JetBrainsMono 11 `textSecondary`; vertical padding 1):
@@ -445,6 +446,7 @@ Full-screen dialog. App bar: transparent, leading text-button **"Close"** (pops)
 6. **Results section** (only when `results != null`):
    - Empty: GlassCard — row [ `search_off` 18px `accentWarn` + **"No matches"** (headline) ]; 8px; caption **"No {comets|asteroids} were discovered between {yyyy-MM-dd} and {yyyy-MM-dd}. Try a wider window or shift the dates."**
    - Non-empty: GlassCard — header row [ SectionHeader **"Results · {N}"** icon `list` + `ios_share` 18px button tooltip **"Share results"** ]. If `truncated`: warning banner (fill accentWarn @ 10%, radius 8, border 0.7px accentWarn @ 50%, padding 8): `warning_amber` 16px accentWarn + caption in accentWarn: **"Results truncated — SBDB capped this reply at its row limit, so more matches almost certainly exist. Narrow the date range for a complete list."** Then 8px and one **discovery card** per object, 8px apart.
+   - Web (Oct 2026): SBDB's `count` (all matches, e.g. 3277 asteroids for a month) is kept as `total` (null in the pre-1900 mode): the header reads "Results · 1000 of 3277" and the truncation banner "Showing the first 1000 of 3277 - SBDB caps a reply at 1000 rows…". Under the header: status filter chips with counts (All / 🔴 Hazardous / 🟡 Caution / 🟢 Normal, a chip at 0 is disabled) and sort chips (Oldest first (default), Newest first, Largest first for asteroids); paging (100 at a time) applies to the filtered, sorted list; Share sends all results.
 
 **Discovery card** (nested GlassCard, tap haptic + opens the detail sheet):
 - Leading: status bar — 8×50 rounded-2 rect colored by status (ok `accentSuccess`, caution `accentWarn`, danger `accentDanger`, unknown `textSecondary`).
@@ -483,6 +485,7 @@ Date fields (web): a typed date only applies once it is a complete date within [
 `cancel()`: abort, `isSearching = false` (prior results retained).
 
 History replay (tap a history row): closes the sheet and applies `{kind, startDate, endDate}` to the form in one shot; **does not auto-search**.
+(Web, Oct 2026: it also shows the results saved with that search - offline too - under a banner "Saved search from {date} · the 200 kept of N found." with **Search again**, which runs the query live. History rows store SBDB's total.)
 
 ### 5.4 SBDB Query client
 

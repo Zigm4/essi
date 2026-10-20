@@ -123,6 +123,8 @@ export async function saveDiscoveryHistory(
   startDate: Date,
   endDate: Date,
   results: DiscoveredObject[],
+  /** All matches when SBDB says (it can be more than the reply holds). */
+  total: number = results.length,
 ): Promise<void> {
   await db.discoveryHistory.put({
     id: newUuid(),
@@ -131,7 +133,7 @@ export async function saveDiscoveryHistory(
     payloadJson: JSON.stringify({
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
-      total: results.length,
+      total: Math.max(total, results.length),
       results: results.slice(0, DISCOVERY_HISTORY_MAX_OBJECTS).map(discoveredObjectToJson),
     }),
     errored: false,
