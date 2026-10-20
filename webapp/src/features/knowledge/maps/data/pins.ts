@@ -2,10 +2,18 @@
  * Per-zone user notes ("pins") persisted to Dexie `mapPins` (maps spec §8.2,
  * §16.3). One pin per (mapId, zoneId); a trimmed-empty note deletes the pin.
  * Pins are deliberately NOT foreign-keyed - a pin outlives a temporarily
- * uninstalled pack.
+ * uninstalled pack. A deleted note leaves a tombstone for its zone, so an older
+ * backup can't bring it back (data-layer §2.3); a new note on the zone clears it.
  */
 
-import { db, newUuid, type MapPinRow } from '../../../../data/db';
+import {
+  clearDeleted,
+  db,
+  markDeleted,
+  newUuid,
+  zoneNoteKey,
+  type MapPinRow,
+} from '../../../../data/db';
 import { MAX_PIN_NOTE_LENGTH } from '../model/limits';
 
 export async function listPinsForMap(mapId: string): Promise<MapPinRow[]> {
@@ -39,10 +47,13 @@ export async function countPinsForMap(mapId: string): Promise<number> {
  */
 export async function savePin(mapId: string, zoneId: string, note: string): Promise<void> {
   const trimmed = note.trim();
-  await db.transaction('rw', db.mapPins, async () => {
+  await db.transaction('rw', db.mapPins, db.deletions, async () => {
     const existing = await getPin(mapId, zoneId);
     if (trimmed.length === 0) {
-      if (existing !== undefined) await db.mapPins.delete(existing.id);
+      if (existing !== undefined) {
+        await db.mapPins.delete(existing.id);
+        await markDeleted(db, 'mapPins', [zoneNoteKey(mapId, zoneId)]);
+      }
       return;
     }
     const capped = trimmed.slice(0, MAX_PIN_NOTE_LENGTH);
@@ -50,6 +61,7 @@ export async function savePin(mapId: string, zoneId: string, note: string): Prom
     if (existing !== undefined) {
       await db.mapPins.update(existing.id, { note: capped, updatedAt: now });
     } else {
+      await clearDeleted(db, 'mapPins', [zoneNoteKey(mapId, zoneId)]);
       await db.mapPins.put({
         id: newUuid(),
         mapId,
@@ -63,5 +75,10 @@ export async function savePin(mapId: string, zoneId: string, note: string): Prom
 }
 
 export async function deletePin(id: string): Promise<void> {
-  await db.mapPins.delete(id);
+  await db.transaction('rw', db.mapPins, db.deletions, async () => {
+    const pin = await db.mapPins.get(id);
+    if (pin === undefined) return;
+    await db.mapPins.delete(id);
+    await markDeleted(db, 'mapPins', [zoneNoteKey(pin.mapId, pin.zoneId)]);
+  });
 }

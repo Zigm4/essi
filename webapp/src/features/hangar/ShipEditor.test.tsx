@@ -23,6 +23,7 @@ const { saveShip } = vi.hoisted(() => ({
 vi.mock('./shipRepository', () => ({
   saveShip,
   deleteShip: vi.fn(),
+  restoreShip: vi.fn(),
   useAllTags: () => ({ status: 'ok', data: [] }),
 }));
 vi.mock('./catalog', async (importOriginal) => ({

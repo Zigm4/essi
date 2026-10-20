@@ -53,11 +53,11 @@ CapturesHomeView  (/captures, tab "Notes" in the bottom nav)
  ├─ NotesListView   (mode == notes)
  │   ├─ search field, tag-filter chip row
  │   └─ NoteCard list  → tap → NoteDetailView   (push /captures/note/:id)
- │                      → long-press → "Delete note?" dialog
+ │                      → long-press → delete + "Note deleted." Undo snackbar (web)
  └─ LinksListView   (mode == links)
      ├─ search field, tag-filter chip row
      └─ LinkCard list  → tap → LinkDetailView   (push /captures/link/:id)
-                        → long-press → "Delete link?" dialog
+                        → long-press → delete + "Link deleted." Undo snackbar (web)
 
 Banner "+" action → modal bottom sheet:
      NoteEditorView (mode==notes) or LinkEditorView (mode==links)
@@ -339,6 +339,12 @@ Order: as provided by the stream — **`updatedAt` descending** (most recently e
   - title `Delete note?` (headline style);
   - buttons: `Cancel` (body, `textSecondary`) and `Delete` (body, `accentDanger`);
   - no body text; confirming calls `deleteNote(id)` (§18.2) — no undo, no snackbar.
+- **Web:** no dialog. Long-press / right-click deletes at once (haptic selection) and
+  shows the snackbar `Note deleted.` with an `Undo` action (the history-sheet pattern);
+  Undo restores the note exactly (same id, dates, tags; a tag pruned by the delete is
+  re-created with its id, or the tag of that name typed since is reused) and removes the
+  note's tombstone. Failures: `Couldn't delete the note.` / `Couldn't restore the note.`
+  (danger). The snackbar lives at the app root, so Undo works wherever the user is.
 
 ---
 
@@ -363,7 +369,8 @@ tagsOk = selected.isEmpty OR any(link.tags, t.id ∈ selected)
 - empty-state strings: `No matches` / `No links yet`;
   captions: `Try a different search.` / `Save Discord messages and other URLs here.`;
   same tag-filter state as Notes (`Nothing matches your filters.` + `Clear filters`);
-- delete dialog title: `Delete link?`; confirm calls `deleteLink(id)`;
+- delete dialog title: `Delete link?`; confirm calls `deleteLink(id)`
+  (**web:** no dialog; immediate delete with `Link deleted.` + `Undo`, as for notes);
 - tap pushes `/captures/link/{id}`.
 
 Sort: `updatedAt` descending.
@@ -788,6 +795,12 @@ text columns (also saved untrimmed).
 `deleteNote(id)` / `deleteLink(id)`: transaction { delete join rows for the entity;
 delete the entity row; prune orphan tags }.
 
+**Web:** the same transaction writes a tombstone for the entity and for each pruned tag
+(data-layer §2.3), so an older backup can't bring them back; the delete resolves to the
+row and its tags. `restoreNote` / `restoreLink` (Undo) put the row, its tags and join
+rows back in one transaction and remove those tombstones. A new tag whose name has a
+tombstone removes it too.
+
 ### 18.3 Orphan tag pruning (`pruneOrphanTags`)
 
 One SQL DELETE (comment tag "R9a"):
@@ -1038,14 +1051,16 @@ Notes list
 - `No matches` / `Try a different search.` (filtered-empty)
 - `No notes yet` / `Tap + to capture your first note.` (true empty)
 - `Couldn't load your notes.` (stream error)
-- `Delete note?` / `Cancel` / `Delete` (long-press dialog)
+- `Delete note?` / `Cancel` / `Delete` (long-press dialog; web: `Note deleted.` / `Undo`,
+  `Couldn't delete the note.`, `Couldn't restore the note.`)
 
 Links list
 - `Search links`
 - `No matches` / `Try a different search.`
 - `No links yet` / `Save Discord messages and other URLs here.`
 - `Couldn't load your links.`
-- `Delete link?` / `Cancel` / `Delete`
+- `Delete link?` / `Cancel` / `Delete` (web: `Link deleted.` / `Undo`, `Couldn't delete
+  the link.`, `Couldn't restore the link.`)
 
 Note editor
 - `New note` / `Edit note` (title), `Cancel`, `Save`

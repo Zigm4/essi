@@ -212,13 +212,14 @@ export interface BackupStatusInput {
   removedFavorites: readonly { removedAt: number }[];
   jobStatus: readonly { status: string; updatedAt: number }[];
   mapPins: readonly { updatedAt: number }[];
+  deletions: readonly { deletedAt: number }[];
   /** Bumped by every user-data write, deletions and imports included; null before the first. */
   localChangeAt: number | null;
 }
 
 /**
  * `hasData` counts real data only: tombstones (removed favorites, jobs reset to
- * 'todo') are not data. `lastChangedAt` is the newest of every row timestamp,
+ * 'todo', deleted records) are not data. `lastChangedAt` is the newest of every row timestamp,
  * tombstones included, and the local-change marker - rows alone can't see a
  * deletion or an import of rows older than the last backup.
  */
@@ -250,6 +251,7 @@ export function backupStatusOf(input: BackupStatusInput): BackupStatus {
   for (const f of input.removedFavorites) track(f.removedAt);
   for (const j of input.jobStatus) track(j.updatedAt);
   for (const p of input.mapPins) track(p.updatedAt);
+  for (const d of input.deletions) track(d.deletedAt);
 
   return { hasData, lastChangedAt };
 }

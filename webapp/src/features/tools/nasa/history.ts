@@ -1,6 +1,14 @@
 import { liveQuery } from 'dexie';
 import { useEffect, useState } from 'react';
-import { db, HISTORY_LIMIT, newUuid, type HistoryRow } from '../../../data/db';
+import {
+  clearDeleted,
+  db,
+  HISTORY_LIMIT,
+  markDeleted,
+  newUuid,
+  type DeletionTable,
+  type HistoryRow,
+} from '../../../data/db';
 import {
   planetPositionFromJson,
   planetPositionToJson,
@@ -36,6 +44,13 @@ function tableFor(kind: HistoryKind) {
       return db.discoveryHistory;
   }
 }
+
+/** Tombstone table names: a deleted entry must not come back with an older backup. */
+const DELETION_TABLE: Record<HistoryKind, DeletionTable> = {
+  scan: 'scanHistory',
+  tracker: 'trackerHistory',
+  discovery: 'discoveryHistory',
+};
 
 function isWellFormedRow(row: unknown): row is HistoryRow {
   if (typeof row !== 'object' || row === null) return false;
@@ -124,20 +139,32 @@ export async function saveDiscoveryHistory(
   await purgeOld('discovery');
 }
 
-/** Deletes one row and returns it, so an Undo can put it back. */
+/** Deletes one row (remembering it) and returns it, so an Undo can put it back. */
 export async function deleteHistoryRow(kind: HistoryKind, id: string): Promise<HistoryRow | undefined> {
   const table = tableFor(kind);
-  const row = await table.get(id);
-  await table.delete(id);
-  return row;
+  return db.transaction('rw', table, db.deletions, async () => {
+    const row = await table.get(id);
+    await table.delete(id);
+    if (row !== undefined) await markDeleted(db, DELETION_TABLE[kind], [id]);
+    return row;
+  });
 }
 
 export async function restoreHistoryRow(kind: HistoryKind, row: HistoryRow): Promise<void> {
-  await tableFor(kind).put(row);
+  const table = tableFor(kind);
+  await db.transaction('rw', table, db.deletions, async () => {
+    await table.put(row);
+    await clearDeleted(db, DELETION_TABLE[kind], [row.id]);
+  });
 }
 
+/** "Delete all": every row goes, and each is remembered. */
 export async function clearHistory(kind: HistoryKind): Promise<void> {
-  await tableFor(kind).clear();
+  const table = tableFor(kind);
+  await db.transaction('rw', table, db.deletions, async () => {
+    await markDeleted(db, DELETION_TABLE[kind], await table.toCollection().primaryKeys());
+    await table.clear();
+  });
 }
 
 // --- Lazy payload decoders (throw on corrupt payloads) -----------------------

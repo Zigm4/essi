@@ -1,4 +1,17 @@
-import { db, newUuid, type TagRow } from '../../data/db';
+import {
+  clearDeleted,
+  db,
+  deleteLinkCascade,
+  deleteNoteCascade,
+  newUuid,
+  pruneOrphanTags,
+  restoreLinkCascade,
+  restoreNoteCascade,
+  type DeletedRecord,
+  type LinkRow,
+  type NoteRow,
+  type TagRow,
+} from '../../data/db';
 import { dedupeTagInputs } from './logic';
 import type { LinkModel, NoteModel } from './models';
 import { toLinkModel, toNoteModel, toTagModel } from './models';
@@ -10,8 +23,11 @@ import { toLinkModel, toNoteModel, toTagModel } from './models';
  * trimming (spec §8/§9/§18.2).
  */
 
-/** Tables every captures mutation touches (entity + all join + tags for prune). */
-const MUTATION_TABLES = [db.notes, db.links, db.noteTags, db.linkTags, db.shipTags, db.tags];
+/**
+ * Tables every captures mutation touches (entity + all join + tags for prune,
+ * and the tombstones a prune or a re-created tag writes).
+ */
+const MUTATION_TABLES = [db.notes, db.links, db.noteTags, db.linkTags, db.shipTags, db.tags, db.deletions];
 
 /**
  * `_resolveTags` (spec §18.1). Must run inside an existing rw transaction so
@@ -32,29 +48,11 @@ async function resolveTagsTx(displayNames: readonly string[]): Promise<TagRow[]>
     }
     const created: TagRow = { id: newUuid(), displayName, name: key, colorHex: null };
     await db.tags.add(created);
+    await clearDeleted(db, 'tags', [key]);
     byKey.set(key, created);
     out.push(created);
   }
   return out;
-}
-
-/**
- * `pruneOrphanTags` (spec §18.3): delete every tag no note/link/ship references.
- * Runs inside the mutation transaction.
- */
-async function pruneOrphanTagsTx(): Promise<void> {
-  const [tags, noteTags, linkTags, shipTags] = await Promise.all([
-    db.tags.toArray(),
-    db.noteTags.toArray(),
-    db.linkTags.toArray(),
-    db.shipTags.toArray(),
-  ]);
-  const used = new Set<string>();
-  for (const r of noteTags) used.add(r.tagId);
-  for (const r of linkTags) used.add(r.tagId);
-  for (const r of shipTags) used.add(r.tagId);
-  const orphanIds = tags.filter((t) => !used.has(t.id)).map((t) => t.id);
-  if (orphanIds.length > 0) await db.tags.bulkDelete(orphanIds);
 }
 
 export interface SaveNoteInput {
@@ -72,6 +70,7 @@ export async function saveNote(input: SaveNoteInput): Promise<NoteModel> {
     const resolved = await resolveTagsTx(input.tagDisplayNames);
     const existing = await db.notes.get(noteId);
     if (existing === undefined) {
+      await clearDeleted(db, 'notes', [noteId]);
       await db.notes.add({
         id: noteId,
         title: input.title,
@@ -90,7 +89,7 @@ export async function saveNote(input: SaveNoteInput): Promise<NoteModel> {
     if (resolved.length > 0) {
       await db.noteTags.bulkAdd(resolved.map((t) => ({ noteId, tagId: t.id })));
     }
-    await pruneOrphanTagsTx();
+    await pruneOrphanTags(db);
     const saved = await db.notes.get(noteId);
     const createdAt = saved?.createdAt ?? now;
     return toNoteModel(
@@ -116,6 +115,7 @@ export async function saveLink(input: SaveLinkInput): Promise<LinkModel> {
     const resolved = await resolveTagsTx(input.tagDisplayNames);
     const existing = await db.links.get(linkId);
     if (existing === undefined) {
+      await clearDeleted(db, 'links', [linkId]);
       await db.links.add({
         id: linkId,
         title: input.title,
@@ -136,7 +136,7 @@ export async function saveLink(input: SaveLinkInput): Promise<LinkModel> {
     if (resolved.length > 0) {
       await db.linkTags.bulkAdd(resolved.map((t) => ({ linkId, tagId: t.id })));
     }
-    await pruneOrphanTagsTx();
+    await pruneOrphanTags(db);
     const saved = await db.links.get(linkId);
     const createdAt = saved?.createdAt ?? now;
     return toLinkModel(
@@ -153,20 +153,26 @@ export async function saveLink(input: SaveLinkInput): Promise<LinkModel> {
   });
 }
 
-/** `deleteNote` (spec §18.2): drop join rows + the note, then prune. */
-export async function deleteNote(id: string): Promise<void> {
-  await db.transaction('rw', MUTATION_TABLES, async () => {
-    await db.noteTags.where('noteId').equals(id).delete();
-    await db.notes.delete(id);
-    await pruneOrphanTagsTx();
-  });
+/**
+ * `deleteNote` (spec §18.2): drop join rows + the note, then prune, in one
+ * transaction; the deletion is remembered so an older backup can't bring the
+ * note back. Resolves to what `restoreNote` needs (undefined: no such note).
+ */
+export function deleteNote(id: string): Promise<DeletedRecord<NoteRow> | undefined> {
+  return deleteNoteCascade(db, id);
 }
 
-/** `deleteLink` (spec §18.2): drop join rows + the link, then prune. */
-export async function deleteLink(id: string): Promise<void> {
-  await db.transaction('rw', MUTATION_TABLES, async () => {
-    await db.linkTags.where('linkId').equals(id).delete();
-    await db.links.delete(id);
-    await pruneOrphanTagsTx();
-  });
+/** Undo of deleteNote: the note exactly as it was, with its tags. */
+export function restoreNote(deleted: DeletedRecord<NoteRow>): Promise<void> {
+  return restoreNoteCascade(db, deleted);
+}
+
+/** `deleteLink` (spec §18.2): same as deleteNote. */
+export function deleteLink(id: string): Promise<DeletedRecord<LinkRow> | undefined> {
+  return deleteLinkCascade(db, id);
+}
+
+/** Undo of deleteLink. */
+export function restoreLink(deleted: DeletedRecord<LinkRow>): Promise<void> {
+  return restoreLinkCascade(db, deleted);
 }

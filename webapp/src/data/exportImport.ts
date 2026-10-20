@@ -2,7 +2,11 @@ import { FormatException } from '../core/errors';
 import { logError } from '../core/logging';
 import {
   db,
+  DELETION_TABLES,
   newUuid,
+  zoneNoteKey,
+  type DeletionRow,
+  type DeletionTable,
   type FavoriteRow,
   type HistoryRow,
   type JobStatusRow,
@@ -32,6 +36,8 @@ import {
  * Web additions (still formatVersion 1, ignored by older importers):
  * - `removedFavorites` tombstones, and 'todo' jobStatus rows for resets, so an
  *   older backup can't undo a removal;
+ * - `deletions` tombstones of notes, links, ships, tags, zone notes and history
+ *   entries, for the same reason;
  * - mapPins merge per (mapId, zoneId): one note per zone, newest wins.
  */
 
@@ -129,6 +135,7 @@ export interface ExportData {
   removedFavorites: RemovedFavoriteRow[];
   jobStatus: JobStatusRow[];
   mapPins: MapPinRow[];
+  deletions: DeletionRow[];
 }
 
 function iso(ms: number): string {
@@ -228,6 +235,11 @@ export function buildExportObject(data: ExportData, exportedAt: Date = new Date(
         createdAt: iso(p.createdAt),
         updatedAt: iso(p.updatedAt),
       })),
+      deletions: data.deletions.map((d) => ({
+        table: d.table,
+        key: d.key,
+        deletedAt: iso(d.deletedAt),
+      })),
     },
   };
 }
@@ -248,6 +260,7 @@ export async function collectExportData(database: UnderdeckDb = db): Promise<Exp
     removedFavorites: await database.removedFavorites.toArray(),
     jobStatus: await database.jobStatus.toArray(),
     mapPins: await database.mapPins.toArray(),
+    deletions: await database.deletions.toArray(),
   };
 }
 
@@ -426,6 +439,19 @@ export interface ImportStore {
   mapPinsForZone: (mapId: string, zoneId: string) => Promise<MapPinRow[]>;
   putMapPin: (row: MapPinRow) => Promise<void>;
   deleteMapPin: (id: string) => Promise<void>;
+  /** Deletes the record and its tag relations; resolves to the ids of the tags it used. */
+  deleteNote: (id: string) => Promise<string[]>;
+  deleteLink: (id: string) => Promise<string[]>;
+  deleteShip: (id: string) => Promise<string[]>;
+  deleteScan: (id: string) => Promise<void>;
+  deleteTrack: (id: string) => Promise<void>;
+  deleteDiscovery: (id: string) => Promise<void>;
+  /** Whether any note, link or ship uses the tag. */
+  tagInUse: (tagId: string) => Promise<boolean>;
+  deleteTag: (id: string) => Promise<void>;
+  getDeletion: (table: DeletionTable, key: string) => Promise<DeletionRow | undefined>;
+  putDeletion: (row: DeletionRow) => Promise<void>;
+  deleteDeletion: (table: DeletionTable, key: string) => Promise<void>;
 }
 
 export function dexieImportStore(database: UnderdeckDb = db): ImportStore {
@@ -452,6 +478,7 @@ export function dexieImportStore(database: UnderdeckDb = db): ImportStore {
           database.removedFavorites,
           database.jobStatus,
           database.mapPins,
+          database.deletions,
         ],
         async () => fn(),
       ),
@@ -523,6 +550,50 @@ export function dexieImportStore(database: UnderdeckDb = db): ImportStore {
     },
     deleteMapPin: async (id) => {
       await database.mapPins.delete(id);
+    },
+    deleteNote: async (id) => {
+      const relations = database.noteTags.where('noteId').equals(id);
+      const tagIds = (await relations.toArray()).map((r) => r.tagId);
+      await relations.delete();
+      await database.notes.delete(id);
+      return tagIds;
+    },
+    deleteLink: async (id) => {
+      const relations = database.linkTags.where('linkId').equals(id);
+      const tagIds = (await relations.toArray()).map((r) => r.tagId);
+      await relations.delete();
+      await database.links.delete(id);
+      return tagIds;
+    },
+    deleteShip: async (id) => {
+      const relations = database.shipTags.where('shipId').equals(id);
+      const tagIds = (await relations.toArray()).map((r) => r.tagId);
+      await relations.delete();
+      await database.ships.delete(id);
+      return tagIds;
+    },
+    deleteScan: async (id) => {
+      await database.scanHistory.delete(id);
+    },
+    deleteTrack: async (id) => {
+      await database.trackerHistory.delete(id);
+    },
+    deleteDiscovery: async (id) => {
+      await database.discoveryHistory.delete(id);
+    },
+    tagInUse: async (tagId) =>
+      (await database.noteTags.where('tagId').equals(tagId).count()) > 0 ||
+      (await database.linkTags.where('tagId').equals(tagId).count()) > 0 ||
+      (await database.shipTags.where('tagId').equals(tagId).count()) > 0,
+    deleteTag: async (id) => {
+      await database.tags.delete(id);
+    },
+    getDeletion: (table, key) => database.deletions.get([table, key]),
+    putDeletion: async (row) => {
+      await database.deletions.put(row);
+    },
+    deleteDeletion: async (table, key) => {
+      await database.deletions.delete([table, key]);
     },
   };
 }
@@ -702,11 +773,39 @@ const VALID_JOB_STATUSES = new Set(['todo', 'in_progress', 'done']);
 const MAX_MAP_PIN_ID_LENGTH = 128;
 const MAX_MAP_PIN_NOTE_LENGTH = 20_000;
 
+const MAX_DELETION_KEY_LENGTH = 1024;
+
+function isDeletionTable(v: string): v is DeletionTable {
+  return (DELETION_TABLES as readonly string[]).includes(v);
+}
+
+/** (mapId, zoneId) of a zone note's tombstone key `mapId/zoneId`; map ids have no '/'. */
+function zoneOfNoteKey(key: string): [string, string] | null {
+  const slash = key.indexOf('/');
+  if (slash <= 0 || slash === key.length - 1) return null;
+  return [key.slice(0, slash), key.slice(slash + 1)];
+}
+
+/** A tombstone row of the file, or null (unknown table, bad key, unreadable date). */
+function deletionOf(raw: Record<string, unknown>): DeletionRow | null {
+  const table = str(raw['table']);
+  const key = str(raw['key']);
+  if (table === undefined || !isDeletionTable(table)) return null;
+  if (key === undefined || key.length === 0 || key.length > MAX_DELETION_KEY_LENGTH) return null;
+  if (table === 'mapPins' && zoneOfNoteKey(key) === null) return null;
+  const deletedAt = parseUpdatedAtMs(raw['deletedAt']);
+  if (deletedAt === 0) return null;
+  return { table, key, deletedAt };
+}
+
 async function runImport(data: Record<string, unknown>, store: ImportStore): Promise<ImportSummary> {
   const summary = emptyImportSummary();
 
   // -- tags first ----------------------------------------------------------
   const tagRemap = new Map<string, string>();
+  // Tags deleted here (tombstone by name) come back only with a note, link or
+  // ship of this file that uses them (see ensureTagId).
+  const deletedTags = new Map<string, TagRow>();
   for (const raw of sectionArray(data, 'tags')) {
     try {
       if (!isRecord(raw)) throw new TypeError('tag row is not an object');
@@ -718,12 +817,17 @@ async function runImport(data: Record<string, unknown>, store: ImportStore): Pro
         tagRemap.set(importedId, existing.id);
         continue;
       }
-      await store.addTag({
+      const tag: TagRow = {
         id: importedId,
         displayName: str(raw['displayName']) ?? key,
         name: key,
         colorHex: strOrNull(raw['colorHex']),
-      });
+      };
+      if ((await store.getDeletion('tags', key)) !== undefined) {
+        deletedTags.set(importedId, tag);
+        continue;
+      }
+      await store.addTag(tag);
       tagRemap.set(importedId, importedId);
       summary.tags += 1;
     } catch (e) {
@@ -733,12 +837,26 @@ async function runImport(data: Record<string, unknown>, store: ImportStore): Pro
 
   const ensureTagId = async (id: string): Promise<string | null> => {
     const resolved = tagRemap.get(id) ?? id;
-    const tag = await store.tagById(resolved);
-    return tag === undefined ? null : resolved;
+    if ((await store.tagById(resolved)) !== undefined) return resolved;
+    // A tag deleted here that a record of this file uses again: re-created.
+    const deleted = deletedTags.get(id);
+    if (deleted === undefined) return null;
+    deletedTags.delete(id);
+    const named = await store.tagByName(deleted.name);
+    if (named !== undefined) {
+      tagRemap.set(id, named.id);
+      return named.id;
+    }
+    await store.deleteDeletion('tags', deleted.name);
+    await store.addTag(deleted);
+    tagRemap.set(id, deleted.id);
+    summary.tags += 1;
+    return deleted.id;
   };
 
   // -- notes / links / ships (newer-wins) ----------------------------------
   const insertSimple = async <T extends { id: string; createdAt: number; updatedAt: number }>(
+    table: DeletionTable,
     rows: unknown[],
     get: (id: string) => Promise<T | undefined>,
     put: (row: T) => Promise<void>,
@@ -756,6 +874,12 @@ async function runImport(data: Record<string, unknown>, store: ImportStore): Pro
           if (!(updatedAt > existing.updatedAt)) continue;
           await put(build(raw, id, existing.createdAt, updatedAt));
         } else {
+          // Deleted here: only a version edited after the deletion comes back.
+          const deletion = await store.getDeletion(table, id);
+          if (deletion !== undefined) {
+            if (!(updatedAt > deletion.deletedAt)) continue;
+            await store.deleteDeletion(table, id);
+          }
           await put(build(raw, id, parseCreatedAtMs(raw['createdAt']), updatedAt));
         }
         count += 1;
@@ -767,6 +891,7 @@ async function runImport(data: Record<string, unknown>, store: ImportStore): Pro
   };
 
   summary.notes = await insertSimple<NoteRow>(
+    'notes',
     sectionArray(data, 'notes'),
     store.getNote,
     store.putNote,
@@ -780,6 +905,7 @@ async function runImport(data: Record<string, unknown>, store: ImportStore): Pro
   );
 
   summary.links = await insertSimple<LinkRow>(
+    'links',
     sectionArray(data, 'links'),
     store.getLink,
     store.putLink,
@@ -794,6 +920,7 @@ async function runImport(data: Record<string, unknown>, store: ImportStore): Pro
   );
 
   summary.ships = await insertSimple<ShipRow>(
+    'ships',
     sectionArray(data, 'ships'),
     store.getShip,
     store.putShip,
@@ -827,7 +954,7 @@ async function runImport(data: Record<string, unknown>, store: ImportStore): Pro
     }),
   );
 
-  // -- join tables ---------------------------------------------------------
+  // -- join tables (follow their parent: none for a record deleted here) ------
   const insertJoin = async (
     rows: unknown[],
     parentKey: string,
@@ -840,9 +967,9 @@ async function runImport(data: Record<string, unknown>, store: ImportStore): Pro
         const parentId = str(raw[parentKey]);
         const tagId = str(raw['tagId']);
         if (parentId === undefined || tagId === undefined) continue;
+        if (!(await parentExists(parentId))) continue;
         const resolved = await ensureTagId(tagId);
         if (resolved === null) continue;
-        if (!(await parentExists(parentId))) continue;
         await put(parentId, resolved);
       } catch (e) {
         logError(e, 'data import: skipped malformed join row');
@@ -871,6 +998,7 @@ async function runImport(data: Record<string, unknown>, store: ImportStore): Pro
 
   // -- histories (immutable: existing ids are skipped) ----------------------
   const insertHistory = async (
+    table: DeletionTable,
     rows: unknown[],
     get: (id: string) => Promise<HistoryRow | undefined>,
     put: (row: HistoryRow) => Promise<void>,
@@ -885,6 +1013,8 @@ async function runImport(data: Record<string, unknown>, store: ImportStore): Pro
         const payloadJson = str(raw['payloadJson']) ?? '{}';
         if (!validPayload(payloadJson)) continue;
         if ((await get(id)) !== undefined) continue;
+        // Deleted here. Entries never change, so the deletion always wins.
+        if ((await store.getDeletion(table, id)) !== undefined) continue;
         await put({
           id,
           date: parseCreatedAtMs(raw['date']),
@@ -901,6 +1031,7 @@ async function runImport(data: Record<string, unknown>, store: ImportStore): Pro
   };
 
   summary.scanHistory = await insertHistory(
+    'scanHistory',
     sectionArray(data, 'scanHistory'),
     store.getScan,
     store.putScan,
@@ -908,6 +1039,7 @@ async function runImport(data: Record<string, unknown>, store: ImportStore): Pro
     validScanPayload,
   );
   summary.trackerHistory = await insertHistory(
+    'trackerHistory',
     sectionArray(data, 'trackerHistory'),
     store.getTrack,
     store.putTrack,
@@ -915,6 +1047,7 @@ async function runImport(data: Record<string, unknown>, store: ImportStore): Pro
     validTrackerPayload,
   );
   summary.discoveryHistory = await insertHistory(
+    'discoveryHistory',
     sectionArray(data, 'discoveryHistory'),
     store.getDiscovery,
     store.putDiscovery,
@@ -1018,11 +1151,16 @@ async function runImport(data: Record<string, unknown>, store: ImportStore): Pro
       if (zoneId === undefined || zoneId.length === 0) continue;
       const note = (str(raw['note']) ?? '').slice(0, MAX_MAP_PIN_NOTE_LENGTH);
       const updatedAt = parseUpdatedAtMs(raw['updatedAt']);
+      // The zone's note was deleted here: only one edited after that comes back.
+      const zoneKey = zoneNoteKey(mapId, zoneId);
+      const deletion = await store.getDeletion('mapPins', zoneKey);
+      if (deletion !== undefined && !(updatedAt > deletion.deletedAt)) continue;
       const existing = await store.getMapPin(id);
       // Another device's note on the same zone has its own id: it competes too.
       const zonePins = await store.mapPinsForZone(mapId, zoneId);
       const rivals = existing === undefined ? zonePins : [existing, ...zonePins];
       if (rivals.some((p) => !(updatedAt > p.updatedAt))) continue;
+      if (deletion !== undefined) await store.deleteDeletion('mapPins', zoneKey);
       for (const p of zonePins) {
         if (p.id !== id) await store.deleteMapPin(p.id);
       }
@@ -1038,6 +1176,106 @@ async function runImport(data: Record<string, unknown>, store: ImportStore): Pro
     } catch (e) {
       logError(e, 'data import: skipped malformed map pin row');
     }
+  }
+
+  // -- deletions (tombstones) -----------------------------------------------
+  // A deletion newer than the local record removes it (counted like an import
+  // of that record) and is kept, so an older file can't bring the record back
+  // either. A record changed here after the deletion wins and the tombstone is
+  // dropped: a record and its tombstone never coexist.
+  const tagged = {
+    notes: { get: store.getNote, remove: store.deleteNote },
+    links: { get: store.getLink, remove: store.deleteLink },
+    ships: { get: store.getShip, remove: store.deleteShip },
+  };
+  const histories = {
+    scanHistory: { get: store.getScan, remove: store.deleteScan },
+    trackerHistory: { get: store.getTrack, remove: store.deleteTrack },
+    discoveryHistory: { get: store.getDiscovery, remove: store.deleteDiscovery },
+  };
+  /** Tags whose relations a removal dropped: pruned at the end if nothing uses them. */
+  const lostTagIds = new Set<string>();
+
+  /** Removes the local record unless it is at least as new (false: it stays). */
+  const removeOlder = async ({ table, key, deletedAt }: DeletionRow): Promise<boolean> => {
+    switch (table) {
+      case 'notes':
+      case 'links':
+      case 'ships': {
+        const live = await tagged[table].get(key);
+        if (live === undefined) return true;
+        if (!(deletedAt > live.updatedAt)) return false;
+        for (const tagId of await tagged[table].remove(key)) lostTagIds.add(tagId);
+        summary[table] += 1;
+        return true;
+      }
+      case 'mapPins': {
+        const zone = zoneOfNoteKey(key);
+        if (zone === null) return false;
+        const pins = await store.mapPinsForZone(zone[0], zone[1]);
+        if (pins.some((p) => !(deletedAt > p.updatedAt))) return false;
+        for (const p of pins) await store.deleteMapPin(p.id);
+        summary.mapPins += pins.length;
+        return true;
+      }
+      case 'scanHistory':
+      case 'trackerHistory':
+      case 'discoveryHistory':
+        // Entries never change: the deletion always follows the entry.
+        if ((await histories[table].get(key)) !== undefined) {
+          await histories[table].remove(key);
+          summary[table] += 1;
+        }
+        return true;
+      case 'tags':
+        return false;
+    }
+  };
+
+  const keepDeletion = async (row: DeletionRow): Promise<void> => {
+    const existing = await store.getDeletion(row.table, row.key);
+    if (existing !== undefined && !(row.deletedAt > existing.deletedAt)) return;
+    await store.putDeletion(row);
+  };
+
+  const tagDeletions: DeletionRow[] = [];
+  for (const raw of sectionArray(data, 'deletions')) {
+    try {
+      if (!isRecord(raw)) throw new TypeError('deletion row is not an object');
+      const row = deletionOf(raw);
+      if (row === null) continue;
+      if (row.table === 'tags') {
+        tagDeletions.push(row);
+        continue;
+      }
+      if (await removeOlder(row)) await keepDeletion(row);
+    } catch (e) {
+      logError(e, 'data import: skipped malformed deletion row');
+    }
+  }
+
+  // Tags last, and they have no date: one still used here stays (its notes,
+  // links and ships decide), an unused one goes. Not counted.
+  for (const row of tagDeletions) {
+    try {
+      const live = await store.tagByName(row.key);
+      if (live !== undefined) {
+        if (await store.tagInUse(live.id)) continue;
+        await store.deleteTag(live.id);
+      }
+      await keepDeletion(row);
+    } catch (e) {
+      logError(e, 'data import: skipped malformed deletion row');
+    }
+  }
+  // A tag whose last note, link or ship this import removed goes too, as
+  // after a delete here.
+  for (const tagId of lostTagIds) {
+    if (await store.tagInUse(tagId)) continue;
+    const tag = await store.tagById(tagId);
+    if (tag === undefined) continue;
+    await store.deleteTag(tagId);
+    await keepDeletion({ table: 'tags', key: tag.name, deletedAt: Date.now() });
   }
 
   return summary;

@@ -121,6 +121,33 @@ export interface RemovedFavoriteRow {
   removedAt: number;
 }
 
+/** Tables whose deletions are remembered in `deletions` (data-layer §2.3). */
+export const DELETION_TABLES = [
+  'notes',
+  'links',
+  'ships',
+  'tags',
+  'mapPins',
+  'scanHistory',
+  'trackerHistory',
+  'discoveryHistory',
+] as const;
+
+export type DeletionTable = (typeof DELETION_TABLES)[number];
+
+/**
+ * Tombstone of a deleted record: an older backup that still has the record
+ * must not bring it back on import. `key` is what the import matches records
+ * by - the row id; a tag's lowercase name (tags merge by name); a zone note's
+ * `mapId/zoneId` (one note per zone). Never coexists with a live record:
+ * re-creating it (Undo, a tag of that name, a note on that zone) deletes it.
+ */
+export interface DeletionRow {
+  table: DeletionTable;
+  key: string;
+  deletedAt: number;
+}
+
 export type JobStatusValue = 'todo' | 'in_progress' | 'done';
 
 /**
@@ -188,6 +215,7 @@ export const USER_DATA_TABLES: ReadonlySet<string> = new Set([
   'removedFavorites',
   'jobStatus',
   'mapPins',
+  'deletions',
 ]);
 
 /**
@@ -230,6 +258,7 @@ export class UnderdeckDb extends Dexie {
   mapPackFiles!: Table<MapPackFileRow, [string, string]>;
   mapPins!: Table<MapPinRow, string>;
   mapBlobs!: Table<MapBlobRow, string>;
+  deletions!: Table<DeletionRow, [string, string]>;
 
   constructor() {
     super('underdeck');
@@ -260,6 +289,9 @@ export class UnderdeckDb extends Dexie {
         const drop = duplicatePinIds(await pins.toArray());
         if (drop.length > 0) await pins.bulkDelete(drop);
       });
+    // v3: tombstones of deleted notes, links, ships, tags, zone notes and
+    // history entries. Additive: nothing was remembered before.
+    this.version(3).stores({ deletions: '[table+key]' });
     this.use(localChangesMiddleware(USER_DATA_TABLES, () => markLocalChange()));
   }
 }
@@ -270,27 +302,225 @@ export function newUuid(): string {
   return crypto.randomUUID();
 }
 
-/** Manual ON DELETE CASCADE equivalents (IndexedDB has no FKs). */
+// --- Deletions (tombstones) --------------------------------------------------
 
-export async function deleteNoteCascade(database: UnderdeckDb, noteId: string): Promise<void> {
-  await database.transaction('rw', database.notes, database.noteTags, async () => {
-    await database.noteTags.where('noteId').equals(noteId).delete();
-    await database.notes.delete(noteId);
+/** `key` of a zone note's tombstone: one note per zone, whatever its id. */
+export function zoneNoteKey(mapId: string, zoneId: string): string {
+  return `${mapId}/${zoneId}`;
+}
+
+/** Remembers deleted records. Runs inside the caller's transaction (with `deletions`). */
+export async function markDeleted(
+  database: UnderdeckDb,
+  table: DeletionTable,
+  keys: readonly string[],
+  deletedAt: number = Date.now(),
+): Promise<void> {
+  if (keys.length === 0) return;
+  await database.deletions.bulkPut(keys.map((key) => ({ table, key, deletedAt })));
+}
+
+/** Forgets the tombstones of re-created records (same transaction rule). */
+export async function clearDeleted(
+  database: UnderdeckDb,
+  table: DeletionTable,
+  keys: readonly string[],
+): Promise<void> {
+  if (keys.length === 0) return;
+  await database.deletions.bulkDelete(keys.map((key): [string, string] => [table, key]));
+}
+
+/**
+ * Deletes every tag no note, link or ship uses any more and remembers each by
+ * name. Runs inside the caller's transaction (tags, the three join tables and
+ * deletions).
+ */
+export async function pruneOrphanTags(database: UnderdeckDb): Promise<void> {
+  const [tags, noteTags, linkTags, shipTags] = await Promise.all([
+    database.tags.toArray(),
+    database.noteTags.toArray(),
+    database.linkTags.toArray(),
+    database.shipTags.toArray(),
+  ]);
+  const used = new Set<string>();
+  for (const r of noteTags) used.add(r.tagId);
+  for (const r of linkTags) used.add(r.tagId);
+  for (const r of shipTags) used.add(r.tagId);
+  const orphans = tags.filter((t) => !used.has(t.id));
+  if (orphans.length === 0) return;
+  await database.tags.bulkDelete(orphans.map((t) => t.id));
+  await markDeleted(database, 'tags', orphans.map((t) => t.name));
+}
+
+// --- Manual ON DELETE CASCADE equivalents (IndexedDB has no FKs) --------------
+
+/** A deleted note, link or ship with its tags: what Undo needs to put it back exactly. */
+export interface DeletedRecord<T> {
+  row: T;
+  tags: TagRow[];
+}
+
+export type TaggedTable = 'notes' | 'links' | 'ships';
+
+export interface RestorePlan {
+  /** Pruned tags, re-created as they were. */
+  createTags: TagRow[];
+  /** What the relations point to: a tag still there (same id, or its name typed again since) is reused. */
+  tagIds: string[];
+  /** Tombstones to forget: the record's and each re-created tag's. */
+  forget: { table: DeletionTable; key: string }[];
+}
+
+/** What an Undo writes to put a deleted note, link or ship back (pure). */
+export function planRestore(
+  table: TaggedTable,
+  deleted: DeletedRecord<{ id: string }>,
+  liveTags: readonly TagRow[],
+): RestorePlan {
+  const byId = new Map(liveTags.map((t) => [t.id, t]));
+  const byName = new Map(liveTags.map((t) => [t.name, t]));
+  const createTags: TagRow[] = [];
+  const tagIds = new Set<string>();
+  for (const tag of deleted.tags) {
+    const found = byId.get(tag.id) ?? byName.get(tag.name);
+    if (found !== undefined) {
+      tagIds.add(found.id);
+      continue;
+    }
+    createTags.push(tag);
+    byId.set(tag.id, tag);
+    byName.set(tag.name, tag);
+    tagIds.add(tag.id);
+  }
+  return {
+    createTags,
+    tagIds: [...tagIds],
+    forget: [
+      { table, key: deleted.row.id },
+      ...createTags.map((t) => ({ table: 'tags' as const, key: t.name })),
+    ],
+  };
+}
+
+/** One record's relation rows (each join table names its parent column differently). */
+interface Relations {
+  toArray: () => PromiseLike<{ tagId: string }[]>;
+  delete: () => PromiseLike<number>;
+}
+
+function taggedScope(database: UnderdeckDb) {
+  return [
+    database.notes,
+    database.links,
+    database.ships,
+    database.tags,
+    database.noteTags,
+    database.linkTags,
+    database.shipTags,
+    database.deletions,
+  ];
+}
+
+/**
+ * Deletes the record and its relations, remembers the deletion and prunes the
+ * tags nothing uses any more, in one transaction. Resolves to what Undo needs,
+ * or undefined when there was no such record.
+ */
+async function deleteTagged<T extends { id: string }>(
+  database: UnderdeckDb,
+  table: TaggedTable,
+  rows: Table<T, string>,
+  relations: () => Relations,
+  id: string,
+): Promise<DeletedRecord<T> | undefined> {
+  return database.transaction('rw', taggedScope(database), async () => {
+    const row = await rows.get(id);
+    if (row === undefined) return undefined;
+    const tagIds = (await relations().toArray()).map((r) => r.tagId);
+    const tags = (await database.tags.bulkGet(tagIds)).filter((t): t is TagRow => t !== undefined);
+    await relations().delete();
+    await rows.delete(id);
+    await markDeleted(database, table, [id]);
+    await pruneOrphanTags(database);
+    return { row, tags };
   });
 }
 
-export async function deleteLinkCascade(database: UnderdeckDb, linkId: string): Promise<void> {
-  await database.transaction('rw', database.links, database.linkTags, async () => {
-    await database.linkTags.where('linkId').equals(linkId).delete();
-    await database.links.delete(linkId);
+/** Undo of deleteTagged: the row as it was, its tags and relations, no tombstones left. */
+async function restoreTagged<T extends { id: string }>(
+  database: UnderdeckDb,
+  table: TaggedTable,
+  rows: Table<T, string>,
+  deleted: DeletedRecord<T>,
+  putRelations: (tagIds: string[]) => PromiseLike<unknown>,
+): Promise<void> {
+  await database.transaction('rw', taggedScope(database), async () => {
+    const plan = planRestore(table, deleted, await database.tags.toArray());
+    if (plan.createTags.length > 0) await database.tags.bulkAdd(plan.createTags);
+    await rows.put(deleted.row);
+    if (plan.tagIds.length > 0) await putRelations(plan.tagIds);
+    await database.deletions.bulkDelete(plan.forget.map((d): [string, string] => [d.table, d.key]));
   });
 }
 
-export async function deleteShipCascade(database: UnderdeckDb, shipId: string): Promise<void> {
-  await database.transaction('rw', database.ships, database.shipTags, async () => {
-    await database.shipTags.where('shipId').equals(shipId).delete();
-    await database.ships.delete(shipId);
-  });
+export function deleteNoteCascade(
+  database: UnderdeckDb,
+  noteId: string,
+): Promise<DeletedRecord<NoteRow> | undefined> {
+  return deleteTagged(
+    database,
+    'notes',
+    database.notes,
+    () => database.noteTags.where('noteId').equals(noteId),
+    noteId,
+  );
+}
+
+export function restoreNoteCascade(database: UnderdeckDb, deleted: DeletedRecord<NoteRow>): Promise<void> {
+  const noteId = deleted.row.id;
+  return restoreTagged(database, 'notes', database.notes, deleted, (tagIds) =>
+    database.noteTags.bulkPut(tagIds.map((tagId) => ({ noteId, tagId }))),
+  );
+}
+
+export function deleteLinkCascade(
+  database: UnderdeckDb,
+  linkId: string,
+): Promise<DeletedRecord<LinkRow> | undefined> {
+  return deleteTagged(
+    database,
+    'links',
+    database.links,
+    () => database.linkTags.where('linkId').equals(linkId),
+    linkId,
+  );
+}
+
+export function restoreLinkCascade(database: UnderdeckDb, deleted: DeletedRecord<LinkRow>): Promise<void> {
+  const linkId = deleted.row.id;
+  return restoreTagged(database, 'links', database.links, deleted, (tagIds) =>
+    database.linkTags.bulkPut(tagIds.map((tagId) => ({ linkId, tagId }))),
+  );
+}
+
+export function deleteShipCascade(
+  database: UnderdeckDb,
+  shipId: string,
+): Promise<DeletedRecord<ShipRow> | undefined> {
+  return deleteTagged(
+    database,
+    'ships',
+    database.ships,
+    () => database.shipTags.where('shipId').equals(shipId),
+    shipId,
+  );
+}
+
+export function restoreShipCascade(database: UnderdeckDb, deleted: DeletedRecord<ShipRow>): Promise<void> {
+  const shipId = deleted.row.id;
+  return restoreTagged(database, 'ships', database.ships, deleted, (tagIds) =>
+    database.shipTags.bulkPut(tagIds.map((tagId) => ({ shipId, tagId }))),
+  );
 }
 
 /**
@@ -317,18 +547,18 @@ export async function toggleFavoriteRow(
   });
 }
 
+/** Deletes a tag everywhere and remembers it by name. */
 export async function deleteTagCascade(database: UnderdeckDb, tagId: string): Promise<void> {
   await database.transaction(
     'rw',
-    database.tags,
-    database.noteTags,
-    database.linkTags,
-    database.shipTags,
+    [database.tags, database.noteTags, database.linkTags, database.shipTags, database.deletions],
     async () => {
+      const tag = await database.tags.get(tagId);
       await database.noteTags.where('tagId').equals(tagId).delete();
       await database.linkTags.where('tagId').equals(tagId).delete();
       await database.shipTags.where('tagId').equals(tagId).delete();
       await database.tags.delete(tagId);
+      if (tag !== undefined) await markDeleted(database, 'tags', [tag.name]);
     },
   );
 }

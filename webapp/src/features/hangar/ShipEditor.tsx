@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Haptics } from '../../core/haptics';
 import { friendlyError } from '../../core/errorText';
 import { showSnackbar } from '../../core/snackbar';
+import { deleteWithUndo } from '../../core/undoDelete';
 import { useUnsavedChangesGuard } from '../../core/useUnsavedChangesGuard';
 import { GlassCard } from '../../design-system/components/GlassCard';
 import { SectionHeader } from '../../design-system/components/SectionHeader';
@@ -32,7 +33,7 @@ import {
   type ShipDraft,
   type ShipModel,
 } from './shipModel';
-import { deleteShip, saveShip, useAllTags } from './shipRepository';
+import { deleteShip, restoreShip, saveShip, useAllTags } from './shipRepository';
 import { PickerSheet, type PickerGroup } from './PickerSheet';
 import { TagInputField, type TagInputHandle } from './TagInputField';
 import { EvilShipIntro } from './EvilShipIntro';
@@ -258,7 +259,6 @@ function ShipEditorForm({
   const [modelPickerOpen, setModelPickerOpen] = useState(false);
   const [locationPickerOpen, setLocationPickerOpen] = useState(false);
   const [showDiscard, setShowDiscard] = useState(false);
-  const [showDelete, setShowDelete] = useState(false);
 
   const tagHandleRef = useRef<TagInputHandle | null>(null);
 
@@ -346,7 +346,7 @@ function ShipEditorForm({
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape' || e.defaultPrevented) return;
-      if (showDiscard || showDelete || modelPickerOpen || locationPickerOpen || intro.open) return;
+      if (showDiscard || modelPickerOpen || locationPickerOpen || intro.open) return;
       e.preventDefault();
       attemptClose();
     };
@@ -428,17 +428,11 @@ function ShipEditorForm({
     }
   };
 
-  const confirmDelete = async () => {
+  /** Deletes at once and closes; Undo in the snackbar still works from the list (spec §5.3). */
+  const removeShip = async () => {
     if (initial == null) return;
-    setShowDelete(false);
     Haptics.warning();
-    try {
-      await deleteShip(initial.id);
-      onClose();
-    } catch (err) {
-      console.error('Failed to delete ship:', err);
-      showSnackbar(friendlyError(err), { danger: true });
-    }
+    if (await deleteWithUndo('ship', () => deleteShip(initial.id), restoreShip)) onClose();
   };
 
   // --- Picker groups --------------------------------------------------------
@@ -718,7 +712,7 @@ function ShipEditorForm({
       </div>
 
       {initial != null && (
-        <button type="button" className={styles.deleteButton} onClick={() => setShowDelete(true)}>
+        <button type="button" className={styles.deleteButton} onClick={() => void removeShip()}>
           Delete ship
         </button>
       )}
@@ -761,16 +755,6 @@ function ShipEditorForm({
             setShowDiscard(false);
             onClose();
           }}
-        />
-      )}
-
-      {showDelete && (
-        <ConfirmDialog
-          title="Delete ship?"
-          cancelLabel="Cancel"
-          confirmLabel="Delete"
-          onCancel={() => setShowDelete(false)}
-          onConfirm={() => void confirmDelete()}
         />
       )}
     </EditorSheet>

@@ -78,6 +78,7 @@ export async function collectBackupStatus(
     removedFavorites,
     jobStatus,
     mapPins,
+    deletions,
   ] = await Promise.all([
     database.notes.toArray(),
     database.links.toArray(),
@@ -89,6 +90,7 @@ export async function collectBackupStatus(
     database.removedFavorites.toArray(),
     database.jobStatus.toArray(),
     database.mapPins.toArray(),
+    database.deletions.toArray(),
   ]);
   return backupStatusOf({
     notes,
@@ -101,6 +103,7 @@ export async function collectBackupStatus(
     removedFavorites,
     jobStatus,
     mapPins,
+    deletions,
     localChangeAt: localChangeAt(),
   });
 }

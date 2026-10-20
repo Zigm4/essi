@@ -15,6 +15,7 @@ const empty: BackupStatusInput = {
   removedFavorites: [],
   jobStatus: [],
   mapPins: [],
+  deletions: [],
   localChangeAt: null,
 };
 
@@ -49,11 +50,12 @@ describe('backupStatusOf', () => {
     expect(shows({ ...imported, localChangeAt: now - 60_000 }, now - DAY)).toBe(true);
   });
 
-  it('counts resets and removed stars as changes but not as data', () => {
+  it('counts resets, removed stars and deleted records as changes but not as data', () => {
     const tombstonesOnly = {
       ...empty,
-      jobStatus: [{ status: 'todo', updatedAt: now - DAY }],
+      jobStatus: [{ status: 'todo', updatedAt: now - 3 * DAY }],
       removedFavorites: [{ removedAt: now - 2 * DAY }],
+      deletions: [{ deletedAt: now - DAY }],
     };
     expect(backupStatusOf(tombstonesOnly)).toEqual({ hasData: false, lastChangedAt: now - DAY });
 

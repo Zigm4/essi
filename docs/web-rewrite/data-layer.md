@@ -154,6 +154,7 @@ Shared read behavior (`HistoryRepository`, `lib/features/tools/history/history_r
 - `kHistoryLimit = 100`: every history list query is `ORDER BY date DESC LIMIT 100`. Older rows stay on disk but are never loaded.
 - Payload is decoded **lazily** per row (`detail` getter caches after first decode); a corrupt payload degrades a single tile, never the whole list (the stream maps a row-level `entryFromRow` failure to skipping that row, with logging).
 - `delete(id)` deletes a single row; `clear()` deletes all rows of that table.
+- **Web:** both leave a tombstone per row in `deletions` (below); the Undo after a single delete puts the row back and removes its tombstone. The automatic 100-row purge leaves none (not a user deletion).
 
 #### `favorites` (class `Favorites`) — schema v3
 | column | type | null | notes |
@@ -225,6 +226,18 @@ Personal per-zone notes on dynamic maps. Purely local user content (not part of 
 - `watchForMap(mapId)` and `watchAll()` order by `updatedAt DESC` (newest-edited first).
 - `watchPinnedZoneIds(mapId)` → live `Set<String>` of zoneIds for pin badges.
 - **Web:** `savePin` runs in one transaction and `getPin` returns the most recently updated row, so a stray duplicate can't hide the current note. The one-per-zone invariant also holds across import (§4.5); IndexedDB v2 collapses duplicates older imports created (newest wins).
+
+#### `deletions` (web only) — IndexedDB v3
+Tombstones of deleted records, so importing an older backup can't bring them back (§4.5). Favorites keep their own `removedFavorites` store and job resets their dated `'todo'` row.
+| field | type | notes |
+|---|---|---|
+| table | TEXT | one of `notes`, `links`, `ships`, `tags`, `mapPins`, `scanHistory`, `trackerHistory`, `discoveryHistory` |
+| key | TEXT | what the import matches the record by: the row id; for `tags` the lowercase `name` (tags merge by name); for `mapPins` `mapId/zoneId` (one note per zone, whatever its id) |
+| deletedAt | DATETIME | |
+Composite PK `(table, key)`. A record and its tombstone never coexist.
+- **Written by** every delete path, in the delete's transaction: note / link / ship delete (`delete*Cascade`, the record's tag relations go with it), tag pruning after any note / link / ship save or delete (`pruneOrphanTags`) and `deleteTagCascade`, a zone note emptied or deleted (`savePin`, `deletePin`), a history entry deleted (`deleteHistoryRow`) and "Delete all" (`clearHistory`, one per row).
+- **Cleared by** re-creating the record: Undo of a note / link / ship delete (`restore*Cascade`, which also re-creates its pruned tags) or of a history delete (`restoreHistoryRow`), a new tag with that name, a new note on that zone, a save that re-creates a deleted id.
+- Readers of the data tables are unaffected. Tombstones are never purged (they are tiny).
 
 #### `map_zone_fts` — FTS5 virtual table (raw SQL, not in drift's table list)
 ```sql
@@ -347,7 +360,8 @@ Top-level:
     "discoveryHistory": [ { "id", "date", "mode", "payloadJson", "errored" } ],
     "favorites":        [ { "entityType", "entityId", "createdAt" } ],
     "jobStatus":        [ { "jobId", "status", "updatedAt" } ],
-    "mapPins":          [ { "id", "mapId", "zoneId", "note", "createdAt", "updatedAt" } ]
+    "mapPins":          [ { "id", "mapId", "zoneId", "note", "createdAt", "updatedAt" } ],
+    "deletions":        [ { "table", "key", "deletedAt" } ]   // web only, see below
   }
 }
 ```
@@ -355,6 +369,7 @@ Top-level:
 - `payloadJson` is the raw stored JSON **string** (double-encoded inside the export).
 - `favorites`, `jobStatus`, `mapPins` are **additive** arrays; old importers ignore unknown keys, old files simply lack them (treated as empty). `formatVersion` stays 1.
 - **Web addition (same rule):** `"removedFavorites": [ { "entityType", "entityId", "removedAt" } ]` carries favorite tombstones, and `jobStatus` may hold `'todo'` rows (resets). Older importers ignore the section and store `'todo'` as "not done".
+- **Web addition (same rule):** `"deletions": [ { "table", "key", "deletedAt" } ]` carries the tombstones of the `deletions` store (§2.3; `deletedAt` ISO-8601 like every date). Older importers ignore it; a file without it imports exactly as before.
 - Ship map field order (for byte-compat, not required): id, name, modelKey, customModelLabel, registered, locationKey, customLocation, locationZone, locationSector, locationSL, hull, pilotName, gunnerName, cartographerName, prospectorName, signallerName, technicianName, sentryName, fabricatorName, medicName, quartermasterName, chefName, alchemistName, note, createdAt, updatedAt.
 
 ### 4.2 Export file paths / names
@@ -398,17 +413,19 @@ Per-section rules:
 - If a local tag already has that `name` key → **skip the insert but remap** importedId → existing local id (H3 — join rows are preserved, not dropped).
 - Else insertOrIgnore with `displayName` (defaults to the key when missing) and `colorHex`; record importedId → importedId in the remap; count it.
 - `ensureTagId(id)`: resolve through the remap, then verify the tag row actually exists locally; returns null when it doesn't.
+- **Web:** tags have no date. A tag whose name has a local tombstone is not inserted up front; it comes back (same id, counted, tombstone removed) only when `ensureTagId` needs it for a relation of a note, link or ship that exists after the merge. So the tags of records deleted here stay deleted too.
 
 **notes / links / ships** (`insertSimple`, per-row try/catch, skipped rows logged `data import: skipped malformed row`):
 - `id` defaults to uuid v4.
 - If a row with the id exists locally: **newer-wins** — overwrite only when imported `updatedAt` is **strictly after** the local `updatedAt` (`!updatedAt.isAfter(exists.updatedAt) → return false`, not counted). The UPDATE **omits `createdAt`** (original creation timestamp preserved — F43).
 - Else insertOrIgnore with `createdAt = parseDate(...)`, `updatedAt = parseUpdatedAt(...)`. Counted.
 - Missing string fields default to `''`; missing `registered` → false; nullable ship fields pass through as null.
+- **Web:** a row with a local tombstone is skipped unless its `updatedAt` is strictly after `deletedAt` (edited elsewhere after the deletion); when it wins, the tombstone is deleted.
 
 **noteTags / linkTags / shipTags** (`insertJoin`, per-row try/catch, log `data import: skipped malformed join row`):
 - Skip when either id is missing.
 - Skip when `ensureTagId(tagId)` is null (tag doesn't exist locally).
-- Skip when the parent (note/link/ship) doesn't exist locally (F44 — hard FKs would otherwise abort the transaction).
+- Skip when the parent (note/link/ship) doesn't exist locally (F44 — hard FKs would otherwise abort the transaction). **Web:** checked before the tag, so relations follow their parent: a record deleted here gets none and re-creates none of its deleted tags.
 - insertOrIgnore `(parentId, resolvedLocalTagId)`. Join rows are NOT counted in the summary.
 
 **scanHistory / trackerHistory / discoveryHistory** (`insertHistory`, per-row try/catch covering cast+validate+write, logged):
@@ -418,6 +435,7 @@ Per-section rules:
   - discovery: `DateTime.parse(startDate)` and `endDate` must succeed; every `results` element must parse as `DiscoveredObject`.
 - Invalid → skip row (a poisoned payload can never brick `watchAll()` later).
 - Id exists locally → skip (histories are immutable; **no** newer-wins here), not counted (F36/F42 — count only genuinely new rows).
+- **Web:** a local tombstone for the id → skip. Entries never change, so a deletion always wins whatever the dates.
 - Insert with `mode` defaults if absent: scan `'light'`, tracker `'asteroid'`, discovery `'comet'`; `payloadJson` default `'{}'`; `errored` default false; `date = parseDate(...)`.
 
 **favorites** (per-row try/catch, log `data import: skipped malformed favorite row`):
@@ -440,10 +458,21 @@ Per-section rules:
 - `note` defaults `''`; **truncated to 20000 chars** (`maxMapPinNoteLength`).
 - Newer-wins on `updatedAt` (strictly after). insertOrReplace, counted.
 - **Web:** one note per `(mapId, zoneId)`: the row competes with the same id **and** every local pin of that zone (another device's note has another id). It is written only when strictly newer than all of them; the losing zone pins are deleted and an existing row keeps its `createdAt`. A file with several notes for one zone keeps the newest.
+- **Web:** a zone tombstone (`mapId/zoneId`) blocks every note for that zone, whatever its id, unless its `updatedAt` is strictly after `deletedAt`; a note that wins removes the tombstone.
+
+**deletions** (web only; processed last, after every row section; per-row try/catch, log `data import: skipped malformed deletion row`):
+- Skip rows with an unknown `table`, an empty or > 1024-char `key`, a `mapPins` key that isn't `mapId/zoneId`, or an unreadable `deletedAt` (epoch fallback → skip).
+- notes / links / ships: a local row strictly older than `deletedAt` is deleted with its relations (counted under its section, like favorites removals); a local row as new or newer wins and the tombstone is dropped.
+- mapPins: every local note of the zone strictly older than `deletedAt` is deleted (counted); any note as new or newer wins and the tombstone is dropped.
+- scan / tracker / discovery history: the local entry is deleted whatever its date (counted).
+- Otherwise the tombstone is stored; a newer `deletedAt` wins over a local tombstone. Not counted (nothing visible changes).
+- tags (after all of the above; no date to compare): a local tag of that name that a note, link or ship still uses stays and the tombstone is dropped; an unused one is deleted and the tombstone stored. Not counted.
+- Finally every tag whose last relation this import removed is pruned and tombstoned, as after a delete in the app.
+- Result: a file re-imported into the database it came from says `Nothing imported.`; a file without the section imports as before.
 
 ### 4.6 `ImportSummary`
 
-Fields (all int, default 0): `notes, links, tags, ships, scanHistory, trackerHistory, discoveryHistory, favorites, jobStatus, mapPins`. `isEmpty` = sum == 0.
+Fields (all int, default 0): `notes, links, tags, ships, scanHistory, trackerHistory, discoveryHistory, favorites, jobStatus, mapPins`. `isEmpty` = sum == 0. **Web:** a record an imported tombstone removed counts under its section, like an imported one (a change either way).
 
 `describe()` copy — shown in a SnackBar after import:
 - Empty: `Nothing imported.`
@@ -476,7 +505,7 @@ Constants:
 
 `BackupStatus { bool hasData; DateTime? lastChangedAt; }` — computed by `DataExportService.backupStatus()` using cheap `COUNT(*)`/`MAX(ts)` aggregates over: notes.updatedAt, links.updatedAt, ships.updatedAt, scanHistory.date, trackerHistory.date, discoveryHistory.date, favorites.createdAt, jobStatus.updatedAt, mapPins.updatedAt. `hasData` = total count > 0; `lastChangedAt` = max timestamp across all (null when empty).
 
-**Web:** row timestamps can't see deletions (job reset, star removed, note/ship/pin deleted, history cleared) nor an import of rows older than the last backup. A Dexie DBCore middleware on every user-data store (not `mapPacks`/`mapPackFiles`/`mapBlobs`) bumps the localStorage marker `underdeck.settings.lastLocalChangeAt` (epoch ms, monotonic) after each successful write, delete or clear, imports included. `lastChangedAt` = max(row timestamps incl. tombstones, marker). `hasData` ignores tombstones (`'todo'` rows, `removedFavorites`). Pure logic: `backupStatusOf` (captures/logic.ts).
+**Web:** row timestamps can't see deletions (job reset, star removed, note/ship/pin deleted, history cleared) nor an import of rows older than the last backup. A Dexie DBCore middleware on every user-data store (not `mapPacks`/`mapPackFiles`/`mapBlobs`) bumps the localStorage marker `underdeck.settings.lastLocalChangeAt` (epoch ms, monotonic) after each successful write, delete or clear, imports included. `lastChangedAt` = max(row timestamps incl. tombstones, marker). `hasData` ignores tombstones (`'todo'` rows, `removedFavorites`, `deletions`); their dates do count for `lastChangedAt`, and their writes bump the marker. Pure logic: `backupStatusOf` (captures/logic.ts).
 
 `daysSinceBackup({now, lastBackupAt})` → whole days, `null` if never backed up, clamped ≥ 0 (backwards clock → 0).
 
@@ -699,7 +728,7 @@ React: same function keyed on fetch/AbortError/HTTP status.
 
 ## 10. Proposed IndexedDB schema (web)
 
-Database `underdeck`, Dexie version 2 (v1 + `removedFavorites`; its upgrade collapses duplicate `mapPins` per zone, newest wins):
+Database `underdeck`, Dexie version 3 (v1; v2 adds `removedFavorites` and its upgrade collapses duplicate `mapPins` per zone, newest wins; v3 adds `deletions`, additive — nothing was remembered before, so the upgrade has no data step):
 
 | object store | keyPath | indexes | mirrors |
 |---|---|---|---|
@@ -720,9 +749,10 @@ Database `underdeck`, Dexie version 2 (v1 + `removedFavorites`; its upgrade coll
 | `mapPackFiles` | `[contentVersion, logicalPath]` | `sha256` | MapPackFiles |
 | `mapPins` | `id` | `[mapId+zoneId]`, `updatedAt` | MapPins |
 | `map_blobs` | `sha256` | — | filesystem blob store (values: Blob) |
+| `deletions` | `[table, key]` | — | tombstones of deleted records (web only, v3, §2.3) |
 
 Notes:
-- **Cascade deletes must be done manually** (IndexedDB has no FKs): deleting a note/link/ship/tag must delete its join rows in the same transaction; deleting a tag must delete rows in all three join stores.
+- **Cascade deletes must be done manually** (IndexedDB has no FKs): deleting a note/link/ship/tag must delete its join rows in the same transaction; deleting a tag must delete rows in all three join stores. The same transaction writes the tombstones (§2.3).
 - Tag-name uniqueness: enforce via the unique index on `tags.name` (lowercased before write) and replicate the import remap logic.
 - Reactive reads: wrap stores in a small pub/sub (or use Dexie's `liveQuery`) to reproduce drift `watch()` semantics — every list in the app expects live updates.
 - The 100-row history cap is a query-level LIMIT, not a storage cap — replicate with a cursor that stops at 100 (ordered by the `date` index descending).

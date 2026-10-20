@@ -32,7 +32,7 @@ The Hangar is the "Fleet Registry" of the companion app: a personal list of the 
 - See all their ships grouped by craft category (Landcraft / Watercraft / Spacecraft / Other), sorted alphabetically.
 - Add a ship via a full-height modal editor (name/call sign, model from a catalog, registered flag, location from a catalog with contextual parameters, hull integer, up to 12 crew role names, a free-text note, and tags shared app-wide with Notes/Links).
 - Quick-adjust a ship's hull directly from its list card with +/- stepper buttons (clamped to `[0, hullMax]`).
-- Delete a ship via long-press → confirm dialog.
+- Delete a ship via long-press → confirm dialog (web: deleted at once, with Undo in the snackbar).
 - A hidden easter egg: selecting the "EVIL Lawless" spacecraft model triggers a full-screen "captain's log" cinematic intro (star-scroll text + void portal animation), after which the form is auto-filled and partially locked.
 
 There is **no image/photo attachment on ships** and **no direct per-ship share/export UI**. (`image_picker` is used elsewhere in the app — menu/contact view — not in Hangar.) Ships ARE included in the global app backup/export JSON (section 14).
@@ -234,6 +234,8 @@ adjustHull(delta):
 UI updates optimistically via the reactive ships stream (the DB watch re-emits).
 
 **Delete flow**: long-press card → `AlertDialog` (background `bgElevated`): title `Delete ship?` (headline). No body text. Actions: `Cancel` (body, `textSecondary`) → dismiss; `Delete` (body, `accentDanger`) → warning haptic + `repository.delete(id)`. No undo.
+
+**Web delete flow**: no dialog. Long-press / right-click on the card, or `Delete ship` in the editor (which then closes), deletes at once with a warning haptic and shows the snackbar `Ship deleted.` with an `Undo` action. Undo restores the ship exactly (same id, every field, dates, tags; a tag pruned by the delete is re-created with its id, or the tag of that name typed since is reused) and removes its tombstone. The snackbar lives at the app root, so Undo works from the list after the editor closed. Failures: `Couldn't delete the ship.` / `Couldn't restore the ship.` (danger).
 
 ### 5.4 Hangar notes card
 
@@ -630,7 +632,7 @@ Combines a live query of all `ships` rows with a live join of `ship_tags ⨝ tag
 ### 12.3 `updateHull(id, hull)` / `delete(id)`
 
 - `updateHull`: writes only `hull` and `updatedAt` (used by the card stepper).
-- `delete`: atomic transaction — delete the ship's `ship_tags` rows, delete the ship, prune orphan tags.
+- `delete`: atomic transaction — delete the ship's `ship_tags` rows, delete the ship, prune orphan tags. **Web:** the same transaction writes a tombstone for the ship and each pruned tag (data-layer §2.3) so an older backup can't bring them back, and resolves to the row and its tags; `restoreShip` (Undo) puts them back and removes those tombstones.
 
 ### 12.4 Location display string (list card)
 
@@ -710,7 +712,7 @@ Digit-only enforcement (`FilteringTextInputFormatter.digitsOnly`) applies to: Zo
 - Badges: `Registered` / `Unregistered`
 - Hull row: `Hull ` + `{hull} / {max}` or `{hull}`
 - Location row: see §12.4 formats (`{name} · zone {z}`, `{name} · {sector}, {sl} SL`, `{name} · ? SL`)
-- Delete dialog: `Delete ship?` / `Cancel` / `Delete`
+- Delete dialog: `Delete ship?` / `Cancel` / `Delete` (web: `Ship deleted.` / `Undo`, `Couldn't delete the ship.`, `Couldn't restore the ship.`)
 - Notes card title: `hangar.notes`; lines: see §5.4 (3 lines, verbatim)
 
 **Editor**

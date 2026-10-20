@@ -7,7 +7,7 @@ const LONG_PRESS_MS = 500;
 
 /**
  * Interactive wrapper around a GlassCard list row. Tap/Enter opens the detail
- * route; a touch long-press or a right-click opens the delete confirmation
+ * route; a touch long-press or a right-click deletes, with Undo in the snackbar
  * (the pointer-friendly equivalent of the Flutter long-press, spec §25.2).
  */
 export function CaptureCardShell({

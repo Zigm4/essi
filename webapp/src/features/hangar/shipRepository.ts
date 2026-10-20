@@ -1,12 +1,22 @@
 import { liveQuery } from 'dexie';
 import { useEffect, useState } from 'react';
-import { db, newUuid, type TagRow } from '../../data/db';
+import {
+  clearDeleted,
+  db,
+  deleteShipCascade,
+  newUuid,
+  pruneOrphanTags,
+  restoreShipCascade,
+  type DeletedRecord,
+  type ShipRow,
+  type TagRow,
+} from '../../data/db';
 import { draftToShipRow, rowToShipModel, sortShips, type ShipDraft, type ShipModel } from './shipModel';
 
 /**
  * Hangar persistence (spec §12). Faithful port of the Drift repository onto
  * Dexie: a live ship list, atomic save with shared tag resolution + orphan
- * pruning, hull-only quick update, and cascade delete.
+ * pruning, hull-only quick update, and cascade delete with Undo.
  */
 
 // --- Live query hook --------------------------------------------------------
@@ -86,26 +96,11 @@ async function resolveTags(displayNames: string[]): Promise<string[]> {
     } else {
       const id = newUuid();
       await db.tags.put({ id, displayName: trimmed, name: key, colorHex: null });
+      await clearDeleted(db, 'tags', [key]);
       ids.push(id);
     }
   }
   return ids;
-}
-
-/** Deletes every tag no longer referenced by any note/link/ship join (spec §12.2). */
-async function pruneOrphanTags(): Promise<void> {
-  const [noteTags, linkTags, shipTags, tags] = await Promise.all([
-    db.noteTags.toArray(),
-    db.linkTags.toArray(),
-    db.shipTags.toArray(),
-    db.tags.toArray(),
-  ]);
-  const referenced = new Set<string>();
-  for (const r of noteTags) referenced.add(r.tagId);
-  for (const r of linkTags) referenced.add(r.tagId);
-  for (const r of shipTags) referenced.add(r.tagId);
-  const orphans = tags.filter((t) => !referenced.has(t.id)).map((t) => t.id);
-  if (orphans.length > 0) await db.tags.bulkDelete(orphans);
 }
 
 // --- Mutations --------------------------------------------------------------
@@ -119,21 +114,19 @@ export async function saveShip(draft: ShipDraft, tagDisplayNames: string[]): Pro
   const id = draft.id === '' ? newUuid() : draft.id;
   await db.transaction(
     'rw',
-    db.ships,
-    db.shipTags,
-    db.tags,
-    db.noteTags,
-    db.linkTags,
+    [db.ships, db.shipTags, db.tags, db.noteTags, db.linkTags, db.deletions],
     async () => {
       const existing = await db.ships.get(id);
       const createdAt = existing?.createdAt ?? now;
+      if (existing === undefined) await clearDeleted(db, 'ships', [id]);
       await db.ships.put(draftToShipRow(draft, id, createdAt, now));
 
       const tagIds = await resolveTags(tagDisplayNames);
       await db.shipTags.where('shipId').equals(id).delete();
       for (const tagId of tagIds) await db.shipTags.put({ shipId: id, tagId });
 
-      await pruneOrphanTags();
+      // Deletes every tag no join references any more (spec §12.2), remembering each.
+      await pruneOrphanTags(db);
     },
   );
   return id;
@@ -144,19 +137,16 @@ export async function updateHull(id: string, hull: number): Promise<void> {
   await db.ships.update(id, { hull, updatedAt: Date.now() });
 }
 
-/** Atomic delete: ship_tags rows, then the ship, then orphan tags (spec §12.3). */
-export async function deleteShip(id: string): Promise<void> {
-  await db.transaction(
-    'rw',
-    db.ships,
-    db.shipTags,
-    db.tags,
-    db.noteTags,
-    db.linkTags,
-    async () => {
-      await db.shipTags.where('shipId').equals(id).delete();
-      await db.ships.delete(id);
-      await pruneOrphanTags();
-    },
-  );
+/**
+ * Atomic delete: ship_tags rows, then the ship, then orphan tags (spec §12.3).
+ * The deletion is remembered so an older backup can't bring the ship back.
+ * Resolves to what `restoreShip` needs (undefined: no such ship).
+ */
+export function deleteShip(id: string): Promise<DeletedRecord<ShipRow> | undefined> {
+  return deleteShipCascade(db, id);
+}
+
+/** Undo of deleteShip: the ship exactly as it was, with its tags. */
+export function restoreShip(deleted: DeletedRecord<ShipRow>): Promise<void> {
+  return restoreShipCascade(db, deleted);
 }

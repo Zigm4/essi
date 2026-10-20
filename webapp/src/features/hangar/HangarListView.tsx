@@ -5,15 +5,13 @@ import { TerminalNotes } from '../../design-system/components/TerminalNotes';
 import { BannerAction } from '../../design-system/components/TransmissionHeader';
 import { IconAdd, IconHelpOutline, IconRocketLaunch, type IconProps } from '../../design-system/icons';
 import { Haptics } from '../../core/haptics';
-import { friendlyError } from '../../core/errorText';
-import { showSnackbar } from '../../core/snackbar';
+import { deleteWithUndo } from '../../core/undoDelete';
 import { useCatalogs } from './catalog';
-import { ConfirmDialog } from './ConfirmDialog';
 import { IconArchive, IconDirectionsCar, IconSailing } from './hangarIcons';
 import { ShipCard } from './ShipCard';
 import { ShipEditor } from './ShipEditor';
 import { groupShips, type ShipCategory, type ShipModel } from './shipModel';
-import { deleteShip, useShips } from './shipRepository';
+import { deleteShip, restoreShip, useShips } from './shipRepository';
 import styles from './hangar.module.css';
 
 /** Terminal notes shown at the bottom of the hangar list (spec §5.4). */
@@ -41,24 +39,16 @@ export function HangarListView() {
   const catalog = catalogState.status === 'ready' ? catalogState.data : null;
   const shipsState = useShips();
   const [editor, setEditor] = useState<EditorState>({ open: false });
-  const [pendingDelete, setPendingDelete] = useState<ShipModel | null>(null);
 
   const openNew = () => {
     Haptics.tap();
     setEditor({ open: true, ship: null });
   };
 
-  const confirmDelete = async () => {
-    const ship = pendingDelete;
-    setPendingDelete(null);
-    if (ship == null) return;
+  /** Deletes at once; the snackbar offers Undo (spec §5.3). */
+  const removeShip = (ship: ShipModel) => {
     Haptics.warning();
-    try {
-      await deleteShip(ship.id);
-    } catch (err) {
-      console.error('Failed to delete ship:', err);
-      showSnackbar(friendlyError(err), { danger: true });
-    }
+    void deleteWithUndo('ship', () => deleteShip(ship.id), restoreShip);
   };
 
   let content: ReactElement;
@@ -105,7 +95,7 @@ export function HangarListView() {
                       model={ship}
                       catalog={catalog}
                       onOpen={() => setEditor({ open: true, ship })}
-                      onDelete={() => setPendingDelete(ship)}
+                      onDelete={() => removeShip(ship)}
                     />
                   </div>
                 ))}
@@ -134,16 +124,6 @@ export function HangarListView() {
 
       {editor.open && (
         <ShipEditor initial={editor.ship} onClose={() => setEditor({ open: false })} />
-      )}
-
-      {pendingDelete != null && (
-        <ConfirmDialog
-          title="Delete ship?"
-          cancelLabel="Cancel"
-          confirmLabel="Delete"
-          onCancel={() => setPendingDelete(null)}
-          onConfirm={() => void confirmDelete()}
-        />
       )}
     </>
   );
