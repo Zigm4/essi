@@ -66,6 +66,11 @@ describe('wrapRich', () => {
     ]);
   });
 
+  it('never breaks at a no-break space', () => {
+    const lines = wrapRich(parseInlineMarkdown('aa bb · cc dd'), 8, 5, measure);
+    expect(lines.map((l) => l.map((r) => r.text).join(''))).toEqual(['aa bb ·', 'cc dd']);
+  });
+
   it('ends a cut text with …', () => {
     const lines = wrapRich(parseInlineMarkdown('aa bb cc dd ee ff'), 5, 2, measure);
     expect(lines).toHaveLength(2);
@@ -83,6 +88,18 @@ describe('panel height', () => {
       items: [{ kind: 'facts', rows: Array.from({ length: 6 }, () => ({ label: 'a', value: 'b' })) }],
     });
     expect(big).toBeGreaterThan(small);
+  });
+
+  it('keeps its height when tinted like an alert box', () => {
+    const items = [{ kind: 'rich' as const, text: '🏗 This asteroid has significant infrastructure.' }];
+    expect(blockHeight({ kind: 'panel', items, tint: '#4FC3FF' })).toBe(blockHeight({ kind: 'panel', items }));
+  });
+});
+
+describe('hero', () => {
+  it('keeps its height with a depth circle', () => {
+    const hero = { kind: 'hero' as const, emoji: '🎣', title: 'Zone', caption: 'Zone 49' };
+    expect(blockHeight({ ...hero, dot: '#E07AA8' })).toBe(blockHeight(hero));
   });
 });
 

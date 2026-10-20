@@ -9,6 +9,8 @@
  * draws it.
  */
 
+import { withAlpha } from '../../../design-system/color';
+
 export interface PlanetGlyphSpec {
   light: string;
   dark: string;
@@ -18,7 +20,8 @@ export interface PlanetGlyphSpec {
 export type CardBlock =
   | { kind: 'divider'; alpha?: number }
   | { kind: 'space'; height: number }
-  | { kind: 'hero'; emoji: string; title: string; caption?: string }
+  /** `dot`: a filled circle on the right in that colour (a fishing zone's depth). */
+  | { kind: 'hero'; emoji: string; title: string; caption?: string; dot?: string }
   | { kind: 'kv'; label: string; value: string; valueColor?: string; large?: boolean }
   | { kind: 'status'; emoji: string; text: string; color: string }
   | { kind: 'caption'; text: string; color?: string }
@@ -30,8 +33,10 @@ export type CardBlock =
   /**
    * A card like the app's GlassCard (the job sheet's panels). Its items are
    * laid out by renderCardPng (`layout`); until then the height is estimated.
+   * `tint` (#RRGGBB) draws it like the app's alert boxes instead: a tinted
+   * fill and border.
    */
-  | { kind: 'panel'; items: readonly PanelItem[]; layout?: PanelLayout }
+  | { kind: 'panel'; items: readonly PanelItem[]; layout?: PanelLayout; tint?: string }
   | { kind: 'listRow'; emoji: string; text: string; trailing: string }
   | {
       kind: 'planet';
@@ -51,8 +56,11 @@ export interface FactRowSpec {
 }
 
 export type PanelItem =
-  /** Job text with the app's inline markdown: **bold** (blue, heavy), `code`. */
-  | { kind: 'rich'; text: string; maxLines?: number }
+  /**
+   * Job text with the app's inline markdown: **bold** (blue, heavy), `code`.
+   * `color` sets the plain text's colour (a dimmer hint).
+   */
+  | { kind: 'rich'; text: string; maxLines?: number; color?: string }
   | { kind: 'facts'; rows: readonly FactRowSpec[] }
   /** "ON COMPLETE"-style small caps heading. */
   | { kind: 'heading'; text: string; color?: string };
@@ -64,7 +72,7 @@ export interface Run {
 }
 
 type LaidItem =
-  | { kind: 'rich'; lines: Run[][] }
+  | { kind: 'rich'; lines: Run[][]; color?: string }
   | { kind: 'facts'; rows: { label: string; lines: string[]; color?: string }[] }
   | { kind: 'heading'; text: string; color?: string };
 
@@ -83,6 +91,7 @@ export interface CardSpec {
 export const CARD_WIDTH = 380;
 export const CARD_SCALE = 3;
 const PAD = 16;
+const HERO_DOT_RADIUS = 14;
 
 /** Height (in card px) taken by each block. */
 export function blockHeight(block: CardBlock): number {
@@ -150,7 +159,7 @@ function estimateLayout(items: readonly PanelItem[]): PanelLayout {
       switch (item.kind) {
         case 'rich': {
           const n = Math.max(1, Math.min(item.maxLines ?? 10, Math.ceil(item.text.length / 48)));
-          return { kind: 'rich', lines: Array.from({ length: n }, () => []) };
+          return { kind: 'rich', lines: Array.from({ length: n }, () => []), color: item.color };
         }
         case 'facts':
           return { kind: 'facts', rows: item.rows.map((r) => ({ label: r.label, lines: [r.value], color: r.color })) };
@@ -213,9 +222,10 @@ function wordUnits(runs: readonly Run[]): { pieces: Run[]; spaced: boolean }[] {
     current = [];
   };
   for (const run of runs) {
-    for (const part of run.text.split(/(\s+)/)) {
+    // Plain spaces only, like wrapLines: a no-break space keeps its words together.
+    for (const part of run.text.split(/([ \t\r\n]+)/)) {
       if (part.length === 0) continue;
-      if (/^\s+$/.test(part)) {
+      if (/^[ \t\r\n]+$/.test(part)) {
         close();
         spaced = units.length > 0;
         continue;
@@ -444,15 +454,23 @@ function drawBlock(ctx: Ctx, block: CardBlock, y: number, p: Palette): void {
     case 'space':
       return;
     case 'hero': {
+      // The app's 56 px depth circle, at the card's scale.
+      const dotSpace = block.dot === undefined ? 0 : HERO_DOT_RADIUS * 2 + 10;
+      if (block.dot !== undefined) {
+        ctx.fillStyle = withAlpha(block.dot, 0.55);
+        ctx.beginPath();
+        ctx.arc(right - HERO_DOT_RADIUS, y + blockHeight(block) / 2, HERO_DOT_RADIUS, 0, Math.PI * 2);
+        ctx.fill();
+      }
       setFont(ctx, `22px ${SANS}`);
       ctx.fillStyle = p.text;
       ctx.fillText(block.emoji, left, y + 26);
       setFont(ctx, `600 16px ${SANS}`);
-      ctx.fillText(fit(ctx, block.title, width - 34), left + 34, y + 20);
+      ctx.fillText(fit(ctx, block.title, width - 34 - dotSpace), left + 34, y + 20);
       if (block.caption !== undefined) {
         setFont(ctx, `11px ${MONO}`);
         ctx.fillStyle = p.text2;
-        ctx.fillText(fit(ctx, block.caption, width - 34), left + 34, y + 37);
+        ctx.fillText(fit(ctx, block.caption, width - 34 - dotSpace), left + 34, y + 37);
       }
       return;
     }
@@ -493,7 +511,7 @@ function drawBlock(ctx: Ctx, block: CardBlock, y: number, p: Palette): void {
       return;
     }
     case 'panel': {
-      drawPanel(ctx, block.layout ?? estimateLayout(block.items), y, panelHeight(block), p);
+      drawPanel(ctx, block.layout ?? estimateLayout(block.items), y, panelHeight(block), p, block.tint);
       return;
     }
     case 'listRow': {
@@ -550,14 +568,15 @@ function runMeasurer(ctx: Ctx): MeasureRun {
   };
 }
 
-function drawPanel(ctx: Ctx, layout: PanelLayout, y: number, height: number, p: Palette): void {
+function drawPanel(ctx: Ctx, layout: PanelLayout, y: number, height: number, p: Palette, tint?: string): void {
   const x = PAD;
   const w = CARD_WIDTH - PAD * 2;
-  ctx.fillStyle = p.card;
+  // A tinted panel is an alert box (tint@12% fill, tint@50% border, 8 px corners).
+  ctx.fillStyle = tint === undefined ? p.card : withAlpha(tint, 0.12);
   ctx.beginPath();
-  ctx.roundRect(x, y, w, height, 14);
+  ctx.roundRect(x, y, w, height, tint === undefined ? 14 : 8);
   ctx.fill();
-  ctx.strokeStyle = p.border;
+  ctx.strokeStyle = tint === undefined ? p.border : withAlpha(tint, 0.5);
   ctx.lineWidth = 1;
   ctx.stroke();
 
@@ -585,7 +604,7 @@ function drawPanel(ctx: Ctx, layout: PanelLayout, y: number, height: number, p: 
               ctx.fill();
             }
             setFont(ctx, RICH_FONT[run.style]);
-            ctx.fillStyle = run.style === 'bold' ? p.accent : run.style === 'code' ? p.accent2 : p.text;
+            ctx.fillStyle = run.style === 'bold' ? p.accent : run.style === 'code' ? p.accent2 : (item.color ?? p.text);
             ctx.fillText(run.text, lx, baseline);
             lx += runWidth;
           }
@@ -625,6 +644,7 @@ function layoutPanel(ctx: Ctx, items: readonly PanelItem[]): PanelLayout {
           return {
             kind: 'rich',
             lines: wrapRich(parseInlineMarkdown(item.text), PANEL_INNER, item.maxLines ?? 10, measure),
+            color: item.color,
           };
         case 'facts':
           setFont(ctx, `13px ${SANS}`);

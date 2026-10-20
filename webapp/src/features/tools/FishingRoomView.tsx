@@ -1,5 +1,5 @@
-import { useState, type CSSProperties } from 'react';
-import { useParams } from 'react-router-dom';
+import { useEffect, useState, type CSSProperties } from 'react';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { withAlpha } from '../../design-system/color';
 import { BottomSheet } from './shared/BottomSheet';
 import { useFavoriteSet } from './shared/favorites';
@@ -17,6 +17,7 @@ import {
   type FishingSegment,
   type FishingZone,
 } from './fishing/fishingData';
+import { zoneIdFromSearch } from './fishing/fishingShare';
 import { useFishingRooms } from './fishing/useFishingData';
 import styles from './fishing/Fishing.module.css';
 
@@ -28,7 +29,7 @@ const SEGMENTS: readonly { id: FishingSegment; label: string }[] = [
   { id: 'reefs', label: 'Reefs' },
 ];
 
-/** /tools/fishing/:roomId - a single fishing map room. */
+/** /tools/fishing/:roomId - a single fishing map room; `?zone=` (a shared link) opens that zone. */
 export function FishingRoomView() {
   const { roomId } = useParams();
   const { rooms, error } = useFishingRooms();
@@ -60,6 +61,30 @@ function MultiRoom({ room, favSet }: { room: FishingRoom; favSet: Set<string> })
   const [segment, setSegment] = useState<FishingSegment>('all');
   const [depths, setDepths] = useState<Set<string>>(() => new Set());
   const [sheetZone, setSheetZone] = useState<FishingZone | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const linkedZoneId = zoneIdFromSearch(searchParams.toString());
+
+  // A shared zone link opens that zone's card.
+  useEffect(() => {
+    if (linkedZoneId === null) return;
+    const zone = room.zones.find((z) => z.id === linkedZoneId);
+    if (zone !== undefined) setSheetZone(zone);
+  }, [room, linkedZoneId]);
+
+  const closeSheet = () => {
+    setSheetZone(null);
+    // Closed: Back and reloads shouldn't open the shared zone again.
+    if (searchParams.has('zone')) {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          next.delete('zone');
+          return next;
+        },
+        { replace: true },
+      );
+    }
+  };
 
   const filtering = isFiltering(segment, depths);
   const counts = depthCounts(room.zones, segment);
@@ -180,7 +205,7 @@ function MultiRoom({ room, favSet }: { room: FishingRoom; favSet: Set<string> })
 
       <BottomSheet
         open={sheetZone !== null}
-        onClose={() => setSheetZone(null)}
+        onClose={closeSheet}
         heightFraction={0.6}
         radius={20}
         ariaLabel="Zone details"

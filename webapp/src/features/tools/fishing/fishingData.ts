@@ -51,6 +51,24 @@ export function depthFromName(name: string | null): FishingDepth | null {
   return DEPTH_BY_NAME.get(name) ?? null;
 }
 
+/** One detail line of a zone card. */
+export interface ZoneFactRow {
+  label: string;
+  value: string;
+}
+
+/**
+ * The zone card's detail lines in screen order (§4.4). The share card and
+ * message use the same rows, so the image always matches the card.
+ */
+export function zoneFactRows(zone: FishingZone): ZoneFactRow[] {
+  return [
+    { label: 'Accessible', value: zone.accessible ? 'Yes' : 'No (Reef)' },
+    { label: 'Depth', value: zone.depth ?? 'n/a' },
+    { label: 'Pole', value: zone.pole ?? 'n/a' },
+  ];
+}
+
 export interface FishingRoom {
   /** Slug, e.g. `rankle-river` - used in the route. */
   id: string;

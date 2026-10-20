@@ -27,6 +27,27 @@ export function ownerId(owner: WalletOwner): string {
   return owner.discord_username ?? owner.display_name;
 }
 
+/**
+ * The Discord handle shown under an owner's name (`@handle`), or null when it
+ * is missing or only repeats the name (case-insensitively). The results and
+ * the share use the same rule.
+ */
+export function ownerHandle(owner: WalletOwner): string | null {
+  const handle = owner.discord_username;
+  if (handle === null || handle.toLowerCase() === owner.display_name.toLowerCase()) return null;
+  return `@${handle}`;
+}
+
+/** `1 result`, `12 results`. */
+export function resultsLabel(total: number): string {
+  return `${total} result${total === 1 ? '' : 's'}`;
+}
+
+/** `1 wallet`, `2 wallets`. */
+export function walletCountLabel(count: number): string {
+  return `${count} wallet${count === 1 ? '' : 's'}`;
+}
+
 /** Parses the raw JSON; missing `wallets` becomes []; skips non-objects. */
 export function parseWallets(raw: unknown): WalletOwner[] {
   if (!Array.isArray(raw)) return [];

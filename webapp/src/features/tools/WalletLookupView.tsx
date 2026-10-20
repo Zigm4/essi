@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { GlassCard } from '../../design-system/components/GlassCard';
 import { SectionHeader } from '../../design-system/components/SectionHeader';
 import { TransmissionHeader } from '../../design-system/components/TransmissionHeader';
@@ -7,28 +7,36 @@ import { friendlyError } from '../../core/errorText';
 import { IconSearch, IconWallet } from '../../design-system/icons';
 import { IconBarChart, IconIosShare, IconList, IconPerson } from './shared/toolIcons';
 import { CenteredError, CenteredSpinner } from './shared/Status';
+import { ShareSheet } from './shared/ShareSheet';
+import type { ShareContent } from './shared/shareActions';
 import { ToolScaffold } from './shared/ToolScaffold';
 import { loadCatalog } from './shared/catalog';
-import { shareOrCopy } from './shared/share';
 import {
   capResults,
   normalizeQuery,
+  ownerHandle,
   ownerId,
   parseWallets,
+  resultsLabel,
   search,
+  walletCountLabel,
   walletStats,
   type WalletDisplay,
   type WalletHit,
   type WalletOwner,
 } from './wallet/walletData';
+import { walletQueryFromSearch, walletShare } from './wallet/walletShare';
 import styles from './wallet/WalletLookup.module.css';
 
-/** /tools/wallet - find a wallet from an owner handle, or an owner from a wallet. */
+/**
+ * /tools/wallet - find a wallet from an owner handle, or an owner from a
+ * wallet. `?q=` (global search, a shared link) runs that search.
+ */
 export function WalletLookupView() {
-  const [searchParams] = useSearchParams();
+  const location = useLocation();
   const [owners, setOwners] = useState<WalletOwner[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [query, setQuery] = useState(() => searchParams.get('q') ?? '');
+  const [query, setQuery] = useState(() => walletQueryFromSearch(location.search));
 
   useEffect(() => {
     let alive = true;
@@ -112,17 +120,13 @@ export function WalletLookupView() {
 }
 
 function Results({ query, display }: { query: string; display: WalletDisplay }) {
-  const onShare = () => {
-    void shareOrCopy('ESSI wallet lookup', buildShareText(query, display));
-  };
-  const total = display.total;
+  const [share, setShare] = useState<ShareContent | null>(null);
+  // Discord message, image or link (walletShare) - the same sheet as the NASA tools.
+  const onShare = () => setShare(walletShare(query, display));
   return (
     <div className={styles.stack}>
       <div className={styles.resultsHeader}>
-        <SectionHeader
-          title={`${total} result${total === 1 ? '' : 's'}`}
-          icon={<IconList size={18} />}
-        />
+        <SectionHeader title={resultsLabel(display.total)} icon={<IconList size={18} />} />
         <button
           type="button"
           className={styles.shareBtn}
@@ -154,15 +158,14 @@ function Results({ query, display }: { query: string; display: WalletDisplay }) 
           ))}
         </>
       )}
+
+      <ShareSheet content={share} onClose={() => setShare(null)} />
     </div>
   );
 }
 
 function OwnerCard({ owner }: { owner: WalletOwner }) {
-  const showHandle =
-    owner.discord_username !== null &&
-    owner.discord_username.toLowerCase() !== owner.display_name.toLowerCase();
-  const count = owner.wallets.length;
+  const handle = ownerHandle(owner);
   return (
     <GlassCard>
       <div className={styles.ownerTop}>
@@ -171,9 +174,9 @@ function OwnerCard({ owner }: { owner: WalletOwner }) {
         </span>
         <div className={styles.ownerNameCol}>
           <div className={styles.ownerName}>{owner.display_name}</div>
-          {showHandle && <div className={styles.ownerHandle}>{`@${owner.discord_username}`}</div>}
+          {handle !== null && <div className={styles.ownerHandle}>{handle}</div>}
         </div>
-        <span className={styles.ownerCount}>{`${count} wallet${count === 1 ? '' : 's'}`}</span>
+        <span className={styles.ownerCount}>{walletCountLabel(owner.wallets.length)}</span>
       </div>
       <div className={styles.divider} />
       {owner.wallets.map((wallet) => (
@@ -190,9 +193,7 @@ function OwnerCard({ owner }: { owner: WalletOwner }) {
 
 function WalletHitCard({ hit }: { hit: WalletHit }) {
   const { owner } = hit;
-  const showHandle =
-    owner.discord_username !== null &&
-    owner.discord_username.toLowerCase() !== owner.display_name.toLowerCase();
+  const handle = ownerHandle(owner);
   return (
     <GlassCard>
       <div className={styles.hitWallet}>
@@ -203,9 +204,7 @@ function WalletHitCard({ hit }: { hit: WalletHit }) {
       </div>
       <div className={styles.hitRegistered}>
         Registered to <span className={styles.hitOwner}>{owner.display_name}</span>
-        {showHandle && (
-          <span className={styles.hitOwnerHandle}>{` (@${owner.discord_username})`}</span>
-        )}
+        {handle !== null && <span className={styles.hitOwnerHandle}>{` (${handle})`}</span>}
       </div>
     </GlassCard>
   );
@@ -218,16 +217,4 @@ function StatRow({ label, value }: { label: string; value: string }) {
       <span className={styles.statValue}>{value}</span>
     </div>
   );
-}
-
-function buildShareText(query: string, display: WalletDisplay): string {
-  const lines: string[] = [`Wallet lookup "${query}" - ${display.total} match${display.total === 1 ? '' : 'es'}`];
-  for (const owner of display.owners) {
-    lines.push(`${owner.display_name}: ${owner.wallets.join(', ')}`);
-  }
-  for (const hit of display.walletHits) {
-    lines.push(`${hit.wallet} → ${hit.owner.display_name}`);
-  }
-  if (display.hiddenCaption !== null) lines.push(display.hiddenCaption);
-  return lines.join('\n');
 }

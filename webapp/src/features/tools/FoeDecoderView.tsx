@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { GlassCard } from '../../design-system/components/GlassCard';
 import { NeonButton } from '../../design-system/components/NeonButton';
 import { SectionHeader } from '../../design-system/components/SectionHeader';
@@ -18,23 +19,27 @@ import {
   IconChecklist,
   IconFlag,
   IconGppBad,
+  IconIosShare,
   IconPending,
 } from './shared/toolIcons';
 import { CenteredError, CenteredSpinner } from './shared/Status';
 import { cleanIdInput } from './shared/idInput';
+import { ShareSheet } from './shared/ShareSheet';
+import type { ShareContent } from './shared/shareActions';
 import { ToolScaffold } from './shared/ToolScaffold';
 import { loadCatalog } from './shared/catalog';
+import { analyze, isValidId, validate, type FoeReport, type FoeTables } from './foe/foeDecoder';
 import {
-  analyze,
-  isValidId,
-  validate,
-  type FoeFamilyPart,
-  type FoeField,
-  type FoeFieldKey,
-  type FoeReport,
-  type FoeTables,
-} from './foe/foeDecoder';
-import { isBlueprintLoot, lootPool } from './foe/lootPools';
+  BLUEPRINT_HINT,
+  foeHeadline,
+  foeLootPool,
+  foeSections,
+  isBlueprintReward,
+  isPartialFamily,
+  LOOT_HINT,
+  type FoeRow,
+} from './foe/foeFacts';
+import { foeIdFromSearch, foeShare } from './foe/foeShare';
 import styles from './foe/FoeDecoder.module.css';
 
 const NOTES = [
@@ -43,14 +48,17 @@ const NOTES = [
   'Decoding an ID tells you who you are hunting, how it fights and what it drops.',
 ];
 
-/** /tools/foe - decode 10-digit FOE (bounty) IDs. */
+/** /tools/foe - decode 10-digit FOE (bounty) IDs; `?id=` (a shared link) decodes that one. */
 export function FoeDecoderView() {
   const [tables, setTables] = useState<FoeTables | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [input, setInput] = useState('');
   const [report, setReport] = useState<FoeReport | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [share, setShare] = useState<ShareContent | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const linkedId = foeIdFromSearch(searchParams.toString());
 
   useEffect(() => {
     let alive = true;
@@ -66,6 +74,25 @@ export function FoeDecoderView() {
     };
   }, []);
 
+  const decode = (id: string, data: FoeTables) => {
+    try {
+      setReport(analyze(id, data));
+      setError(null);
+    } catch (e) {
+      setReport(null);
+      setError(e instanceof FormatException ? e.message : 'Unknown error.');
+    }
+  };
+
+  // A shared link fills the ID and shows its decoding once the registry is in.
+  useEffect(() => {
+    if (tables === null || linkedId === null) return;
+    setInput(linkedId);
+    setError(null);
+    if (isValidId(linkedId)) decode(linkedId, tables);
+    else setReport(null);
+  }, [tables, linkedId]);
+
   const rules = validate(input);
   const valid = isValidId(input);
 
@@ -75,17 +102,22 @@ export function FoeDecoderView() {
     setInput(sanitized);
     setReport(null);
     setError(null);
+    // Typing another ID leaves the shared one: reloading shouldn't bring it back.
+    if (searchParams.has('id')) {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          next.delete('id');
+          return next;
+        },
+        { replace: true },
+      );
+    }
   };
 
   const onDecode = () => {
     if (tables === null) return;
-    try {
-      setReport(analyze(input, tables));
-      setError(null);
-    } catch (e) {
-      setReport(null);
-      setError(e instanceof FormatException ? e.message : 'Unknown error.');
-    }
+    decode(input, tables);
     inputRef.current?.blur();
   };
 
@@ -154,7 +186,7 @@ export function FoeDecoderView() {
               </GlassCard>
             )}
 
-            {report !== null && <Report report={report} />}
+            {report !== null && <Report report={report} onShare={() => setShare(foeShare(report))} />}
 
             <GlassCard>
               <div className={styles.noticeHeader}>
@@ -171,95 +203,82 @@ export function FoeDecoderView() {
           </>
         )}
       </div>
+      <ShareSheet content={share} onClose={() => setShare(null)} />
     </ToolScaffold>
   );
 }
 
-function Report({ report }: { report: FoeReport }) {
-  const byKey = (key: FoeFieldKey): FoeField => {
-    const f = report.fields.find((x) => x.key === key);
-    if (f === undefined) throw new Error(`missing field ${key}`);
-    return f;
-  };
-  const faction = byKey('faction');
-  // Positions 2-6 + family name only decode once the faction is known.
-  const dependentPending = faction.known ? 'pending decode' : 'needs faction';
+function Report({ report, onShare }: { report: FoeReport; onShare: () => void }) {
+  // Same rows as the share card (foeFacts), so the image matches the screen.
+  const headline = foeHeadline(report);
+  const sections = foeSections(report);
 
   return (
     <div className={styles.stack}>
-      <div className={styles.terminalBlock}>
-        <span className={styles.terminalLine}>{`> decoding bounty ${report.id}…`}</span>
-        <span className={styles.terminalLine}>{'> registry match ✓'}</span>
+      <div className={styles.reportHead}>
+        <div className={styles.terminalBlock}>
+          <span className={styles.terminalLine}>{`> decoding bounty ${report.id}…`}</span>
+          <span className={styles.terminalLine}>{'> registry match ✓'}</span>
+        </div>
+        <button
+          type="button"
+          className={styles.shareBtn}
+          aria-label="Share this bounty"
+          title="Share this bounty"
+          onClick={onShare}
+        >
+          <IconIosShare size={20} />
+        </button>
       </div>
 
       <GlassCard>
         <div className={styles.headline}>
-          {faction.emoji !== '' && <span className={styles.headlineEmoji}>{faction.emoji}</span>}
+          {headline.emoji !== '' && <span className={styles.headlineEmoji}>{headline.emoji}</span>}
           <div className={styles.headlineMain}>
-            <span className={styles.headlineName}>
-              {faction.known ? faction.name : 'Unknown faction'}
-            </span>
+            <span className={styles.headlineName}>{headline.name}</span>
             <span className={styles.headlineSub}>{`FOE ${report.id}`}</span>
           </div>
-          {faction.code !== undefined && <span className={styles.factionChip}>{faction.code}</span>}
+          {headline.code !== undefined && <span className={styles.factionChip}>{headline.code}</span>}
         </div>
       </GlassCard>
 
       <GlassCard>
         <SectionHeader title="Identity" icon={<IconFlag size={18} />} />
         <div className={styles.fieldRows}>
-          <FieldRow field={byKey('subfaction')} pendingLabel={dependentPending} />
-          <FamilyRow
-            parts={report.familyParts}
-            fullName={report.familyName}
-            code={report.familyCode}
-            factionKnown={faction.known}
-          />
+          {sections.identity.map((row) =>
+            row.key === 'family' ? <FamilyRow key={row.key} row={row} /> : <FieldRow key={row.key} row={row} />,
+          )}
         </div>
       </GlassCard>
 
       <GlassCard>
         <SectionHeader title="Combat profile" icon={<IconGppBad size={18} />} />
         <div className={styles.fieldRows}>
-          <FieldRow field={byKey('rank')} pendingLabel={dependentPending} />
-          <FieldRow field={byKey('dodge')} />
-          <FieldRow field={byKey('weapon')} pendingLabel={dependentPending} />
-          <FieldRow field={byKey('protection')} />
+          {sections.combat.map((row) => (
+            <FieldRow key={row.key} row={row} />
+          ))}
         </div>
       </GlassCard>
 
-      <RewardCard loot={byKey('loot')} factionCode={report.factionCode} factionName={faction.name} />
+      <RewardCard report={report} loot={sections.loot} />
     </div>
   );
 }
 
-function RewardCard({
-  loot,
-  factionCode,
-  factionName,
-}: {
-  loot: FoeField;
-  factionCode: string | null;
-  factionName: string;
-}) {
-  const pool = lootPool(factionCode, loot.digit);
+function RewardCard({ report, loot }: { report: FoeReport; loot: FoeRow }) {
+  const pool = foeLootPool(report);
   return (
     <GlassCard>
       <SectionHeader title="Reward" icon={<IconAttachMoney size={18} />} />
       <div className={styles.fieldRows}>
-        <FieldRow field={loot} />
+        <FieldRow row={loot} />
       </div>
-      <p className={styles.rewardHint}>
-        Loot is RNG: this is the best drop this FOE can give, not a guarantee. You may get something
-        lesser instead, for example scrap in place of a Clothing BP.
-      </p>
-      {pool !== undefined && (
+      <p className={styles.rewardHint}>{LOOT_HINT}</p>
+      {pool !== null && (
         <div className={styles.lootPool}>
-          <span className={styles.lootPoolLabel}>
-            {`Possible ${factionName} ${loot.name} drops`}
-          </span>
+          <span className={styles.lootPoolLabel}>{pool.label}</span>
           <div className={styles.lootPoolItems}>
-            {pool.map((item) => (
+            {pool.items.map((item) => (
               <span key={item} className={styles.lootPoolItem}>
                 {item}
               </span>
@@ -267,39 +286,35 @@ function RewardCard({
           </div>
         </div>
       )}
-      {isBlueprintLoot(loot.digit) && (
-        <p className={styles.rewardHint}>
-          Blueprints are extremely rare: once you own one, you can craft as many as you can afford.
-        </p>
-      )}
+      {isBlueprintReward(report) && <p className={styles.rewardHint}>{BLUEPRINT_HINT}</p>}
     </GlassCard>
   );
 }
 
-function FieldRow({ field, pendingLabel = 'pending decode' }: { field: FoeField; pendingLabel?: string }) {
+function FieldRow({ row }: { row: FoeRow }) {
   // Raw-value fields (dodge, protection): the value is the digit itself.
-  if (field.isValue === true) {
+  if (row.isValue) {
     return (
       <div className={styles.fieldRow}>
-        <span className={styles.fieldLabel}>{field.label}</span>
-        <span className={styles.fieldValue}>{field.digit}</span>
+        <span className={styles.fieldLabel}>{row.label}</span>
+        <span className={styles.fieldValue}>{row.digits}</span>
       </div>
     );
   }
   return (
     <div className={styles.fieldRow}>
-      <span className={styles.fieldLabel}>{field.label}</span>
-      {field.emoji !== '' && <span className={styles.fieldEmoji}>{field.emoji}</span>}
-      {field.known ? (
-        <span className={styles.fieldName}>{field.name}</span>
+      <span className={styles.fieldLabel}>{row.label}</span>
+      {row.emoji !== '' && <span className={styles.fieldEmoji}>{row.emoji}</span>}
+      {row.value !== null ? (
+        <span className={styles.fieldName}>{row.value}</span>
       ) : (
         <span className={styles.fieldPending}>
-          <IconPending size={14} /> {pendingLabel}
+          <IconPending size={14} /> {row.pendingLabel}
         </span>
       )}
-      {field.note !== undefined && <span className={styles.fieldNote}>{field.note}</span>}
-      {field.code !== undefined && <span className={styles.fieldCode}>{field.code}</span>}
-      <span className={styles.digitBadge}>{field.digit}</span>
+      {row.note !== undefined && <span className={styles.fieldNote}>{row.note}</span>}
+      {row.code !== undefined && <span className={styles.fieldCode}>{row.code}</span>}
+      <span className={styles.digitBadge}>{row.digits}</span>
     </div>
   );
 }
@@ -309,30 +324,15 @@ function FieldRow({ field, pendingLabel = 'pending decode' }: { field: FoeField;
  * name when all three resolve; otherwise composes the known fragments inline and
  * renders each unmapped fragment as its raw digit.
  */
-function FamilyRow({
-  parts,
-  fullName,
-  code,
-  factionKnown,
-}: {
-  parts: FoeFamilyPart[];
-  fullName: string | null;
-  code: string;
-  factionKnown: boolean;
-}) {
-  const anyKnown = parts.some((p) => p.name !== null);
+function FamilyRow({ row }: { row: FoeRow }) {
   return (
     <div className={styles.fieldRow}>
-      <span className={styles.fieldLabel}>Family name</span>
-      {!factionKnown ? (
-        <span className={styles.fieldPending}>
-          <IconPending size={14} /> needs faction
-        </span>
-      ) : fullName !== null ? (
-        <span className={styles.fieldName}>{fullName}</span>
-      ) : anyKnown ? (
+      <span className={styles.fieldLabel}>{row.label}</span>
+      {row.value !== null ? (
+        <span className={styles.fieldName}>{row.value}</span>
+      ) : isPartialFamily(row) ? (
         <span className={styles.familyCompose}>
-          {parts.map((p, i) =>
+          {(row.parts ?? []).map((p, i) =>
             p.name !== null ? (
               <span key={i} className={styles.familyPart}>
                 {p.name}
@@ -346,10 +346,10 @@ function FamilyRow({
         </span>
       ) : (
         <span className={styles.fieldPending}>
-          <IconPending size={14} /> pending decode
+          <IconPending size={14} /> {row.pendingLabel}
         </span>
       )}
-      <span className={styles.digitBadge}>{code}</span>
+      <span className={styles.digitBadge}>{row.digits}</span>
     </div>
   );
 }

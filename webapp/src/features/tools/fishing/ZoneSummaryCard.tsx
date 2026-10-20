@@ -1,12 +1,15 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { GlassCard } from '../../../design-system/components/GlassCard';
 import { NeonButton } from '../../../design-system/components/NeonButton';
 import { withAlpha } from '../../../design-system/color';
 import { IconMap } from '../../../design-system/icons';
 import { FavoriteButton } from '../shared/FavoriteButton';
+import { ShareSheet } from '../shared/ShareSheet';
+import type { ShareContent } from '../shared/shareActions';
 import { IconIosShare } from '../shared/toolIcons';
-import { shareOrCopy } from '../shared/share';
-import { depthFromName, roomDisplayName, type FishingZone } from './fishingData';
+import { depthFromName, zoneFactRows, type FishingZone } from './fishingData';
+import { fishingZoneShare } from './fishingShare';
 import styles from './Fishing.module.css';
 
 /** Zone summary card (spec §4.4). */
@@ -21,17 +24,9 @@ export function ZoneSummaryCard({
 }) {
   const navigate = useNavigate();
   const depth = depthFromName(zone.depth);
-
-  const onShare = () => {
-    const lines = [
-      `Fishing zone ${zone.id}${zone.name !== 'Unknown' ? ` - ${zone.name}` : ''}`,
-      `Room: ${roomDisplayName(zone.room)}`,
-      `Depth: ${zone.depth ?? 'n/a'}`,
-      `Pole: ${zone.pole ?? 'n/a'}`,
-      `Access: ${zone.accessible ? 'Accessible' : 'No (Reef)'}`,
-    ];
-    void shareOrCopy('ESSI fishing zone', lines.join('\n'));
-  };
+  const [share, setShare] = useState<ShareContent | null>(null);
+  // Discord message, image or link (fishingZoneShare) - the same sheet as the NASA tools.
+  const onShare = () => setShare(fishingZoneShare(zone, showsZoneNumber));
 
   return (
     <GlassCard>
@@ -63,9 +58,10 @@ export function ZoneSummaryCard({
 
       <div className={styles.zoneDivider} />
 
-      <ZoneRow label="Accessible" value={zone.accessible ? 'Yes' : 'No (Reef)'} />
-      <ZoneRow label="Depth" value={zone.depth ?? 'n/a'} />
-      <ZoneRow label="Pole" value={zone.pole ?? 'n/a'} />
+      {/* Same rows as the share card (zoneFactRows), so the image matches the card. */}
+      {zoneFactRows(zone).map((row) => (
+        <ZoneRow key={row.label} label={row.label} value={row.value} />
+      ))}
 
       {zone.mapRef != null && (
         <NeonButton
@@ -78,6 +74,8 @@ export function ZoneSummaryCard({
           }}
         />
       )}
+
+      <ShareSheet content={share} onClose={() => setShare(null)} />
     </GlassCard>
   );
 }
