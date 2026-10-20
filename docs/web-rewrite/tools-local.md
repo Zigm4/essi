@@ -843,6 +843,8 @@ AppBar: transparent, title `Wallet Lookup`. PageScrollView (top padding = safe-a
    - **Owner card** (GlassCard): row — `person` icon accentPrimary; display name (headline) with `@{discord_username}` beneath in mono 12 accentSecondary **only when it differs case-insensitively from the display name**; right-aligned `"{n} wallet{s}"` caption. Divider; then one row per wallet: `wallet` icon 16 accentSecondary + the wallet string as **selectable text** (mono 13).
    - Sub-header `Wallet matches` (icon `wallet`) before the wallet-hit cards. **Wallet-hit card**: `wallet` icon accentSecondary + wallet as selectable mono 14/600; below: `Registered to ` caption + owner name (caption/600 accentPrimary) + optional ` (@{discord})` mono 12 accentSecondary.
 
+(Web, Oct 2026: every wallet row - owner card and wallet-hit card - ends with a **copy** button (`content_copy` 16 in a 40px hit area, label `Copy wallet {wallet}`) → clipboard + snackbar `Wallet copied`. The search field's Enter key (`enterkeyhint="search"`) closes the keyboard and scrolls the results into view: they already update as you type.)
+
 ### 6.4 Deep link & state
 
 - Route accepts `?q=…` (used by global search) which pre-fills the input and seeds the query after first render.
@@ -1007,6 +1009,8 @@ AppBar: transparent, title `Asteroid Analyzer`. PageScrollView (top padding = sa
    - **Resources card**: SectionHeader `Resources`; one row per resource digit (3 rows, duplicates repeated): 22px emoji, name (body) over optional symbol (mono 11 textSecondary), right-aligned `{value} pts` caption (missing value → `0 pts`).
 
 No share/favorite on this screen. Analyze blurs the input. Haptics: success on analyze, error on failure (web: drop).
+
+(Web, Oct 2026: Enter / the phone keyboard's **Go** key (`enterkeyhint="go"`) analyzes a valid ID, like the button. After an analysis the user asked for (not a shared `?id=` link), the report is scrolled into view when it starts low on the screen - on a phone it sits under the input and the closing keyboard - and stops below the app bar (`revealResult`). The Bounty Decoder does the same.)
 
 ---
 

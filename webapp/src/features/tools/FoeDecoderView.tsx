@@ -23,6 +23,7 @@ import {
 } from './shared/toolIcons';
 import { CenteredError, CenteredSpinner } from './shared/Status';
 import { cleanIdInput } from './shared/idInput';
+import { isSubmitKey, revealResult } from './shared/revealResult';
 import { ShareSheet } from './shared/ShareSheet';
 import type { ShareContent } from './shared/shareActions';
 import { ToolScaffold } from './shared/ToolScaffold';
@@ -61,8 +62,17 @@ export function FoeDecoderView() {
   const [error, setError] = useState<string | null>(null);
   const [share, setShare] = useState<ShareContent | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const reportRef = useRef<HTMLDivElement | null>(null);
+  // Set by a decode the user asked for (not a shared link): show its result.
+  const revealNext = useRef(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const linkedId = foeIdFromSearch(searchParams.toString());
+
+  useEffect(() => {
+    if (report === null || !revealNext.current) return;
+    revealNext.current = false;
+    revealResult(reportRef.current);
+  }, [report]);
 
   const decode = (id: string, data: FoeTables) => {
     try {
@@ -106,7 +116,8 @@ export function FoeDecoderView() {
   };
 
   const onDecode = () => {
-    if (tables === null) return;
+    if (tables === null || !valid) return;
+    revealNext.current = true;
     decode(input, tables);
     inputRef.current?.blur();
   };
@@ -130,6 +141,7 @@ export function FoeDecoderView() {
                 ref={inputRef}
                 className={styles.input}
                 inputMode="numeric"
+                enterKeyHint="go"
                 autoComplete="off"
                 autoCorrect="off"
                 spellCheck={false}
@@ -139,6 +151,9 @@ export function FoeDecoderView() {
                   borderBottomColor: valid ? 'var(--accent-success)' : 'var(--border-glow)',
                 }}
                 onChange={(e) => onChange(e.target.value)}
+                onKeyDown={(e) => {
+                  if (isSubmitKey(e)) onDecode();
+                }}
               />
               <NeonButton
                 className={styles.decode}
@@ -176,7 +191,11 @@ export function FoeDecoderView() {
               </GlassCard>
             )}
 
-            {report !== null && <Report report={report} onShare={() => setShare(foeShare(report))} />}
+            {report !== null && (
+              <div ref={reportRef} className={styles.reveal}>
+                <Report report={report} onShare={() => setShare(foeShare(report))} />
+              </div>
+            )}
 
             <GlassCard>
               <div className={styles.noticeHeader}>

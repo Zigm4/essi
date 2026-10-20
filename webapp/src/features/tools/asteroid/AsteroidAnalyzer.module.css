@@ -5,6 +5,11 @@
   align-items: stretch;
 }
 
+/* A decoded result scrolled into view stops below the floating app bar. */
+.reveal {
+  scroll-margin-top: 72px;
+}
+
 .inputCaption {
   font-family: var(--font-sans);
   font-size: 12px;

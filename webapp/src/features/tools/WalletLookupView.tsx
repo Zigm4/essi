@@ -1,13 +1,15 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { GlassCard } from '../../design-system/components/GlassCard';
 import { SectionHeader } from '../../design-system/components/SectionHeader';
 import { TransmissionHeader } from '../../design-system/components/TransmissionHeader';
-import { IconSearch, IconWallet } from '../../design-system/icons';
+import { Haptics } from '../../core/haptics';
+import { IconContentCopy, IconSearch, IconWallet } from '../../design-system/icons';
 import { IconBarChart, IconIosShare, IconList, IconPerson } from './shared/toolIcons';
 import { CenteredError, CenteredSpinner } from './shared/Status';
 import { ShareSheet } from './shared/ShareSheet';
-import type { ShareContent } from './shared/shareActions';
+import { copyText, type ShareContent } from './shared/shareActions';
+import { isSubmitKey, revealResult } from './shared/revealResult';
 import { ToolScaffold } from './shared/ToolScaffold';
 import { useCatalog } from './shared/useCatalog';
 import {
@@ -35,6 +37,7 @@ export function WalletLookupView() {
   const location = useLocation();
   const { data: owners, error: loadError, retry } = useCatalog('wallets.json', parseWallets, "Couldn't load wallet data.");
   const [query, setQuery] = useState(() => walletQueryFromSearch(location.search));
+  const resultsRef = useRef<HTMLDivElement | null>(null);
 
   const trimmed = query.trim();
   const result = useMemo(
@@ -66,36 +69,45 @@ export function WalletLookupView() {
                 autoCorrect="off"
                 autoCapitalize="off"
                 spellCheck={false}
+                enterKeyHint="search"
                 placeholder="Search…"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  // Results update as you type: Enter just closes the keyboard and shows them.
+                  if (!isSubmitKey(e)) return;
+                  e.currentTarget.blur();
+                  revealResult(resultsRef.current);
+                }}
               />
             </GlassCard>
 
-            {normalizeQuery(query).length === 0 ? (
-              <GlassCard>
-                <SectionHeader title="Database overview" icon={<IconBarChart size={18} />} />
-                <div style={{ marginTop: 8 }}>
-                  <StatRow label="Owners" value={String(stats.totalOwners)} />
-                  <StatRow label="Wallets" value={String(stats.totalWallets)} />
-                  <StatRow label="Avg per owner" value={stats.avgPerOwner} />
-                </div>
-              </GlassCard>
-            ) : display.total === 0 ? (
-              <GlassCard>
-                <div className={styles.noMatchRow}>
-                  <IconSearch size={22} />
-                  <div className={styles.noMatchText}>
-                    <span className={styles.noMatchHead}>No matches</span>
+            <div ref={resultsRef} className={styles.reveal}>
+              {normalizeQuery(query).length === 0 ? (
+                <GlassCard>
+                  <SectionHeader title="Database overview" icon={<IconBarChart size={18} />} />
+                  <div style={{ marginTop: 8 }}>
+                    <StatRow label="Owners" value={String(stats.totalOwners)} />
+                    <StatRow label="Wallets" value={String(stats.totalWallets)} />
+                    <StatRow label="Avg per owner" value={stats.avgPerOwner} />
                   </div>
-                </div>
-                <div className={styles.caption} style={{ marginBottom: 0 }}>
-                  Try a different name, Discord handle, or wallet substring.
-                </div>
-              </GlassCard>
-            ) : (
-              <Results query={trimmed} display={display} />
-            )}
+                </GlassCard>
+              ) : display.total === 0 ? (
+                <GlassCard>
+                  <div className={styles.noMatchRow}>
+                    <IconSearch size={22} />
+                    <div className={styles.noMatchText}>
+                      <span className={styles.noMatchHead}>No matches</span>
+                    </div>
+                  </div>
+                  <div className={styles.caption} style={{ marginBottom: 0 }}>
+                    Try a different name, Discord handle, or wallet substring.
+                  </div>
+                </GlassCard>
+              ) : (
+                <Results query={trimmed} display={display} />
+              )}
+            </div>
           </>
         )}
       </div>
@@ -169,6 +181,7 @@ function OwnerCard({ owner }: { owner: WalletOwner }) {
             <IconWallet size={16} />
           </span>
           <span className={styles.walletText}>{wallet}</span>
+          <CopyWalletButton wallet={wallet} />
         </div>
       ))}
     </GlassCard>
@@ -185,12 +198,31 @@ function WalletHitCard({ hit }: { hit: WalletHit }) {
           <IconWallet size={16} />
         </span>
         <span className={styles.hitWalletText}>{hit.wallet}</span>
+        <CopyWalletButton wallet={hit.wallet} />
       </div>
       <div className={styles.hitRegistered}>
         Registered to <span className={styles.hitOwner}>{owner.display_name}</span>
         {handle !== null && <span className={styles.hitOwnerHandle}>{` (${handle})`}</span>}
       </div>
     </GlassCard>
+  );
+}
+
+/** Copies one wallet address - a long string that is easy to mis-select on a phone. */
+function CopyWalletButton({ wallet }: { wallet: string }) {
+  return (
+    <button
+      type="button"
+      className={styles.copyBtn}
+      aria-label={`Copy wallet ${wallet}`}
+      title="Copy wallet"
+      onClick={() => {
+        Haptics.tap();
+        void copyText(wallet, 'Wallet copied');
+      }}
+    >
+      <IconContentCopy size={16} />
+    </button>
   );
 }
 

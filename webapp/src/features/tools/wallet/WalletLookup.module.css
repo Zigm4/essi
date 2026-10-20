@@ -5,6 +5,11 @@
   align-items: stretch;
 }
 
+/* Results scrolled into view (Enter) stop below the floating app bar. */
+.reveal {
+  scroll-margin-top: 72px;
+}
+
 .caption {
   font-family: var(--font-sans);
   font-size: 12px;
@@ -163,7 +168,7 @@
 }
 
 .walletRow + .walletRow {
-  margin-top: 6px;
+  margin-top: 2px;
 }
 
 .walletIcon {
@@ -172,6 +177,8 @@
 }
 
 .walletText {
+  flex: 1;
+  min-width: 0;
   font-family: var(--font-mono);
   font-size: 13px;
   color: var(--text-primary);
@@ -186,6 +193,8 @@
 }
 
 .hitWalletText {
+  flex: 1;
+  min-width: 0;
   font-family: var(--font-mono);
   font-size: 14px;
   font-weight: 600;
@@ -212,4 +221,30 @@
   font-family: var(--font-mono);
   font-size: 12px;
   color: var(--accent-secondary);
+}
+
+/* 40px hit area for a 16px icon, at the end of the wallet's row. */
+.copyBtn {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin: -4px -8px -4px 0;
+  padding: 0;
+  border: none;
+  border-radius: 10px;
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.copyBtn:hover,
+.copyBtn:focus-visible {
+  color: var(--accent-primary);
+}
+
+.copyBtn:active {
+  background: rgba(79, 195, 255, 0.12);
 }
