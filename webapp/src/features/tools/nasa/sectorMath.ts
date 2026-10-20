@@ -40,6 +40,16 @@ export function computeScanMetrics(x: number, y: number): ScanMetrics {
   return { sector: computeSector(x, y), distanceSL: computeDistanceSL(x, y) };
 }
 
+/**
+ * The true distance from the Sun in 3D (AU). For information only: the game
+ * map is flat, so sector, SL and the "map distance" use X and Y alone - a body
+ * far above or below the ecliptic (C/2024 G3: Z = −7.2 AU) is much farther
+ * from the Sun than its map distance.
+ */
+export function distanceFromSunAU(xAU: number, yAU: number, zAU: number): number {
+  return Math.sqrt(xAU * xAU + yAU * yAU + zAU * zAU);
+}
+
 export interface TrackerMetrics {
   xAU: number;
   yAU: number;

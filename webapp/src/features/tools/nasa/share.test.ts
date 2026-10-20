@@ -83,6 +83,9 @@ describe('tracker share', () => {
     expect(text).toContain('- **Sector:** 7');
     expect(text).toContain('- **Distance:** 3.512 SL');
     expect(text).toContain('- **Navigation flooring:** 3.5 SL');
+    // The map distance (as computed, from X and Y) and the true 3D distance √(X² + Y² + Z²).
+    expect(text).toContain('- **Map distance:** 35.123 AU (in the map plane)');
+    expect(text).toContain('- **Distance from the Sun:** 29.851 AU (3D)');
     expect(text).toContain(`🔗 [Open this track in ESSI](<${share.link}>)`);
     expect(text.endsWith('East Shire Space Industries (ESSI)')).toBe(true);
     expect(share.card.blocks.some((b) => b.kind === 'kv' && b.label === 'Sector')).toBe(true);

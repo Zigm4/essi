@@ -45,6 +45,7 @@ import {
   type TrackChoice,
 } from './nasa/errors';
 import { isMajorKind, type TrackKind, type TrackerResult } from './nasa/models';
+import { distanceFromSunAU } from './nasa/sectorMath';
 import {
   describeMajorBody,
   describeMajorBodyInline,
@@ -732,9 +733,14 @@ function TrackResult({
       )}
 
       <div style={{ marginTop: 8 }}>
-        <InfoRow label="AU distance">
+        <InfoRow label="Map distance (AU)">
           <span className={styles.mono} style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>
             {result.distanceAU.toFixed(3)}
+          </span>
+        </InfoRow>
+        <InfoRow label="From the Sun (AU, 3D)">
+          <span className={styles.mono} style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>
+            {distanceFromSunAU(result.xAU, result.yAU, result.zAU).toFixed(3)}
           </span>
         </InfoRow>
         <InfoRow label="X (AU)">
@@ -752,6 +758,9 @@ function TrackResult({
             {result.zAU.toFixed(3)}
           </span>
         </InfoRow>
+        <div className={styles.caption} style={{ marginTop: 6 }}>
+          The game map is flat: sector, SL and map distance use X and Y only (Z is ignored).
+        </div>
       </div>
     </GlassCard>
   );

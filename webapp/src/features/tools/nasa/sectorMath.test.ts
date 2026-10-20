@@ -4,6 +4,7 @@ import {
   computeScanMetrics,
   computeSector,
   computeTrackerMetrics,
+  distanceFromSunAU,
 } from './sectorMath';
 
 describe('computeSector', () => {
@@ -70,5 +71,15 @@ describe('computeTrackerMetrics', () => {
     const KM_PER_AU = 149_597_870.7;
     const m = computeTrackerMetrics(KM_PER_AU * 0.1, 0, 0); // ~3.0985 SL
     expect(m.slFloor).toBeLessThan(m.slRounded);
+  });
+});
+
+describe('map distance vs distance from the Sun', () => {
+  it('matches the C/2024 G3 report: 3.742 AU on the map, 8.124 AU in 3D', () => {
+    const km = 149_597_870.7;
+    const m = computeTrackerMetrics(1.737 * km, -3.314 * km, -7.211 * km);
+    expect(m.distanceAU).toBeCloseTo(3.742, 3);
+    expect(m.slRounded).toBeCloseTo(115.94, 1);
+    expect(distanceFromSunAU(m.xAU, m.yAU, m.zAU)).toBeCloseTo(8.124, 3);
   });
 });

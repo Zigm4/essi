@@ -20,6 +20,7 @@ import { ymdLocal } from './discoveriesClient';
 import { describeMajorBodyInline, majorBodyFromId, trackDesignation, trackSymbol } from './majorBodies';
 import type { PlanetPosition, ScanMode, TrackKind, TrackerResult } from './models';
 import { PLANETS, searchSpanText } from './planets';
+import { distanceFromSunAU } from './sectorMath';
 import {
   computeStatus,
   displayNameOf,
@@ -174,7 +175,8 @@ export function trackerShare(r: TrackerResult): ShareContent {
       `- **Sector:** ${r.sector}`,
       `- **Distance:** ${sl}`,
       `- **Navigation flooring:** ${r.slFloor} SL`,
-      `- **AU distance:** ${r.distanceAU.toFixed(3)} AU`,
+      `- **Map distance:** ${r.distanceAU.toFixed(3)} AU (in the map plane)`,
+      `- **Distance from the Sun:** ${distanceFromSunAU(r.xAU, r.yAU, r.zAU).toFixed(3)} AU (3D)`,
       `- **Coordinates (AU):** X ${r.xAU.toFixed(3)} · Y ${r.yAU.toFixed(3)} · Z ${r.zAU.toFixed(3)}`,
     ],
     after: [`🧭 Flight engineers advise: enter **${r.slFloor} SL** in your jump calculator.`],
@@ -186,7 +188,8 @@ export function trackerShare(r: TrackerResult): ShareContent {
     { kind: 'space', height: 8 },
     { kind: 'kv', label: 'Sector', value: String(r.sector), valueColor: '#4FC3FF', large: true },
     { kind: 'kv', label: 'Distance', value: `${r.slRounded.toFixed(3)} SL`, valueColor: '#7AE3FF' },
-    { kind: 'kv', label: 'AU', value: r.distanceAU.toFixed(3) },
+    { kind: 'kv', label: 'Map distance (AU)', value: r.distanceAU.toFixed(3) },
+    { kind: 'kv', label: 'From the Sun (AU, 3D)', value: distanceFromSunAU(r.xAU, r.yAU, r.zAU).toFixed(3) },
     { kind: 'kv', label: 'X (AU)', value: r.xAU.toFixed(3) },
     { kind: 'kv', label: 'Y (AU)', value: r.yAU.toFixed(3) },
     { kind: 'kv', label: 'Z (AU)', value: r.zAU.toFixed(3) },

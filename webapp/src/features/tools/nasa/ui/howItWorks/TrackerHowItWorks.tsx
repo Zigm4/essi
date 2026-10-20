@@ -49,7 +49,8 @@ xAU = x * au_per_km
 yAU = y * au_per_km
 zAU = z * au_per_km`;
 
-const SECTOR_MATH = `distanceAU = sqrt(xAU*xAU + yAU*yAU)
+const SECTOR_MATH = `distanceAU = sqrt(xAU*xAU + yAU*yAU)   // map distance: the game map is flat, Z ignored
+sunAU      = sqrt(xAU*xAU + yAU*yAU + zAU*zAU)   // true 3D distance, shown for information
 theta = atan2(y, x)              // radians on raw km, sign-equivalent
 if theta < 0: theta += 2π
 sector = ((floor(theta * 12 / 2π) + 12) % 12) + 1`;
