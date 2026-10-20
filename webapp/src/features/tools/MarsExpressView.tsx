@@ -2,12 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { GlassCard } from '../../design-system/components/GlassCard';
 import { SectionHeader } from '../../design-system/components/SectionHeader';
 import { TransmissionHeader } from '../../design-system/components/TransmissionHeader';
-import { friendlyError } from '../../core/errorText';
 import { IconChevronRight } from '../../design-system/icons';
 import { IconSchedule, IconSwapHoriz, IconTram } from './shared/toolIcons';
 import { CenteredError, CenteredSpinner } from './shared/Status';
 import { ToolScaffold } from './shared/ToolScaffold';
-import { loadCatalog } from './shared/catalog';
+import { useCatalog } from './shared/useCatalog';
 import {
   consolidated,
   currentStop,
@@ -30,29 +29,14 @@ function pad2(n: number): string {
  * notifications once it is closed or backgrounded (no server push here).
  */
 export function MarsExpressView() {
-  const [stops, setStops] = useState<TrainStop[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let alive = true;
-    loadCatalog<unknown>('train_schedule.json')
-      .then((data) => {
-        if (alive) setStops(parseSchedule(data));
-      })
-      .catch((e: unknown) => {
-        if (alive) setError(friendlyError(e, "Couldn't load the schedule."));
-      });
-    return () => {
-      alive = false;
-    };
-  }, []);
+  const { data: stops, error, retry } = useCatalog('train_schedule.json', parseSchedule, "Couldn't load the schedule.");
 
   return (
     <ToolScaffold title="Mars Express">
       <div className={styles.stack}>
         <TransmissionHeader label="ESSI · transit operations" />
         {error !== null ? (
-          <CenteredError message={error} />
+          <CenteredError message={error} onRetry={retry} />
         ) : stops === null ? (
           <CenteredSpinner />
         ) : (

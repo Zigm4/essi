@@ -237,7 +237,7 @@ KB Home mapping (`_iconFor` in kb_home_view.dart):
 ### 3.4 States
 
 - `kbDataProvider` loading → centered spinner (Material circular progress).
-- Error → centered text, `body` style in `accentDanger`: transport errors map to friendly copy (§14.3), otherwise fallback `Couldn't load the knowledge base.`
+- Error → centered text, `body` style in `accentDanger`: transport errors map to friendly copy (§14.3), otherwise fallback `Couldn't load the knowledge base.` (Web, Oct 2026: with a **Try again** button below it - KB home, category and article alike - that loads the KB again; a failed load is never cached.)
 - KB data loads once and is cached for the app lifetime (no refresh mechanism, no pull-to-refresh).
 
 ---

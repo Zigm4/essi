@@ -290,6 +290,13 @@ ESSI banner and the bottom nav (never behind either).
 Tap behavior: switch to that branch; if the tapped tab is already current, reset the branch to
 its initial location (pop to `/tools`, `/captures`, …).
 
+(Web, Oct 2026) **Offline strip.** While the browser reports no network, a one-line strip sits
+in the shell's flow above the bottom nav (desktop: under the content, beside the rail), in the
+same row as the backup reminder: amber dot + `Offline` + `Your data and the offline tools still
+work.` (`app/OfflineBanner.tsx`, `role="status"`). It goes as soon as the connection is back.
+Catalogs, the knowledge base and maps ship with the app (service worker precache), so only the
+NASA tools need the network.
+
 ### 4.2 Visual spec — "floating glass capsule" tab bar
 
 Outer wrapper: solid `#03060B` backdrop (so nothing bleeds through), padding

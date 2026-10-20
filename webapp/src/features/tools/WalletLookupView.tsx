@@ -1,16 +1,15 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { GlassCard } from '../../design-system/components/GlassCard';
 import { SectionHeader } from '../../design-system/components/SectionHeader';
 import { TransmissionHeader } from '../../design-system/components/TransmissionHeader';
-import { friendlyError } from '../../core/errorText';
 import { IconSearch, IconWallet } from '../../design-system/icons';
 import { IconBarChart, IconIosShare, IconList, IconPerson } from './shared/toolIcons';
 import { CenteredError, CenteredSpinner } from './shared/Status';
 import { ShareSheet } from './shared/ShareSheet';
 import type { ShareContent } from './shared/shareActions';
 import { ToolScaffold } from './shared/ToolScaffold';
-import { loadCatalog } from './shared/catalog';
+import { useCatalog } from './shared/useCatalog';
 import {
   capResults,
   normalizeQuery,
@@ -34,23 +33,8 @@ import styles from './wallet/WalletLookup.module.css';
  */
 export function WalletLookupView() {
   const location = useLocation();
-  const [owners, setOwners] = useState<WalletOwner[] | null>(null);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const { data: owners, error: loadError, retry } = useCatalog('wallets.json', parseWallets, "Couldn't load wallet data.");
   const [query, setQuery] = useState(() => walletQueryFromSearch(location.search));
-
-  useEffect(() => {
-    let alive = true;
-    loadCatalog<unknown>('wallets.json')
-      .then((data) => {
-        if (alive) setOwners(parseWallets(data));
-      })
-      .catch((e: unknown) => {
-        if (alive) setLoadError(friendlyError(e, "Couldn't load wallet data."));
-      });
-    return () => {
-      alive = false;
-    };
-  }, []);
 
   const trimmed = query.trim();
   const result = useMemo(
@@ -66,7 +50,7 @@ export function WalletLookupView() {
         <TransmissionHeader label="ESBE · blockchain analysis" />
 
         {loadError !== null ? (
-          <CenteredError message={loadError} />
+          <CenteredError message={loadError} onRetry={retry} />
         ) : owners === null || display === null || stats === null ? (
           <CenteredSpinner />
         ) : (

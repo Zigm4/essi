@@ -20,6 +20,7 @@ import { Haptics } from '../../core/haptics';
 import { discordInviteUrl } from '../../core/constants';
 import { launchExternal } from '../../core/externalLink';
 import { friendlyError } from '../../core/errorText';
+import { CenteredError } from '../tools/shared/Status';
 import { IconStarBorder } from '../tools/shared/toolIcons';
 import type { KBArticle, KBArticleRef, KBCategory } from './data/kbModels';
 import { useKBData } from './data/kbLoader';
@@ -239,7 +240,7 @@ export function KBHomeView() {
 
         {kb.status === 'error' && (
           <>
-            <p className={styles.errorText}>{friendlyError(kb.error, "Couldn't load the knowledge base.")}</p>
+            <CenteredError message={friendlyError(kb.error, "Couldn't load the knowledge base.")} onRetry={kb.retry} />
             {/* Installed maps live in IndexedDB: still list them when the KB can't load. */}
             {trimmedIsEmpty && <MapsList />}
           </>

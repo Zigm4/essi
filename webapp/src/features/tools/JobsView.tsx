@@ -74,7 +74,7 @@ function chipStyle(tint: string, active: boolean): CSSProperties {
 /** /tools/jobs - search 371 jobs by faction, place, category, reward, requirements (spec §3.3). */
 export function JobsView() {
   const storeRef = useRef(createScrollOffsetStore());
-  const { jobs, error } = useJobs();
+  const { jobs, error, retry } = useJobs();
   const starred = useFavoriteSet('job');
   const statusMap = useJobStatusMap();
   const filter = useJobsFilterStore((s) => s.filter);
@@ -280,7 +280,7 @@ export function JobsView() {
             onScroll={(e) => storeRef.current.set(e.currentTarget.scrollTop)}
           >
             {error !== null ? (
-              <CenteredError message={error} />
+              <CenteredError message={error} onRetry={retry} />
             ) : jobs === null ? (
               <CenteredSpinner />
             ) : visible.length === 0 ? (

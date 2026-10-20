@@ -133,6 +133,12 @@
   color: var(--text-secondary);
 }
 
+.paneRetry {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+}
+
 /* --- Filter bar (§12.5) --- */
 .filterBar {
   position: absolute;

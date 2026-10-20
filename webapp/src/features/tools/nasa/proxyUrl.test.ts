@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { normalizeProxyUrl } from './jplClient';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { jplRequest, normalizeProxyUrl } from './jplClient';
 
 describe('normalizeProxyUrl', () => {
   it('keeps a well-formed https URL', () => {
@@ -27,5 +27,25 @@ describe('normalizeProxyUrl', () => {
   it('returns empty string for blank input', () => {
     expect(normalizeProxyUrl('')).toBe('');
     expect(normalizeProxyUrl('   ')).toBe('');
+  });
+});
+
+describe('jplRequest offline', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    Reflect.deleteProperty(navigator, 'onLine');
+  });
+
+  it('fails at once when the device is offline, without calling the network', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => false });
+    const started = Date.now();
+    await expect(jplRequest('https://p.example', 'sbdb', { sstr: '1P' })).rejects.toMatchObject({
+      name: 'NetworkError',
+      kind: 'offline',
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(Date.now() - started).toBeLessThan(400); // no 500 ms + 1500 ms retry waits
   });
 });

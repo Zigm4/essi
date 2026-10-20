@@ -1,6 +1,4 @@
-import { useEffect, useState } from 'react';
-import { friendlyError } from '../../../core/errorText';
-import { loadCatalog } from '../shared/catalog';
+import { useCatalog } from '../shared/useCatalog';
 import { parseJobsJson, type Job } from './jobModel';
 
 /**
@@ -8,22 +6,7 @@ import { parseJobsJson, type Job } from './jobModel';
  * render path in the async `.then` (spec §1.6 - inline async parse is fast
  * enough on modern browsers; no Web Worker needed).
  */
-export function useJobs(): { jobs: Job[] | null; error: string | null } {
-  const [jobs, setJobs] = useState<Job[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  useEffect(() => {
-    let alive = true;
-    loadCatalog<unknown>('jobs.json')
-      .then((data) => {
-        const parsed = parseJobsJson(data);
-        if (alive) setJobs(parsed);
-      })
-      .catch((e: unknown) => {
-        if (alive) setError(friendlyError(e, "Couldn't load jobs."));
-      });
-    return () => {
-      alive = false;
-    };
-  }, []);
-  return { jobs, error };
+export function useJobs(): { jobs: Job[] | null; error: string | null; retry: () => void } {
+  const { data, error, retry } = useCatalog('jobs.json', parseJobsJson, "Couldn't load jobs.");
+  return { jobs: data, error, retry };
 }

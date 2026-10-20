@@ -1,4 +1,5 @@
 import { NetworkError } from '../../../core/errors';
+import { isOffline } from '../../../core/useOnline';
 import { JPL_PROXY_URL } from '../../../config';
 
 /**
@@ -135,6 +136,7 @@ async function attempt(url: string, options: JplRequestOptions): Promise<JplResp
  * GET a proxied JPL route. Returns `{ status, body }` for any HTTP response
  * (including 3xx/4xx/5xx); throws NetworkError only for transport failures
  * (offline/timeout/cancelled/unknown). Retries transient failures and 5xx.
+ * A device that knows it is offline fails at once, without the retries.
  */
 export async function jplRequest(
   base: string,
@@ -145,6 +147,7 @@ export async function jplRequest(
   const url = buildJplUrl(base, route, params);
   let attemptCount = 0;
   for (;;) {
+    if (isOffline()) throw new NetworkError('offline', 'Device offline');
     try {
       const res = await attempt(url, options);
       if (res.status >= 500 && attemptCount < MAX_RETRIES) {

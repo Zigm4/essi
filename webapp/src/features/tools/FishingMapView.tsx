@@ -15,12 +15,12 @@ const ACCENT_PRIMARY = '#4FC3FF';
 /** /tools/fishing - the four map rooms + the Rankle River grid. */
 export function FishingMapView() {
   const navigate = useNavigate();
-  const { rooms, error } = useFishingRooms();
+  const { rooms, error, retry } = useFishingRooms();
 
   return (
     <ToolScaffold title="Fishing Map">
       {error !== null ? (
-        <CenteredError message={error} />
+        <CenteredError message={error} onRetry={retry} />
       ) : rooms === null ? (
         <CenteredSpinner />
       ) : (

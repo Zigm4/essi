@@ -796,7 +796,7 @@ AppBar: background `#03060B` at 55 % alpha (scrim over the map), title = descrip
 Body dispatch (`mapDocumentProvider(id)`):
 
 - loading → centered spinner.
-- error → `_MessagePane(Icons.error_outline, "Couldn't open this map", friendlyError(e, fallback: 'The map failed to load.'))`.
+- error → `_MessagePane(Icons.error_outline, "Couldn't open this map", friendlyError(e, fallback: 'The map failed to load.'))`. (Web, Oct 2026: the pane has a **Try again** button that runs the load once more.)
 - doc == null:
   - descriptor.draft → `_MessagePane(Icons.edit_note, 'Draft map', 'This map is still a draft and is not available to open yet. It will unlock in a future content update.')`
   - else → `_MessagePane(Icons.map_outlined, 'Map not found', 'This map is no longer available. It may have been removed in a content update. Go back to the gallery to see current maps.')`

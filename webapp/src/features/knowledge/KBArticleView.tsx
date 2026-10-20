@@ -10,6 +10,7 @@ import { KBMarkdownView } from './KBMarkdownView';
 import { IconBookmarkBorder, IconBookmarkFilled } from './kbIcons';
 import { DetailScaffold } from './components/DetailScaffold';
 import { Spinner } from './components/Spinner';
+import { CenteredError } from '../tools/shared/Status';
 import styles from './KBArticleView.module.css';
 
 /** /knowledge/article/:slug - a knowledge base article (markdown). */
@@ -28,7 +29,7 @@ export function KBArticleView() {
   if (kb.status === 'error') {
     return (
       <DetailScaffold title="" bodyPadding="64px 16px 32px">
-        <p className={styles.errorText}>{friendlyError(kb.error, "Couldn't load this article.")}</p>
+        <CenteredError message={friendlyError(kb.error, "Couldn't load this article.")} onRetry={kb.retry} />
       </DetailScaffold>
     );
   }

@@ -1,11 +1,16 @@
-/* Rows: the page, the backup reminder (when shown), the bottom nav. The
-   reminder takes its own row, so a page ends above it instead of under it. */
+/* Rows: the page, the notices (offline, backup reminder - when shown), the
+   bottom nav. The notices take their own row, so a page ends above them
+   instead of under them. */
 .shell {
   height: 100dvh;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr) auto auto;
   background: var(--bg-deepest);
+}
+
+.notices {
+  grid-row: 2;
 }
 
 .content {
@@ -27,6 +32,10 @@
   /* The SideNav rail spans both rows. */
   .shell > :first-child {
     grid-row: 1 / -1;
+  }
+
+  .notices {
+    grid-column: 2;
   }
 
   .content {

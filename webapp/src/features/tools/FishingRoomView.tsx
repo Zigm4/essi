@@ -32,14 +32,14 @@ const SEGMENTS: readonly { id: FishingSegment; label: string }[] = [
 /** /tools/fishing/:roomId - a single fishing map room; `?zone=` (a shared link) opens that zone. */
 export function FishingRoomView() {
   const { roomId } = useParams();
-  const { rooms, error } = useFishingRooms();
+  const { rooms, error, retry } = useFishingRooms();
   const favSet = useFavoriteSet('fishing_zone');
   const room = rooms?.find((r) => r.id === roomId) ?? null;
 
   return (
     <ToolScaffold title={room?.name ?? ''}>
       {error !== null ? (
-        <CenteredError message={error} />
+        <CenteredError message={error} onRetry={retry} />
       ) : rooms === null ? (
         <CenteredSpinner />
       ) : room === null ? (

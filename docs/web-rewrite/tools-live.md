@@ -136,6 +136,7 @@ One shared HTTP client (Dio) used by all three tools:
 - **Connect timeout: 10 s** (global). **Receive timeout: 30 s** default; per-request overrides win (Discoveries asteroid queries use 90 s).
 - **Retry interceptor** — for idempotent GET/HEAD only: retries on *transient* failures (connection error, connect timeout, receive timeout, or HTTP 5xx). Max **2 retries** with backoff delays **500 ms then 1500 ms**. Never retries a cancelled request; re-checks cancellation after the backoff sleep before re-issuing.
 - **Cancellation** — every fetch takes a cancel token; starting a new operation cancels the in-flight one. Web equivalent: `AbortController` (fetch), one per operation, aborted on new-start/cancel/unmount.
+- (Web, Oct 2026) **Known offline → fail at once.** When the browser reports no network (`navigator.onLine === false`), `jplRequest` throws the offline error before any fetch and skips the retries, so a tool shows its offline message immediately instead of after the retry waits and timeouts. While offline, the "Network access required" notice of each tool says `You're offline: this tool needs a connection to NASA JPL.`, folded or not.
 
 Web note: all three tools' requests are plain GETs with query strings, no headers, no auth. **[CORS-BLOCKED]** applies to every one of them; route through the proxy.
 

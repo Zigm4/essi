@@ -1021,6 +1021,8 @@ No share/favorite on this screen. Analyze blurs the input. Haptics: success on a
 | Wallet | spinner | "Couldn't load wallet data." | blank query → overview card; no hits → `No matches` card |
 | Asteroid | spinner (tables) | "Couldn't load the asteroid tables." | n/a (input-driven) |
 
+(Web, Oct 2026: every catalog error above also shows a **Try again** button (`replay` icon, 44px tall) that loads the file again - shared `useCatalog` hook + `CenteredError onRetry`. The copy is `friendlyError`'s, so a network failure reads "No network connection. Check your signal and try again.")
+
 No pull-to-refresh anywhere in this area; all data is static. No request cancellation (no network). No debounce on any search input (the jobs search only delays its URL write, §3.3).
 
 ---

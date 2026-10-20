@@ -40,4 +40,21 @@ describe('NetworkNotice', () => {
     expect(toggle.getAttribute('aria-expanded')).toBe('true');
     unmount();
   });
+
+  it('says the tool needs a connection while offline, folded or not', () => {
+    let online = false;
+    Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => online });
+    try {
+      const unmount = mount();
+      expect(host.textContent).toContain("You're offline: this tool needs a connection to NASA JPL.");
+      act(() => {
+        online = true;
+        window.dispatchEvent(new Event('online'));
+      });
+      expect(host.textContent).not.toContain("You're offline");
+      unmount();
+    } finally {
+      Reflect.deleteProperty(navigator, 'onLine');
+    }
+  });
 });

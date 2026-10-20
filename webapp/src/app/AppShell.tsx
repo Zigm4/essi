@@ -4,6 +4,7 @@ import { CenteredSpinner } from '../features/tools/shared/Status';
 import { ErrorBoundary } from './ErrorBoundary';
 import { BackupReminderFooter } from './BackupReminderFooter';
 import { BottomNav } from './BottomNav';
+import { OfflineBanner } from './OfflineBanner';
 import { SideNav } from './SideNav';
 import styles from './AppShell.module.css';
 
@@ -29,8 +30,11 @@ export function AppShell() {
         </ErrorBoundary>
       </div>
       {/* Before the nav in the DOM so keyboard focus follows the visual order
-          (the CSS grid puts it in the row above the nav). */}
-      <BackupReminderFooter />
+          (the CSS grid puts them in the row above the nav). */}
+      <div className={styles.notices}>
+        <OfflineBanner />
+        <BackupReminderFooter />
+      </div>
       <BottomNav />
     </div>
   );

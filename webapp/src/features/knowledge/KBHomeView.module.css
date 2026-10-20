@@ -2,15 +2,6 @@
   margin-bottom: 8px;
 }
 
-.errorText {
-  margin: 0;
-  padding: 24px 0;
-  text-align: center;
-  font-family: var(--font-sans);
-  font-size: 15px;
-  color: var(--accent-danger);
-}
-
 /* Interactive maps touch point */
 .mapsSection {
   margin-bottom: 12px;

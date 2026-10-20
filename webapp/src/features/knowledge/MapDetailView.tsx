@@ -30,6 +30,7 @@ import {
 } from '../../design-system/icons';
 import { FavoriteButton } from '../favorites/FavoriteButton';
 import { useLiveQuery } from '../favorites/useLiveQuery';
+import { RetryButton } from '../tools/shared/Status';
 import { IconEditNote, IconPushPin } from './kbIcons';
 import { SearchField } from './components/SearchField';
 import { Spinner } from './components/Spinner';
@@ -112,6 +113,8 @@ export function MapDetailView() {
   const [filters, setFilters] = useState<Map<string, ReadonlySet<string>>>(new Map());
   const [focus, setFocus] = useState<{ id: string | null; nonce: number }>({ id: null, nonce: 0 });
   const [panel, setPanel] = useState<'none' | 'zones' | 'notes'>('none');
+  // Bumped by "Try again" on a load error: runs the load below once more.
+  const [attempt, setAttempt] = useState(0);
 
   const pinCount = useLiveQuery(() => countPinsForMap(id), [id]);
 
@@ -145,7 +148,7 @@ export function MapDetailView() {
     return () => {
       cancelled = true;
     };
-  }, [id]);
+  }, [id, attempt]);
 
   const readyDoc = state.status === 'ready' ? state.doc : null;
   const descriptor = state.status === 'ready' ? state.descriptor : null;
@@ -315,6 +318,7 @@ export function MapDetailView() {
               icon="update"
               title="Couldn't open this map"
               message={friendlyError(view.error, 'The map failed to load.')}
+              onRetry={() => setAttempt((n) => n + 1)}
             />
           )}
           {view.kind === 'pane' && <MessagePane icon={view.icon} title={view.title} message={view.message} />}
@@ -424,7 +428,17 @@ function updatePane(message: string): ViewKind {
   return { kind: 'pane', icon: 'update', title: 'Update required', message };
 }
 
-function MessagePane({ icon, title, message }: { icon: PaneIcon; title: string; message: string }) {
+function MessagePane({
+  icon,
+  title,
+  message,
+  onRetry,
+}: {
+  icon: PaneIcon;
+  title: string;
+  message: string;
+  onRetry?: () => void;
+}) {
   const Icon = icon === 'map' ? IconMap : icon === 'draft' ? IconEditNote : IconWarningAmber;
   return (
     <div className={styles.center}>
@@ -436,6 +450,11 @@ function MessagePane({ icon, title, message }: { icon: PaneIcon; title: string; 
           <span className={styles.paneTitle}>{title}</span>
         </div>
         <p className={styles.paneMessage}>{message}</p>
+        {onRetry !== undefined && (
+          <div className={styles.paneRetry}>
+            <RetryButton onRetry={onRetry} />
+          </div>
+        )}
       </GlassCard>
     </div>
   );

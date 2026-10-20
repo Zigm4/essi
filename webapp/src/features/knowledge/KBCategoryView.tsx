@@ -8,6 +8,7 @@ import { useKBData } from './data/kbLoader';
 import { categoryRowIcon } from './kbCategoryIcon';
 import { DetailScaffold } from './components/DetailScaffold';
 import { Spinner } from './components/Spinner';
+import { CenteredError } from '../tools/shared/Status';
 import styles from './KBCategoryView.module.css';
 
 function ArticleRow({ article, category }: { article: KBArticle; category: KBCategory }) {
@@ -54,7 +55,7 @@ export function KBCategoryView() {
   if (kb.status === 'error') {
     return (
       <DetailScaffold title="" bodyPadding="64px 12px 32px">
-        <p className={styles.errorText}>{friendlyError(kb.error, "Couldn't load this category.")}</p>
+        <CenteredError message={friendlyError(kb.error, "Couldn't load this category.")} onRetry={kb.retry} />
       </DetailScaffold>
     );
   }

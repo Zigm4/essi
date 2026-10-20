@@ -124,8 +124,8 @@ let cached: Promise<KBData> | null = null;
 export function loadKBData(): Promise<KBData> {
   if (cached === null) {
     cached = loadOnce().catch((error: unknown) => {
-      // Drop the cache on failure so a later mount can retry (no explicit
-      // refresh mechanism exists; a successful load is cached forever).
+      // Drop the cache on failure so a retry (or a later mount) loads it
+      // again; a successful load is cached forever.
       cached = null;
       throw error;
     });
@@ -136,11 +136,13 @@ export function loadKBData(): Promise<KBData> {
 export type KBLoadState =
   | { status: 'loading' }
   | { status: 'ready'; data: KBData }
-  | { status: 'error'; error: unknown };
+  /** `retry` loads it again (a failed load isn't cached). */
+  | { status: 'error'; error: unknown; retry: () => void };
 
 /** React hook wrapping the memoized loader. */
 export function useKBData(): KBLoadState {
   const [state, setState] = useState<KBLoadState>({ status: 'loading' });
+  const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     let active = true;
     setState({ status: 'loading' });
@@ -149,12 +151,12 @@ export function useKBData(): KBLoadState {
         if (active) setState({ status: 'ready', data });
       },
       (error: unknown) => {
-        if (active) setState({ status: 'error', error });
+        if (active) setState({ status: 'error', error, retry: () => setAttempt((n) => n + 1) });
       },
     );
     return () => {
       active = false;
     };
-  }, []);
+  }, [attempt]);
   return state;
 }

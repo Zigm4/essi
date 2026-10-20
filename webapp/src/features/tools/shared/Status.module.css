@@ -35,3 +35,33 @@
     animation-duration: 2000ms;
   }
 }
+
+.column {
+  flex-direction: column;
+  gap: 16px;
+}
+
+.retry {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 12px;
+  border: 1px solid var(--accent-primary);
+  background: rgba(79, 195, 255, 0.08);
+  color: var(--accent-primary);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.retry:hover {
+  background: rgba(79, 195, 255, 0.16);
+}
+
+.retry:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}

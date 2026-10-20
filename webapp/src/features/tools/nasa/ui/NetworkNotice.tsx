@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { safeGetItem, safeSetItem } from '../../../../core/safeStorage';
+import { useOnline } from '../../../../core/useOnline';
 import { GlassCard } from '../../../../design-system/components/GlassCard';
 import { IconExpandLess, IconExpandMore, IconWifiTethering } from '../../../../design-system/icons';
 import { Divider } from './kit';
@@ -10,6 +11,8 @@ import styles from './nasa.module.css';
  * The "Network access required" notice of the three NASA tools. It is open the
  * first time a tool is opened; after that it folds to one line (tap to read it
  * again), so on a phone the tool's action button is no longer pushed off screen.
+ * While the device is offline it says so up front, folded or not: the tool
+ * can't run until the connection is back.
  */
 export function NetworkNotice({
   tool,
@@ -27,6 +30,7 @@ export function NetworkNotice({
 }) {
   const key = `underdeck.nasa.networkNotice.${tool}`;
   const [open, setOpen] = useState(() => safeGetItem(key) === null);
+  const online = useOnline();
   // Read once: next visits start folded.
   useEffect(() => {
     safeSetItem(key, 'seen');
@@ -45,7 +49,13 @@ export function NetworkNotice({
         </span>
         <span className={styles.noticeTitle}>
           <span className={styles.headline}>Network access required</span>
-          {!open && <span className={styles.caption}>{summary}</span>}
+          {!online ? (
+            <span className={styles.caption} style={{ color: 'var(--accent-warn)' }} role="status">
+              You&apos;re offline: this tool needs a connection to NASA JPL.
+            </span>
+          ) : (
+            !open && <span className={styles.caption}>{summary}</span>
+          )}
         </span>
         <span className={styles.noticeChevron} aria-hidden="true">
           {open ? <IconExpandLess size={20} /> : <IconExpandMore size={20} />}

@@ -1,8 +1,8 @@
 .footer {
-  /* In the shell's flow (AppShell.module.css), between the page and the bottom
-     nav: it takes its own row instead of floating over the end of every page
-     and the back-to-top button. Kept to two short lines to spare the page. */
-  grid-row: 2;
+  /* In the shell's flow (AppShell.module.css `.notices`), between the page and
+     the bottom nav: it takes its own row instead of floating over the end of
+     every page and the back-to-top button. Kept to two short lines to spare
+     the page. */
   width: calc(100% - 24px);
   max-width: 560px;
   margin: 0 auto 8px;
@@ -19,7 +19,6 @@
 /* Desktop: no bottom nav - under the content, beside the sidebar rail. */
 @media (min-width: 900px) {
   .footer {
-    grid-column: 2;
     width: calc(100% - 48px);
     margin-bottom: 16px;
   }

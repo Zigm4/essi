@@ -6,7 +6,6 @@ import { SectionHeader } from '../../design-system/components/SectionHeader';
 import { TerminalNotes } from '../../design-system/components/TerminalNotes';
 import { TransmissionHeader } from '../../design-system/components/TransmissionHeader';
 import { FormatException } from '../../core/errors';
-import { friendlyError } from '../../core/errorText';
 import {
   IconCheckCircle,
   IconGraphicEq,
@@ -27,7 +26,7 @@ import { cleanIdInput } from './shared/idInput';
 import { ShareSheet } from './shared/ShareSheet';
 import type { ShareContent } from './shared/shareActions';
 import { ToolScaffold } from './shared/ToolScaffold';
-import { loadCatalog } from './shared/catalog';
+import { useCatalog } from './shared/useCatalog';
 import { analyze, isValidId, validate, type FoeReport, type FoeTables } from './foe/foeDecoder';
 import {
   BLUEPRINT_HINT,
@@ -42,6 +41,8 @@ import {
 import { foeIdFromSearch, foeShare } from './foe/foeShare';
 import styles from './foe/FoeDecoder.module.css';
 
+const parseTables = (raw: unknown) => raw as FoeTables;
+
 const NOTES = [
   'FOEs are the bounties roaming Mars: hunt them down and claim the reward when they fall.',
   'Every FOE carries a 10-digit registry ID that encodes its faction, combat profile and loot drop.',
@@ -50,8 +51,11 @@ const NOTES = [
 
 /** /tools/foe - decode 10-digit FOE (bounty) IDs; `?id=` (a shared link) decodes that one. */
 export function FoeDecoderView() {
-  const [tables, setTables] = useState<FoeTables | null>(null);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const {
+    data: tables,
+    error: loadError,
+    retry,
+  } = useCatalog('foe_tables.json', parseTables, "Couldn't load the bounty registry.");
   const [input, setInput] = useState('');
   const [report, setReport] = useState<FoeReport | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -59,20 +63,6 @@ export function FoeDecoderView() {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const linkedId = foeIdFromSearch(searchParams.toString());
-
-  useEffect(() => {
-    let alive = true;
-    loadCatalog<FoeTables>('foe_tables.json')
-      .then((data) => {
-        if (alive) setTables(data);
-      })
-      .catch((e: unknown) => {
-        if (alive) setLoadError(friendlyError(e, "Couldn't load the bounty registry."));
-      });
-    return () => {
-      alive = false;
-    };
-  }, []);
 
   const decode = (id: string, data: FoeTables) => {
     try {
@@ -127,7 +117,7 @@ export function FoeDecoderView() {
         <TransmissionHeader label="ESSI · Bounty Registry Division" />
 
         {loadError !== null ? (
-          <CenteredError message={loadError} />
+          <CenteredError message={loadError} onRetry={retry} />
         ) : tables === null ? (
           <CenteredSpinner />
         ) : (

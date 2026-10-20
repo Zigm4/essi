@@ -7,7 +7,6 @@ import { TerminalNotes } from '../../design-system/components/TerminalNotes';
 import { TransmissionHeader } from '../../design-system/components/TransmissionHeader';
 import { withAlpha } from '../../design-system/color';
 import { FormatException } from '../../core/errors';
-import { friendlyError } from '../../core/errorText';
 import {
   IconCheckCircle,
   IconGraphicEq,
@@ -19,7 +18,7 @@ import { cleanIdInput } from './shared/idInput';
 import { ShareSheet } from './shared/ShareSheet';
 import type { ShareContent } from './shared/shareActions';
 import { ToolScaffold } from './shared/ToolScaffold';
-import { loadCatalog } from './shared/catalog';
+import { useCatalog } from './shared/useCatalog';
 import {
   analyze,
   isValidId,
@@ -31,6 +30,8 @@ import { alertRows, characteristicRows, resourceRows, WEALTH_MAX, wealthText } f
 import { asteroidIdFromSearch, asteroidShare } from './asteroid/asteroidShare';
 import styles from './asteroid/AsteroidAnalyzer.module.css';
 
+const parseTables = (raw: unknown) => raw as AsteroidTables;
+
 const NOTES = [
   'This tool is for players who own a UFO, the type of ship that can mine multiple resources directly from asteroids.',
   'Some players own several UFOs, you can ask them to grant you pilot rights if you want to try the gameplay.',
@@ -39,8 +40,11 @@ const NOTES = [
 
 /** /tools/asteroid - decode 9-digit asteroid IDs; `?id=` (a shared link) decodes that one. */
 export function AsteroidAnalyzerView() {
-  const [tables, setTables] = useState<AsteroidTables | null>(null);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const {
+    data: tables,
+    error: loadError,
+    retry,
+  } = useCatalog('asteroid_tables.json', parseTables, "Couldn't load the asteroid tables.");
   const [input, setInput] = useState('');
   const [report, setReport] = useState<AsteroidReport | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -48,20 +52,6 @@ export function AsteroidAnalyzerView() {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const linkedId = asteroidIdFromSearch(searchParams.toString());
-
-  useEffect(() => {
-    let alive = true;
-    loadCatalog<AsteroidTables>('asteroid_tables.json')
-      .then((data) => {
-        if (alive) setTables(data);
-      })
-      .catch((e: unknown) => {
-        if (alive) setLoadError(friendlyError(e, "Couldn't load the asteroid tables."));
-      });
-    return () => {
-      alive = false;
-    };
-  }, []);
 
   const decode = (id: string, data: AsteroidTables) => {
     try {
@@ -116,7 +106,7 @@ export function AsteroidAnalyzerView() {
         <TransmissionHeader label="ESSI · Asteroid Analysis Division" />
 
         {loadError !== null ? (
-          <CenteredError message={loadError} />
+          <CenteredError message={loadError} onRetry={retry} />
         ) : tables === null ? (
           <CenteredSpinner />
         ) : (
